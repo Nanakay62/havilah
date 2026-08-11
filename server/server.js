@@ -1,6 +1,12 @@
 'use strict';
 
-require('dotenv').config();
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    require('dotenv').config();
+  } catch (e) {
+    console.log('dotenv not found or not required in production environment');
+  }
+}
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');

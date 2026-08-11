@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "routes": [
+    { "src": "/hr", "dest": "/private/app/hr.html" },
+    { "src": "/join", "dest": "/private/app/join.html" },
+    { "src": "/superadmin", "dest": "/private/app/superadmin.html" },
+    { "src": "/(.*)", "dest": "/private/app/$1" }
+  ]
+}

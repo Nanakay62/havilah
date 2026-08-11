@@ -1,0 +1,561 @@
+/* ================================================================
+   WELLFRAME — Landing Page
+   landing.css
+   Styles for the marketing / landing page (index.html)
+   ================================================================ */
+
+/* ── View System ──────────────────────────────────────────────── */
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────── */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+  padding: 80px 24px;
+  max-width: var(--max-w);
+  margin: 0 auto;
+}
+
+.hero-content {
+  max-width: 560px;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 120, 212, 0.08);
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--accent-deep);
+  margin-bottom: 24px;
+}
+
+.hero-tag-pill {
+  background: var(--accent);
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.hero-trust {
+  display: flex;
+  gap: 40px;
+}
+
+.hero-trust-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-0);
+}
+
+.hero-trust-label {
+  font-size: 0.75rem;
+  color: var(--text-2);
+  margin-top: 2px;
+}
+
+/* ── Device Frame ─────────────────────────────────────────────── */
+.hero-visual {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.device-frame {
+  background: var(--bg-1);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl);
+  padding: 8px;
+  max-width: 480px;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+.device-screen {
+  background: var(--bg-2);
+  border-radius: 8px;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.device-stand {
+  width: 80px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+  margin: 8px auto 0;
+}
+
+/* ── Mini Dashboard ───────────────────────────────────────────── */
+.mini-dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mini-dash-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.mini-dash-pills {
+  display: flex;
+  gap: 4px;
+}
+
+.mini-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  background: var(--bg-0);
+  color: var(--text-2);
+  border: none;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+}
+
+.mini-pill.active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.mini-dash-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.mini-kpi {
+  background: var(--bg-1);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.mini-kpi-label {
+  font-size: 0.5625rem;
+  color: var(--text-2);
+  margin-bottom: 2px;
+}
+
+.mini-kpi-value {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: var(--text-0);
+}
+
+.mini-kpi-trend {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.mini-kpi-trend.down {
+  color: var(--red);
+}
+
+.mini-dash-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mini-chart-card {
+  background: var(--bg-1);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.mini-chart-title {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: var(--text-2);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mini-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 60px;
+}
+
+.mini-bar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  animation: barGrow 0.6s ease both;
+  min-height: 4px;
+}
+
+@keyframes barGrow {
+  from {
+    height: 0;
+  }
+}
+
+.mini-radar {
+  width: 100%;
+  display: block;
+}
+
+/* ── Floating Cards ───────────────────────────────────────────── */
+.float-card {
+  position: absolute;
+  background: var(--bg-1);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  z-index: 3;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.float-card-1 {
+  top: 10%;
+  left: -40px;
+  animation: float 4s ease-in-out infinite;
+}
+
+.float-card-2 {
+  bottom: 15%;
+  right: -40px;
+  animation: float 4s ease-in-out infinite 1s;
+}
+
+.float-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.float-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.float-icon-teal {
+  background: var(--teal-light);
+  color: var(--teal);
+}
+
+.float-icon-purple {
+  background: rgba(112, 0, 255, 0.08);
+  color: var(--purple);
+}
+
+.float-label {
+  font-size: 0.6875rem;
+  color: var(--text-2);
+}
+
+.float-value {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-0);
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* ── Trust Strip ──────────────────────────────────────────────── */
+.trust-strip {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 32px 24px;
+  background: var(--bg-2);
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  flex-wrap: wrap;
+}
+
+.trust-strip-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.trust-strip-item svg {
+  width: 20px;
+  height: 20px;
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+/* ── Features Grid ────────────────────────────────────────────── */
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.feature {
+  background: var(--bg-1);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: box-shadow var(--duration) var(--ease), transform var(--duration) var(--ease);
+}
+
+.feature:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.feature-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.feature h3 {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--text-0);
+  margin-bottom: 8px;
+}
+
+.feature p {
+  color: var(--text-2);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+/* ── Experiences ──────────────────────────────────────────────── */
+.experiences {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.experience-card {
+  border-radius: var(--radius-xl);
+  padding: 40px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.experience-card.employee {
+  background: linear-gradient(135deg, rgba(0, 183, 195, 0.05), rgba(0, 120, 212, 0.05));
+}
+
+.experience-card.hr {
+  background: linear-gradient(135deg, rgba(112, 0, 255, 0.05), rgba(0, 120, 212, 0.05));
+}
+
+.experience-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  background: var(--accent-light);
+  color: var(--accent-deep);
+  margin-bottom: 16px;
+}
+
+.experience-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-0);
+  margin-bottom: 8px;
+}
+
+.experience-card p {
+  color: var(--text-2);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.experience-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+}
+
+.experience-list li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.9375rem;
+  padding: 6px 0;
+  color: var(--text-2);
+}
+
+.experience-list svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--green);
+}
+
+/* ── Stats Band ───────────────────────────────────────────────── */
+.stats-band {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-num {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-0);
+  background: linear-gradient(135deg, var(--accent), var(--teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-2);
+  max-width: 200px;
+  margin: 8px auto 0;
+  line-height: 1.4;
+}
+
+/* ── Responsive – Landing ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 48px 16px;
+    text-align: center;
+  }
+
+  .hero-content {
+    max-width: 100%;
+    order: 1;
+  }
+
+  .hero-visual {
+    order: 2;
+  }
+
+  .hero-cta {
+    justify-content: center;
+  }
+
+  .hero-trust {
+    justify-content: center;
+  }
+
+  .float-card {
+    display: none;
+  }
+
+  .features {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .feature {
+    padding: 24px;
+  }
+
+  .experiences {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .experience-card {
+    padding: 28px;
+  }
+
+  .stats-band {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .trust-strip {
+    gap: 16px;
+    padding: 24px 16px;
+  }
+
+  .mini-dash-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 32px 12px;
+    gap: 24px;
+  }
+
+  .hero-trust {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .stats-band {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .stat-num {
+    font-size: 2rem;
+  }
+
+  .mini-dash-charts {
+    grid-template-columns: 1fr;
+  }
+}

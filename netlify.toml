@@ -1,0 +1,17 @@
+[build]
+  publish = "private/app"
+
+[[redirects]]
+  from = "/hr"
+  to = "/hr.html"
+  status = 200
+
+[[redirects]]
+  from = "/join"
+  to = "/join.html"
+  status = 200
+
+[[redirects]]
+  from = "/superadmin"
+  to = "/superadmin.html"
+  status = 200

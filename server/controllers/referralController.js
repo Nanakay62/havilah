@@ -3,6 +3,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const Tenant = require('../models/Tenant');
+const Department = require('../models/Department');
 const { validateSession } = require('../middleware/auth');
 const { enforceTenantScope } = require('../middleware/tenantIsolation');
 const { sendClinicalDispatch, CLINICAL_EMAIL } = require('../utils/emailService');
@@ -31,8 +32,25 @@ router.post(
         });
       }
 
+      // Resolve human-readable department name
+      let departmentName = req.sessionData.department_name || req.sessionData.department_id || 'Product & Engineering';
+      const rawDeptId = req.sessionData.department_id;
+      if (rawDeptId && rawDeptId.length > 5) {
+        try {
+          const deptDoc = await Department.findOne({
+            $or: [
+              { _id: rawDeptId },
+              { department_code: rawDeptId },
+              { company_id: companyId, department_code: rawDeptId }
+            ]
+          }).select('name').lean();
+          if (deptDoc && deptDoc.name) {
+            departmentName = deptDoc.name;
+          }
+        } catch (e) {}
+      }
+
       // 1. Retrieve the designated clinical intake email (nanakwamedickson62@gmail.com)
-      const tenant = await Tenant.findOne({ company_id: companyId });
       const targetEmail =
         process.env.CLINICAL_INTAKE_EMAIL ||
         'nanakwamedickson62@gmail.com';
@@ -40,10 +58,12 @@ router.post(
       // 2. Generate anonymized reference code
       const referenceCode = 'REF-' + uuidv4().slice(0, 6).toUpperCase();
 
-      // 3. Dispatch structured HTML email via Resend
+      // 3. Dispatch structured HTML email via Nodemailer
       const result = await sendClinicalDispatch({
         referenceCode,
-        department: req.sessionData.department_id || 'Undisclosed',
+        patientName: name,
+        contactInfo: contact_info,
+        department: departmentName,
         notes: notes || '',
         preferredTime: preferred_time || '',
         to: targetEmail,
@@ -51,14 +71,13 @@ router.post(
 
       if (!result.success) {
         console.warn('[Referral] Email dispatch failed:', result.error);
-        // Still return success to the user - referral was recorded
       }
 
-      console.log('[Occupational Health Referral] Dispatched:', referenceCode, 'to:', targetEmail);
+      console.log('[Occupational Health Referral] Dispatched for patient:', name, 'Reference:', referenceCode, 'to:', targetEmail);
 
       return res.status(200).json({
         success: true,
-        message: 'Referral submitted securely.',
+        message: 'Referral submitted securely to FZ Safety & Health.',
         reference_code: referenceCode,
       });
     } catch (err) {

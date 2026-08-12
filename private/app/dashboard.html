@@ -1312,9 +1312,22 @@
               <span class="cosmic-pill purple">Direct Intake</span>
             </div>
             <p style="font-size: 0.78rem; color: var(--cosmic-text-secondary); margin-bottom: 12px;">Submit an encrypted request to connect with a licensed practitioner from <strong id="helpProviderFormName">FZ Safety and Health</strong>. Employer is never notified.</p>
-            <div style="display: flex; gap: 10px;">
-              <input type="text" id="consultTopicInput" class="input" placeholder="Optional topic (e.g. Work stress, Fatigue, Anxiety)" style="flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem;">
-              <button class="cosmic-pill emerald" style="cursor: pointer; padding: 8px 16px; font-weight: 700;" onclick="App.submitClinicalConsultation()">Submit Request</button>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Employee Name *</label>
+                  <input type="text" id="consultNameInput" class="input" placeholder="Your Full Name" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem;">
+                </div>
+                <div>
+                  <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Contact Phone / Email *</label>
+                  <input type="text" id="consultContactInput" class="input" placeholder="Phone (+233...) or Email" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem;">
+                </div>
+              </div>
+              <div>
+                <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Topic & Preferred Time (Optional)</label>
+                <input type="text" id="consultTopicInput" class="input" placeholder="e.g. Work stress, Fatigue, Anxiety (Mornings preferred)" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem;">
+              </div>
+              <button class="cosmic-pill emerald" style="cursor: pointer; padding: 10px 16px; font-weight: 700; width: 100%; margin-top: 4px; justify-content: center;" onclick="App.submitClinicalConsultation()">Submit Request to FZ Safety Practitioner</button>
             </div>
           </div>
           
@@ -3667,28 +3680,44 @@ const App = (() => {
     openContact: () => { App.openHelp(); App.switchHelpTab('eap'); },
     submitClinicalConsultation: async () => {
       try {
+        const nameVal = document.getElementById('consultNameInput')?.value.trim();
+        const contactVal = document.getElementById('consultContactInput')?.value.trim();
+        const topicVal = document.getElementById('consultTopicInput')?.value.trim();
+
+        let userMeta = {};
+        try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || '{}'); } catch(e) {}
+
+        const name = nameVal || state.user?.name || userMeta.email || 'Confidential Patient';
+        const contact_info = contactVal || state.user?.email || userMeta.email || '';
+        const notes = topicVal || 'General Clinical Consultation Intake Request';
+
+        if (!contact_info) {
+          showToast('Contact Required', 'Please provide a phone number or email for the practitioner to reach you.', 'warning');
+          return;
+        }
+
         const formData = {
-          name: document.querySelector('#clinicalName')?.value || document.querySelector('[name="clinicalName"]')?.value || 'Anonymous',
-          contact_info: document.querySelector('#clinicalContact')?.value || document.querySelector('[name="clinicalContact"]')?.value || 'Not provided',
-          preferred_time: document.querySelector('#clinicalTime')?.value || document.querySelector('[name="clinicalTime"]')?.value || '',
-          notes: document.querySelector('#clinicalNotes')?.value || document.querySelector('[name="clinicalNotes"]')?.value || document.getElementById('consultTopicInput')?.value || ''
+          name,
+          contact_info,
+          preferred_time: 'As soon as available',
+          notes
         };
-        
+
         const resp = await apiFetch('/api/v1/referrals/occupational-health', {
           method: 'POST',
           body: JSON.stringify(formData)
         });
         const result = await resp.json();
-        
+
         if (result.success) {
-          showToast('Referral Submitted', 'Your confidential referral has been submitted securely. Reference: ' + (result.reference_code || ''), 'success');
+          showToast('Referral Submitted', 'Your confidential referral has been submitted securely to FZ Safety & Health. Reference: ' + (result.reference_code || ''), 'success');
+          if (document.getElementById('consultTopicInput')) document.getElementById('consultTopicInput').value = '';
         } else {
-          showToast('Submission Failed', result.message || 'Please try calling the hotline directly.', 'error');
+          showToast('Submission Failed', result.message || 'Please try calling +233 24 362 9870 directly.', 'error');
         }
       } catch (err) {
-        showToast('Connection Error', 'Could not reach the server. Please call the clinical hotline directly.', 'error');
+        showToast('Connection Error', 'Could not reach the server. Please call +233 24 362 9870 directly.', 'error');
       }
-      if (document.getElementById('consultTopicInput')) document.getElementById('consultTopicInput').value = '';
     },
     closeHelpCenter: () => { closeModal('helpCenterModalBackdrop'); },
     switchHelpTab: (tabName) => {

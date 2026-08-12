@@ -19,45 +19,53 @@ async function sendMail({ to, subject, html, from }) {
 }
 
 /**
- * Sends a structured clinical referral dispatch email.
+ * Sends a structured clinical referral dispatch email to FZ Safety and Health.
  * @param {object} opts
- * @param {string} opts.referenceCode - Anonymized reference code (e.g. REF-A3X9K2)
- * @param {string} [opts.department] - Department tag (anonymized)
- * @param {string} [opts.notes] - Intake notes from employee
+ * @param {string} opts.referenceCode - Reference code (e.g. REF-A3X9K2)
+ * @param {string} [opts.patientName] - Employee / Patient name
+ * @param {string} [opts.contactInfo] - Phone or Email contact info
+ * @param {string} [opts.department] - Human-readable department name
+ * @param {string} [opts.notes] - Intake topic / notes
  * @param {string} [opts.preferredTime] - Preferred contact time
- * @param {string} [opts.to] - Override recipient (defaults to clinical partner)
+ * @param {string} [opts.to] - Override recipient (defaults to nanakwamedickson62@gmail.com)
  */
-async function sendClinicalDispatch({ referenceCode, department, notes, preferredTime, to }) {
-  const recipient = to || CLINICAL_EMAIL;
+async function sendClinicalDispatch({ referenceCode, patientName, contactInfo, department, notes, preferredTime, to }) {
+  const recipient = to || process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com';
   const timestamp = new Date().toISOString();
 
   const html = `
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f0f1a; color: #e0e0e0; border-radius: 12px; overflow: hidden;">
-      <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 24px 32px;">
-        <h1 style="margin: 0; color: #fff; font-size: 20px;">🏥 Confidential Clinical Referral</h1>
-        <p style="margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 13px;">Havilah Occupational Health Compliance System</p>
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f0f1a; color: #e0e0e0; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+      <div style="background: linear-gradient(135deg, #0d9488, #0f766e); padding: 24px 32px;">
+        <h1 style="margin: 0; color: #fff; font-size: 20px;">🏥 FZ Safety & Health - Clinical Referral Intake</h1>
+        <p style="margin: 4px 0 0; color: rgba(255,255,255,0.9); font-size: 13px;">Havilah Occupational Health Intake System</p>
       </div>
       <div style="padding: 24px 32px;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding: 8px 0; color: #9ca3af; width: 140px;">Reference Code</td><td style="padding: 8px 0; font-weight: 600; color: #a78bfa;">${referenceCode}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af;">Department</td><td style="padding: 8px 0;">${department || 'Not specified'}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af;">Preferred Time</td><td style="padding: 8px 0;">${preferredTime || 'Not specified'}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af;">Timestamp</td><td style="padding: 8px 0;">${timestamp}</td></tr>
+        <div style="background: rgba(13, 148, 136, 0.1); border-left: 4px solid #0d9488; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
+          <strong style="color: #2dd4bf; font-size: 14px;">Direct Patient Intake Request Received</strong>
+          <p style="margin: 4px 0 0; font-size: 12px; color: #9ca3af;">Please assign a practitioner to contact this patient via their preferred method.</p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr><td style="padding: 8px 0; color: #9ca3af; width: 160px; font-weight: 600;">Reference Code</td><td style="padding: 8px 0; font-weight: 700; color: #2dd4bf;">${referenceCode}</td></tr>
+          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Patient Name</td><td style="padding: 8px 0; font-weight: 700; color: #ffffff;">${patientName || 'Confidential Patient'}</td></tr>
+          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Contact Method</td><td style="padding: 8px 0; font-weight: 700; color: #38bdf8;">${contactInfo || 'Not specified'}</td></tr>
+          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Department</td><td style="padding: 8px 0; color: #e2e8f0;">${department || 'Not specified'}</td></tr>
+          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Preferred Time</td><td style="padding: 8px 0; color: #e2e8f0;">${preferredTime || 'As soon as available'}</td></tr>
+          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Submitted At</td><td style="padding: 8px 0; color: #9ca3af; font-size: 12px;">${timestamp}</td></tr>
         </table>
-        ${notes ? `<div style="margin-top: 16px; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid #8b5cf6;"><p style="margin: 0 0 4px; color: #9ca3af; font-size: 12px;">INTAKE NOTES</p><p style="margin: 0; line-height: 1.6;">${notes}</p></div>` : ''}
+        ${notes ? `<div style="margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid #38bdf8;"><p style="margin: 0 0 4px; color: #9ca3af; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Intake Topic & Notes</p><p style="margin: 0; line-height: 1.6; color: #f1f5f9;">${notes}</p></div>` : ''}
         <div style="margin-top: 24px; padding: 12px 16px; background: rgba(99,102,241,0.1); border-radius: 8px; font-size: 12px; color: #9ca3af;">
-          <strong>Privacy Notice:</strong> This is an automated, isolated request. No psychosocial data or hazard survey history is attached to protect employee privacy.
+          <strong>🔒 Employer Privacy Guarantee:</strong> This intake request is dispatched strictly to FZ Safety & Health. Employer/HR dashboards will NEVER receive this individual patient contact data.
         </div>
       </div>
       <div style="padding: 16px 32px; background: rgba(255,255,255,0.03); font-size: 11px; color: #6b7280; text-align: center;">
-        Clinical Hotline: ${CLINICAL_HOTLINE} &bull; Generated by Havilah Compliance Engine
+        FZ Safety & Health Helpline: ${CLINICAL_HOTLINE} &bull; Powered by Havilah Compliance Platform
       </div>
     </div>
   `;
 
   return sendMail({
     to: recipient,
-    subject: `🏥 Clinical Referral ${referenceCode} - Confidential Intake`,
+    subject: `🏥 FZ Safety Clinical Referral [${referenceCode}] - Patient: ${patientName || 'Confidential'}`,
     html
   });
 }

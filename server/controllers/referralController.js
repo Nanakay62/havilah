@@ -29,8 +29,10 @@ async function resolveReadableDepartment(rawDept, companyId, sessionData) {
       try {
         const deptDoc = await Department.findOne({
           $or: [
+            { department_id: candidate },
             { _id: candidate },
             { department_code: candidate },
+            { company_id: companyId, department_id: candidate },
             { company_id: companyId, department_code: candidate }
           ]
         }).select('name').lean();

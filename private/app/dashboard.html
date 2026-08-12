@@ -3687,9 +3687,10 @@ const App = (() => {
         let userMeta = {};
         try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || '{}'); } catch(e) {}
 
-        const patientName = nameVal || state.user?.name || userMeta.email || 'Confidential Patient';
+        const patientName = nameVal || state.user?.name || userMeta.name || userMeta.email || 'Confidential Patient';
         const patientContact = contactVal || state.user?.email || userMeta.email || '';
-        const departmentName = state.user?.department || userMeta.department || 'Product & Engineering';
+        // Prefer human-readable department_name; fall back to UUID (backend will resolve it)
+        const departmentName = state.user?.department_name || userMeta.department_name || state.user?.department || userMeta.department || 'General Staff';
         const preferredTime = 'As soon as available';
         const notes = topicVal || 'General Clinical Consultation Intake Request';
 

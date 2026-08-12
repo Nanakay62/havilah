@@ -3687,20 +3687,27 @@ const App = (() => {
         let userMeta = {};
         try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || '{}'); } catch(e) {}
 
-        const name = nameVal || state.user?.name || userMeta.email || 'Confidential Patient';
-        const contact_info = contactVal || state.user?.email || userMeta.email || '';
+        const patientName = nameVal || state.user?.name || userMeta.email || 'Confidential Patient';
+        const patientContact = contactVal || state.user?.email || userMeta.email || '';
+        const departmentName = state.user?.department || userMeta.department || 'Product & Engineering';
+        const preferredTime = 'As soon as available';
         const notes = topicVal || 'General Clinical Consultation Intake Request';
 
-        if (!contact_info) {
+        if (!patientContact && !patientName) {
           showToast('Contact Required', 'Please provide a phone number or email for the practitioner to reach you.', 'warning');
           return;
         }
 
         const formData = {
-          name,
-          contact_info,
-          preferred_time: 'As soon as available',
-          notes
+          patientName,
+          patientContact,
+          patientEmail: patientContact,
+          departmentName,
+          preferredTime,
+          notes,
+          name: patientName,
+          contact_info: patientContact,
+          preferred_time: preferredTime
         };
 
         const resp = await apiFetch('/api/v1/referrals/occupational-health', {

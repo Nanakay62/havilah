@@ -23,14 +23,21 @@ async function sendMail({ to, subject, html, from }) {
  * @param {object} opts
  * @param {string} opts.referenceCode - Reference code (e.g. REF-A3X9K2)
  * @param {string} [opts.patientName] - Employee / Patient name
- * @param {string} [opts.contactInfo] - Phone or Email contact info
- * @param {string} [opts.department] - Human-readable department name
+ * @param {string} [opts.patientContact] - Phone or Email contact info
+ * @param {string} [opts.contactInfo] - Alias for contact info
+ * @param {string} [opts.patientEmail] - Alias for email
+ * @param {string} [opts.departmentName] - Human-readable department name
+ * @param {string} [opts.department] - Alias for department name
  * @param {string} [opts.notes] - Intake topic / notes
  * @param {string} [opts.preferredTime] - Preferred contact time
  * @param {string} [opts.to] - Override recipient (defaults to nanakwamedickson62@gmail.com)
  */
-async function sendClinicalDispatch({ referenceCode, patientName, contactInfo, department, notes, preferredTime, to }) {
+async function sendClinicalDispatch({ referenceCode, patientName, patientContact, contactInfo, patientEmail, department, departmentName, notes, preferredTime, to }) {
   const recipient = to || process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com';
+  const resolvedPatientName = patientName || 'Not provided';
+  const resolvedContact = patientContact || contactInfo || patientEmail || 'Not provided';
+  const resolvedDepartment = departmentName || department || 'General Staff';
+  const resolvedTime = preferredTime || 'As soon as available';
   const timestamp = new Date().toISOString();
 
   const html = `
@@ -46,10 +53,10 @@ async function sendClinicalDispatch({ referenceCode, patientName, contactInfo, d
         </div>
         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
           <tr><td style="padding: 8px 0; color: #9ca3af; width: 160px; font-weight: 600;">Reference Code</td><td style="padding: 8px 0; font-weight: 700; color: #2dd4bf;">${referenceCode}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Patient Name</td><td style="padding: 8px 0; font-weight: 700; color: #ffffff;">${patientName || 'Confidential Patient'}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Contact Method</td><td style="padding: 8px 0; font-weight: 700; color: #38bdf8;">${contactInfo || 'Not specified'}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Department</td><td style="padding: 8px 0; color: #e2e8f0;">${department || 'Not specified'}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Preferred Time</td><td style="padding: 8px 0; color: #e2e8f0;">${preferredTime || 'As soon as available'}</td></tr>
+          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Patient Name</td><td style="padding: 8px 0; font-weight: 700; color: #ffffff;">${resolvedPatientName}</td></tr>
+          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Contact Phone/Email</td><td style="padding: 8px 0; font-weight: 700; color: #38bdf8;">${resolvedContact}</td></tr>
+          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Department</td><td style="padding: 8px 0; color: #e2e8f0;">${resolvedDepartment}</td></tr>
+          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Preferred Time</td><td style="padding: 8px 0; color: #e2e8f0;">${resolvedTime}</td></tr>
           <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Submitted At</td><td style="padding: 8px 0; color: #9ca3af; font-size: 12px;">${timestamp}</td></tr>
         </table>
         ${notes ? `<div style="margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid #38bdf8;"><p style="margin: 0 0 4px; color: #9ca3af; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Intake Topic & Notes</p><p style="margin: 0; line-height: 1.6; color: #f1f5f9;">${notes}</p></div>` : ''}
@@ -65,7 +72,7 @@ async function sendClinicalDispatch({ referenceCode, patientName, contactInfo, d
 
   return sendMail({
     to: recipient,
-    subject: `🏥 FZ Safety Clinical Referral [${referenceCode}] - Patient: ${patientName || 'Confidential'}`,
+    subject: `🏥 FZ Safety Clinical Referral [${referenceCode}] - Patient: ${resolvedPatientName}`,
     html
   });
 }

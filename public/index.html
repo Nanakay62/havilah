@@ -295,12 +295,75 @@
   /* ============ MAIN ============ */
   main { max-width: 1440px; margin: 0 auto; padding: 0 32px; }
 
+  .mobile-menu-btn {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: var(--text-1);
+    cursor: pointer;
+  }
+  .mobile-menu-btn svg { width: 20px; height: 20px; }
+  .mobile-menu-drawer {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 20px;
+    background: var(--bg-acrylic-strong);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    transition: all 0.3s var(--ease-out);
+  }
+  .mobile-menu-drawer.open { display: flex; }
+  .mobile-nav-item {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-1);
+    background: rgba(0,0,0,0.03);
+    border: 1px solid var(--border);
+    text-align: left;
+    cursor: pointer;
+  }
+  .mobile-drawer-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   /* ============ RESPONSIVE ============ */
   @media (max-width: 1100px) {
     .hero { grid-template-columns: 1fr; gap: 40px; }
     .features { grid-template-columns: repeat(2, 1fr); }
     .experiences { grid-template-columns: 1fr; }
     .stats-band { grid-template-columns: repeat(2, 1fr); padding: 40px 32px; }
+  }
+  @media (max-width: 768px) {
+    .nav, .header-right { display: none !important; }
+    .mobile-menu-btn { display: flex !important; align-items: center; justify-content: center; }
+    
+    /* Contrast & Accessibility for Hero Text */
+    #particle-brain-container { opacity: 0.25 !important; }
+    .hero-content { position: relative; z-index: 10; }
+    .display, .hero h1 { text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9); }
+    .lead, .hero-lead { color: #1e293b !important; font-weight: 500 !important; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9); }
+
+    /* ISO Badge Vertical Stacking */
+    .hero-tag {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      border-radius: 14px !important;
+      padding: 10px 14px !important;
+      gap: 6px !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      white-space: normal !important;
+    }
+    .hero-tag-pill {
+      align-self: flex-start !important;
+      white-space: nowrap !important;
+    }
   }
   @media (max-width: 720px) {
     main { padding: 0 20px; }
@@ -329,6 +392,10 @@
       </div>
       Havilah
     </button>
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
+      <svg class="hamburger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <svg class="close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
     <nav class="nav" role="navigation" aria-label="Primary">
       <button class="nav-item active">Platform Overview</button>
     </nav>
@@ -336,6 +403,12 @@
       <button class="btn btn-ghost btn-sm" onclick="App.bookDemo()">Book Demo</button>
       <a href="/login.html" class="btn btn-primary btn-sm" style="text-decoration:none;">Login</a>
     </div>
+  </div>
+  <!-- Mobile Collapsible Menu Drawer -->
+  <div class="mobile-menu-drawer" id="mobileMenuDrawer">
+    <button class="mobile-nav-item active" onclick="toggleMobileMenu()">Platform Overview</button>
+    <button class="btn btn-ghost btn-sm mobile-drawer-btn" onclick="toggleMobileMenu(); App.bookDemo();">Book Demo</button>
+    <a href="/login.html" class="btn btn-primary btn-sm mobile-drawer-btn" style="text-decoration:none;">Login</a>
   </div>
 </header>
 
@@ -745,6 +818,22 @@
 
     animate();
   })();
+
+  function toggleMobileMenu() {
+    const drawer = document.getElementById('mobileMenuDrawer');
+    const btn = document.querySelector('.mobile-menu-btn');
+    if (!drawer) return;
+    const isOpen = drawer.classList.toggle('open');
+    if (btn) {
+      const hamburger = btn.querySelector('.hamburger-icon');
+      const closeIcon = btn.querySelector('.close-icon');
+      if (hamburger && closeIcon) {
+        hamburger.style.display = isOpen ? 'none' : 'block';
+        closeIcon.style.display = isOpen ? 'block' : 'none';
+      }
+    }
+  }
+  window.toggleMobileMenu = toggleMobileMenu;
 </script>
 </body>
 </html>

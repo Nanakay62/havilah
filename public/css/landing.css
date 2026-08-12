@@ -481,21 +481,24 @@
     text-align: center;
   }
 
-  .hero-content {
-    max-width: 100%;
-    order: 1;
+  .hero-tag {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    border-radius: 14px !important;
+    padding: 10px 14px !important;
+    gap: 6px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
   }
 
-  .hero-visual {
-    order: 2;
+  .hero-tag-pill {
+    align-self: flex-start !important;
+    white-space: nowrap !important;
   }
 
-  .hero-cta {
-    justify-content: center;
-  }
-
-  .hero-trust {
-    justify-content: center;
+  #particle-brain-container {
+    opacity: 0.25 !important;
   }
 
   .float-card {

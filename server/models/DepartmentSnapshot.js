@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 
 /**
- * DepartmentSnapshot — point-in-time capture of department metadata.
+ * DepartmentSnapshot - point-in-time capture of department metadata.
  *
  * Every hazard-log submission records a snapshot of the department as it
  * existed at the moment the survey was completed.  This decouples
@@ -74,7 +74,7 @@ DepartmentSnapshotSchema.index(
 /**
  * Creates a snapshot from a Department mongoose document.
  *
- * @param {object} department — A Department document (or lean object).
+ * @param {object} department - A Department document (or lean object).
  * @returns {Promise<mongoose.Document>}
  */
 DepartmentSnapshotSchema.statics.capture = function capture(department) {

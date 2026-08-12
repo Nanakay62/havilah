@@ -165,7 +165,7 @@ const ResourceLinkSchema = new mongoose.Schema(
 );
 
 /**
- * Tenant / Company schema — root entity of the multi-tenant hierarchy.
+ * Tenant / Company schema - root entity of the multi-tenant hierarchy.
  */
 const TenantSchema = new mongoose.Schema(
   {

@@ -1,6 +1,6 @@
 /**
- * @fileoverview Havilah Safety Module — Crisis Detection & Audit Trail Helpers
- * Crisis keyword scanning is LOCAL ONLY — no data is sent to any server.
+ * @fileoverview Havilah Safety Module - Crisis Detection & Audit Trail Helpers
+ * Crisis keyword scanning is LOCAL ONLY - no data is sent to any server.
  * @version 2.0.0
  */
 
@@ -39,7 +39,7 @@
 
     /**
      * Scan text against all crisis pattern regexes.
-     * THIS IS LOCAL ONLY — no data is sent to any server.
+     * THIS IS LOCAL ONLY - no data is sent to any server.
      * @param {string} text - The text to scan
      * @returns {{ detected: boolean, category: string|null }}
      */
@@ -82,7 +82,7 @@
         var r = resources[i];
         html += '<div class="crisis-contact">';
         html += '<div class="crisis-contact-num">' + r.number + '</div>';
-        html += '<div class="crisis-contact-label">' + r.name + ' — ' + r.description + '</div>';
+        html += '<div class="crisis-contact-label">' + r.name + ' - ' + r.description + '</div>';
         html += '</div>';
       }
 

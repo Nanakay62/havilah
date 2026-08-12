@@ -83,7 +83,7 @@ function stripIdentity(req, res, next) {
   }
 
   // ── Step 3: Scrub transport-layer identity ─────────────────────────
-  // Overwrite req.ip — Express derives this from the socket/proxy headers.
+  // Overwrite req.ip - Express derives this from the socket/proxy headers.
   // We use Object.defineProperty because req.ip is a getter on Express.
   Object.defineProperty(req, 'ip', {
     value: null,
@@ -102,7 +102,7 @@ function stripIdentity(req, res, next) {
 
   // ── Step 5: Log confirmation ───────────────────────────────────────
   console.log(
-    '[anonymizer] Identity stripped — company_id=%s, department_id=%s — all PII fields purged',
+    '[anonymizer] Identity stripped - company_id=%s, department_id=%s - all PII fields purged',
     req.anonymizedContext.company_id,
     req.anonymizedContext.department_id
   );

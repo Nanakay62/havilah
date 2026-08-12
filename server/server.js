@@ -68,7 +68,7 @@ app.use(inputSanitizer);
 // General Rate Limiting for all API routes except excluded health pings (Principle 9 & Edge Case 3)
 app.use('/api/v1', apiRateLimiter(200));
 
-// Tenant status enforcement — blocks suspended/expired tenant API access
+// Tenant status enforcement - blocks suspended/expired tenant API access
 // Runs after auth on each route; passes through if no session data
 app.use('/api/v1', checkTenantStatus);
 
@@ -124,7 +124,7 @@ app.get('/', (req, res) => {
   res.redirect('/login.html');
 });
 
-// GET /api/v1/clinical-provider — Active Tenant Clinical Provider Endpoint
+// GET /api/v1/clinical-provider - Active Tenant Clinical Provider Endpoint
 app.get('/api/v1/clinical-provider', (req, res) => {
   res.json({
     success: true,
@@ -153,7 +153,7 @@ app.use('/api/v1/vault', whistleblowerRouter);
 app.use('/api/v1/assessments', assessmentRouter.router || assessmentRouter);
 app.use('/api/v1/alerts', alertsRouter);
 
-// Global Error Handler — Sanitized Error Messages (Principle 11)
+// Global Error Handler - Sanitized Error Messages (Principle 11)
 app.use((err, req, res, next) => {
   console.error('[Global Error Audit Log]', err);
   const statusCode = err.status || err.statusCode || 500;

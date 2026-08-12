@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Havilah — Occupational Health & Wellness Platform</title>
+<title>Havilah - Occupational Health & Wellness Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1928,7 +1928,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ============================================================
-   HAVILAH APPLICATION — Production Implementation
+   HAVILAH APPLICATION - Production Implementation
    ============================================================ */
 
 const App = (() => {
@@ -1963,7 +1963,7 @@ const App = (() => {
       darkMode: false
     },
     notifications: [
-      { id: 1, icon: 'critical', title: 'Sales team — severe stress spike', desc: 'PSS-10 moderate+ up 18% in 14 days. Recommend pulse check-in.', time: '2 hours ago', read: false },
+      { id: 1, icon: 'critical', title: 'Sales team - severe stress spike', desc: 'PSS-10 moderate+ up 18% in 14 days. Recommend pulse check-in.', time: '2 hours ago', read: false },
       { id: 2, icon: 'moderate', title: 'Engineering fatigue above threshold', desc: 'FAS-10 scores shifted from healthy to adjusting after release week.', time: 'Yesterday', read: false },
       { id: 3, icon: 'info', title: 'Quarterly COPSOQ III (Middle) opens Monday', desc: 'Scheduled deployment to 1,842 employees on Monday 09:00.', time: '2 days ago', read: false },
       { id: 4, icon: 'moderate', title: 'Operations night-shift cohort', desc: '28% response drop. Consider schedule-aware reminders.', time: '3 days ago', read: true },
@@ -2687,9 +2687,9 @@ const App = (() => {
     gad7: { code: 'GAD-7', name: 'GAD-7 (Anxiety Self-Check)', title: 'GAD-7 Anxiety Check', description: '7-item generalized anxiety disorder scale.', estimatedMinutes: 2 },
     pss10: { code: 'PSS-10', name: 'PSS-10 (Perceived Stress)', title: 'PSS-10 Perceived Stress', description: '10-item measure of perceived life stress.', estimatedMinutes: 4 },
     fas10: { code: 'FAS-10', name: 'FAS-10 (Fatigue Assessment)', title: 'FAS-10 Fatigue Assessment', description: '10-item fatigue assessment scale evaluating physical and mental exhaustion.', estimatedMinutes: 4 },
-    copsoq3_core: { code: 'COPSOQ III', name: 'COPSOQ III (Core)', title: 'COPSOQ III — Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Core edition).', estimatedMinutes: 5 },
-    copsoq3_middle: { code: 'COPSOQ III', name: 'COPSOQ III (Middle)', title: 'COPSOQ III — Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Middle edition).', estimatedMinutes: 10 },
-    copsoq3_long: { code: 'COPSOQ III', name: 'COPSOQ III (Long)', title: 'COPSOQ III — Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Long edition).', estimatedMinutes: 15 }
+    copsoq3_core: { code: 'COPSOQ III', name: 'COPSOQ III (Core)', title: 'COPSOQ III - Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Core edition).', estimatedMinutes: 5 },
+    copsoq3_middle: { code: 'COPSOQ III', name: 'COPSOQ III (Middle)', title: 'COPSOQ III - Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Middle edition).', estimatedMinutes: 10 },
+    copsoq3_long: { code: 'COPSOQ III', name: 'COPSOQ III (Long)', title: 'COPSOQ III - Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Long edition).', estimatedMinutes: 15 }
   };
 
   function renderSurveyCards() {
@@ -2807,7 +2807,7 @@ const App = (() => {
         const depthLabel = (lockState.depth || 'core').charAt(0).toUpperCase() + (lockState.depth || 'core').slice(1);
         displayName = `COPSOQ III (${depthLabel})`;
       } else if (code === 'copsoq3' && isLocked) {
-        displayName = 'COPSOQ III — Work Environment & Fit';
+        displayName = 'COPSOQ III - Work Environment & Fit';
       }
 
       let actionButtonHtml = '';
@@ -3396,7 +3396,7 @@ const App = (() => {
       htmlContent = `
         <div style="line-height: 1.6; color: var(--text-dark);">
           <p style="margin-top:0; color: var(--text-muted);">Target Hazard: <strong>RoleClarity / SocialSupport</strong></p>
-          <p>A major source of workplace anxiety stems from interpersonal communication—specifically, setting boundaries without sounding aggressive or missing context.</p>
+          <p>A major source of workplace anxiety stems from interpersonal communication - specifically, setting boundaries without sounding aggressive or missing context.</p>
           
           <div style="background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 8px; margin-top: 16px;">
             <div style="font-weight:600; margin-bottom: 8px;">The "Scope Creep" Interception Script</div>
@@ -3767,7 +3767,7 @@ const App = (() => {
         title = 'Terms of Service';
         content = `
           <h3>Acceptable Use Policy</h3>
-          <p>This platform is explicitly a preventative wellness and compliance benchmarking tool—not a clinical medical diagnostic suite or an emergency crisis response system.</p>
+          <p>This platform is explicitly a preventative wellness and compliance benchmarking tool - not a clinical medical diagnostic suite or an emergency crisis response system.</p>
           <h3>Subscription & Multi-Tenancy Rules</h3>
           <p>Defines tenant isolation parameters, seat licensing limitations, payment terms, and platform uptime SLA guidelines.</p>
           <h3>Limitation of Liability</h3>
@@ -3885,7 +3885,7 @@ window.App = App;
     <div style="padding:22px 24px 16px;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
       <div>
         <h3 style="margin:0;color:#0F172A;font-size:18px;font-weight:700;letter-spacing:-0.02em;">5-Dimension Wellbeing Check-in</h3>
-        <p style="margin:3px 0 0;font-size:12px;color:#64748B;font-weight:500;">Quick daily self-assessment — 5 quick taps (1 to 5 scale)</p>
+        <p style="margin:3px 0 0;font-size:12px;color:#64748B;font-weight:500;">Quick daily self-assessment - 5 quick taps (1 to 5 scale)</p>
       </div>
       <button onclick="window.closeDailyPulseModal()" style="width:32px;height:32px;border-radius:8px;border:none;background:#F1F5F9;color:#64748B;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;" onmouseover="this.style.background='#E2E8F0'" onmouseout="this.style.background='#F1F5F9'">&times;</button>
     </div>

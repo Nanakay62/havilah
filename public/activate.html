@@ -133,7 +133,7 @@
           validatedEmail = email;
           validatedCode = code;
           const companyText = data.companyName || 'Your Company';
-          const deptText = data.departmentName ? ` — ${data.departmentName}` : '';
+          const deptText = data.departmentName ? ` - ${data.departmentName}` : '';
           document.getElementById('display-company').innerText = companyText + deptText;
           
           document.getElementById('prog-2').classList.replace('bg-white/10', 'bg-cyan-500');

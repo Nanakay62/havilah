@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const { coarsenTimestamp } = require('../utils/crypto');
 
 /**
- * AnonHazardLog schema — CRITICAL ANONYMITY CONTRACT
+ * AnonHazardLog schema - CRITICAL ANONYMITY CONTRACT
  *
  * This collection stores hazard / psychosocial risk survey submissions
  * with **zero linkage to any individual user**.
@@ -150,7 +150,7 @@ AnonHazardLogSchema.index(
   { name: 'idx_company_severity' }
 );
 
-/* ───── BANNED FIELDS — identity firewall ───── */
+/* ───── BANNED FIELDS - identity firewall ───── */
 const BANNED_FIELDS = ['user_id', 'ip_address', 'user_agent', 'ip', 'userId', 'userAgent'];
 
 /**

@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require('uuid');
  * @fileoverview Anonymized Whistleblower / Hazard Escalation Report model.
  *
  * Privacy guarantees:
- *   - NO user_id field — structurally impossible to link to a submitter
+ *   - NO user_id field - structurally impossible to link to a submitter
  *   - NO IP address stored
  *   - Timestamp coarsened to nearest hour
  *   - Description encrypted at rest

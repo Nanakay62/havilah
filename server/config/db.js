@@ -67,7 +67,7 @@ async function connectDB(uri) {
       );
 
       if (attempt >= MAX_RETRIES) {
-        console.error('[db] All connection attempts exhausted — exiting process');
+        console.error('[db] All connection attempts exhausted - exiting process');
         process.exit(1);
       }
 

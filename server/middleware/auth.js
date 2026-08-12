@@ -135,7 +135,7 @@ function requireConsent(req, res, next) {
  * The calling user's `role` (from `req.sessionData`) must be in the
  * supplied allow-list.
  *
- * @param {...string} roles — One or more allowed roles (e.g. 'hr_admin', 'tenant_admin').
+ * @param {...string} roles - One or more allowed roles (e.g. 'hr_admin', 'tenant_admin').
  * @returns {import('express').RequestHandler}
  */
 function requireRole(...roles) {
@@ -168,7 +168,7 @@ function requireRole(...roles) {
 }
 
 /* ─────────────────────────────────────────────
- *  requireTenantAdmin — convenience shorthand
+ *  requireTenantAdmin - convenience shorthand
  * ───────────────────────────────────────────── */
 
 /** @type {import('express').RequestHandler} */

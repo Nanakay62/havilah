@@ -8,7 +8,7 @@ const AuditLog = require('../models/AuditLog');
 const Tenant = require('../models/Tenant');
 const { broadcastTenantAvailability } = require('./assessment');
 
-// GET /status — Auth: validateSession
+// GET /status - Auth: validateSession
 router.get('/status', validateSession, async (req, res, next) => {
   try {
     const { company_id, department_id } = req.sessionData;

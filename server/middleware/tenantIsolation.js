@@ -5,7 +5,7 @@ const Tenant = require('../models/Tenant');
 /**
  * @fileoverview Multi-tenant row-level data isolation middleware.
  *
- * Every tenant-scoped query MUST include `company_id` — these middleware
+ * Every tenant-scoped query MUST include `company_id` - these middleware
  * functions guarantee that the value is always derived from the authenticated
  * session and can never be spoofed by the client.
  *
@@ -103,7 +103,7 @@ function validateTenantAccess(extractCompanyId) {
 
     if (requestedCompanyId !== req.tenantScope.company_id) {
       console.warn(
-        `[tenantIsolation] Cross-tenant access BLOCKED — ` +
+        `[tenantIsolation] Cross-tenant access BLOCKED - ` +
         `user company_id="${req.tenantScope.company_id}" attempted to access company_id="${requestedCompanyId}"`
       );
       return res.status(403).json({

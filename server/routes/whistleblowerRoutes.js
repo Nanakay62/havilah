@@ -43,7 +43,7 @@ router.post('/submit', validateSession, async (req, res, next) => {
       });
     }
 
-    // Extract company_id ONLY — user_id is deliberately NOT stored
+    // Extract company_id ONLY - user_id is deliberately NOT stored
     const company_id = req.sessionData.company_id;
 
     // Encrypt the description for at-rest privacy

@@ -15,7 +15,7 @@ const { generateInsights } = require('../services/correlationEngine');
 const router = express.Router();
 
 /**
- * @fileoverview Hazard log controller — anonymous survey submission and
+ * @fileoverview Hazard log controller - anonymous survey submission and
  * privacy-safe analytics for ISO 45003 psychosocial risk assessments.
  *
  * All submissions pass through the anonymizer middleware to ensure ZERO

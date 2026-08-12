@@ -55,7 +55,7 @@ function getHmacSecret() {
 /**
  * Encrypts a plaintext string with AES-256-GCM.
  *
- * @param {string} plaintext — The value to encrypt.
+ * @param {string} plaintext - The value to encrypt.
  * @returns {{ iv: string, encrypted: string, authTag: string }} Hex-encoded components.
  */
 function encryptField(plaintext) {
@@ -82,7 +82,7 @@ function encryptField(plaintext) {
 /**
  * Decrypts a value previously encrypted with {@link encryptField}.
  *
- * @param {{ iv: string, encrypted: string, authTag: string }} components — Hex-encoded.
+ * @param {{ iv: string, encrypted: string, authTag: string }} components - Hex-encoded.
  * @returns {string} The original plaintext.
  */
 function decryptField({ iv, encrypted, authTag }) {
@@ -145,7 +145,7 @@ function generateConsentToken() {
 /**
  * Validates that a consent token's HMAC signature is authentic.
  *
- * @param {string} token — The full `<uuid>.<hmac>` string.
+ * @param {string} token - The full `<uuid>.<hmac>` string.
  * @returns {boolean}
  */
 function validateConsentToken(token) {
@@ -178,8 +178,8 @@ function validateConsentToken(token) {
  * Computes the SHA-256 hash for an audit log entry, chaining it to the
  * previous entry's hash for tamper-evident immutability.
  *
- * @param {string} previousHash — The sha256_hash of the preceding audit entry, or 'GENESIS'.
- * @param {object} eventPayload — The event_payload object to include in the hash.
+ * @param {string} previousHash - The sha256_hash of the preceding audit entry, or 'GENESIS'.
+ * @param {object} eventPayload - The event_payload object to include in the hash.
  * @returns {string} 64-character lowercase hex digest.
  */
 function computeAuditHash(previousHash, eventPayload) {

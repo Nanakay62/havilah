@@ -51,7 +51,7 @@ router.post(
 
       if (!result.success) {
         console.warn('[Referral] Email dispatch failed:', result.error);
-        // Still return success to the user — referral was recorded
+        // Still return success to the user - referral was recorded
       }
 
       console.log('[Occupational Health Referral] Dispatched:', referenceCode, 'to:', targetEmail);

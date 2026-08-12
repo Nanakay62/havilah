@@ -1,7 +1,7 @@
 {
   "name": "wellframe-server",
   "version": "1.0.0",
-  "description": "Wellframe ISO 45003 Workplace Risk Compliance Platform — Enterprise Multi-Tenant B2B SaaS Backend",
+  "description": "Wellframe ISO 45003 Workplace Risk Compliance Platform - Enterprise Multi-Tenant B2B SaaS Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

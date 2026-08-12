@@ -20,13 +20,13 @@ const DEFAULT_N_SIZE_THRESHOLD = 5;
 /**
  * Builds and executes an N-size-safe aggregation pipeline on AnonHazardLog.
  *
- * @param {string} companyId — Tenant company_id (mandatory for isolation).
+ * @param {string} companyId - Tenant company_id (mandatory for isolation).
  * @param {object} [options={}]
- * @param {string} [options.departmentId]    — Optional department filter.
- * @param {string} [options.surveyType]      — Optional survey type filter.
- * @param {string} [options.periodStart]     — ISO 8601 start date for submitted_at range.
- * @param {string} [options.periodEnd]       — ISO 8601 end date for submitted_at range.
- * @param {number} [options.nSizeThreshold=5] — Minimum response count before metrics are exposed.
+ * @param {string} [options.departmentId] - Optional department filter.
+ * @param {string} [options.surveyType] - Optional survey type filter.
+ * @param {string} [options.periodStart] - ISO 8601 start date for submitted_at range.
+ * @param {string} [options.periodEnd] - ISO 8601 end date for submitted_at range.
+ * @param {number} [options.nSizeThreshold=5] - Minimum response count before metrics are exposed.
  * @returns {Promise<Array<{
  *   department_id: string,
  *   department_name: string,
@@ -48,7 +48,7 @@ async function buildNSizeAggregation(companyId, options = {}) {
     nSizeThreshold = DEFAULT_N_SIZE_THRESHOLD,
   } = options;
 
-  // ── Stage 1: $match — tenant isolation + optional filters ──────────
+  // ── Stage 1: $match - tenant isolation + optional filters ──────────
   /** @type {object} */
   const matchStage = { company_id: companyId };
 
@@ -146,7 +146,7 @@ async function buildNSizeAggregation(companyId, options = {}) {
   /** @type {Array} */
   const finalResults = [];
 
-  // Process departments meeting the threshold — expose full metrics
+  // Process departments meeting the threshold - expose full metrics
   for (const dept of meetingThreshold) {
     finalResults.push({
       department_id: dept.department_id,
@@ -161,7 +161,7 @@ async function buildNSizeAggregation(companyId, options = {}) {
     });
   }
 
-  // Process departments BELOW threshold — attempt parent roll-up
+  // Process departments BELOW threshold - attempt parent roll-up
   if (belowThreshold.length > 0) {
     // Group below-threshold departments by parent_department_id
     /** @type {Map<string, Array>} */
@@ -177,7 +177,7 @@ async function buildNSizeAggregation(companyId, options = {}) {
 
     for (const [parentId, children] of parentGroups) {
       if (parentId === '__company_root__') {
-        // No parent to roll up to — go company-wide
+        // No parent to roll up to - go company-wide
         const companyRollup = await rollUpToCompany(companyId, matchStage, nSizeThreshold, children);
         finalResults.push(companyRollup);
         continue;
@@ -239,7 +239,7 @@ async function buildNSizeAggregation(companyId, options = {}) {
           privacy_notice: `Data rolled up to parent department to meet minimum sample size of ${nSizeThreshold}.`,
         });
       } else {
-        // Parent-level still insufficient — roll up to company-wide
+        // Parent-level still insufficient - roll up to company-wide
         const childDeptIds = children.map((c) => c.department_id);
         const companyRollup = await rollUpToCompany(companyId, matchStage, nSizeThreshold, children);
         companyRollup.rolled_up_from = childDeptIds;
@@ -256,9 +256,9 @@ async function buildNSizeAggregation(companyId, options = {}) {
  * levels fail the n-size threshold.
  *
  * @param {string} companyId
- * @param {object} baseMatch — Original match criteria (excluding department_id).
+ * @param {object} baseMatch - Original match criteria (excluding department_id).
  * @param {number} nSizeThreshold
- * @param {Array}  failedDepts — Departments that failed the threshold.
+ * @param {Array}  failedDepts - Departments that failed the threshold.
  * @returns {Promise<object>}
  */
 async function rollUpToCompany(companyId, baseMatch, nSizeThreshold, failedDepts) {
@@ -298,7 +298,7 @@ async function rollUpToCompany(companyId, baseMatch, nSizeThreshold, failedDepts
     };
   }
 
-  // Even company-wide doesn't meet threshold — suppress entirely
+  // Even company-wide doesn't meet threshold - suppress entirely
   return {
     department_id: '__company_wide__',
     department_name: 'Company-Wide Aggregate',
@@ -315,7 +315,7 @@ async function rollUpToCompany(companyId, baseMatch, nSizeThreshold, failedDepts
 /**
  * Computes the detailed metrics object from a raw aggregation group result.
  *
- * @param {object} group — A single group from the aggregation pipeline.
+ * @param {object} group - A single group from the aggregation pipeline.
  * @param {number} group.count
  * @param {number} group.avg_composite
  * @param {number} group.avg_likelihood
@@ -384,7 +384,7 @@ function computeMetrics(group) {
  * Verifies that n-size privacy compliance is maintained across a set of results.
  * Ensures no entry with fewer than `threshold` responses has exposed metrics.
  *
- * @param {Array} results — Output from buildNSizeAggregation.
+ * @param {Array} results - Output from buildNSizeAggregation.
  * @param {number} [threshold=DEFAULT_N_SIZE_THRESHOLD]
  * @returns {{ compliant: boolean, violations: Array<{ department_id: string, response_count: number, reason: string }> }}
  */

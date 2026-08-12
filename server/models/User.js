@@ -6,11 +6,11 @@ const bcrypt = require('bcryptjs');
 const { encryptField, hashField } = require('../utils/crypto');
 
 /**
- * User schema — represents an employee or admin within a tenant.
+ * User schema - represents an employee or admin within a tenant.
  *
  * Email is stored twice:
- *   1. `email_encrypted` — AES-256-GCM ciphertext for retrieval
- *   2. `email_hash` — SHA-256 digest for deterministic lookup without decryption
+ *   1. `email_encrypted` - AES-256-GCM ciphertext for retrieval
+ *   2. `email_hash` - SHA-256 digest for deterministic lookup without decryption
  *
  * The pre-save hook automatically encrypts and hashes the email when a
  * transient `_plaintext_email` property is set on the document.
@@ -183,7 +183,7 @@ UserSchema.pre('save', async function preSaveEncryptEmail(next) {
 /**
  * Find a user by their email without requiring the plaintext to be stored.
  *
- * @param {string} email — plaintext email to look up
+ * @param {string} email - plaintext email to look up
  * @returns {Promise<mongoose.Document|null>}
  */
 UserSchema.statics.findByEmail = function findByEmail(email) {

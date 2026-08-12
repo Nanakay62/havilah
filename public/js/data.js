@@ -1,5 +1,5 @@
 /**
- * @fileoverview Havilah Platform — Survey Instrument Data & Reference Constants
+ * @fileoverview Havilah Platform - Survey Instrument Data & Reference Constants
  * Contains all validated psychometric instruments, crisis detection patterns,
  * ISO 45003 controls, emergency resources, legal content, and dimension mappings.
  * @version 2.0.0
@@ -11,7 +11,7 @@
 var WF_DATA = (function () {
 
   /* ──────────────────────────────────────────────
-   *  PHQ-9 — Patient Health Questionnaire
+   *  PHQ-9 - Patient Health Questionnaire
    * ────────────────────────────────────────────── */
 
   /** @type {Object} */
@@ -28,9 +28,9 @@ var WF_DATA = (function () {
       { id: 'phq9_q3', text: 'Trouble falling or staying asleep, or sleeping too much' },
       { id: 'phq9_q4', text: 'Feeling tired or having little energy' },
       { id: 'phq9_q5', text: 'Poor appetite or overeating' },
-      { id: 'phq9_q6', text: 'Feeling bad about yourself — or that you are a failure or have let yourself or your family down' },
+      { id: 'phq9_q6', text: 'Feeling bad about yourself - or that you are a failure or have let yourself or your family down' },
       { id: 'phq9_q7', text: 'Trouble concentrating on things, such as reading the newspaper or watching television' },
-      { id: 'phq9_q8', text: 'Moving or speaking so slowly that other people could have noticed? Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual' },
+      { id: 'phq9_q8', text: 'Moving or speaking so slowly that other people could have noticed? Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual' },
       { id: 'phq9_q9', text: 'Thoughts that you would be better off dead, or of hurting yourself in some way' }
     ],
     options: [
@@ -57,7 +57,7 @@ var WF_DATA = (function () {
   };
 
   /* ──────────────────────────────────────────────
-   *  GAD-7 — Generalized Anxiety Disorder
+   *  GAD-7 - Generalized Anxiety Disorder
    * ────────────────────────────────────────────── */
 
   /** @type {Object} */
@@ -98,7 +98,7 @@ var WF_DATA = (function () {
   };
 
   /* ──────────────────────────────────────────────
-   *  PSS-10 — Perceived Stress Scale
+   *  PSS-10 - Perceived Stress Scale
    * ────────────────────────────────────────────── */
 
   /** @type {Object} */
@@ -150,7 +150,7 @@ var WF_DATA = (function () {
   };
 
   /* ──────────────────────────────────────────────
-   *  FAS-10 — Fatigue Assessment Scale
+   *  FAS-10 - Fatigue Assessment Scale
    * ────────────────────────────────────────────── */
 
   /** @type {Object} */

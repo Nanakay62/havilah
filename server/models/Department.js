@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 
 /**
- * Department schema — supports arbitrary nesting via materialized path.
+ * Department schema - supports arbitrary nesting via materialized path.
  *
  * The `path` field stores the full ancestry chain using dot-delimited slugs
  * (e.g. 'engineering.frontend.react') enabling efficient subtree queries
@@ -121,7 +121,7 @@ DepartmentSchema.pre('save', function preSaveVersionBump(next) {
  * materialized path prefix.
  *
  * @param {string} companyId
- * @param {string} pathPrefix — e.g. 'engineering.frontend'
+ * @param {string} pathPrefix - e.g. 'engineering.frontend'
  * @returns {Promise<Array>}
  */
 DepartmentSchema.statics.findDescendants = function findDescendants(companyId, pathPrefix) {

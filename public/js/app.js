@@ -136,7 +136,7 @@
                     <div class="flex items-start justify-between">
                         <div>
                             <span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded font-medium mb-2 inline-block">High Workload Flag</span>
-                            <h3 class="font-bold text-gray-800">Box Breathing — 4-4-4-4</h3>
+                            <h3 class="font-bold text-gray-800">Box Breathing - 4-4-4-4</h3>
                             <p class="text-xs text-gray-600 mt-1">Regulate your nervous system between intense tasks.</p>
                         </div>
                         <button class="bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700" onclick="window.app.openResourceLibrary('audio')">
@@ -673,7 +673,7 @@
     function switchResourceTab(tab) {
         destroyPlyrInstances();
         const area = document.getElementById('resourceContentArea');
-        document.getElementById('resourceModalTitle').textContent = `Resource Library — ${tab.charAt(0).toUpperCase() + tab.slice(1)}`;
+        document.getElementById('resourceModalTitle').textContent = `Resource Library - ${tab.charAt(0).toUpperCase() + tab.slice(1)}`;
         
         if (tab === 'audio') {
             const config = window.BreathingAudioConfig || { box_breathing: { title: '4-4-4-4 Breathing', description: 'Deep calming breath', youtube_id: '123' } };

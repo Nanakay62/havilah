@@ -57,7 +57,7 @@ async function sendClinicalDispatch({ referenceCode, department, notes, preferre
 
   return sendMail({
     to: recipient,
-    subject: `🏥 Clinical Referral ${referenceCode} — Confidential Intake`,
+    subject: `🏥 Clinical Referral ${referenceCode} - Confidential Intake`,
     html
   });
 }
@@ -78,7 +78,7 @@ async function sendInterventionAlert({ surveyType, severityBand, department, to 
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f0f1a; color: #e0e0e0; border-radius: 12px; overflow: hidden;">
       <div style="background: linear-gradient(135deg, #ef4444, #dc2626); padding: 24px 32px;">
         <h1 style="margin: 0; color: #fff; font-size: 20px;">⚠️ High-Risk Intervention Alert</h1>
-        <p style="margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 13px;">Automated Hazard Detection — Immediate Review Required</p>
+        <p style="margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 13px;">Automated Hazard Detection - Immediate Review Required</p>
       </div>
       <div style="padding: 24px 32px;">
         <table style="width: 100%; border-collapse: collapse;">
@@ -102,7 +102,7 @@ async function sendInterventionAlert({ surveyType, severityBand, department, to 
 
   return sendMail({
     to: recipient,
-    subject: `⚠️ HIGH-RISK ALERT — ${(surveyType || '').toUpperCase()} Severity: ${(severityBand || '').toUpperCase()}`,
+    subject: `⚠️ HIGH-RISK ALERT - ${(surveyType || '').toUpperCase()} Severity: ${(severityBand || '').toUpperCase()}`,
     html
   });
 }
@@ -131,7 +131,7 @@ async function sendWhistleblowerAlert({ reportId, category, urgency, companyName
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f0f1a; color: #e0e0e0; border-radius: 12px; overflow: hidden;">
       <div style="background: linear-gradient(135deg, ${color}, ${color}dd); padding: 24px 32px;">
         <h1 style="margin: 0; color: #fff; font-size: 20px;">🛡️ Anonymous Hazard Escalation Report</h1>
-        <p style="margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 13px;">Whistleblower Protection — Confidential</p>
+        <p style="margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 13px;">Whistleblower Protection - Confidential</p>
       </div>
       <div style="padding: 24px 32px;">
         <table style="width: 100%; border-collapse: collapse;">
@@ -153,7 +153,7 @@ async function sendWhistleblowerAlert({ reportId, category, urgency, companyName
 
   return sendMail({
     to: recipient,
-    subject: `🛡️ Anonymous Hazard Report ${reportId} — ${(urgency || 'standard').toUpperCase()} Priority`,
+    subject: `🛡️ Anonymous Hazard Report ${reportId} - ${(urgency || 'standard').toUpperCase()} Priority`,
     html
   });
 }
@@ -204,7 +204,7 @@ async function sendHrWelcomeEmail({ to, companyName, password, loginUrl, activat
 
   return sendMail({
     to,
-    subject: `🚀 Havilah Tenant Provisioned — HR Login Credentials for ${companyName}`,
+    subject: `🚀 Havilah Tenant Provisioned - HR Login Credentials for ${companyName}`,
     html
   });
 }

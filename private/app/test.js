@@ -1,6 +1,6 @@
 
 /* ============================================================
-   WELLFRAME APPLICATION — Production Implementation
+   WELLFRAME APPLICATION - Production Implementation
    ============================================================ */
 
 const App = (() => {
@@ -24,7 +24,7 @@ const App = (() => {
       darkMode: false
     },
     notifications: [
-      { id: 1, icon: 'critical', title: 'Sales team — severe stress spike', desc: 'PSS-10 moderate+ up 18% in 14 days. Recommend pulse check-in.', time: '2 hours ago', read: false },
+      { id: 1, icon: 'critical', title: 'Sales team - severe stress spike', desc: 'PSS-10 moderate+ up 18% in 14 days. Recommend pulse check-in.', time: '2 hours ago', read: false },
       { id: 2, icon: 'moderate', title: 'Engineering fatigue above threshold', desc: 'FAS-10 scores shifted from healthy to adjusting after release week.', time: 'Yesterday', read: false },
       { id: 3, icon: 'info', title: 'Quarterly COPSOQ III (Middle) opens Monday', desc: 'Scheduled deployment to 1,842 employees on Monday 09:00.', time: '2 days ago', read: false },
       { id: 4, icon: 'moderate', title: 'Operations night-shift cohort', desc: '28% response drop. Consider schedule-aware reminders.', time: '3 days ago', read: true },
@@ -712,7 +712,7 @@ const App = (() => {
       htmlContent = `
         <div style="line-height: 1.6; color: var(--text-dark);">
           <p style="margin-top:0; color: var(--text-muted);">Target Hazard: <strong>RoleClarity / SocialSupport</strong></p>
-          <p>A major source of workplace anxiety stems from interpersonal communication—specifically, setting boundaries without sounding aggressive or missing context.</p>
+          <p>A major source of workplace anxiety stems from interpersonal communication - specifically, setting boundaries without sounding aggressive or missing context.</p>
           
           <div style="background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 8px; margin-top: 16px;">
             <div style="font-weight:600; margin-bottom: 8px;">The "Scope Creep" Interception Script</div>
@@ -919,7 +919,7 @@ const App = (() => {
         title = 'Terms of Service';
         content = `
           <h3>Acceptable Use Policy</h3>
-          <p>This platform is explicitly a preventative wellness and compliance benchmarking tool—not a clinical medical diagnostic suite or an emergency crisis response system.</p>
+          <p>This platform is explicitly a preventative wellness and compliance benchmarking tool - not a clinical medical diagnostic suite or an emergency crisis response system.</p>
           <h3>Subscription & Multi-Tenancy Rules</h3>
           <p>Defines tenant isolation parameters, seat licensing limitations, payment terms, and platform uptime SLA guidelines.</p>
           <h3>Limitation of Liability</h3>

@@ -11,7 +11,7 @@ const Department = require('../models/Department');
 const { hashField } = require('../utils/crypto');
 const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
 
-// POST /api/v1/auth/login — Rate limited (max 5 attempts per window)
+// POST /api/v1/auth/login - Rate limited (max 5 attempts per window)
 router.post('/login', sensitiveRateLimiter(5), async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -293,7 +293,7 @@ const handleRegistration = async (req, res, next) => {
   }
 };
 
-// GET /api/v1/auth/me — Validate bearer token freshness and return user profile
+// GET /api/v1/auth/me - Validate bearer token freshness and return user profile
 const { validateSession } = require('../middleware/auth');
 router.get('/me', validateSession, async (req, res, next) => {
   try {
@@ -326,10 +326,10 @@ router.get('/me', validateSession, async (req, res, next) => {
   }
 });
 
-// POST /api/v1/auth/activate — Rate limited (max 5 attempts)
+// POST /api/v1/auth/activate - Rate limited (max 5 attempts)
 router.post('/activate', sensitiveRateLimiter(5), handleRegistration);
 
-// POST /api/v1/auth/register — Rate limited (max 5 attempts)
+// POST /api/v1/auth/register - Rate limited (max 5 attempts)
 router.post('/register', sensitiveRateLimiter(5), handleRegistration);
 
 module.exports = router;

@@ -12,7 +12,7 @@ const { buildNSizeAggregation } = require('../aggregations/nSizePrivacy');
 router.use(validateSession);
 router.use(requireRole('hr_admin', 'tenant_admin', 'super_admin'));
 
-// GET /api/v1/hr/analytics — Privacy-Preserving Analytics Endpoint (N-threshold = 5)
+// GET /api/v1/hr/analytics - Privacy-Preserving Analytics Endpoint (N-threshold = 5)
 router.get('/analytics', async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;
@@ -203,7 +203,7 @@ router.post('/generate-invite', async (req, res, next) => {
       const { sendMail } = require('../utils/emailService');
       await sendMail({
         to: emailList,
-        subject: `🔒 Your Havilah Onboarding Invitation — ${department.name}`,
+        subject: `🔒 Your Havilah Onboarding Invitation - ${department.name}`,
         html: `
           <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #020617; color: #ffffff;">
             <h2 style="color: #2dd4bf;">Join Your Team on Havilah</h2>
@@ -378,7 +378,7 @@ router.delete('/invites/:code', handleDeleteInvite);
 router.post('/invites/:code/delete', handleDeleteInvite);
 router.delete('/departments/codes/:code', handleDeleteInvite);
 
-// GET /api/v1/hr/heatmap — Edge Case 1: Hard DB Aggregation Suppression for N < 5
+// GET /api/v1/hr/heatmap - Edge Case 1: Hard DB Aggregation Suppression for N < 5
 router.get('/heatmap', async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;

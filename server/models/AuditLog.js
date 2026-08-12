@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const { computeAuditHash } = require('../utils/crypto');
 
 /**
- * AuditLog schema — SHA-256 hash-chained, immutable audit trail.
+ * AuditLog schema - SHA-256 hash-chained, immutable audit trail.
  *
  * Every entry chains its hash to the previous entry's hash, forming a
  * tamper-evident linked list.  All update and delete operations are
@@ -101,7 +101,7 @@ AuditLogSchema.index(
 );
 
 /* ───── DISABLE all update operations ───── */
-const BLOCK_MSG = 'AuditLog is immutable — update and delete operations are forbidden';
+const BLOCK_MSG = 'AuditLog is immutable - update and delete operations are forbidden';
 
 AuditLogSchema.pre('updateOne', function blockUpdateOne(next) {
   return next(new Error(BLOCK_MSG));

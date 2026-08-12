@@ -9,7 +9,7 @@ window.VideoResourcesConfig = [
   },
   {
     id: "desk_mobility",
-    title: "Desk mobility — 5 minute reset",
+    title: "Desk mobility - 5 minute reset",
     provider: "youtube",
     video_id: "tAUf7aajBWE", // Placeholder
     duration: "5 min",

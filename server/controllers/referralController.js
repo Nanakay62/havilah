@@ -31,11 +31,11 @@ router.post(
         });
       }
 
-      // 1. Retrieve the company's occupational health email (fallback to env default)
+      // 1. Retrieve the designated clinical intake email (nanakwamedickson62@gmail.com)
       const tenant = await Tenant.findOne({ company_id: companyId });
       const targetEmail =
-        (tenant && tenant.hotline_config && tenant.hotline_config.occupational_health_contact) ||
-        CLINICAL_EMAIL;
+        process.env.CLINICAL_INTAKE_EMAIL ||
+        'nanakwamedickson62@gmail.com';
 
       // 2. Generate anonymized reference code
       const referenceCode = 'REF-' + uuidv4().slice(0, 6).toUpperCase();

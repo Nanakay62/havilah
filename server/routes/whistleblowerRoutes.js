@@ -65,16 +65,18 @@ router.post('/submit', validateSession, async (req, res, next) => {
       submitted_at,
     });
 
-    // Dispatch anonymized alert to HR + clinical partner
+    // Dispatch anonymized alert to designated whistleblower email (nanakwamedickson553@gmail.com)
+    const whistleblowerTargetEmail = process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || 'nanakwamedickson553@gmail.com';
     if (sendWhistleblowerAlert) {
-        await sendWhistleblowerAlert({
+      await sendWhistleblowerAlert({
         reportId: report.report_id,
         category,
         urgency: urgency || 'standard',
         companyName: tenant?.company_name || 'Confidential',
-        }).catch(err => console.warn('[Vault] Alert email dispatch failed:', err.message));
+        to: whistleblowerTargetEmail,
+      }).catch(err => console.warn('[Vault] Alert email dispatch failed:', err.message));
     } else {
-        console.warn('[Vault] Alert email dispatch skipped: sendWhistleblowerAlert not available');
+      console.warn('[Vault] Alert email dispatch skipped: sendWhistleblowerAlert not available');
     }
 
     console.log('[Vault] Anonymous report submitted:', report.report_id);

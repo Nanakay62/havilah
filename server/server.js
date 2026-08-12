@@ -130,9 +130,11 @@ app.get('/api/v1/clinical-provider', (req, res) => {
     success: true,
     active_provider: process.env.DEFAULT_CLINICAL_PARTNER_NAME || 'FZ Safety and Health',
     provider_name: process.env.DEFAULT_CLINICAL_PARTNER_NAME || 'FZ Safety and Health',
-    eap_hotline: process.env.DEFAULT_CLINICAL_HOTLINE || '0551022714',
-    crisis_hotline: '988',
-    occupational_health_contact: process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'nanakwamedickson62@gmail.com',
+    eap_hotline: process.env.DEFAULT_CLINICAL_HOTLINE || '+233 24 362 9870',
+    crisis_hotline: '+233 24 362 9870',
+    occupational_health_contact: process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'clarke.edith@gmail.com',
+    clinical_intake_email: process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com',
+    whistleblower_email: process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || 'nanakwamedickson553@gmail.com',
     allow_custom_eap_overrides: true
   });
 });

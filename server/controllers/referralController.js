@@ -59,11 +59,23 @@ router.post(
   async (req, res, next) => {
     try {
       const companyId = req.tenantScope.company_id;
-      
-      // Explicitly read all parameter aliases from req.body or fallback to authenticated session
+
+      // Fetch the authenticated user's full record for reliable name/email/department fallbacks
+      let dbUser = null;
+      try {
+        const User = require('../models/User');
+        dbUser = await User.findOne({ user_id: req.sessionData.user_id })
+          .select('full_name email department_id')
+          .lean();
+      } catch (e) {
+        console.warn('[Referral] Could not fetch user record:', e.message);
+      }
+
+      // Explicitly read all parameter aliases from req.body or fallback to authenticated session / DB user
       const patientName =
         req.body.patientName ||
         req.body.name ||
+        dbUser?.full_name ||
         req.sessionData?.name ||
         req.user?.name ||
         'Not provided';
@@ -72,6 +84,7 @@ router.post(
         req.body.patientContact ||
         req.body.patientEmail ||
         req.body.contact_info ||
+        dbUser?.email ||
         req.sessionData?.email ||
         req.user?.email ||
         'Not provided';
@@ -80,6 +93,7 @@ router.post(
         req.body.departmentName ||
         req.body.department ||
         req.sessionData?.department_name ||
+        dbUser?.department_id ||
         req.sessionData?.department_id;
 
       const departmentName = await resolveReadableDepartment(rawDept, companyId, req.sessionData);

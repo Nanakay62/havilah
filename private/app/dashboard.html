@@ -3676,7 +3676,18 @@ const App = (() => {
     clearLocalCache: () => {
       showToast('Cache Cleared', 'Stored preferences and cached tokens cleared.', 'info');
     },
-    openHelp: () => { openModal('helpCenterModalBackdrop'); },
+    openHelp: () => {
+      openModal('helpCenterModalBackdrop');
+      // Pre-fill consultation form with stored user credentials
+      try {
+        const storedName = localStorage.getItem('wf_user_name') || '';
+        const storedEmail = localStorage.getItem('wf_user_email') || '';
+        const nameInput = document.getElementById('consultNameInput');
+        const contactInput = document.getElementById('consultContactInput');
+        if (nameInput && !nameInput.value && storedName) nameInput.value = storedName;
+        if (contactInput && !contactInput.value && storedEmail) contactInput.value = storedEmail;
+      } catch(e) {}
+    },
     openContact: () => { App.openHelp(); App.switchHelpTab('eap'); },
     submitClinicalConsultation: async () => {
       try {
@@ -3687,15 +3698,17 @@ const App = (() => {
         let userMeta = {};
         try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || '{}'); } catch(e) {}
 
-        const patientName = nameVal || state.user?.name || userMeta.name || userMeta.email || 'Confidential Patient';
-        const patientContact = contactVal || state.user?.email || userMeta.email || '';
-        // Prefer human-readable department_name; fall back to UUID (backend will resolve it)
-        const departmentName = state.user?.department_name || userMeta.department_name || state.user?.department || userMeta.department || 'General Staff';
+        const storedName = localStorage.getItem('wf_user_name') || '';
+        const storedEmail = localStorage.getItem('wf_user_email') || '';
+        const patientName = nameVal || storedName || state.user?.name || userMeta.name || userMeta.full_name || 'Not provided';
+        const patientContact = contactVal || storedEmail || state.user?.email || userMeta.email || 'Not provided';
+        // Prefer human-readable department_name; fall back to UUID (backend will resolve it via DB lookup)
+        const departmentName = state.user?.department_name || userMeta.department_name || state.user?.department || userMeta.department || '';
         const preferredTime = 'As soon as available';
         const notes = topicVal || 'General Clinical Consultation Intake Request';
 
-        if (!patientContact && !patientName) {
-          showToast('Contact Required', 'Please provide a phone number or email for the practitioner to reach you.', 'warning');
+        if (!nameVal && !storedName && !contactVal && !storedEmail) {
+          showToast('Contact Required', 'Please provide your name and a phone number or email for the practitioner to reach you.', 'warning');
           return;
         }
 

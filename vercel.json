@@ -1,10 +1,26 @@
 {
   "version": 2,
   "cleanUrls": true,
-  "routes": [
-    { "src": "/hr", "dest": "/private/app/hr.html" },
-    { "src": "/join", "dest": "/private/app/join.html" },
-    { "src": "/superadmin", "dest": "/private/app/superadmin.html" },
-    { "src": "/(.*)", "dest": "/private/app/$1" }
+  "rewrites": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://havilah-api.onrender.com/api/v1/:path*"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/public/dashboard.html"
+    },
+    {
+      "source": "/hr",
+      "destination": "/public/hr.html"
+    },
+    {
+      "source": "/superadmin",
+      "destination": "/public/superadmin.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/public/login.html"
+    }
   ]
 }

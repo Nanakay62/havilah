@@ -65,28 +65,36 @@ router.post('/submit', validateSession, async (req, res, next) => {
       submitted_at,
     });
 
-    // Dispatch anonymized alert to designated whistleblower email (nanakwamedickson553@gmail.com)
-    const whistleblowerTargetEmail = process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || 'nanakwamedickson553@gmail.com';
-    if (sendWhistleblowerAlert) {
-      await sendWhistleblowerAlert({
-        reportId: report.report_id,
-        category,
-        description,
-        urgency: urgency || 'standard',
-        companyName: tenant?.company_name || 'Confidential',
-        to: whistleblowerTargetEmail,
-      }).catch(err => console.warn('[Vault] Alert email dispatch failed:', err.message));
-    } else {
-      console.warn('[Vault] Alert email dispatch skipped: sendWhistleblowerAlert not available');
-    }
+    console.log('[Vault] Anonymous report submitted and persisted:', report.report_id);
 
-    console.log('[Vault] Anonymous report submitted:', report.report_id);
-
-    return res.status(201).json({
+    // 2. Respond immediately to the client to eliminate proxy timeouts
+    res.status(201).json({
       success: true,
       report_id: report.report_id,
       message: 'Your report has been submitted anonymously. No identifying information has been stored.',
     });
+
+    // 3. Dispatch anonymized alert to designated whistleblower email asynchronously in background
+    const whistleblowerTargetEmail = process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || 'nanakwamedickson553@gmail.com';
+    if (sendWhistleblowerAlert) {
+      setImmediate(async () => {
+        try {
+          await sendWhistleblowerAlert({
+            reportId: report.report_id,
+            category,
+            description,
+            urgency: urgency || 'standard',
+            companyName: tenant?.company_name || 'Confidential',
+            to: whistleblowerTargetEmail,
+          });
+          console.log('[Vault] Alert email successfully dispatched in background for report:', report.report_id);
+        } catch (dispatchErr) {
+          console.warn('[Vault] Alert email background dispatch error:', dispatchErr.message);
+        }
+      });
+    } else {
+      console.warn('[Vault] Alert email dispatch skipped: sendWhistleblowerAlert not available');
+    }
   } catch (err) {
     next(err);
   }

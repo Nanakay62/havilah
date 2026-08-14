@@ -3781,7 +3781,13 @@ const App = (() => {
           method: 'POST',
           body: JSON.stringify(formData)
         });
-        const result = await resp.json();
+        
+        let result = {};
+        try {
+          result = await resp.json();
+        } catch (parseErr) {
+          result = { success: false, message: `Server error (${resp.status}): ${resp.statusText || 'Unable to process referral.'}` };
+        }
 
         if (result.success) {
           showToast('Referral Submitted', 'Your confidential referral has been submitted securely to FZ Safety & Health. Reference: ' + (result.reference_code || ''), 'success');

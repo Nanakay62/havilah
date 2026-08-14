@@ -124,31 +124,40 @@ router.post(
       // 2. Generate anonymized reference code
       const referenceCode = 'REF-' + uuidv4().slice(0, 6).toUpperCase();
 
-      // 3. Dispatch structured HTML email via Nodemailer
-      const result = await sendClinicalDispatch({
-        referenceCode,
-        patientName,
-        patientContact,
-        contactInfo: patientContact,
-        departmentName,
-        department: departmentName,
-        topic,
-        preferredDate,
-        preferredTime,
-        notes,
-        to: targetEmail,
-      });
+      console.log('[Occupational Health Referral] Dispatched for patient:', patientName, 'Dept:', departmentName, 'Topic:', topic, 'Reference:', referenceCode);
 
-      if (!result.success) {
-        console.warn('[Referral] Email dispatch failed:', result.error);
-      }
-
-      console.log('[Occupational Health Referral] Dispatched for patient:', patientName, 'Contact:', patientContact, 'Dept:', departmentName, 'Topic:', topic, 'Schedule:', `${preferredDate} ${preferredTime}`.trim(), 'Reference:', referenceCode);
-
-      return res.status(200).json({
+      // 3. Respond immediately to the client to eliminate proxy timeouts
+      res.status(200).json({
         success: true,
         message: 'Referral submitted securely to FZ Safety & Health.',
         reference_code: referenceCode,
+      });
+
+      // 4. Dispatch structured HTML email via Nodemailer asynchronously in the background
+      setImmediate(async () => {
+        try {
+          const result = await sendClinicalDispatch({
+            referenceCode,
+            patientName,
+            patientContact,
+            contactInfo: patientContact,
+            departmentName,
+            department: departmentName,
+            topic,
+            preferredDate,
+            preferredTime,
+            notes,
+            to: targetEmail,
+          });
+
+          if (!result.success) {
+            console.warn('[Referral] Background email dispatch failed:', result.error);
+          } else {
+            console.log('[Occupational Health Referral] Email successfully sent for reference:', referenceCode);
+          }
+        } catch (dispatchErr) {
+          console.warn('[Referral] Background email dispatch error:', dispatchErr.message);
+        }
       });
     } catch (err) {
       next(err);

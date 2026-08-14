@@ -1,26 +1,101 @@
 {
   "version": 2,
-  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/api/v1/:path*",
       "destination": "https://havilah-api.onrender.com/api/v1/:path*"
     },
     {
+      "source": "/app/dashboard",
+      "destination": "/private/app/dashboard.html"
+    },
+    {
+      "source": "/app/dashboard.html",
+      "destination": "/private/app/dashboard.html"
+    },
+    {
       "source": "/dashboard",
-      "destination": "/public/dashboard.html"
+      "destination": "/private/app/dashboard.html"
+    },
+    {
+      "source": "/dashboard.html",
+      "destination": "/private/app/dashboard.html"
+    },
+    {
+      "source": "/portal/hr",
+      "destination": "/private/portal/hr.html"
+    },
+    {
+      "source": "/portal/hr.html",
+      "destination": "/private/portal/hr.html"
     },
     {
       "source": "/hr",
-      "destination": "/public/hr.html"
+      "destination": "/private/portal/hr.html"
+    },
+    {
+      "source": "/hr.html",
+      "destination": "/private/portal/hr.html"
+    },
+    {
+      "source": "/app/superadmin",
+      "destination": "/private/app/superadmin.html"
+    },
+    {
+      "source": "/app/superadmin.html",
+      "destination": "/private/app/superadmin.html"
     },
     {
       "source": "/superadmin",
-      "destination": "/public/superadmin.html"
+      "destination": "/private/app/superadmin.html"
+    },
+    {
+      "source": "/superadmin.html",
+      "destination": "/private/app/superadmin.html"
     },
     {
       "source": "/login",
       "destination": "/public/login.html"
+    },
+    {
+      "source": "/login.html",
+      "destination": "/public/login.html"
+    },
+    {
+      "source": "/register",
+      "destination": "/public/register.html"
+    },
+    {
+      "source": "/register.html",
+      "destination": "/public/register.html"
+    },
+    {
+      "source": "/activate",
+      "destination": "/public/activate.html"
+    },
+    {
+      "source": "/activate.html",
+      "destination": "/public/activate.html"
+    },
+    {
+      "source": "/join",
+      "destination": "/public/activate.html"
+    },
+    {
+      "source": "/join.html",
+      "destination": "/public/activate.html"
+    },
+    {
+      "source": "/js/:path*",
+      "destination": "/public/js/:path*"
+    },
+    {
+      "source": "/css/:path*",
+      "destination": "/public/css/:path*"
+    },
+    {
+      "source": "/",
+      "destination": "/public/index.html"
     }
   ]
 }

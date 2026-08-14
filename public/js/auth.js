@@ -8,11 +8,22 @@ const Auth = {
     });
     
     if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.message || 'Login failed');
+      let msg = 'Login failed';
+      try {
+        const data = await res.json();
+        msg = data.message || data.error || msg;
+      } catch (e) {
+        msg = `Server error (${res.status}): ${res.statusText || 'Unable to process request'}`;
+      }
+      throw new Error(msg);
     }
     
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch (e) {
+      throw new Error('Invalid server response format');
+    }
     if (data.token) {
       localStorage.setItem('havilah_token', data.token);
       localStorage.setItem('token', data.token);

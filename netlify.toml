@@ -1,17 +1,123 @@
 [build]
-  publish = "private/app"
+  publish = "."
 
 [[redirects]]
-  from = "/hr"
-  to = "/hr.html"
+  from = "/api/v1/*"
+  to = "https://havilah-api.onrender.com/api/v1/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/app/dashboard"
+  to = "/private/app/dashboard.html"
   status = 200
 
 [[redirects]]
-  from = "/join"
-  to = "/join.html"
+  from = "/app/dashboard.html"
+  to = "/private/app/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard"
+  to = "/private/app/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard.html"
+  to = "/private/app/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/portal/hr"
+  to = "/private/portal/hr.html"
+  status = 200
+
+[[redirects]]
+  from = "/portal/hr.html"
+  to = "/private/portal/hr.html"
+  status = 200
+
+[[redirects]]
+  from = "/hr"
+  to = "/private/portal/hr.html"
+  status = 200
+
+[[redirects]]
+  from = "/hr.html"
+  to = "/private/portal/hr.html"
+  status = 200
+
+[[redirects]]
+  from = "/app/superadmin"
+  to = "/private/app/superadmin.html"
+  status = 200
+
+[[redirects]]
+  from = "/app/superadmin.html"
+  to = "/private/app/superadmin.html"
   status = 200
 
 [[redirects]]
   from = "/superadmin"
-  to = "/superadmin.html"
+  to = "/private/app/superadmin.html"
+  status = 200
+
+[[redirects]]
+  from = "/superadmin.html"
+  to = "/private/app/superadmin.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/public/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/login.html"
+  to = "/public/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/register"
+  to = "/public/register.html"
+  status = 200
+
+[[redirects]]
+  from = "/register.html"
+  to = "/public/register.html"
+  status = 200
+
+[[redirects]]
+  from = "/activate"
+  to = "/public/activate.html"
+  status = 200
+
+[[redirects]]
+  from = "/activate.html"
+  to = "/public/activate.html"
+  status = 200
+
+[[redirects]]
+  from = "/join"
+  to = "/public/activate.html"
+  status = 200
+
+[[redirects]]
+  from = "/join.html"
+  to = "/public/activate.html"
+  status = 200
+
+[[redirects]]
+  from = "/js/*"
+  to = "/public/js/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/css/*"
+  to = "/public/css/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/"
+  to = "/public/index.html"
   status = 200

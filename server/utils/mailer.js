@@ -7,24 +7,40 @@ if (dns.setDefaultResultOrder) {
   dns.setDefaultResultOrder('ipv4first');
 }
 
+// Strict IPv4 resolver to guarantee IPv6 is never returned in cloud container environments
+function lookupIPv4(hostname, options, callback) {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  dns.resolve4(hostname, (err, addresses) => {
+    if (err || !addresses || addresses.length === 0) {
+      return dns.lookup(hostname, { ...options, family: 4 }, callback);
+    }
+    callback(null, addresses[0], 4);
+  });
+}
+
 const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
 const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER || 'nanakwamedickson62@gmail.com';
 const smtpPass = (process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || 'kyck buvc yrcq aqjb').replace(/\s+/g, '');
 const configuredPort = parseInt(process.env.SMTP_PORT, 10) || 587;
 const isSecure = process.env.SMTP_SECURE === 'true' || configuredPort === 465;
 
-// Primary Transporter (Port 587 with STARTTLS by default for maximum cloud compatibility on Render)
+// Primary Transporter (Port 587 with STARTTLS by default with strict IPv4 lookup)
 const transporter = nodemailer.createTransport({
   host: smtpHost,
   port: configuredPort,
   secure: isSecure,
   requireTLS: !isSecure,
+  lookup: lookupIPv4,
   family: 4, // Force IPv4
   auth: {
     user: smtpUser,
     pass: smtpPass,
   },
   tls: {
+    servername: smtpHost,
     rejectUnauthorized: false
   },
   connectionTimeout: 20000,
@@ -32,18 +48,20 @@ const transporter = nodemailer.createTransport({
   socketTimeout: 25000,
 });
 
-// Secondary Fallback Transporter (Port 465 SSL or 587 TLS)
+// Secondary Fallback Transporter (Port 465 SSL with strict IPv4 lookup)
 const fallbackTransporter = nodemailer.createTransport({
   host: smtpHost,
   port: configuredPort === 587 ? 465 : 587,
   secure: configuredPort === 587,
   requireTLS: configuredPort !== 587,
+  lookup: lookupIPv4,
   family: 4,
   auth: {
     user: smtpUser,
     pass: smtpPass,
   },
   tls: {
+    servername: smtpHost,
     rejectUnauthorized: false
   },
   connectionTimeout: 20000,

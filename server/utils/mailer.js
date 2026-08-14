@@ -25,15 +25,14 @@ function lookupIPv4(hostname, options, callback) {
 const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
 const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER || 'nanakwamedickson62@gmail.com';
 const smtpPass = (process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || 'kyck buvc yrcq aqjb').replace(/\s+/g, '');
-const configuredPort = parseInt(process.env.SMTP_PORT, 10) || 587;
-const isSecure = process.env.SMTP_SECURE === 'true' || configuredPort === 465;
+const configuredPort = parseInt(process.env.SMTP_PORT, 10) || 465;
+const isSecure = process.env.SMTP_SECURE !== undefined ? process.env.SMTP_SECURE === 'true' : configuredPort === 465;
 
-// Primary Transporter (Port 587 with STARTTLS by default with strict IPv4 lookup)
+// Primary Transporter: Direct SSL on Port 465 (Immediate TLS handshake, eliminates 'Greeting never received' delays)
 const transporter = nodemailer.createTransport({
   host: smtpHost,
   port: configuredPort,
   secure: isSecure,
-  requireTLS: !isSecure,
   lookup: lookupIPv4,
   auth: {
     user: smtpUser,
@@ -43,17 +42,17 @@ const transporter = nodemailer.createTransport({
     servername: smtpHost,
     rejectUnauthorized: false
   },
-  connectionTimeout: 20000,
-  greetingTimeout: 20000,
-  socketTimeout: 25000,
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000,
 });
 
-// Secondary Fallback Transporter (Port 465 SSL with strict IPv4 lookup)
+// Secondary Fallback Transporter: Port 587 with STARTTLS
 const fallbackTransporter = nodemailer.createTransport({
   host: smtpHost,
-  port: configuredPort === 587 ? 465 : 587,
-  secure: configuredPort === 587,
-  requireTLS: configuredPort !== 587,
+  port: configuredPort === 465 ? 587 : 465,
+  secure: configuredPort !== 465,
+  requireTLS: configuredPort === 465,
   lookup: lookupIPv4,
   auth: {
     user: smtpUser,
@@ -63,9 +62,9 @@ const fallbackTransporter = nodemailer.createTransport({
     servername: smtpHost,
     rejectUnauthorized: false
   },
-  connectionTimeout: 20000,
-  greetingTimeout: 20000,
-  socketTimeout: 25000,
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000,
 });
 
 /**

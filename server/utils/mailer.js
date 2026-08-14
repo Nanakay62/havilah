@@ -7,43 +7,79 @@ if (dns.setDefaultResultOrder) {
   dns.setDefaultResultOrder('ipv4first');
 }
 
-// Reusable Nodemailer transporter backed by Gmail SMTP with forced IPv4
+const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER || 'nanakwamedickson62@gmail.com';
+const smtpPass = (process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || 'kyck buvc yrcq aqjb').replace(/\s+/g, '');
+const configuredPort = parseInt(process.env.SMTP_PORT, 10) || 587;
+const isSecure = process.env.SMTP_SECURE === 'true' || configuredPort === 465;
+
+// Primary Transporter (Port 587 with STARTTLS by default for maximum cloud compatibility on Render)
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  family: 4, // Force IPv4 to eliminate IPv6 ENETUNREACH errors
+  host: smtpHost,
+  port: configuredPort,
+  secure: isSecure,
+  requireTLS: !isSecure,
+  family: 4, // Force IPv4
   auth: {
-    user: process.env.GMAIL_USER || 'nanakwamedickson62@gmail.com',
-    pass: (process.env.GMAIL_APP_PASSWORD || 'kyck buvc yrcq aqjb').replace(/\s+/g, ''),
+    user: smtpUser,
+    pass: smtpPass,
   },
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  socketTimeout: 20000,
+  tls: {
+    rejectUnauthorized: false
+  },
+  connectionTimeout: 20000,
+  greetingTimeout: 20000,
+  socketTimeout: 25000,
+});
+
+// Secondary Fallback Transporter (Port 465 SSL or 587 TLS)
+const fallbackTransporter = nodemailer.createTransport({
+  host: smtpHost,
+  port: configuredPort === 587 ? 465 : 587,
+  secure: configuredPort === 587,
+  requireTLS: configuredPort !== 587,
+  family: 4,
+  auth: {
+    user: smtpUser,
+    pass: smtpPass,
+  },
+  tls: {
+    rejectUnauthorized: false
+  },
+  connectionTimeout: 20000,
+  greetingTimeout: 20000,
+  socketTimeout: 25000,
 });
 
 /**
- * Universal email delivery helper
+ * Universal email delivery helper with automatic retry and dual-port fallback
  * @param {Object} options - { to, subject, html, from }
  */
 async function sendEmail({ to, subject, html, from }) {
+  const recipientList = Array.isArray(to) ? to.join(', ') : to;
+  const sender = from || `"Havilah Health" <${smtpUser}>`;
+
+  const mailOptions = {
+    from: sender,
+    to: recipientList,
+    subject,
+    html,
+  };
+
   try {
-    const recipientList = Array.isArray(to) ? to.join(', ') : to;
-    const sender = from || `"Havilah Health" <${process.env.GMAIL_USER || 'nanakwamedickson62@gmail.com'}>`;
-
-    const mailOptions = {
-      from: sender,
-      to: recipientList,
-      subject,
-      html,
-    };
-
     const info = await transporter.sendMail(mailOptions);
     console.log(`✉️ Email successfully delivered to ${recipientList} (Message ID: ${info.messageId})`);
     return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error(`❌ Email Delivery Error (${to}):`, error.message || error);
-    return { success: false, error: error.message || error };
+  } catch (primaryErr) {
+    console.warn(`[Mailer] Primary dispatch attempt on port ${configuredPort} failed (${primaryErr.message}). Trying fallback transport...`);
+    try {
+      const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
+      console.log(`✉️ Email delivered via fallback transport to ${recipientList} (Message ID: ${fallbackInfo.messageId})`);
+      return { success: true, messageId: fallbackInfo.messageId };
+    } catch (fallbackErr) {
+      console.error(`❌ Email Delivery Error (${to}):`, fallbackErr.message || fallbackErr);
+      return { success: false, error: fallbackErr.message || fallbackErr };
+    }
   }
 }
 

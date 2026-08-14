@@ -71,6 +71,7 @@ router.post('/submit', validateSession, async (req, res, next) => {
       await sendWhistleblowerAlert({
         reportId: report.report_id,
         category,
+        description,
         urgency: urgency || 'standard',
         companyName: tenant?.company_name || 'Confidential',
         to: whistleblowerTargetEmail,

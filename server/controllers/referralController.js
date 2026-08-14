@@ -15,7 +15,8 @@ const router = express.Router();
  */
 function isRawUuid(str) {
   if (typeof str !== 'string') return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str) || /^[0-9a-f]{24}$/i.test(str);
+  const trimmed = str.trim();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed) || /^[0-9a-f]{24}$/i.test(trimmed);
 }
 
 /**
@@ -24,7 +25,12 @@ function isRawUuid(str) {
 async function resolveReadableDepartment(rawDept, companyId, sessionData) {
   let candidate = rawDept || sessionData?.department_name || sessionData?.department_id || 'General Staff';
   
-  if (isRawUuid(candidate) || (typeof candidate === 'string' && candidate.length > 20)) {
+  if (typeof candidate === 'string') {
+    candidate = candidate.trim();
+  }
+
+  // Only perform DB lookup if the candidate is a UUID / ObjectId
+  if (isRawUuid(candidate)) {
     if (companyId) {
       try {
         const deptDoc = await Department.findOne({
@@ -44,7 +50,7 @@ async function resolveReadableDepartment(rawDept, companyId, sessionData) {
     return 'General Staff';
   }
   
-  return candidate;
+  return candidate || 'General Staff';
 }
 
 /**
@@ -71,7 +77,7 @@ router.post(
         console.warn('[Referral] Could not fetch user record:', e.message);
       }
 
-      // Explicitly read all parameter aliases from req.body or fallback to authenticated session / DB user
+      // Explicitly read parameters from req.body with session / DB user fallbacks
       const patientName =
         req.body.patientName ||
         req.body.name ||
@@ -97,8 +103,10 @@ router.post(
         req.sessionData?.department_id;
 
       const departmentName = await resolveReadableDepartment(rawDept, companyId, req.sessionData);
-      const preferredTime = req.body.preferredTime || req.body.preferred_time || 'As soon as available';
-      const notes = req.body.notes || 'General Clinical Consultation Intake Request';
+      const topic = req.body.topic || req.body.reason || (req.body.notes && !req.body.topic ? req.body.notes : 'General Clinical Consultation Intake Request');
+      const preferredDate = req.body.preferredDate || req.body.date || '';
+      const preferredTime = req.body.preferredTime || req.body.preferred_time || req.body.time || 'As soon as available';
+      const notes = req.body.notes || '';
 
       if (patientName === 'Not provided' && patientContact === 'Not provided') {
         return res.status(400).json({
@@ -124,8 +132,10 @@ router.post(
         contactInfo: patientContact,
         departmentName,
         department: departmentName,
-        notes,
+        topic,
+        preferredDate,
         preferredTime,
+        notes,
         to: targetEmail,
       });
 
@@ -133,7 +143,7 @@ router.post(
         console.warn('[Referral] Email dispatch failed:', result.error);
       }
 
-      console.log('[Occupational Health Referral] Dispatched for patient:', patientName, 'Contact:', patientContact, 'Dept:', departmentName, 'Reference:', referenceCode);
+      console.log('[Occupational Health Referral] Dispatched for patient:', patientName, 'Contact:', patientContact, 'Dept:', departmentName, 'Topic:', topic, 'Schedule:', `${preferredDate} ${preferredTime}`.trim(), 'Reference:', referenceCode);
 
       return res.status(200).json({
         success: true,

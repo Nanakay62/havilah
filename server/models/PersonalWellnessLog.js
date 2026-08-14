@@ -33,6 +33,30 @@ const PersonalWellnessLogSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    composite_score: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: null,
+    },
+    overallIndex: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: null,
+    },
+    clinical_score: {
+      type: Number,
+      default: null,
+    },
+    max_score: {
+      type: Number,
+      default: null,
+    },
+    severity_label: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: { createdAt: 'submitted_at', updatedAt: false },

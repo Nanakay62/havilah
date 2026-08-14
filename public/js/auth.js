@@ -68,19 +68,17 @@ const Auth = {
   },
 
   logout: () => {
-    localStorage.removeItem('havilah_token');
-    localStorage.removeItem('havilah_user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('session_token');
-    localStorage.removeItem('wf_user');
-    localStorage.removeItem('wf_user_name');
-    localStorage.removeItem('wf_user_email');
+    ['havilah_token', 'havilah_user', 'token', 'session_token', 'wf_user', 'wf_user_name', 'wf_user_email'].forEach(k => {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     if (!window.location.pathname.includes('login')) {
       window.location.href = '/login.html';
     }
   }
 };
+
+window.Auth = Auth;
 
 // Global Auth Check on Page Load & Session Restoration
 document.addEventListener('DOMContentLoaded', async () => {

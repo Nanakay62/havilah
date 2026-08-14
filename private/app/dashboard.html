@@ -459,7 +459,7 @@
   .survey-card.locked { opacity: 0.55; cursor: default; pointer-events: none !important; background: repeating-linear-gradient(135deg, var(--bg-elev), var(--bg-elev) 10px, rgba(0,0,0,0.015) 10px, rgba(0,0,0,0.015) 20px); border-style: dashed; }
   .survey-card.locked * { pointer-events: none !important; }
   .insights-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 32px; width: 100%; max-width: 100%; box-sizing: border-box; }
-  .insight-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden; }
+  .insight-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box; position: relative; overflow: visible; }
   .insight-card h3 { margin-bottom: 16px; font-size: 1.0625rem; display: flex; align-items: center; gap: 10px; }
   .insight-card h3 svg { width: 18px; height: 18px; color: var(--accent-deep); }
   .trend-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; width: 100%; max-width: 100%; box-sizing: border-box; }
@@ -476,13 +476,13 @@
   .trend-tab:hover { color: var(--text-1); background: rgba(0,0,0,0.04); }
   .trend-tab.active { background: var(--bg-elev); color: var(--text-1); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
   .trend-legend { display: flex; gap: 12px 16px; flex-wrap: wrap; margin-bottom: 10px; font-size: 0.71875rem; color: var(--text-2); width: 100%; max-width: 100%; box-sizing: border-box; }
-  .trend-chart { position: relative; width: 100%; max-width: 100%; height: 200px; overflow: hidden; box-sizing: border-box; }
+  .trend-chart { position: relative; width: 100%; max-width: 100%; height: 200px; overflow: visible; box-sizing: border-box; }
   .trend-chart canvas { width: 100% !important; max-width: 100% !important; height: 100% !important; display: block; }
   #chartTooltip {
-    position: absolute; pointer-events: none; z-index: 100;
+    position: absolute; pointer-events: none; z-index: 999;
     background: var(--bg-elev); border: 1px solid var(--border);
     border-radius: 10px; padding: 12px 16px; min-width: 200px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12); font-size: 0.8125rem;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.18); font-size: 0.8125rem;
     transition: opacity 0.15s, transform 0.15s;
   }
   #chartTooltip .tooltip-date { font-size: 0.71875rem; color: var(--text-3); font-weight: 600; margin-bottom: 6px; }
@@ -1312,7 +1312,7 @@
               <span class="cosmic-pill purple">Direct Intake</span>
             </div>
             <p style="font-size: 0.78rem; color: var(--cosmic-text-secondary); margin-bottom: 12px;">Submit an encrypted request to connect with a licensed practitioner from <strong id="helpProviderFormName">FZ Safety and Health</strong>. Employer is never notified.</p>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <div>
                   <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Employee Name *</label>
@@ -1324,8 +1324,27 @@
                 </div>
               </div>
               <div>
-                <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Topic & Preferred Time (Optional)</label>
-                <input type="text" id="consultTopicInput" class="input" placeholder="e.g. Work stress, Fatigue, Anxiety (Mornings preferred)" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem;">
+                <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Consultation Topic / Reason</label>
+                <input type="text" id="consultTopicInput" class="input" placeholder="e.g. Work stress, Fatigue, Anxiety, Sleep disturbance" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem;">
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Preferred Date</label>
+                  <input type="date" id="consultDateInput" class="input" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem;">
+                </div>
+                <div>
+                  <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Preferred Time</label>
+                  <select id="consultTimeInput" class="input" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem; background: var(--cosmic-glass-bg);">
+                    <option value="As soon as available">As soon as available</option>
+                    <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
+                    <option value="Afternoon (13:00 - 17:00)">Afternoon (13:00 - 17:00)</option>
+                    <option value="Evening (17:00 - 20:00)">Evening (17:00 - 20:00)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Additional Notes (Optional)</label>
+                <textarea id="consultNotesInput" class="input" rows="2" placeholder="Optional details or specific accommodations needed..." style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem; resize: vertical;"></textarea>
               </div>
               <button class="cosmic-pill emerald" style="cursor: pointer; padding: 10px 16px; font-weight: 700; width: 100%; margin-top: 4px; justify-content: center;" onclick="App.submitClinicalConsultation()">Submit Request to FZ Safety Practitioner</button>
             </div>
@@ -1898,8 +1917,10 @@ window.closeVaultModal = function() {
   if (modal) { modal.style.display = 'none'; }
   const cat = document.getElementById('vaultCategory');
   const desc = document.getElementById('vaultDescription');
+  const counter = document.getElementById('vaultCharCount');
   if (cat) cat.value = '';
   if (desc) desc.value = '';
+  if (counter) counter.textContent = '0';
 };
 window.submitVaultReport = async function() {
   const category = document.getElementById('vaultCategory')?.value;
@@ -2272,13 +2293,16 @@ const App = (() => {
       return;
     }
 
-    // Accurate Scoring Logic for UI Display (fallback if we wanted, but we already have baseline)
+    // Accurate Scoring Logic for UI Display
     let rawScore = 0;
     let normalized = 0;
     
-    if (sType === 'phq9' || sType === 'gad7') {
+    if (sType === 'phq9') {
       answers.forEach(v => rawScore += v);
       normalized = 100 - ((rawScore / 27) * 100);
+    } else if (sType === 'gad7') {
+      answers.forEach(v => rawScore += v);
+      normalized = 100 - ((rawScore / 21) * 100);
     } else if (sType === 'pss10') {
       const reverse = [3, 4, 6, 7];
       answers.forEach((v, i) => {
@@ -2310,20 +2334,16 @@ const App = (() => {
       state.wellbeing.dimensions[dimIndex].status = statusLabel.toLowerCase().replace(' ', '-');
     }
     
-    // Update composite score & trend chart
-    const allVals = state.wellbeing.dimensions.map(d => d.value);
-    const compositeScore = Math.round(allVals.reduce((a,b)=>a+b, 0) / allVals.length);
-    state.wellbeing.composite_score = compositeScore;
-    
-    const todayStr = new Date().toISOString().split('T')[0];
-    const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    const todayEntries = state.employeeHistoryPayload.filter(e => e.date === todayStr);
-    const labelStr = `Check-in ${todayEntries.length + 1} (${timeStr})`;
-    
-    state.employeeHistoryPayload.push({ date: todayStr, score: compositeScore, label: labelStr });
-    
     state.surveyProgress[sType].completed = true;
     state.surveyProgress[sType].score = normalized;
+
+    // Refresh history and trend chart cleanly from backend database
+    if (typeof fetchDashboardData === 'function') {
+      await fetchDashboardData();
+    } else {
+      updateTrendChart();
+      renderEmployeeDashboard();
+    }
 
     // Show result to user
     const providerName = (state.clinicalProvider && state.clinicalProvider.name) ? state.clinicalProvider.name : 'FZ Safety and Health';
@@ -2355,9 +2375,6 @@ const App = (() => {
     document.getElementById('modalBack').style.display = 'none';
     document.getElementById('modalNext').style.display = 'none';
     document.getElementById('modalQNum').style.display = 'none';
-    
-    updateTrendChart();
-    renderEmployeeDashboard();
   }
 
   async function fetchAssessmentLocks() {
@@ -2402,13 +2419,13 @@ const App = (() => {
     // Framework filter
     const fw = state.trendFilter.framework;
     if (fw === 'daily') {
-      data = data.filter(d => d.source === 'checkin_slider' || !d.source);
+      data = data.filter(d => isDailyPoint(d));
     } else if (fw === 'copsoq') {
-      data = data.filter(d => d.source && d.source.startsWith('copsoq3'));
+      data = data.filter(d => (d.source || d.survey_type || '').toLowerCase().startsWith('copsoq3'));
     } else if (fw === 'pss10') {
-      data = data.filter(d => d.source === 'pss10');
+      data = data.filter(d => (d.source || d.survey_type || '').toLowerCase() === 'pss10');
     } else if (fw === 'clinical') {
-      data = data.filter(d => ['phq9', 'gad7', 'fas10'].includes(d.source));
+      data = data.filter(d => ['phq9', 'gad7', 'fas10'].includes((d.source || d.survey_type || '').toLowerCase()));
     }
     
     // Timeframe filter
@@ -2423,7 +2440,13 @@ const App = (() => {
     return data;
   }
 
+  function isDailyPoint(entry) {
+    const s = (typeof entry === 'string' ? entry : (entry?.source || entry?.survey_type || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
+    return !s || s === 'checkinslider' || s === 'dailypulse' || s === 'pulse';
+  }
+
   const sourceColors = {
+    daily_pulse: '#00B7C3',
     DAILY_PULSE: '#00B7C3',
     checkin_slider: '#00B7C3',
     pulse: '#00B7C3',
@@ -2444,6 +2467,7 @@ const App = (() => {
   };
 
   const sourceNames = {
+    daily_pulse: '5-Dimension Daily Pulse',
     DAILY_PULSE: '5-Dimension Daily Pulse',
     checkin_slider: '5-Dimension Daily Pulse',
     pulse: '5-Dimension Daily Pulse',
@@ -2550,11 +2574,11 @@ const App = (() => {
           fill: true,
           tension: 0.4,
           borderWidth: 2.5,
-          pointBackgroundColor: data.map(d => sourceColors[d.source] || '#00B7C3'),
-          pointBorderColor: data.map(d => sourceColors[d.source] || '#00B7C3'),
-          pointRadius: data.map(d => (!d.source || d.source === 'checkin_slider') ? 4 : 7),
-          pointHoverRadius: data.map(d => (!d.source || d.source === 'checkin_slider') ? 6 : 9),
-          pointStyle: data.map(d => (!d.source || d.source === 'checkin_slider') ? 'circle' : 'rectRot')
+          pointBackgroundColor: data.map(d => sourceColors[d.source] || sourceColors[d.survey_type] || '#00B7C3'),
+          pointBorderColor: data.map(d => sourceColors[d.source] || sourceColors[d.survey_type] || '#00B7C3'),
+          pointRadius: data.map(d => isDailyPoint(d) ? 6 : 7),
+          pointHoverRadius: data.map(d => isDailyPoint(d) ? 8 : 9),
+          pointStyle: data.map(d => isDailyPoint(d) ? 'circle' : 'rectRot')
         }]
       },
       options: {
@@ -2580,18 +2604,18 @@ const App = (() => {
               const entry = data[idx];
               if (!entry) return;
 
-              const isDaily = (!entry.source || entry.source === 'checkin_slider' || entry.source === 'DAILY_PULSE' || entry.source === 'pulse') && entry.dimensions !== null;
+              const isDaily = isDailyPoint(entry);
               const overallIndex = entry.overallIndex ?? entry.score ?? 0;
               const tier = getRiskTier(overallIndex);
               const dateObj = new Date(entry.date);
               const dateStr = isNaN(dateObj.getTime()) ? entry.date : dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
-              const matchedName = sourceNames[entry.source] || sourceNames[entry.survey_type] || entry.source || 'Assessment';
-              const matchedColor = sourceColors[entry.source] || sourceColors[entry.survey_type] || '#00B7C3';
+              const matchedName = sourceNames[entry.source] || sourceNames[entry.survey_type] || (isDaily ? '5-Dimension Daily Pulse' : (entry.source || 'Assessment'));
+              const matchedColor = sourceColors[entry.source] || sourceColors[entry.survey_type] || (isDaily ? '#00B7C3' : '#6366f1');
 
               let html = '';
-              if (isDaily && entry.dimensions && typeof entry.dimensions === 'object') {
-                const dims = entry.dimensions;
+              if (isDaily) {
+                const dims = (entry.dimensions && typeof entry.dimensions === 'object') ? entry.dimensions : {};
                 const offsets = [4, -3, 6, -2, 1];
                 const dimBars = [
                   { key: 'mood', label: 'Mood' },
@@ -2602,7 +2626,7 @@ const App = (() => {
                 ].map((item, idx) => {
                   let rawVal = dims[item.key] ?? (item.altKey ? dims[item.altKey] : undefined);
                   if (typeof rawVal !== 'number' || rawVal <= 0) {
-                    rawVal = Math.min(100, Math.max(10, overallIndex + offsets[idx % offsets.length]));
+                    rawVal = overallIndex;
                   }
                   const val = Math.min(100, Math.max(0, Math.round(rawVal)));
                   const color = val >= 70 ? '#4FB286' : val >= 40 ? '#E8A33D' : '#E5646E';
@@ -2614,7 +2638,7 @@ const App = (() => {
                     <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${matchedColor};"></span>
                     <strong style="font-size:0.875rem;color:#0F172A;">${matchedName}</strong>
                   </div>
-                  <div class="tooltip-date">📅 ${dateStr}</div>
+                  <div class="tooltip-date">📅 Completed: ${dateStr}</div>
                   <div style="font-weight:700;font-size:15px;color:${tier.color};margin:4px 0;">Overall Index: ${overallIndex}</div>
                   ${dimBars}
                 `;
@@ -2652,9 +2676,9 @@ const App = (() => {
               const caretX = tooltipModel.caretX;
               const caretY = tooltipModel.caretY;
 
-              // Vertical positioning: If caret is near top boundary, flip popover downward below node
+              // Vertical positioning: Default place above data point; if at very top edge (caretY < 35), flip below
               let topPos, transformY;
-              if (caretY - ttHeight < 15) {
+              if (caretY < 35) {
                 topPos = caretY + 14;
                 transformY = '0%';
               } else {
@@ -2929,36 +2953,7 @@ const App = (() => {
     }
   }
 
-  window.addEventListener('DOMContentLoaded', async () => {
-    // Pull the active user name from session storage
-    const activeName = localStorage.getItem('wf_user_name');
-    if (activeName) {
-      const firstName = activeName.split(' ')[0];
-      const hr = new Date().getHours();
-      const greeting = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
-      
-      const greetingEl = document.getElementById('empGreeting');
-      if (greetingEl) greetingEl.textContent = `${greeting}, ${firstName}.`;
-      
-      // Update profile names
-      document.querySelectorAll('.profile-name, .dropdown-header-name').forEach(el => {
-        el.textContent = activeName;
-      });
-      
-      // Update avatars
-      const initials = activeName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-      document.querySelectorAll('.avatar').forEach(el => {
-        el.textContent = initials;
-      });
-    }
-    
-    const activeEmail = localStorage.getItem('wf_user_email');
-    if (activeEmail) {
-      document.querySelectorAll('.dropdown-header-email').forEach(el => {
-        el.textContent = activeEmail;
-      });
-    }
-
+  window.fetchDashboardData = async function fetchDashboardData() {
     try {
       const res = await apiFetch('/api/v1/wellness/dashboard-data', {
         headers: {
@@ -2981,11 +2976,13 @@ const App = (() => {
         // Sync history
         if (data.history && data.history.length > 0) {
           state.employeeHistoryPayload = data.history.map((item, idx) => ({
+            ...item,
             date: item.date,
-            score: item.score,
-            label: `Check-in ${idx + 1}`,
-            source: item.source || item.survey_type || 'checkin_slider',
-            dimensions: item.dimensions || {}
+            score: item.score ?? item.overallIndex ?? 64,
+            overallIndex: item.overallIndex ?? item.score ?? 64,
+            label: item.label || `Check-in ${idx + 1}`,
+            source: item.source || item.survey_type || 'daily_pulse',
+            dimensions: item.dimensions !== undefined ? item.dimensions : null
           }));
           
           // Latest composite score
@@ -2998,17 +2995,60 @@ const App = (() => {
           state.wellbeing.composite_score = 0;
         }
       }
+      updateTrendChart();
+      renderEmployeeDashboard();
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     }
+  };
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Check authentication
+    if (!localStorage.getItem('token')) {
+      window.location.href = '/login.html';
+      return;
+    }
+
+    // Set user profile info from localStorage
+    const activeUser = localStorage.getItem('wf_user_name');
+    if (activeUser) {
+      document.querySelectorAll('.dropdown-header-name').forEach(el => {
+        el.textContent = activeUser;
+      });
+      
+      const firstName = activeUser.split(' ')[0];
+      const hr = new Date().getHours();
+      const greeting = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
+      
+      const greetingEl = document.getElementById('empGreeting');
+      if (greetingEl) greetingEl.textContent = `${greeting}, ${firstName}.`;
+      
+      // Update profile names
+      document.querySelectorAll('.profile-name').forEach(el => {
+        el.textContent = activeUser;
+      });
+      
+      // Update avatars
+      const initials = activeUser.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      document.querySelectorAll('.avatar').forEach(el => {
+        el.textContent = initials;
+      });
+    }
+    
+    const activeEmail = localStorage.getItem('wf_user_email');
+    if (activeEmail) {
+      document.querySelectorAll('.dropdown-header-email').forEach(el => {
+        el.textContent = activeEmail;
+      });
+    }
+
+    await window.fetchDashboardData();
 
     // Clear stale completion cache keys from localStorage
     ['mock_completed_surveys', 'survey_completion_cache', 'completed_wellness_banners', 'wf_completed_list'].forEach(k => {
       try { localStorage.removeItem(k); } catch (e) {}
     });
 
-    updateTrendChart();
-    renderEmployeeDashboard();
     fetchAssessmentLocks();
     fetchActiveCycles();
     fetchWorkerCompletedStatus();
@@ -3595,6 +3635,7 @@ const App = (() => {
     updateTrendChart,
     renderSurveyCards,
     fetchAssessmentLocks,
+    fetchDashboardData: window.fetchDashboardData,
     openResources: () => { openModal('resBackdrop'); document.getElementById('resPanel').classList.add('open'); },
     closeResources: () => { closeModal('resBackdrop'); document.getElementById('resPanel').classList.remove('open'); },
     openProfileSettings: () => {
@@ -3678,14 +3719,22 @@ const App = (() => {
     },
     openHelp: () => {
       openModal('helpCenterModalBackdrop');
-      // Pre-fill consultation form with stored user credentials
+      // Pre-fill consultation form with stored user credentials and default schedule
       try {
-        const storedName = localStorage.getItem('wf_user_name') || '';
-        const storedEmail = localStorage.getItem('wf_user_email') || '';
+        let userMeta = {};
+        try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || localStorage.getItem('wf_user') || '{}'); } catch(e) {}
+        const storedName = localStorage.getItem('wf_user_name') || userMeta.name || userMeta.full_name || (state.user?.name !== 'Amara Okafor' ? state.user?.name : '') || '';
+        const storedEmail = localStorage.getItem('wf_user_email') || userMeta.email || (state.user?.email !== 'amara.okafor@havilah.io' ? state.user?.email : '') || '';
         const nameInput = document.getElementById('consultNameInput');
         const contactInput = document.getElementById('consultContactInput');
+        const dateInput = document.getElementById('consultDateInput');
         if (nameInput && !nameInput.value && storedName) nameInput.value = storedName;
         if (contactInput && !contactInput.value && storedEmail) contactInput.value = storedEmail;
+        if (dateInput && !dateInput.value) {
+          const today = new Date().toISOString().split('T')[0];
+          dateInput.min = today;
+          dateInput.value = today;
+        }
       } catch(e) {}
     },
     openContact: () => { App.openHelp(); App.switchHelpTab('eap'); },
@@ -3694,34 +3743,38 @@ const App = (() => {
         const nameVal = document.getElementById('consultNameInput')?.value.trim();
         const contactVal = document.getElementById('consultContactInput')?.value.trim();
         const topicVal = document.getElementById('consultTopicInput')?.value.trim();
+        const dateVal = document.getElementById('consultDateInput')?.value.trim() || '';
+        const timeVal = document.getElementById('consultTimeInput')?.value.trim() || 'As soon as available';
+        const notesVal = document.getElementById('consultNotesInput')?.value.trim() || '';
 
         let userMeta = {};
-        try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || '{}'); } catch(e) {}
+        try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || localStorage.getItem('wf_user') || '{}'); } catch(e) {}
 
         const storedName = localStorage.getItem('wf_user_name') || '';
         const storedEmail = localStorage.getItem('wf_user_email') || '';
-        const patientName = nameVal || storedName || state.user?.name || userMeta.name || userMeta.full_name || 'Not provided';
-        const patientContact = contactVal || storedEmail || state.user?.email || userMeta.email || 'Not provided';
-        // Prefer human-readable department_name; fall back to UUID (backend will resolve it via DB lookup)
-        const departmentName = state.user?.department_name || userMeta.department_name || state.user?.department || userMeta.department || '';
-        const preferredTime = 'As soon as available';
-        const notes = topicVal || 'General Clinical Consultation Intake Request';
+        const patientName = nameVal || storedName || userMeta.name || userMeta.full_name || state.user?.name || 'Not provided';
+        const patientContact = contactVal || storedEmail || userMeta.email || state.user?.email || 'Not provided';
+        // Extract department name
+        const departmentName = state.user?.department || state.user?.department_name || userMeta.department_name || userMeta.department || 'General Staff';
+        const topic = topicVal || 'General Clinical Consultation Intake Request';
+        const preferredDate = dateVal;
+        const preferredTime = timeVal;
+        const notes = notesVal;
 
         if (!nameVal && !storedName && !contactVal && !storedEmail) {
           showToast('Contact Required', 'Please provide your name and a phone number or email for the practitioner to reach you.', 'warning');
           return;
         }
 
+        // Single clean non-redundant payload
         const formData = {
           patientName,
           patientContact,
-          patientEmail: patientContact,
           departmentName,
+          topic,
+          preferredDate,
           preferredTime,
-          notes,
-          name: patientName,
-          contact_info: patientContact,
-          preferred_time: preferredTime
+          notes
         };
 
         const resp = await apiFetch('/api/v1/referrals/occupational-health', {
@@ -3733,6 +3786,7 @@ const App = (() => {
         if (result.success) {
           showToast('Referral Submitted', 'Your confidential referral has been submitted securely to FZ Safety & Health. Reference: ' + (result.reference_code || ''), 'success');
           if (document.getElementById('consultTopicInput')) document.getElementById('consultTopicInput').value = '';
+          if (document.getElementById('consultNotesInput')) document.getElementById('consultNotesInput').value = '';
         } else {
           showToast('Submission Failed', result.message || 'Please try calling +233 24 362 9870 directly.', 'error');
         }
@@ -3759,7 +3813,19 @@ const App = (() => {
       }
     },
     openKeyboardShortcuts: () => {},
-    signOut: () => { window.location.href = '/'; },
+    signOut: () => {
+      if (typeof window.Auth !== 'undefined' && typeof window.Auth.logout === 'function') {
+        window.Auth.logout();
+      } else if (typeof Auth !== 'undefined' && typeof Auth.logout === 'function') {
+        Auth.logout();
+      } else {
+        ['havilah_token', 'havilah_user', 'token', 'session_token', 'wf_user', 'wf_user_name', 'wf_user_email'].forEach(k => {
+          try { localStorage.removeItem(k); } catch (e) {}
+        });
+        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        window.location.href = '/login.html';
+      }
+    },
     closeNotifications: () => {
       document.getElementById('notifPanel').classList.remove('open');
       closeModal('notifBackdrop');

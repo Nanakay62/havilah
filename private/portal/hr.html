@@ -3150,7 +3150,17 @@ const App = (() => {
   }
   function confirmSignOut() {
     closeGeneric();
-    Auth.logout();
+    if (typeof window.Auth !== 'undefined' && typeof window.Auth.logout === 'function') {
+      window.Auth.logout();
+    } else if (typeof Auth !== 'undefined' && typeof Auth.logout === 'function') {
+      Auth.logout();
+    } else {
+      ['havilah_token', 'havilah_user', 'token', 'session_token', 'wf_user', 'wf_user_name', 'wf_user_email'].forEach(k => {
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+      document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      window.location.href = '/login.html';
+    }
   }
 
   function startTrial() {

@@ -7,41 +7,64 @@ const PersonalWellnessLog = require('../models/PersonalWellnessLog');
 const { validateSession, requireConsent } = require('../middleware/auth');
 const hazardController = require('../controllers/hazardController');
 
-// Helper to compute core dimensions
+// Helper to compute core dimensions and clinical scales
 function computeDimensions(surveyType, answers) {
   let rawScore = 0;
   let normalized = 0;
   let dimLabel = 'work_fit';
+  let maxScore = 100;
+  let severityLabel = '';
 
-  if (surveyType === 'phq9' || surveyType === 'gad7') {
-    answers.forEach(v => rawScore += v);
+  const normType = (surveyType || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+  if (normType.includes('PHQ9')) {
+    answers.forEach(v => rawScore += (Number(v) || 0));
+    maxScore = 27;
     normalized = 100 - ((rawScore / 27) * 100);
-    dimLabel = surveyType === 'phq9' ? 'mood' : 'calm';
-  } else if (surveyType === 'pss10') {
+    dimLabel = 'mood';
+    severityLabel = rawScore >= 20 ? 'Severe Depression' : rawScore >= 15 ? 'Moderately Severe' : rawScore >= 10 ? 'Moderate Depression' : rawScore >= 5 ? 'Mild Depression' : 'Minimal';
+  } else if (normType.includes('GAD7')) {
+    answers.forEach(v => rawScore += (Number(v) || 0));
+    maxScore = 21;
+    normalized = 100 - ((rawScore / 21) * 100);
+    dimLabel = 'calm';
+    severityLabel = rawScore >= 15 ? 'Severe Anxiety' : rawScore >= 10 ? 'Moderate Anxiety' : rawScore >= 5 ? 'Mild Anxiety' : 'Minimal';
+  } else if (normType.includes('PSS10')) {
     const reverse = [3, 4, 6, 7];
     answers.forEach((v, i) => {
-      rawScore += reverse.includes(i) ? (4 - v) : v;
+      const num = Number(v) || 0;
+      rawScore += reverse.includes(i) ? (4 - num) : num;
     });
+    maxScore = 40;
     normalized = 100 - ((rawScore / 40) * 100);
     dimLabel = 'stress';
-  } else if (surveyType === 'fas10') {
+    severityLabel = rawScore >= 27 ? 'High Stress' : rawScore >= 14 ? 'Moderate Stress' : 'Low Stress';
+  } else if (normType.includes('FAS10')) {
     const reverse = [3, 9];
     answers.forEach((v, i) => {
-      rawScore += reverse.includes(i) ? (6 - v) : v;
+      const num = Number(v) || 0;
+      rawScore += reverse.includes(i) ? (6 - num) : num;
     });
+    maxScore = 50;
     normalized = 100 - (((rawScore - 10) / 40) * 100);
     dimLabel = 'energy';
-  } else if (surveyType.startsWith('copsoq')) {
-    answers.forEach(v => rawScore += v);
+    severityLabel = rawScore >= 35 ? 'Severe Fatigue' : rawScore >= 22 ? 'Moderate Fatigue' : 'Low Fatigue';
+  } else if (normType.includes('COPSOQ')) {
+    answers.forEach(v => rawScore += (Number(v) || 0));
+    maxScore = 100;
     normalized = answers.length > 0 ? (rawScore / answers.length) : 0;
     dimLabel = 'work_fit';
-  } else if (surveyType === 'checkin_slider') {
-    // If client submits the 7 scores directly, we don't compute normalized based on survey answers,
-    // we just use the scores. We'll handle this in the main route block below.
+    severityLabel = normalized >= 75 ? 'Optimal' : normalized >= 50 ? 'Moderate Risk Tier' : 'High Risk Tier';
+  } else {
+    answers.forEach(v => rawScore += (Number(v) || 0));
+    maxScore = 100;
+    normalized = answers.length > 0 ? (rawScore / answers.length) : 0;
+    dimLabel = 'work_fit';
+    severityLabel = normalized >= 75 ? 'Optimal' : normalized >= 50 ? 'Moderate Risk Tier' : 'High Risk Tier';
   }
 
   normalized = Math.max(0, Math.min(100, Math.round(normalized)));
-  return { dimLabel, normalized };
+  return { dimLabel, normalized, rawScore, maxScore, severityLabel };
 }
 
 // Ensure the user has consented before submitting check-ins
@@ -117,19 +140,22 @@ router.post('/daily-pulse', async (req, res, next) => {
       await user.save();
     }
 
+    const overallBalance = Math.round(
+      (profileScores.mood + profileScores.calm + profileScores.stress + profileScores.energy + profileScores.work_fit) / 5
+    );
+
     // 2. Log to PersonalWellnessLog
     await PersonalWellnessLog.create({
       user_id: userId,
       company_id: companyId,
       survey_type: 'daily_pulse',
+      composite_score: overallBalance,
+      overallIndex: overallBalance,
       dimension_scores: profileScores,
     });
 
     // 3. Dual-write to AnonHazardLog for department aggregate tracking (N >= 5 protected)
     const AnonHazardLog = require('../models/AnonHazardLog');
-    const overallBalance = Math.round(
-      (profileScores.mood + profileScores.calm + profileScores.stress + profileScores.energy + profileScores.work_fit) / 5
-    );
 
     const anonDoc = new AnonHazardLog({
       company_id: companyId,
@@ -273,20 +299,24 @@ router.post('/submit-checkin', async (req, res, next) => {
       };
       await hazardController.submitLog(mockReq, mockRes, next);
 
-      const { dimLabel, normalized } = computeDimensions(survey_type, answers);
+      const { dimLabel, normalized, rawScore, maxScore, severityLabel } = computeDimensions(survey_type, answers);
       user.baseline_profile[dimLabel] = normalized;
       user.baseline_profile.last_updated = new Date();
+      await user.save();
+
+      // Push to PersonalWellnessLog
+      await PersonalWellnessLog.create({
+        user_id: userId,
+        company_id: companyId,
+        survey_type,
+        composite_score: normalized,
+        overallIndex: normalized,
+        clinical_score: rawScore,
+        max_score: maxScore,
+        severity_label: severityLabel,
+        dimension_scores: user.baseline_profile
+      });
     }
-
-    await user.save();
-
-    // Push to PersonalWellnessLog
-    await PersonalWellnessLog.create({
-      user_id: userId,
-      company_id: companyId,
-      survey_type,
-      dimension_scores: user.baseline_profile
-    });
 
     res.json({
       success: true,
@@ -316,8 +346,9 @@ router.get('/dashboard-data', async (req, res, next) => {
     rawHistory.forEach(log => {
       const dateObj = log.submitted_at ? new Date(log.submitted_at) : new Date();
       const dateKey = dateObj.toISOString().split('T')[0];
-      const surveyType = log.survey_type || 'checkin_slider';
-      const isDaily = !surveyType || surveyType === 'checkin_slider' || surveyType === 'DAILY_PULSE' || surveyType === 'pulse';
+      const surveyType = log.survey_type || 'daily_pulse';
+      const normCheck = (surveyType || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const isDaily = !surveyType || normCheck === 'checkinslider' || normCheck === 'dailypulse' || normCheck === 'pulse';
 
       if (isDaily) {
         const dims = log.dimension_scores || {};
@@ -379,6 +410,14 @@ router.get('/dashboard-data', async (req, res, next) => {
           maxScore = maxScore || 50;
           if (clinicalScore === undefined) clinicalScore = Math.round((1 - (overallIndex / 100)) * 50);
           severityLabel = severityLabel || (clinicalScore >= 35 ? 'Severe Fatigue' : clinicalScore >= 22 ? 'Moderate Fatigue' : 'Low Fatigue');
+        } else if (normType.includes('COPSOQ')) {
+          maxScore = maxScore || 100;
+          if (clinicalScore === undefined) clinicalScore = overallIndex;
+          severityLabel = severityLabel || (overallIndex >= 75 ? 'Optimal' : overallIndex >= 50 ? 'Moderate Risk Tier' : 'High Risk Tier');
+        } else {
+          maxScore = maxScore || 100;
+          if (clinicalScore === undefined) clinicalScore = overallIndex;
+          severityLabel = severityLabel || (overallIndex >= 75 ? 'Optimal' : overallIndex >= 50 ? 'Moderate Risk Tier' : 'High Risk Tier');
         }
 
         dailyMap.set(dateKey + '_' + surveyType, {

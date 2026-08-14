@@ -28,44 +28,59 @@ async function sendMail({ to, subject, html, from }) {
  * @param {string} [opts.patientEmail] - Alias for email
  * @param {string} [opts.departmentName] - Human-readable department name
  * @param {string} [opts.department] - Alias for department name
- * @param {string} [opts.notes] - Intake topic / notes
- * @param {string} [opts.preferredTime] - Preferred contact time
+ * @param {string} [opts.topic] - Intake reason / consultation topic
+ * @param {string} [opts.preferredDate] - Preferred appointment date
+ * @param {string} [opts.preferredTime] - Preferred contact / appointment time
+ * @param {string} [opts.notes] - Additional optional notes
  * @param {string} [opts.to] - Override recipient (defaults to nanakwamedickson62@gmail.com)
  */
-async function sendClinicalDispatch({ referenceCode, patientName, patientContact, contactInfo, patientEmail, department, departmentName, notes, preferredTime, to }) {
+async function sendClinicalDispatch({ referenceCode, patientName, patientContact, contactInfo, patientEmail, department, departmentName, topic, preferredDate, preferredTime, notes, to }) {
   const recipient = to || process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com';
   const resolvedPatientName = patientName || 'Not provided';
   const resolvedContact = patientContact || contactInfo || patientEmail || 'Not provided';
   const resolvedDepartment = departmentName || department || 'General Staff';
-  const resolvedTime = preferredTime || 'As soon as available';
+  const resolvedTopic = topic || 'General Clinical Consultation Intake Request';
+  
+  let resolvedSchedule = 'As soon as available';
+  if (preferredDate && preferredTime && preferredTime !== 'As soon as available') {
+    resolvedSchedule = `${preferredDate} at ${preferredTime}`;
+  } else if (preferredDate) {
+    resolvedSchedule = `${preferredDate} (${preferredTime || 'Any time'})`;
+  } else if (preferredTime) {
+    resolvedSchedule = preferredTime;
+  }
+
   const timestamp = new Date().toISOString();
 
   const html = `
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f0f1a; color: #e0e0e0; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-      <div style="background: linear-gradient(135deg, #0d9488, #0f766e); padding: 24px 32px;">
-        <h1 style="margin: 0; color: #fff; font-size: 20px;">🏥 FZ Safety & Health - Clinical Referral Intake</h1>
-        <p style="margin: 4px 0 0; color: rgba(255,255,255,0.9); font-size: 13px;">Havilah Occupational Health Intake System</p>
-      </div>
-      <div style="padding: 24px 32px;">
-        <div style="background: rgba(13, 148, 136, 0.1); border-left: 4px solid #0d9488; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
-          <strong style="color: #2dd4bf; font-size: 14px;">Direct Patient Intake Request Received</strong>
-          <p style="margin: 4px 0 0; font-size: 12px; color: #9ca3af;">Please assign a practitioner to contact this patient via their preferred method.</p>
+    <div style="background-color: #000000; padding: 32px 12px; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #0a0a0e; color: #e2e8f0; border-radius: 12px; overflow: hidden; border: 1px solid #222228;">
+        <div style="background-color: #111116; border-bottom: 1px solid #222228; padding: 24px 32px;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 700;">🏥 FZ Safety & Health - Clinical Referral Intake</h1>
+          <p style="margin: 4px 0 0; color: #94a3b8; font-size: 13px;">Havilah Occupational Health Intake System</p>
         </div>
-        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-          <tr><td style="padding: 8px 0; color: #9ca3af; width: 160px; font-weight: 600;">Reference Code</td><td style="padding: 8px 0; font-weight: 700; color: #2dd4bf;">${referenceCode}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Patient Name</td><td style="padding: 8px 0; font-weight: 700; color: #ffffff;">${resolvedPatientName}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Contact Phone/Email</td><td style="padding: 8px 0; font-weight: 700; color: #38bdf8;">${resolvedContact}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Department</td><td style="padding: 8px 0; color: #e2e8f0;">${resolvedDepartment}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Preferred Time</td><td style="padding: 8px 0; color: #e2e8f0;">${resolvedTime}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af; font-weight: 600;">Submitted At</td><td style="padding: 8px 0; color: #9ca3af; font-size: 12px;">${timestamp}</td></tr>
-        </table>
-        ${notes ? `<div style="margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid #38bdf8;"><p style="margin: 0 0 4px; color: #9ca3af; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Intake Topic & Notes</p><p style="margin: 0; line-height: 1.6; color: #f1f5f9;">${notes}</p></div>` : ''}
-        <div style="margin-top: 24px; padding: 12px 16px; background: rgba(99,102,241,0.1); border-radius: 8px; font-size: 12px; color: #9ca3af;">
-          <strong>🔒 Employer Privacy Guarantee:</strong> This intake request is dispatched strictly to FZ Safety & Health. Employer/HR dashboards will NEVER receive this individual patient contact data.
+        <div style="padding: 24px 32px;">
+          <div style="background-color: #131318; border: 1px solid #222228; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px;">
+            <strong style="color: #2dd4bf; font-size: 14px; display: block; margin-bottom: 2px;">Direct Patient Intake Request Received</strong>
+            <p style="margin: 0; font-size: 12px; color: #94a3b8;">Please assign a practitioner to contact this patient via their preferred method.</p>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr><td style="padding: 9px 0; color: #94a3b8; width: 160px; font-weight: 600;">Reference Code</td><td style="padding: 9px 0; font-weight: 700; color: #2dd4bf; font-family: monospace; font-size: 15px;">${referenceCode}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Patient Name</td><td style="padding: 9px 0; font-weight: 700; color: #ffffff;">${resolvedPatientName}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Contact Phone/Email</td><td style="padding: 9px 0; font-weight: 700; color: #38bdf8;">${resolvedContact}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Department</td><td style="padding: 9px 0; color: #e2e8f0; font-weight: 600;">${resolvedDepartment}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Consultation Topic</td><td style="padding: 9px 0; color: #f8fafc; font-weight: 600;">${resolvedTopic}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Preferred Schedule</td><td style="padding: 9px 0; color: #e2e8f0;">${resolvedSchedule}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Submitted At</td><td style="padding: 9px 0; color: #94a3b8; font-size: 12px;">${timestamp}</td></tr>
+          </table>
+          ${notes ? `<div style="margin-top: 20px; padding: 16px; background-color: #131318; border: 1px solid #222228; border-radius: 8px;"><p style="margin: 0 0 6px; color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Additional Notes</p><p style="margin: 0; line-height: 1.6; color: #f1f5f9;">${notes}</p></div>` : ''}
+          <div style="margin-top: 24px; padding: 14px 18px; background-color: #131318; border: 1px solid #222228; border-radius: 8px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
+            <strong style="color: #cbd5e1;">🔒 Employer Privacy Guarantee:</strong> This intake request is dispatched strictly to FZ Safety & Health. Employer/HR dashboards will NEVER receive this individual patient contact data.
+          </div>
         </div>
-      </div>
-      <div style="padding: 16px 32px; background: rgba(255,255,255,0.03); font-size: 11px; color: #6b7280; text-align: center;">
-        FZ Safety & Health Helpline: ${CLINICAL_HOTLINE} &bull; Powered by Havilah Compliance Platform
+        <div style="padding: 16px 32px; background-color: #070709; border-top: 1px solid #1a1a1f; font-size: 11px; color: #64748b; text-align: center;">
+          FZ Safety & Health Helpline: ${CLINICAL_HOTLINE} &bull; Powered by Havilah Compliance Platform
+        </div>
       </div>
     </div>
   `;
@@ -90,27 +105,29 @@ async function sendInterventionAlert({ surveyType, severityBand, department, to 
   const timestamp = new Date().toISOString();
 
   const html = `
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f0f1a; color: #e0e0e0; border-radius: 12px; overflow: hidden;">
-      <div style="background: linear-gradient(135deg, #ef4444, #dc2626); padding: 24px 32px;">
-        <h1 style="margin: 0; color: #fff; font-size: 20px;">⚠️ High-Risk Intervention Alert</h1>
-        <p style="margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 13px;">Automated Hazard Detection - Immediate Review Required</p>
-      </div>
-      <div style="padding: 24px 32px;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding: 8px 0; color: #9ca3af; width: 140px;">Survey Type</td><td style="padding: 8px 0; font-weight: 600;">${(surveyType || '').toUpperCase()}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af;">Severity Band</td><td style="padding: 8px 0; color: #ef4444; font-weight: 600;">${(severityBand || '').toUpperCase()}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af;">Department</td><td style="padding: 8px 0;">${department || 'Anonymized'}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af;">Detected At</td><td style="padding: 8px 0;">${timestamp}</td></tr>
-        </table>
-        <div style="margin-top: 24px; padding: 12px 16px; background: rgba(239,68,68,0.1); border-radius: 8px; font-size: 12px; color: #fca5a5;">
-          <strong>⚠️ Action Required:</strong> An anonymous assessment submission has triggered a high-severity alert. Please review departmental risk indicators and consider initiating a targeted intervention protocol.
+    <div style="background-color: #000000; padding: 32px 12px; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #0a0a0e; color: #e2e8f0; border-radius: 12px; overflow: hidden; border: 1px solid #222228;">
+        <div style="background-color: #111116; border-bottom: 1px solid #222228; padding: 24px 32px;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 700;">⚠️ High-Risk Intervention Alert</h1>
+          <p style="margin: 4px 0 0; color: #f87171; font-size: 13px; font-weight: 600;">Automated Hazard Detection - Immediate Review Required</p>
         </div>
-        <div style="margin-top: 12px; padding: 12px 16px; background: rgba(99,102,241,0.1); border-radius: 8px; font-size: 12px; color: #9ca3af;">
-          <strong>Privacy Notice:</strong> No personally identifiable information is included. This alert contains only aggregate risk indicators.
+        <div style="padding: 24px 32px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr><td style="padding: 9px 0; color: #94a3b8; width: 140px; font-weight: 600;">Survey Type</td><td style="padding: 9px 0; font-weight: 700; color: #ffffff;">${(surveyType || '').toUpperCase()}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Severity Band</td><td style="padding: 9px 0; color: #ef4444; font-weight: 700;">${(severityBand || '').toUpperCase()}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Department</td><td style="padding: 9px 0; color: #e2e8f0;">${department || 'Anonymized'}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Detected At</td><td style="padding: 9px 0; color: #94a3b8; font-size: 12px;">${timestamp}</td></tr>
+          </table>
+          <div style="margin-top: 24px; padding: 14px 18px; background-color: #131318; border: 1px solid #222228; border-radius: 8px; font-size: 12px; color: #fca5a5; line-height: 1.5;">
+            <strong style="color: #ef4444;">⚠️ Action Required:</strong> An anonymous assessment submission has triggered a high-severity alert. Please review departmental risk indicators and consider initiating a targeted intervention protocol.
+          </div>
+          <div style="margin-top: 12px; padding: 14px 18px; background-color: #131318; border: 1px solid #222228; border-radius: 8px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
+            <strong style="color: #cbd5e1;">Privacy Notice:</strong> No personally identifiable information is included. This alert contains only aggregate risk indicators.
+          </div>
         </div>
-      </div>
-      <div style="padding: 16px 32px; background: rgba(255,255,255,0.03); font-size: 11px; color: #6b7280; text-align: center;">
-        Clinical Hotline: ${CLINICAL_HOTLINE} &bull; Generated by Havilah Compliance Engine
+        <div style="padding: 16px 32px; background-color: #070709; border-top: 1px solid #1a1a1f; font-size: 11px; color: #64748b; text-align: center;">
+          Clinical Hotline: ${CLINICAL_HOTLINE} &bull; Generated by Havilah Compliance Engine
+        </div>
       </div>
     </div>
   `;
@@ -126,42 +143,62 @@ async function sendInterventionAlert({ surveyType, severityBand, department, to 
  * Sends an anonymized whistleblower hazard escalation alert.
  * @param {object} opts
  * @param {string} opts.reportId - Anonymous report reference ID
- * @param {string} opts.category - Hazard category
+ * @param {string} opts.category - Hazard category code
+ * @param {string} [opts.description] - Hazard description / incident narrative
  * @param {string} opts.urgency - Urgency level
  * @param {string} [opts.companyName] - Company name for context
  * @param {string} [opts.to] - Override recipient
  */
-async function sendWhistleblowerAlert({ reportId, category, urgency, companyName, to }) {
+async function sendWhistleblowerAlert({ reportId, category, description, urgency, companyName, to }) {
   const recipient = to || CLINICAL_EMAIL;
   const timestamp = new Date().toISOString();
+
+  const categoryLabels = {
+    harassment: 'Harassment',
+    unsafe_conditions: 'Unsafe Working Conditions',
+    systemic_burnout: 'Systemic Burnout',
+    discrimination: 'Discrimination',
+    retaliation: 'Retaliation',
+    other: 'Other Workplace Hazard'
+  };
+  const resolvedCategory = categoryLabels[category] || (category || '').replace(/_/g, ' ');
 
   const urgencyColors = {
     critical: '#ef4444',
     urgent: '#f59e0b',
-    standard: '#6366f1'
+    standard: '#818cf8'
   };
   const color = urgencyColors[urgency] || urgencyColors.standard;
 
   const html = `
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f0f1a; color: #e0e0e0; border-radius: 12px; overflow: hidden;">
-      <div style="background: linear-gradient(135deg, ${color}, ${color}dd); padding: 24px 32px;">
-        <h1 style="margin: 0; color: #fff; font-size: 20px;">🛡️ Anonymous Hazard Escalation Report</h1>
-        <p style="margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 13px;">Whistleblower Protection - Confidential</p>
-      </div>
-      <div style="padding: 24px 32px;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding: 8px 0; color: #9ca3af; width: 140px;">Report ID</td><td style="padding: 8px 0; font-weight: 600; color: #a78bfa;">${reportId}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af;">Category</td><td style="padding: 8px 0; text-transform: capitalize;">${(category || '').replace(/_/g, ' ')}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af;">Urgency</td><td style="padding: 8px 0; color: ${color}; font-weight: 600; text-transform: uppercase;">${urgency}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af;">Organization</td><td style="padding: 8px 0;">${companyName || 'Confidential'}</td></tr>
-          <tr><td style="padding: 8px 0; color: #9ca3af;">Received At</td><td style="padding: 8px 0;">${timestamp}</td></tr>
-        </table>
-        <div style="margin-top: 24px; padding: 12px 16px; background: rgba(99,102,241,0.1); border-radius: 8px; font-size: 12px; color: #9ca3af;">
-          <strong>🔒 Anonymity Guarantee:</strong> This report was submitted through the Havilah Anonymous Vault. No IP addresses, user IDs, or identifying metadata have been stored. The submitter's identity is structurally unrecoverable.
+    <div style="background-color: #000000; padding: 32px 12px; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #0a0a0e; color: #e2e8f0; border-radius: 12px; overflow: hidden; border: 1px solid #222228;">
+        <div style="background-color: #111116; border-bottom: 1px solid #222228; padding: 24px 32px;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 700;">🛡️ Anonymous Hazard Escalation Report</h1>
+          <p style="margin: 4px 0 0; color: #94a3b8; font-size: 13px;">Whistleblower Protection - Confidential</p>
         </div>
-      </div>
-      <div style="padding: 16px 32px; background: rgba(255,255,255,0.03); font-size: 11px; color: #6b7280; text-align: center;">
-        Clinical Hotline: ${CLINICAL_HOTLINE} &bull; Havilah Whistleblower Protection System
+        <div style="padding: 24px 32px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr><td style="padding: 9px 0; color: #94a3b8; width: 140px; font-weight: 600;">Report ID</td><td style="padding: 9px 0; font-weight: 700; color: #a78bfa; font-family: monospace; font-size: 15px;">${reportId}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Category</td><td style="padding: 9px 0; font-weight: 700; color: #ffffff;">${resolvedCategory}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Urgency</td><td style="padding: 9px 0; color: ${color}; font-weight: 700; text-transform: uppercase;">${urgency}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Organization</td><td style="padding: 9px 0; color: #e2e8f0; font-weight: 600;">${companyName || 'Confidential'}</td></tr>
+            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Received At</td><td style="padding: 9px 0; color: #94a3b8; font-size: 12px;">${timestamp}</td></tr>
+          </table>
+          
+          <!-- Hazard Description Card (Clean Dark Card, No Colored Edge) -->
+          <div style="margin-top: 20px; padding: 16px; background-color: #131318; border: 1px solid #222228; border-radius: 8px;">
+            <p style="margin: 0 0 6px; color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Hazard Description & Incident Details</p>
+            <p style="margin: 0; line-height: 1.6; color: #f1f5f9; white-space: pre-wrap; font-size: 13.5px;">${description || 'No additional narrative provided.'}</p>
+          </div>
+
+          <div style="margin-top: 24px; padding: 14px 18px; background-color: #131318; border: 1px solid #222228; border-radius: 8px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
+            <strong style="color: #cbd5e1;">🔒 Anonymity Guarantee:</strong> This report was submitted through the Havilah Anonymous Vault. No IP addresses, user IDs, or identifying metadata have been stored. The submitter's identity is structurally unrecoverable.
+          </div>
+        </div>
+        <div style="padding: 16px 32px; background-color: #070709; border-top: 1px solid #1a1a1f; font-size: 11px; color: #64748b; text-align: center;">
+          Clinical Hotline: ${CLINICAL_HOTLINE} &bull; Havilah Whistleblower Protection System
+        </div>
       </div>
     </div>
   `;
@@ -177,42 +214,47 @@ async function sendWhistleblowerAlert({ reportId, category, urgency, companyName
  * Sends a welcome email containing HR credentials and activation codes to newly provisioned HR Admin.
  */
 async function sendHrWelcomeEmail({ to, companyName, password, loginUrl, activationUrl, activationCodes }) {
-  const codesListHtml = (activationCodes || []).map(c => `<li style="font-family: monospace; font-weight: bold; color: #10b981;">${c}</li>`).join('');
+  const codesListHtml = (activationCodes || []).map(c => `<li style="font-family: monospace; font-weight: bold; color: #34d399; margin-bottom: 4px;">${c}</li>`).join('');
 
   const html = `
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #f8fafc; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);">
-      <div style="background: linear-gradient(135deg, #0d9488, #0284c7); padding: 28px 32px;">
-        <h1 style="margin: 0; color: #ffffff; font-size: 22px;">🎉 Welcome to Havilah Platform</h1>
-        <p style="margin: 6px 0 0; color: rgba(255,255,255,0.85); font-size: 14px;">ISO 45003 Workplace Compliance & Psychosocial Risk Platform</p>
-      </div>
-      <div style="padding: 28px 32px;">
-        <p style="font-size: 15px; line-height: 1.6; color: #cbd5e1;">
-          Hello HR Administrator,<br><br>
-          A new tenant account has been provisioned for <strong>${companyName}</strong>. You can now log into your HR Compliance Portal to manage your organization's risk assessment cycles.
-        </p>
-
-        <!-- Login Credentials Card -->
-        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin: 20px 0;">
-          <h3 style="margin: 0 0 12px 0; color: #38bdf8; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">🔑 HR Admin Login Credentials</h3>
-          <p style="margin: 4px 0; font-size: 14px;"><strong>Portal URL:</strong> <a href="${loginUrl || 'http://localhost:3000/login.html'}" style="color: #38bdf8; text-decoration: underline;">${loginUrl || 'http://localhost:3000/login.html'}</a></p>
-          <p style="margin: 4px 0; font-size: 14px;"><strong>Email:</strong> <span style="font-family: monospace; font-weight: bold; color: #ffffff;">${to}</span></p>
-          <p style="margin: 4px 0; font-size: 14px;"><strong>Password:</strong> <span style="font-family: monospace; font-weight: bold; color: #ffffff;">${password}</span></p>
+    <div style="background-color: #000000; padding: 32px 12px; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #0a0a0e; color: #e2e8f0; border-radius: 12px; overflow: hidden; border: 1px solid #222228;">
+        <div style="background-color: #111116; border-bottom: 1px solid #222228; padding: 24px 32px;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 700;">🎉 Welcome to Havilah Platform</h1>
+          <p style="margin: 4px 0 0; color: #94a3b8; font-size: 13px;">ISO 45003 Workplace Compliance & Psychosocial Risk Platform</p>
         </div>
+        <div style="padding: 24px 32px;">
+          <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin-top: 0;">
+            Hello HR Administrator,<br><br>
+            A new tenant account has been provisioned for <strong>${companyName}</strong>. You can now log into your HR Compliance Portal to manage your organization's risk assessment cycles.
+          </p>
 
-        <!-- Activation Codes Card -->
-        ${activationCodes && activationCodes.length > 0 ? `
-        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin: 20px 0;">
-          <h3 style="margin: 0 0 12px 0; color: #34d399; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">🎫 Employee Activation Codes</h3>
-          <p style="margin: 4px 0 12px 0; font-size: 13px; color: #94a3b8;">Share these codes with participating employees to register at <a href="${activationUrl || 'http://localhost:3000/register.html'}" style="color: #38bdf8;">${activationUrl || 'http://localhost:3000/register.html'}</a>:</p>
-          <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-            ${codesListHtml}
-          </ul>
+          <!-- Login Credentials Card -->
+          <div style="background-color: #131318; border: 1px solid #222228; border-radius: 8px; padding: 18px; margin: 20px 0;">
+            <h3 style="margin: 0 0 12px 0; color: #38bdf8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">🔑 HR Admin Login Credentials</h3>
+            <p style="margin: 6px 0; font-size: 14px;"><strong>Portal URL:</strong> <a href="${loginUrl || 'http://localhost:3000/login.html'}" style="color: #38bdf8; text-decoration: underline;">${loginUrl || 'http://localhost:3000/login.html'}</a></p>
+            <p style="margin: 6px 0; font-size: 14px;"><strong>Email:</strong> <span style="font-family: monospace; font-weight: bold; color: #ffffff;">${to}</span></p>
+            <p style="margin: 6px 0; font-size: 14px;"><strong>Password:</strong> <span style="font-family: monospace; font-weight: bold; color: #ffffff;">${password}</span></p>
+          </div>
+
+          <!-- Activation Codes Card -->
+          ${activationCodes && activationCodes.length > 0 ? `
+          <div style="background-color: #131318; border: 1px solid #222228; border-radius: 8px; padding: 18px; margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0; color: #34d399; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">🎫 Employee Activation Codes</h3>
+            <p style="margin: 0 0 12px 0; font-size: 13px; color: #94a3b8;">Share these codes with participating employees to register at <a href="${activationUrl || 'http://localhost:3000/register.html'}" style="color: #38bdf8;">${activationUrl || 'http://localhost:3000/register.html'}</a>:</p>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+              ${codesListHtml}
+            </ul>
+          </div>
+          ` : ''}
+
+          <p style="font-size: 12px; color: #64748b; margin-top: 24px; margin-bottom: 0;">
+            For security, please log in and change your password upon your first access.
+          </p>
         </div>
-        ` : ''}
-
-        <p style="font-size: 12px; color: #64748b; margin-top: 24px;">
-          For security, please log in and change your password upon your first access.
-        </p>
+        <div style="padding: 16px 32px; background-color: #070709; border-top: 1px solid #1a1a1f; font-size: 11px; color: #64748b; text-align: center;">
+          Powered by Havilah Compliance Platform
+        </div>
       </div>
     </div>
   `;

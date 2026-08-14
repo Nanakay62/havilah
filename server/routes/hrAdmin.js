@@ -198,38 +198,6 @@ router.post('/generate-invite', async (req, res, next) => {
     const protocol = req.protocol || 'http';
     const magicLink = `${protocol}://${host}/register.html?invite=${generatedCode}`;
 
-    if (emailList.length > 0) {
-      const deptTitle = department.name.toLowerCase().endsWith('department') ? department.name : `${department.name} department`;
-      const { sendMail } = require('../utils/emailService');
-      await sendMail({
-        to: emailList,
-        subject: `🔒 Your Havilah Onboarding Invitation - ${department.name}`,
-        html: `
-          <div style="background-color: #000000; padding: 32px 12px; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;">
-            <div style="max-width: 520px; margin: 0 auto; background-color: #0a0a0e; color: #e2e8f0; border-radius: 12px; overflow: hidden; border: 1px solid #222228;">
-              <div style="background-color: #111116; border-bottom: 1px solid #222228; padding: 24px 28px;">
-                <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 700;">Join Your Team on Havilah</h2>
-                <p style="margin: 4px 0 0; color: #94a3b8; font-size: 13px;">ISO 45003 Workplace Compliance & Psychosocial Health</p>
-              </div>
-              <div style="padding: 24px 28px;">
-                <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin-top: 0;">You have been invited to join the <strong>${deptTitle}</strong>.</p>
-                <p style="font-size: 14px; line-height: 1.6; color: #94a3b8;">Use your single-click activation link below or enter code <strong style="color: #38bdf8; font-family: monospace;">${generatedCode}</strong> during registration:</p>
-                <div style="margin: 24px 0; text-align: center;">
-                  <a href="${magicLink}" style="background-color: #00B7C3; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; display: inline-block;">Activate Account</a>
-                </div>
-                <div style="background-color: #131318; border: 1px solid #222228; border-radius: 8px; padding: 12px 16px; margin-top: 20px;">
-                  <p style="margin: 0; font-size: 12px; color: #64748b; word-break: break-all;">Link: <a href="${magicLink}" style="color: #38bdf8; text-decoration: underline;">${magicLink}</a></p>
-                </div>
-              </div>
-              <div style="padding: 14px 28px; background-color: #070709; border-top: 1px solid #1a1a1f; font-size: 11px; color: #64748b; text-align: center;">
-                Powered by Havilah Compliance Platform
-              </div>
-            </div>
-          </div>
-        `
-      });
-    }
-
     const AuditLog = require('../models/AuditLog');
     await AuditLog.append({
       company_id,
@@ -239,6 +207,7 @@ router.post('/generate-invite', async (req, res, next) => {
       event_payload: { department_id: department.department_id, activation_code: generatedCode, emails_sent: emailList }
     }).catch(e => {});
 
+    // 1. Respond immediately to the client to eliminate any 504 gateway proxy timeouts
     res.status(201).json({
       success: true,
       code: generatedCode,
@@ -247,6 +216,46 @@ router.post('/generate-invite', async (req, res, next) => {
       emails_invited: emailList,
       expires_at: expiresAt
     });
+
+    // 2. Dispatch onboarding emails asynchronously in the background
+    if (emailList.length > 0) {
+      setImmediate(async () => {
+        try {
+          const deptTitle = department.name.toLowerCase().endsWith('department') ? department.name : `${department.name} department`;
+          const { sendMail } = require('../utils/emailService');
+          await sendMail({
+            to: emailList,
+            subject: `🔒 Your Havilah Onboarding Invitation - ${department.name}`,
+            html: `
+              <div style="background-color: #000000; padding: 32px 12px; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;">
+                <div style="max-width: 520px; margin: 0 auto; background-color: #0a0a0e; color: #e2e8f0; border-radius: 12px; overflow: hidden; border: 1px solid #222228;">
+                  <div style="background-color: #111116; border-bottom: 1px solid #222228; padding: 24px 28px;">
+                    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 700;">Join Your Team on Havilah</h2>
+                    <p style="margin: 4px 0 0; color: #94a3b8; font-size: 13px;">ISO 45003 Workplace Compliance & Psychosocial Health</p>
+                  </div>
+                  <div style="padding: 24px 28px;">
+                    <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin-top: 0;">You have been invited to join the <strong>${deptTitle}</strong>.</p>
+                    <p style="font-size: 14px; line-height: 1.6; color: #94a3b8;">Use your single-click activation link below or enter code <strong style="color: #38bdf8; font-family: monospace;">${generatedCode}</strong> during registration:</p>
+                    <div style="margin: 24px 0; text-align: center;">
+                      <a href="${magicLink}" style="background-color: #00B7C3; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; display: inline-block;">Activate Account</a>
+                    </div>
+                    <div style="background-color: #131318; border: 1px solid #222228; border-radius: 8px; padding: 12px 16px; margin-top: 20px;">
+                      <p style="margin: 0; font-size: 12px; color: #64748b; word-break: break-all;">Link: <a href="${magicLink}" style="color: #38bdf8; text-decoration: underline;">${magicLink}</a></p>
+                    </div>
+                  </div>
+                  <div style="padding: 14px 28px; background-color: #070709; border-top: 1px solid #1a1a1f; font-size: 11px; color: #64748b; text-align: center;">
+                    Powered by Havilah Compliance Platform
+                  </div>
+                </div>
+              </div>
+            `
+          });
+          console.log('[HR Invite] Background email dispatched successfully for department:', department.name);
+        } catch (mailErr) {
+          console.warn('[HR Invite] Background email dispatch error:', mailErr.message);
+        }
+      });
+    }
   } catch (err) {
     console.error('Failed to provision administrative invite code:', err);
     res.status(500).json({ error: 'Internal system error provisioning code.' });

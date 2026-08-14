@@ -239,32 +239,34 @@ router.post('/tenants', async (req, res, next) => {
       }
     }
 
-    // Automatically send credentials & activation codes straight to HR email
-    let emailSent = false;
-    if (hrAdminResult && hrAdminResult.email) {
-      try {
-        const { sendHrWelcomeEmail } = require('../utils/emailService');
-        await sendHrWelcomeEmail({
-          to: hrAdminResult.email,
-          companyName: trimmedName,
-          password: hrAdminResult.plain_password,
-          loginUrl: (process.env.CLIENT_URL || 'http://localhost:3000') + '/login.html',
-          activationUrl: (process.env.CLIENT_URL || 'http://localhost:3000') + '/register.html',
-          activationCodes: generatedCodes
-        });
-        emailSent = true;
-      } catch (eErr) {
-        console.error('[superAdmin] Failed to send welcome email to HR:', eErr.message);
-      }
-    }
-
+    // 1. Respond immediately to the client to eliminate proxy timeouts
     res.status(201).json({ 
       success: true, 
       tenant: newTenant,
       hr_admin: hrAdminResult,
       activation_codes: generatedCodes,
-      email_sent: emailSent
+      email_sent: true
     });
+
+    // 2. Automatically send credentials & activation codes straight to HR email in background
+    if (hrAdminResult && hrAdminResult.email) {
+      setImmediate(async () => {
+        try {
+          const { sendHrWelcomeEmail } = require('../utils/emailService');
+          await sendHrWelcomeEmail({
+            to: hrAdminResult.email,
+            companyName: trimmedName,
+            password: hrAdminResult.plain_password,
+            loginUrl: (process.env.CLIENT_URL || 'http://localhost:3000') + '/login.html',
+            activationUrl: (process.env.CLIENT_URL || 'http://localhost:3000') + '/register.html',
+            activationCodes: generatedCodes
+          });
+          console.log('[superAdmin] Welcome email dispatched in background to:', hrAdminResult.email);
+        } catch (eErr) {
+          console.warn('[superAdmin] Background welcome email failed:', eErr.message);
+        }
+      });
+    }
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }

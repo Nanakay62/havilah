@@ -1,5 +1,10 @@
 'use strict';
 
+const dns = require('dns');
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
 if (process.env.NODE_ENV !== 'production') {
   try {
     require('dotenv').config();

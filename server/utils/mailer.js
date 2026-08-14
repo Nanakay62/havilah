@@ -1,13 +1,25 @@
+const dns = require('dns');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-// Reusable Nodemailer transporter backed by Gmail SMTP
+// Ensure Node.js resolves IPv4 first to prevent ENETUNREACH errors on cloud container networks
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
+// Reusable Nodemailer transporter backed by Gmail SMTP with forced IPv4
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  family: 4, // Force IPv4 to eliminate IPv6 ENETUNREACH errors
   auth: {
     user: process.env.GMAIL_USER || 'nanakwamedickson62@gmail.com',
     pass: (process.env.GMAIL_APP_PASSWORD || 'kyck buvc yrcq aqjb').replace(/\s+/g, ''),
   },
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000,
 });
 
 /**

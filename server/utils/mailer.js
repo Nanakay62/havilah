@@ -13,11 +13,12 @@ function lookupIPv4(hostname, options, callback) {
     callback = options;
     options = {};
   }
-  dns.resolve4(hostname, (err, addresses) => {
-    if (err || !addresses || addresses.length === 0) {
-      return dns.lookup(hostname, { ...options, family: 4 }, callback);
+  dns.lookup(hostname, { ...options, family: 4 }, (err, address, family) => {
+    if (err) return callback(err);
+    if (options && options.all) {
+      return callback(null, [{ address, family: 4 }]);
     }
-    callback(null, addresses[0], 4);
+    callback(null, address, 4);
   });
 }
 
@@ -34,7 +35,6 @@ const transporter = nodemailer.createTransport({
   secure: isSecure,
   requireTLS: !isSecure,
   lookup: lookupIPv4,
-  family: 4, // Force IPv4
   auth: {
     user: smtpUser,
     pass: smtpPass,
@@ -55,7 +55,6 @@ const fallbackTransporter = nodemailer.createTransport({
   secure: configuredPort === 587,
   requireTLS: configuredPort !== 587,
   lookup: lookupIPv4,
-  family: 4,
   auth: {
     user: smtpUser,
     pass: smtpPass,
@@ -70,35 +69,53 @@ const fallbackTransporter = nodemailer.createTransport({
 });
 
 /**
- * Universal email delivery helper with automatic retry and dual-port fallback
+ * Universal email delivery helper with automatic retry, dual-port fallback, and individual recipient addressing
  * @param {Object} options - { to, subject, html, from }
  */
 async function sendEmail({ to, subject, html, from }) {
-  const recipientList = Array.isArray(to) ? to.join(', ') : to;
-  const sender = from || `"Havilah Health" <${smtpUser}>`;
+  const recipients = (Array.isArray(to) ? to : [to])
+    .flatMap(item => typeof item === 'string' ? item.split(/[\s,;]+/) : item)
+    .map(e => (typeof e === 'string' ? e.trim() : ''))
+    .filter(e => e && e.includes('@'));
 
-  const mailOptions = {
-    from: sender,
-    to: recipientList,
-    subject,
-    html,
-  };
+  if (recipients.length === 0) {
+    return { success: false, error: 'No valid recipient email addresses provided.' };
+  }
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✉️ Email successfully delivered to ${recipientList} (Message ID: ${info.messageId})`);
-    return { success: true, messageId: info.messageId };
-  } catch (primaryErr) {
-    console.warn(`[Mailer] Primary dispatch attempt on port ${configuredPort} failed (${primaryErr.message}). Trying fallback transport...`);
+  const sender = from || `"Havilah Compliance" <${smtpUser}>`;
+  const results = [];
+
+  for (const recipient of recipients) {
+    const mailOptions = {
+      from: sender,
+      to: recipient,
+      subject,
+      html,
+    };
+
     try {
-      const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
-      console.log(`✉️ Email delivered via fallback transport to ${recipientList} (Message ID: ${fallbackInfo.messageId})`);
-      return { success: true, messageId: fallbackInfo.messageId };
-    } catch (fallbackErr) {
-      console.error(`❌ Email Delivery Error (${to}):`, fallbackErr.message || fallbackErr);
-      return { success: false, error: fallbackErr.message || fallbackErr };
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✉️ Email successfully delivered to ${recipient} (Message ID: ${info.messageId})`);
+      results.push({ recipient, success: true, messageId: info.messageId });
+    } catch (primaryErr) {
+      console.warn(`[Mailer] Primary dispatch to ${recipient} failed (${primaryErr.message}). Trying fallback transport...`);
+      try {
+        const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
+        console.log(`✉️ Email delivered via fallback transport to ${recipient} (Message ID: ${fallbackInfo.messageId})`);
+        results.push({ recipient, success: true, messageId: fallbackInfo.messageId });
+      } catch (fallbackErr) {
+        console.error(`❌ Email Delivery Error (${recipient}):`, fallbackErr.message || fallbackErr);
+        results.push({ recipient, success: false, error: fallbackErr.message || fallbackErr });
+      }
     }
   }
+
+  const allSuccessful = results.every(r => r.success);
+  return {
+    success: allSuccessful,
+    results,
+    messageId: results[0]?.messageId
+  };
 }
 
 module.exports = { sendEmail, transporter };

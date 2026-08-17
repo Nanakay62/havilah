@@ -8,3 +8,5 @@ build/
 coverage/
 .DS_Store
 scratch/
+server/scripts/
+

@@ -328,7 +328,7 @@ router.get('/telemetry', async (req, res, next) => {
     res.json({
       success: true,
       telemetry: {
-        email_gateway: { status: 'Operational', provider: 'Nodemailer / Gmail SMTP', magic_links_today: 48, bounce_rate: '0.0%' },
+        email_gateway: { status: 'Operational', provider: 'Brevo Transactional Email API', magic_links_today: 48, bounce_rate: '0.0%' },
         database: { status: 'Healthy', connection_state: dbState, active_sockets: 8 },
         cron_scheduler: { status: 'Active', midnight_lock_checks: 'Verified', daily_pulse_reset: 'Operational' },
         anonymity_engine: { threshold: 5, suppressed_queries: 14, status: 'Active (N >= 5)' }

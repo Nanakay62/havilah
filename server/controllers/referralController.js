@@ -116,10 +116,10 @@ router.post(
         });
       }
 
-      // 1. Retrieve the designated clinical intake email (nanakwamedickson62@gmail.com)
+      // 1. Retrieve the designated clinical intake email (clarke.edith@gmail.com)
       const targetEmail =
         process.env.CLINICAL_INTAKE_EMAIL ||
-        'nanakwamedickson62@gmail.com';
+        'clarke.edith@gmail.com';
 
       // 2. Generate anonymized reference code
       const referenceCode = 'REF-' + uuidv4().slice(0, 6).toUpperCase();

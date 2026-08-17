@@ -2,12 +2,12 @@
 
 const { sendEmail } = require('./mailer');
 
-const CLINICAL_EMAIL = process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'nanakwamedickson62@gmail.com';
+const CLINICAL_EMAIL = process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'clarke.edith@gmail.com';
 const CLINICAL_HOTLINE = process.env.DEFAULT_CLINICAL_HOTLINE || '0551022714';
-const NOTIFICATION_RECIPIENT = process.env.DEFAULT_NOTIFICATION_RECIPIENT || 'nanakwamedickson62@gmail.com';
+const NOTIFICATION_RECIPIENT = process.env.DEFAULT_NOTIFICATION_RECIPIENT || 'clarke.edith@gmail.com';
 
 /**
- * Sends email using Nodemailer (Gmail SMTP).
+ * Sends email using Brevo Transactional Email REST API.
  * @param {object} options
  * @param {string|string[]} options.to - Recipient email or array of emails
  * @param {string} options.subject - Email subject line
@@ -32,10 +32,10 @@ async function sendMail({ to, subject, html, from }) {
  * @param {string} [opts.preferredDate] - Preferred appointment date
  * @param {string} [opts.preferredTime] - Preferred contact / appointment time
  * @param {string} [opts.notes] - Additional optional notes
- * @param {string} [opts.to] - Override recipient (defaults to nanakwamedickson62@gmail.com)
+ * @param {string} [opts.to] - Override recipient (defaults to clarke.edith@gmail.com)
  */
 async function sendClinicalDispatch({ referenceCode, patientName, patientContact, contactInfo, patientEmail, department, departmentName, topic, preferredDate, preferredTime, notes, to }) {
-  const recipient = to || process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com';
+  const recipient = to || process.env.CLINICAL_INTAKE_EMAIL || 'clarke.edith@gmail.com';
   const resolvedPatientName = patientName || 'Not provided';
   const resolvedContact = patientContact || contactInfo || patientEmail || 'Not provided';
   const resolvedDepartment = departmentName || department || 'General Staff';

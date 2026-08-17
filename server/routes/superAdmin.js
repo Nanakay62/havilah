@@ -248,6 +248,26 @@ router.post('/tenants', async (req, res, next) => {
       email_sent: true
     });
 
+    // Resolve client base URL dynamically from request headers or production fallback
+    const clientBaseUrl = (() => {
+      if (process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost')) {
+        return process.env.CLIENT_URL.replace(/\/+$/, '');
+      }
+      if (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost')) {
+        return process.env.FRONTEND_URL.replace(/\/+$/, '');
+      }
+      const origin = req.get('origin') || req.get('referer');
+      if (origin && !origin.includes('localhost')) {
+        try { return new URL(origin).origin; } catch (e) {}
+      }
+      const fwdHost = req.get('x-forwarded-host');
+      if (fwdHost && !fwdHost.includes('onrender.com') && !fwdHost.includes('localhost')) {
+        const proto = req.get('x-forwarded-proto') || 'https';
+        return `${proto}://${fwdHost}`;
+      }
+      return 'https://havilahss.netlify.app';
+    })();
+
     // 2. Automatically send credentials & activation codes straight to HR email in background
     if (hrAdminResult && hrAdminResult.email) {
       setImmediate(async () => {
@@ -257,8 +277,8 @@ router.post('/tenants', async (req, res, next) => {
             to: hrAdminResult.email,
             companyName: trimmedName,
             password: hrAdminResult.plain_password,
-            loginUrl: (process.env.CLIENT_URL || 'http://localhost:3000') + '/login.html',
-            activationUrl: (process.env.CLIENT_URL || 'http://localhost:3000') + '/register.html',
+            loginUrl: `${clientBaseUrl}/login.html`,
+            activationUrl: `${clientBaseUrl}/register.html`,
             activationCodes: generatedCodes
           });
           console.log('[superAdmin] Welcome email dispatched in background to:', hrAdminResult.email);

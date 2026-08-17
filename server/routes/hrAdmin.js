@@ -194,9 +194,27 @@ router.post('/generate-invite', async (req, res, next) => {
     });
     await newInvitation.save();
 
-    const host = req.get('host') || 'localhost:3000';
-    const protocol = req.protocol || 'http';
-    const magicLink = `${protocol}://${host}/register.html?invite=${generatedCode}`;
+    // Resolve client base URL dynamically from request headers or production fallback
+    const clientBaseUrl = (() => {
+      if (process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost')) {
+        return process.env.CLIENT_URL.replace(/\/+$/, '');
+      }
+      if (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost')) {
+        return process.env.FRONTEND_URL.replace(/\/+$/, '');
+      }
+      const origin = req.get('origin') || req.get('referer');
+      if (origin && !origin.includes('localhost')) {
+        try { return new URL(origin).origin; } catch (e) {}
+      }
+      const fwdHost = req.get('x-forwarded-host');
+      if (fwdHost && !fwdHost.includes('onrender.com') && !fwdHost.includes('localhost')) {
+        const proto = req.get('x-forwarded-proto') || 'https';
+        return `${proto}://${fwdHost}`;
+      }
+      return 'https://havilahss.netlify.app';
+    })();
+
+    const magicLink = `${clientBaseUrl}/register.html?invite=${generatedCode}`;
 
     const AuditLog = require('../models/AuditLog');
     await AuditLog.append({

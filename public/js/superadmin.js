@@ -598,7 +598,7 @@ async function submitResetHrPassword() {
       closeResetHrModal();
       showCustomAlert(
         '🔑 HR Password Updated',
-        `${data.message}\n\nHR Email: ${data.email}\nNew Password: ${data.new_password}\n\nLogin URL: http://localhost:3000/login.html`,
+        `${data.message}\n\nHR Email: ${data.email}\nNew Password: ${data.new_password}\n\nLogin URL: ${window.location.origin}/login.html`,
         'success'
       );
     } else {
@@ -646,7 +646,7 @@ async function submitGenerateCodes() {
       const codeList = data.codes.join('\n');
       showCustomAlert(
         '🎫 Activation Codes Generated',
-        `Generated ${data.codes.length} new activation codes for ${data.company_name}:\n\n${codeList}\n\nActivation URL: http://localhost:3000/register.html`,
+        `Generated ${data.codes.length} new activation codes for ${data.company_name}:\n\n${codeList}\n\nActivation URL: ${window.location.origin}/register.html`,
         'success'
       );
     } else {
@@ -951,6 +951,18 @@ function openProvisionSuccessModal(data) {
   const hrPwdEl = document.getElementById('succHrPassword');
   if (hrPwdEl) hrPwdEl.textContent = hr ? (hr.plain_password || '********') : 'None';
 
+  const loginLink = document.getElementById('succLoginUrlLink');
+  if (loginLink) {
+    loginLink.href = `${window.location.origin}/login.html`;
+    loginLink.textContent = `${window.location.origin}/login.html`;
+  }
+
+  const actLink = document.getElementById('succActivationUrlLink');
+  if (actLink) {
+    actLink.href = `${window.location.origin}/register.html`;
+    actLink.textContent = `${window.location.origin}/register.html`;
+  }
+
   const container = document.getElementById('succCodesContainer');
   if (container) {
     container.innerHTML = '';
@@ -980,14 +992,14 @@ function closeProvisionSuccessModal() {
 function copyHrCredentials() {
   if (!currentProvisionData || !currentProvisionData.hr_admin) return;
   const hr = currentProvisionData.hr_admin;
-  const text = `Havilah HR Admin Login Credentials:\nLogin URL: http://localhost:3000/login.html\nEmail: ${hr.email}\nPassword: ${hr.plain_password}`;
+  const text = `Havilah HR Admin Login Credentials:\nLogin URL: ${window.location.origin}/login.html\nEmail: ${hr.email}\nPassword: ${hr.plain_password}`;
   copyToClipboard(text, 'HR Login Credentials copied!');
 }
 
 function copyAllActivationCodes() {
   if (!currentProvisionData || !currentProvisionData.activation_codes) return;
   const codes = currentProvisionData.activation_codes;
-  const text = `Employee Activation URL: http://localhost:3000/register.html\nActivation Codes:\n${codes.join('\n')}`;
+  const text = `Employee Activation URL: ${window.location.origin}/register.html\nActivation Codes:\n${codes.join('\n')}`;
   copyToClipboard(text, 'All Activation Codes copied!');
 }
 

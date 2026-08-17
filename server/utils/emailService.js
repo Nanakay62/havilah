@@ -232,7 +232,7 @@ async function sendHrWelcomeEmail({ to, companyName, password, loginUrl, activat
           <!-- Login Credentials Card -->
           <div style="background-color: #131318; border: 1px solid #222228; border-radius: 8px; padding: 18px; margin: 20px 0;">
             <h3 style="margin: 0 0 12px 0; color: #38bdf8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">🔑 HR Admin Login Credentials</h3>
-            <p style="margin: 6px 0; font-size: 14px;"><strong>Portal URL:</strong> <a href="${loginUrl || 'http://localhost:3000/login.html'}" style="color: #38bdf8; text-decoration: underline;">${loginUrl || 'http://localhost:3000/login.html'}</a></p>
+            <p style="margin: 6px 0; font-size: 14px;"><strong>Portal URL:</strong> <a href="${loginUrl || 'https://havilahss.netlify.app/login.html'}" style="color: #38bdf8; text-decoration: underline;">${loginUrl || 'https://havilahss.netlify.app/login.html'}</a></p>
             <p style="margin: 6px 0; font-size: 14px;"><strong>Email:</strong> <span style="font-family: monospace; font-weight: bold; color: #ffffff;">${to}</span></p>
             <p style="margin: 6px 0; font-size: 14px;"><strong>Password:</strong> <span style="font-family: monospace; font-weight: bold; color: #ffffff;">${password}</span></p>
           </div>
@@ -241,7 +241,7 @@ async function sendHrWelcomeEmail({ to, companyName, password, loginUrl, activat
           ${activationCodes && activationCodes.length > 0 ? `
           <div style="background-color: #131318; border: 1px solid #222228; border-radius: 8px; padding: 18px; margin: 20px 0;">
             <h3 style="margin: 0 0 10px 0; color: #34d399; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">🎫 Employee Activation Codes</h3>
-            <p style="margin: 0 0 12px 0; font-size: 13px; color: #94a3b8;">Share these codes with participating employees to register at <a href="${activationUrl || 'http://localhost:3000/register.html'}" style="color: #38bdf8;">${activationUrl || 'http://localhost:3000/register.html'}</a>:</p>
+            <p style="margin: 0 0 12px 0; font-size: 13px; color: #94a3b8;">Share these codes with participating employees to register at <a href="${activationUrl || 'https://havilahss.netlify.app/register.html'}" style="color: #38bdf8;">${activationUrl || 'https://havilahss.netlify.app/register.html'}</a>:</p>
             <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
               ${codesListHtml}
             </ul>

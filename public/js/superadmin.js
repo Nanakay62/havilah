@@ -1126,11 +1126,13 @@ let globalStaleReferralsList = [];
 let globalTenantsList = [];
 
 async function loadAssessorsTab() {
-  await Promise.all([
-    loadSuperadminAssessors(),
-    loadTenantAssessorAssignments(),
-    loadSuperadminStaleReferrals(),
-  ]);
+  try {
+    await loadSuperadminAssessors();
+    await loadTenantAssessorAssignments();
+    await loadSuperadminStaleReferrals();
+  } catch (e) {
+    console.error('Error in loadAssessorsTab:', e);
+  }
 }
 
 async function loadSuperadminAssessors() {
@@ -1145,6 +1147,9 @@ async function loadSuperadminAssessors() {
     if (data.success) {
       globalAssessorsList = data.assessors || [];
       renderAssessorsTable(globalAssessorsList);
+      if (globalTenantsList && globalTenantsList.length > 0) {
+        renderTenantAssessorTable(globalTenantsList);
+      }
     }
   } catch (err) {
     console.error('Error fetching assessors:', err);

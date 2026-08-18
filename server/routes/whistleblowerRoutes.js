@@ -75,7 +75,7 @@ router.post('/submit', validateSession, async (req, res, next) => {
     });
 
     // 3. Dispatch anonymized alert to designated whistleblower email asynchronously in background
-    const whistleblowerTargetEmail = process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || 'clarke.edith@gmail.com';
+    const whistleblowerTargetEmail = process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || 'nanakwamedickson62@gmail.com';
     if (sendWhistleblowerAlert) {
       setImmediate(async () => {
         try {

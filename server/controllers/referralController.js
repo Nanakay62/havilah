@@ -158,7 +158,7 @@ router.post(
       setImmediate(async () => {
         try {
           const assessor = await Assessor.findById(tenant.activeAssessorId).lean();
-          const targetEmail = assessor?.email || process.env.CLINICAL_INTAKE_EMAIL || 'clarke.edith@gmail.com';
+          const targetEmail = assessor?.email || process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com';
 
           const result = await sendClinicalDispatch({
             referenceCode,

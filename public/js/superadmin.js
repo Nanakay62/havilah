@@ -28,6 +28,10 @@ function switchTab(tabId) {
   document.querySelectorAll('.page-view').forEach(el => el.classList.remove('active'));
   const activeView = document.getElementById(`view-${tabId}`);
   if (activeView) activeView.classList.add('active');
+
+  if (tabId === 'assessors') {
+    loadAssessorsTab();
+  }
 }
 
 async function fetchStats() {
@@ -1112,3 +1116,363 @@ async function submitExtendAccess() {
     if (btn) { btn.disabled = false; btn.textContent = 'Extend Access'; }
   }
 }
+
+/* =========================================================================
+ * 11. Medical Assessors & Stale Referral Reassignment Hub
+ * ========================================================================= */
+
+let globalAssessorsList = [];
+let globalStaleReferralsList = [];
+let globalTenantsList = [];
+
+async function loadAssessorsTab() {
+  await Promise.all([
+    loadSuperadminAssessors(),
+    loadTenantAssessorAssignments(),
+    loadSuperadminStaleReferrals(),
+  ]);
+}
+
+async function loadSuperadminAssessors() {
+  const tbody = document.getElementById('assessors-table-body');
+  if (!tbody) return;
+
+  try {
+    const res = await fetch('/api/v1/superadmin/assessors', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (data.success) {
+      globalAssessorsList = data.assessors || [];
+      renderAssessorsTable(globalAssessorsList);
+    }
+  } catch (err) {
+    console.error('Error fetching assessors:', err);
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#f87171;">Failed to load assessors.</td></tr>';
+  }
+}
+
+function renderAssessorsTable(assessors) {
+  const tbody = document.getElementById('assessors-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!assessors || assessors.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-2);">No medical assessors registered yet. Click "Provision Medical Assessor" above.</td></tr>';
+    return;
+  }
+
+  assessors.forEach(a => {
+    const tr = document.createElement('tr');
+    const statusBadge = a.active
+      ? '<span style="background:rgba(16,185,129,0.15); color:#34d399; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">Active</span>'
+      : '<span style="background:rgba(239,68,68,0.15); color:#f87171; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">Inactive</span>';
+
+    const dateStr = a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '—';
+
+    tr.innerHTML = `
+      <td style="font-weight:700; color:#fff;">${a.name}</td>
+      <td style="font-family:monospace; color:#38bdf8; font-size:12px;">${a.email}</td>
+      <td>${a.organization || 'Independent Practice'}</td>
+      <td>${statusBadge}</td>
+      <td style="color:var(--text-2); font-size:12px;">${dateStr}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function loadTenantAssessorAssignments() {
+  const tbody = document.getElementById('tenant-assessor-table-body');
+  if (!tbody) return;
+
+  try {
+    const res = await fetch('/api/v1/superadmin/tenants', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (data.success) {
+      globalTenantsList = data.tenants || [];
+      renderTenantAssessorTable(globalTenantsList);
+    }
+  } catch (err) {
+    console.error('Error fetching tenant assignments:', err);
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#f87171;">Failed to load tenant assignments.</td></tr>';
+  }
+}
+
+function renderTenantAssessorTable(tenants) {
+  const tbody = document.getElementById('tenant-assessor-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!tenants || tenants.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-2);">No tenants provisioned.</td></tr>';
+    return;
+  }
+
+  tenants.forEach(t => {
+    const tr = document.createElement('tr');
+    const activeAssessor = t.activeAssessorId;
+    const currentAssessorName = (typeof activeAssessor === 'object' && activeAssessor)
+      ? `${activeAssessor.name} (${activeAssessor.organization || activeAssessor.email})`
+      : '<span style="color:#f59e0b; font-weight:600;">⚠️ Unassigned</span>';
+
+    // Build select options for available assessors
+    const currentAssessorId = (typeof activeAssessor === 'object' && activeAssessor)
+      ? activeAssessor._id
+      : (activeAssessor || '');
+
+    let selectOptions = '<option value="">-- No Assessor (Unassigned) --</option>';
+    globalAssessorsList.forEach(a => {
+      const isSelected = String(a._id) === String(currentAssessorId) ? 'selected' : '';
+      selectOptions += `<option value="${a._id}" ${isSelected}>${a.name} (${a.organization || a.email})</option>`;
+    });
+
+    tr.innerHTML = `
+      <td style="font-weight:700; color:#fff;">${t.company_name}</td>
+      <td style="font-family:monospace; font-size:12px; color:#94a3b8;">${t.slug || t.company_id}</td>
+      <td>${currentAssessorName}</td>
+      <td>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <select id="tenant-assessor-select-${t.company_id}" style="padding:6px 10px; background:#1e293b; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:12px;">
+            ${selectOptions}
+          </select>
+          <button class="btn-action-primary" style="padding:5px 10px; font-size:11px;" onclick="saveTenantAssessor('${t.company_id}')">
+            Save Route
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function saveTenantAssessor(companyId) {
+  const select = document.getElementById(`tenant-assessor-select-${companyId}`);
+  if (!select) return;
+  const assessorId = select.value || null;
+
+  try {
+    const res = await fetch(`/api/v1/superadmin/tenants/${companyId}/assessor`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ assessorId }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Assessor Updated', 'Active medical assessor updated for tenant.', 'success');
+      loadTenantAssessorAssignments();
+    } else {
+      showToast('Error', data.error || 'Failed to update assessor.', 'error');
+    }
+  } catch (err) {
+    showToast('Error', 'Could not reach server.', 'error');
+  }
+}
+
+async function loadSuperadminStaleReferrals() {
+  const tbody = document.getElementById('stale-referrals-table-body');
+  if (!tbody) return;
+
+  try {
+    const res = await fetch('/api/v1/superadmin/stale-referrals', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (data.success) {
+      globalStaleReferralsList = data.data || [];
+      renderStaleReferralsTable(globalStaleReferralsList);
+    }
+  } catch (err) {
+    console.error('Error fetching stale referrals:', err);
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#f87171;">Failed to load stale referrals.</td></tr>';
+  }
+}
+
+function renderStaleReferralsTable(staleList) {
+  const tbody = document.getElementById('stale-referrals-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (!staleList || staleList.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:#34d399; font-weight:600;">✅ No stale referrals! All clinical referrals are within SLA (< 48 hrs).</td></tr>';
+    return;
+  }
+
+  staleList.forEach(r => {
+    const tr = document.createElement('tr');
+    const companyName = r.tenantId?.company_name || 'Organization';
+    const assessorName = r.assignedAssessorId?.name
+      ? `${r.assignedAssessorId.name} (${r.assignedAssessorId.organization || ''})`
+      : 'Unassigned';
+
+    let reassignHistory = '—';
+    if (r.reassignedFrom) {
+      const fromName = r.reassignedFrom.name || 'Previous Assessor';
+      const when = r.reassignedAt ? new Date(r.reassignedAt).toLocaleDateString() : '';
+      reassignHistory = `<span style="font-size:11px; color:#f59e0b;">From ${fromName} (${when})</span>`;
+    }
+
+    tr.innerHTML = `
+      <td style="font-family:monospace; font-weight:700; color:#2dd4bf;">${r.referenceCode}</td>
+      <td style="font-weight:600;">${companyName}</td>
+      <td style="color:#f87171; font-weight:600;">${assessorName}</td>
+      <td>${r.departmentName || 'General'}</td>
+      <td style="font-size:12px; color:#94a3b8;">${r.preferredTime || 'As soon as available'}</td>
+      <td>
+        <span style="background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid #ef4444; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">
+          ⏱️ ${r.hoursPending || 48}+ hrs
+        </span>
+      </td>
+      <td>${reassignHistory}</td>
+      <td>
+        <button class="btn-action-primary" style="padding:4px 10px; font-size:12px; background:linear-gradient(135deg,#ef4444,#dc2626);" onclick="openReassignModal('${r._id}')">
+          Reassign Case
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function openCreateAssessorModal() {
+  const modal = document.getElementById('createAssessorModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeCreateAssessorModal() {
+  const modal = document.getElementById('createAssessorModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function submitCreateAssessor(event) {
+  event.preventDefault();
+  const name = document.getElementById('newAssessorName').value.trim();
+  const email = document.getElementById('newAssessorEmail').value.trim();
+  const organization = document.getElementById('newAssessorOrg').value.trim();
+  const password = document.getElementById('newAssessorPassword').value;
+  const btn = document.getElementById('createAssessorBtn');
+
+  btn.disabled = true;
+  btn.textContent = 'Provisioning...';
+
+  try {
+    const res = await fetch('/api/v1/superadmin/assessors', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, email, organization, password }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Assessor Created', `Assessor "${data.assessor.name}" provisioned successfully.`, 'success');
+      closeCreateAssessorModal();
+      document.getElementById('newAssessorName').value = '';
+      document.getElementById('newAssessorEmail').value = '';
+      document.getElementById('newAssessorOrg').value = '';
+      document.getElementById('newAssessorPassword').value = '';
+      loadSuperadminAssessors();
+    } else {
+      showToast('Error', data.error || 'Failed to create assessor.', 'error');
+    }
+  } catch (err) {
+    showToast('Error', 'Could not reach server.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Provision Assessor';
+  }
+}
+
+function openReassignModal(referralId) {
+  const item = globalStaleReferralsList.find(r => r._id === referralId);
+  if (!item) return;
+
+  document.getElementById('reassignReferralId').value = item._id;
+  document.getElementById('reassignModalRefCode').textContent = item.referenceCode;
+  document.getElementById('reassignModalCompany').textContent = item.tenantId?.company_name || 'Organization';
+  document.getElementById('reassignModalCurrentAssessor').textContent = item.assignedAssessorId?.name
+    ? `${item.assignedAssessorId.name} (${item.assignedAssessorId.organization || item.assignedAssessorId.email})`
+    : 'None';
+
+  // Default suggestion is the tenant's current active assessor
+  const tenantActiveAssessorId = item.tenantId?.activeAssessorId;
+  let activeAssessorMatch = null;
+  if (tenantActiveAssessorId) {
+    const actId = typeof tenantActiveAssessorId === 'object' ? tenantActiveAssessorId._id : tenantActiveAssessorId;
+    activeAssessorMatch = globalAssessorsList.find(a => String(a._id) === String(actId));
+  }
+
+  const suggestionText = activeAssessorMatch
+    ? `${activeAssessorMatch.name} (${activeAssessorMatch.organization || activeAssessorMatch.email})`
+    : 'No active assessor assigned to tenant';
+  document.getElementById('reassignModalActiveSuggestion').textContent = suggestionText;
+
+  // Populate options
+  const select = document.getElementById('reassignNewAssessorSelect');
+  select.innerHTML = '<option value="">Choose an active assessor...</option>';
+  globalAssessorsList.forEach(a => {
+    const isCurrent = String(a._id) === String(item.assignedAssessorId?._id);
+    const isRecommended = activeAssessorMatch && String(a._id) === String(activeAssessorMatch._id);
+    const label = `${a.name} (${a.organization || a.email}) ${isRecommended ? '★ (Tenant Active Assessor)' : ''} ${isCurrent ? '[Currently Assigned]' : ''}`;
+    const opt = document.createElement('option');
+    opt.value = a._id;
+    opt.textContent = label;
+    if (isRecommended && !isCurrent) {
+      opt.selected = true;
+    }
+    select.appendChild(opt);
+  });
+
+  const modal = document.getElementById('reassignReferralModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeReassignModal() {
+  const modal = document.getElementById('reassignReferralModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function submitReassignCase(event) {
+  event.preventDefault();
+  const id = document.getElementById('reassignReferralId').value;
+  const newAssessorId = document.getElementById('reassignNewAssessorSelect').value;
+  const btn = document.getElementById('reassignSubmitBtn');
+
+  if (!newAssessorId) {
+    showToast('Validation Error', 'Please select a new assessor.', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Reassigning...';
+
+  try {
+    const res = await fetch(`/api/v1/superadmin/referrals/${id}/reassign`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ newAssessorId }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Referral Reassigned', data.message || 'Referral reassigned successfully.', 'success');
+      closeReassignModal();
+      loadSuperadminStaleReferrals();
+    } else {
+      showToast('Error', data.error || 'Failed to reassign referral.', 'error');
+    }
+  } catch (err) {
+    showToast('Error', 'Could not reach server.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirm Reassignment';
+  }
+}
+

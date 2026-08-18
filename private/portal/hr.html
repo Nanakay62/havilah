@@ -580,7 +580,10 @@
       Havilah
     </button>
     
-    <nav class="nav" role="navigation" aria-label="Primary"><button class="nav-item active">HR Analytics</button></nav>
+    <nav class="nav" role="navigation" aria-label="Primary">
+      <button class="nav-item active" id="hr-tab-analytics" onclick="window.switchHrViewTab('analytics')">HR Analytics</button>
+      <button class="nav-item" id="hr-tab-billing" onclick="window.switchHrViewTab('billing')">Clinical Billing</button>
+    </nav>
     
     <div class="header-right">
       <button class="icon-btn" id="searchBtn" aria-label="Search (Ctrl+K)" title="Search (Ctrl+K)">
@@ -647,6 +650,7 @@
 
 <main id="main">
 
+<div id="hr-section-analytics">
 <!-- ============ HR VIEW ============ -->
 <section class="view active" id="view-hr" style="display:block;" aria-label="HR analytics dashboard">
   <div class="page-head">
@@ -921,6 +925,86 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ============ CLINICAL BILLING VIEW ============ -->
+<div id="hr-section-billing" style="display: none; padding-top: 10px;">
+  <div class="page-head">
+    <div>
+      <span class="eyebrow" style="color: var(--accent-deep);">Confidential Invoicing</span>
+      <h1>Clinical Referral Billing &amp; Invoices</h1>
+      <p style="color: var(--text-2); font-size: 0.875rem;">
+        Track employee occupational health referrals and invoices without exposing patient identity.
+      </p>
+    </div>
+    <div class="page-head-actions">
+      <button class="btn btn-ghost btn-sm" onclick="window.refreshClinicalBilling()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        ↻ Refresh Billing
+      </button>
+    </div>
+  </div>
+
+  <!-- Privacy Guarantee Alert -->
+  <div style="background: rgba(13, 148, 136, 0.08); border: 1px solid rgba(13, 148, 136, 0.25); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+    <div style="font-size: 1.3rem;">🔒</div>
+    <div style="font-size: 0.84rem; color: var(--text-2); line-height: 1.5;">
+      <strong style="color: var(--text-1);">Anonymity Guarantee:</strong> Patient identities, medical notes, and clinical records are strictly sequestered with the medical assessor. Only reference codes, department tags, and billing amounts are visible here.
+    </div>
+  </div>
+
+  <!-- KPI Grid -->
+  <div class="kpi-grid" style="margin-bottom: 20px;">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Referrals</div>
+      <div class="kpi-value" id="billingTotalCount">0</div>
+      <div class="kpi-hint">All clinical intake requests</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Billed</div>
+      <div class="kpi-value" id="billingTotalAmount" style="color: #0d9488;">GHS 0.00</div>
+      <div class="kpi-hint">Completed clinical cases</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Billed Rate</div>
+      <div class="kpi-value" id="billingBilledCount">0 of 0</div>
+      <div class="kpi-hint">Invoices settled</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Pending 48+ Hrs</div>
+      <div class="kpi-value" id="billingStaleCount" style="color: #ef4444;">0</div>
+      <div class="kpi-hint">Flagged for assessor review</div>
+    </div>
+  </div>
+
+  <!-- Billing Table Card -->
+  <div class="chart-card">
+    <div class="chart-head" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div class="chart-title">Referral Billing Records</div>
+        <div class="chart-subtitle">Direct ledger of occupational health assessments and billed fees</div>
+      </div>
+    </div>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border-strong); background: var(--bg-base);">
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Reference Code</th>
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Department</th>
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Date</th>
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Status</th>
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Amount</th>
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Currency</th>
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Billed</th>
+          </tr>
+        </thead>
+        <tbody id="hrBillingTableBody">
+          <tr><td colspan="7" style="padding: 24px; text-align: center; color: var(--text-3); font-size: 0.875rem;">Loading billing records...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
   
 </main>
 

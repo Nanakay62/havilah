@@ -268,6 +268,11 @@ const TenantSchema = new mongoose.Schema(
       type: [ResourceLinkSchema],
       default: () => [],
     },
+    activeAssessorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Assessor',
+      default: null,
+    },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

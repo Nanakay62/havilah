@@ -31,6 +31,7 @@ const adminController = require('./controllers/adminController');
 const tenantController = require('./controllers/tenantController');
 const resourceController = require('./controllers/resourceController');
 const referralController = require('./controllers/referralController');
+const assessorController = require('./controllers/assessorController');
 const authRouter = require('./routes/auth');
 const wellnessRouter = require('./routes/wellness');
 const hrRouter = require('./routes/hrAdmin');
@@ -88,9 +89,12 @@ app.use((req, res, next) => {
 // Static Files & Guarded Views
 app.use(express.static(path.join(__dirname, '../public'), { etag: false, lastModified: false }));
 
-// Explicit fallback route for register.html
+// Explicit fallback route for register.html and clinical-portal
 app.get('/register.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'register.html'));
+});
+app.get('/clinical-portal', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', 'clinical-portal.html'));
 });
 
 app.use('/portal', requireViewRole('hr_admin', 'tenant_admin'), express.static(path.join(__dirname, '../private/portal'), { etag: false, lastModified: false }));
@@ -151,6 +155,7 @@ app.use('/api/v1/admin', adminController);
 app.use('/api/v1/tenant', tenantController);
 app.use('/api/v1/resources', resourceController);
 app.use('/api/v1/referrals', referralController);
+app.use('/api/v1/assessor', assessorController);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/wellness', wellnessRouter);
 app.use('/api/v1/hr', hrRouter);

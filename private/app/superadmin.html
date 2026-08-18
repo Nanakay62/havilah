@@ -615,6 +615,10 @@
       <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
       4. Safety & Audit
     </a>
+    <a class="nav-item" id="nav-assessors" onclick="switchTab('assessors')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      5. Medical Assessors &amp; Routing
+    </a>
   </nav>
 
   <div class="sidebar-footer">
@@ -932,6 +936,105 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
           </thead>
           <tbody id="audit-log-body">
             <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <!-- TAB 5: Medical Assessors & Reassignment -->
+  <section id="view-assessors" class="page-view">
+    <div class="section-label">Multi-Tenant Clinical Routing &amp; Governance</div>
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">Medical Assessors &amp; Clinical Operations</h1>
+        <p class="page-subtitle">Manage third-party clinical assessment partners, configure tenant-level active assessor routing, and supervise referral queue SLAs &amp; stale reassignments.</p>
+      </div>
+      <button class="btn-action-primary" onclick="openCreateAssessorModal()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+        Provision Medical Assessor
+      </button>
+    </div>
+
+    <!-- 1. Assessors Directory -->
+    <div class="card-box" style="margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <h3>Registered Medical Assessors</h3>
+          <p>Third-party clinical providers serving tenant organizations across the platform.</p>
+        </div>
+        <button class="btn-action-secondary" onclick="loadSuperadminAssessors()">↻ Refresh Assessors</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Assessor Name</th>
+              <th>Email</th>
+              <th>Practice / Organization</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody id="assessors-table-body">
+            <tr><td colspan="5" style="text-align: center; padding: 24px; color: var(--text-2);">Loading medical assessors...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. Tenant Active Assessor Routing -->
+    <div class="card-box" style="margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <h3>Tenant Active Assessor Routing</h3>
+          <p>Assign or switch the active medical assessor for each tenant company. Existing referrals remain with their original assessor; new referrals route to the updated assessor.</p>
+        </div>
+        <button class="btn-action-secondary" onclick="loadTenantAssessorAssignments()">↻ Refresh Tenants</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Company Name</th>
+              <th>Slug / Domain</th>
+              <th>Current Active Assessor</th>
+              <th>Assigned Assessor Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tenant-assessor-table-body">
+            <tr><td colspan="4" style="text-align: center; padding: 24px; color: var(--text-2);">Loading tenant routing configurations...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. Stale Referral Reassignment Hub (Pending 48+ Hrs) -->
+    <div class="card-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3>Stale Referrals SLA &amp; Reassignment Hub</h3>
+            <span style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;">48h+ SLA Exceeded</span>
+          </div>
+          <p>Referrals pending over 48 hours without assessor completion. SuperAdmin can manually reassign cases with full audit tracking.</p>
+        </div>
+        <button class="btn-action-secondary" onclick="loadSuperadminStaleReferrals()">↻ Refresh Stale Referrals</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Reference Code</th>
+              <th>Company</th>
+              <th>Assigned Assessor</th>
+              <th>Department</th>
+              <th>Preferred Schedule</th>
+              <th>Pending Time</th>
+              <th>Reassigned History</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="stale-referrals-table-body">
+            <tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-2);">Loading stale referrals...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1379,6 +1482,80 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
       <input type="number" id="extendCustomDays" min="1" max="365" placeholder="Enter number of days..." style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#e0e0e0;font-size:14px;box-sizing:border-box;">
     </div>
     <button id="extendSubmitBtn" onclick="submitExtendAccess()" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.3s;">Extend Access</button>
+  </div>
+</div>
+
+<!-- ═══ Create Medical Assessor Modal ═══ -->
+<div id="createAssessorModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeCreateAssessorModal()">
+  <div style="background:rgba(15,15,30,0.97);border:1px solid rgba(13,148,136,0.3);border-radius:20px;width:95%;max-width:480px;box-shadow:0 0 80px rgba(13,148,136,0.15);padding:32px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:24px;">🏥</span>
+        <div>
+          <h3 style="margin:0;color:#e0e0e0;font-size:18px;">Provision Medical Assessor</h3>
+          <p style="margin:2px 0 0;font-size:12px;color:#6b7280;">Register a clinical partner entity</p>
+        </div>
+      </div>
+      <button onclick="closeCreateAssessorModal()" style="background:none;border:none;color:#6b7280;font-size:20px;cursor:pointer;">&times;</button>
+    </div>
+    <form onsubmit="submitCreateAssessor(event)">
+      <div style="margin-bottom:16px;">
+        <label style="font-size:12px;color:#9ca3af;display:block;margin-bottom:6px;">Assessor Full Name *</label>
+        <input type="text" id="newAssessorName" class="form-input" placeholder="e.g. Dr. Edith Clarke" required style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#e0e0e0;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:12px;color:#9ca3af;display:block;margin-bottom:6px;">Login Email *</label>
+        <input type="email" id="newAssessorEmail" class="form-input" placeholder="e.g. clarke.edith@gmail.com" required style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#e0e0e0;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:12px;color:#9ca3af;display:block;margin-bottom:6px;">Practice / Clinic Organization</label>
+        <input type="text" id="newAssessorOrg" class="form-input" placeholder="e.g. FZ Safety & Health" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#e0e0e0;">
+      </div>
+      <div style="margin-bottom:24px;">
+        <label style="font-size:12px;color:#9ca3af;display:block;margin-bottom:6px;">Temporary Password *</label>
+        <input type="password" id="newAssessorPassword" class="form-input" placeholder="••••••••" required style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#e0e0e0;">
+      </div>
+      <button type="submit" id="createAssessorBtn" style="width:100%;padding:13px;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Provision Assessor</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ Reassign Referral Modal ═══ -->
+<div id="reassignReferralModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeReassignModal()">
+  <div style="background:rgba(15,15,30,0.97);border:1px solid rgba(239,68,68,0.3);border-radius:20px;width:95%;max-width:500px;box-shadow:0 0 80px rgba(239,68,68,0.15);padding:32px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:24px;">🔄</span>
+        <div>
+          <h3 style="margin:0;color:#e0e0e0;font-size:18px;">Reassign Stale Referral</h3>
+          <p id="reassignModalRefCode" style="margin:2px 0 0;font-size:12px;color:#f87171;font-family:monospace;font-weight:bold;"></p>
+        </div>
+      </div>
+      <button onclick="closeReassignModal()" style="background:none;border:none;color:#6b7280;font-size:20px;cursor:pointer;">&times;</button>
+    </div>
+    
+    <div style="margin-bottom:18px;padding:12px 16px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06);font-size:13px;">
+      <div style="color:#9ca3af;margin-bottom:4px;">Organization: <strong id="reassignModalCompany" style="color:#fff;">—</strong></div>
+      <div style="color:#9ca3af;">Current Assessor: <strong id="reassignModalCurrentAssessor" style="color:#fca5a5;">—</strong></div>
+    </div>
+
+    <div style="margin-bottom:18px;padding:12px 16px;background:rgba(13,148,136,0.1);border-radius:8px;border:1px solid rgba(13,148,136,0.25);font-size:12px;color:#5eead4;">
+      💡 <strong>Default Recommendation:</strong> <span id="reassignModalActiveSuggestion">Tenant Active Assessor</span>
+    </div>
+
+    <form onsubmit="submitReassignCase(event)">
+      <input type="hidden" id="reassignReferralId" />
+      <div style="margin-bottom:24px;">
+        <label style="font-size:12px;color:#9ca3af;display:block;margin-bottom:6px;">Select New Medical Assessor (or override):</label>
+        <select id="reassignNewAssessorSelect" required style="width:100%;padding:10px 14px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#e0e0e0;font-size:13px;">
+          <option value="">Choose an active assessor...</option>
+        </select>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" onclick="closeReassignModal()" style="padding:10px 16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#9ca3af;cursor:pointer;">Cancel</button>
+        <button type="submit" id="reassignSubmitBtn" style="padding:10px 20px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Confirm Reassignment</button>
+      </div>
+    </form>
   </div>
 </div>
 

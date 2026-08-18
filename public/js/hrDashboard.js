@@ -2,7 +2,9 @@
   const state = {
     heatmapData: [],
     invites: [],
-    departments: []
+    departments: [],
+    referralBilling: [],
+    activeTab: 'analytics'
   };
 
   async function apiFetch(url, options = {}) {
@@ -48,10 +50,6 @@
 
       const redemptions = invite.usage_count || (invite.status === 'used' ? 1 : 0);
       const isRevokable = invite.status === 'active' || invite.status === 'pending';
-
-      const host = window.location.host;
-      const protocol = window.location.protocol;
-      const magicLink = `${protocol}//${host}/activate.html?code=${invite.activation_code}`;
 
       tr.innerHTML = `
         <td style="padding: 12px 14px; border-bottom: 1px solid var(--border);">
@@ -111,6 +109,109 @@
     }
   }
 
+  function renderClinicalBilling() {
+    const tableBody = document.getElementById('hrBillingTableBody');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+
+    const referrals = state.referralBilling || [];
+
+    // Update Summary KPI Badges if elements exist
+    const totalCountEl = document.getElementById('billingTotalCount');
+    const totalAmountEl = document.getElementById('billingTotalAmount');
+    const billedCountEl = document.getElementById('billingBilledCount');
+    const staleCountEl = document.getElementById('billingStaleCount');
+
+    let totalAmount = 0;
+    let billedCount = 0;
+    let staleCount = 0;
+
+    referrals.forEach(r => {
+      const amount = (r.billing && typeof r.billing.amount === 'number') ? r.billing.amount : 0;
+      if (r.billing && r.billing.isBilled) {
+        totalAmount += amount;
+        billedCount++;
+      }
+      if (r.isStale) {
+        staleCount++;
+      }
+    });
+
+    if (totalCountEl) totalCountEl.innerText = referrals.length;
+    if (totalAmountEl) totalAmountEl.innerText = `GHS ${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (billedCountEl) billedCountEl.innerText = `${billedCount} of ${referrals.length}`;
+    if (staleCountEl) staleCountEl.innerText = staleCount;
+
+    if (referrals.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="7" style="padding: 32px; text-align: center; color: var(--text-3); font-size: 0.875rem;">No clinical referral records found for your organization.</td></tr>';
+      return;
+    }
+
+    referrals.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--border)';
+
+      const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }) : '—';
+
+      let statusBadge = '';
+      const st = (r.status || 'pending').toLowerCase();
+      if (st === 'completed') {
+        statusBadge = '<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Completed</span>';
+      } else if (st === 'scheduled') {
+        statusBadge = '<span style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Scheduled</span>';
+      } else if (st === 'cancelled') {
+        statusBadge = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Cancelled</span>';
+      } else {
+        statusBadge = '<span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Pending</span>';
+      }
+
+      const staleBadge = r.isStale
+        ? '<span style="background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; padding: 2px 7px; border-radius: 99px; font-size: 0.72rem; font-weight: 700; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px;" title="Referral has been pending for over 48 hours">⏱️ Pending 48+ hrs</span>'
+        : '';
+
+      const amountVal = (r.billing && typeof r.billing.amount === 'number')
+        ? r.billing.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '0.00';
+
+      const currencyVal = r.billing?.currency || 'GHS';
+      const isBilledVal = r.billing?.isBilled
+        ? '<span style="color: #166534; font-weight: 700; background: #dcfce7; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">Yes</span>'
+        : '<span style="color: #64748b; font-weight: 500; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">No</span>';
+
+      tr.innerHTML = `
+        <td style="padding: 12px 14px; font-family: monospace; font-size: 0.9rem; font-weight: 700; color: var(--text-1); letter-spacing: 0.04em;">
+          ${r.referenceCode || '—'}
+        </td>
+        <td style="padding: 12px 14px; font-weight: 600; color: var(--text-1); font-size: 0.85rem;">
+          ${r.departmentName || 'General'}
+        </td>
+        <td style="padding: 12px 14px; color: var(--text-2); font-size: 0.825rem;">
+          ${dateStr}
+        </td>
+        <td style="padding: 12px 14px;">
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+            ${statusBadge}
+            ${staleBadge}
+          </div>
+        </td>
+        <td style="padding: 12px 14px; font-family: monospace; font-weight: 700; color: var(--text-1); font-size: 0.9rem;">
+          ${amountVal}
+        </td>
+        <td style="padding: 12px 14px; color: var(--text-2); font-size: 0.825rem; font-weight: 600;">
+          ${currencyVal}
+        </td>
+        <td style="padding: 12px 14px;">
+          ${isBilledVal}
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
   async function fetchInvites() {
     try {
       const res = await apiFetch('/api/v1/hr/invites');
@@ -131,17 +232,54 @@
     }
   }
 
+  async function fetchClinicalBilling() {
+    try {
+      const res = await apiFetch('/api/v1/referrals/employer-billing');
+      state.referralBilling = res.data || [];
+      renderClinicalBilling();
+    } catch (e) {
+      console.error('Clinical billing load error', e);
+    }
+  }
+
   async function init() {
     await Promise.all([
       fetchInvites(),
-      fetchDepartments()
+      fetchDepartments(),
+      fetchClinicalBilling()
     ]);
   }
+
+  // Global tab switcher for HR Dashboard
+  window.switchHrViewTab = (tabName) => {
+    state.activeTab = tabName;
+    const analyticsTabBtn = document.getElementById('hr-tab-analytics');
+    const billingTabBtn = document.getElementById('hr-tab-billing');
+    const analyticsSection = document.getElementById('hr-section-analytics');
+    const billingSection = document.getElementById('hr-section-billing');
+
+    if (tabName === 'billing') {
+      if (analyticsTabBtn) analyticsTabBtn.classList.remove('active');
+      if (billingTabBtn) billingTabBtn.classList.add('active');
+      if (analyticsSection) analyticsSection.style.display = 'none';
+      if (billingSection) billingSection.style.display = 'block';
+      fetchClinicalBilling();
+    } else {
+      if (billingTabBtn) billingTabBtn.classList.remove('active');
+      if (analyticsTabBtn) analyticsTabBtn.classList.add('active');
+      if (billingSection) billingSection.style.display = 'none';
+      if (analyticsSection) analyticsSection.style.display = 'block';
+    }
+  };
 
   // Global actions attached to window
   window.refreshHrInvites = () => {
     fetchInvites();
     fetchDepartments();
+  };
+
+  window.refreshClinicalBilling = () => {
+    fetchClinicalBilling();
   };
 
   window.openNewDeptModal = () => {

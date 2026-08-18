@@ -838,6 +838,34 @@ router.post('/assessors', async (req, res, next) => {
   }
 });
 
+// Delete a medical assessor permanently
+router.delete('/assessors/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const Assessor = require('../models/Assessor');
+    const Tenant = require('../models/Tenant');
+
+    const assessor = await Assessor.findById(id);
+    if (!assessor) {
+      return res.status(404).json({ success: false, error: 'Assessor not found.' });
+    }
+
+    // Unset activeAssessorId from any tenants currently mapped to this assessor
+    await Tenant.updateMany({ activeAssessorId: id }, { $set: { activeAssessorId: null } });
+
+    await Assessor.findByIdAndDelete(id);
+
+    console.log(`[SuperAdmin] Assessor permanently deleted: ${assessor.name} (${assessor.email})`);
+
+    res.json({
+      success: true,
+      message: `Assessor "${assessor.name}" has been permanently deleted.`,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // 5.1 Switching a tenant's active assessor (superadmin action)
 // Updates tenant.activeAssessorId only.
 // Does NOT modify existing Referral documents.

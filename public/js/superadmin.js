@@ -1163,27 +1163,56 @@ function renderAssessorsTable(assessors) {
   tbody.innerHTML = '';
 
   if (!assessors || assessors.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-2);">No medical assessors registered yet. Click "Provision Medical Assessor" above.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-2);">No medical assessors registered yet. Click "Provision Medical Assessor" above.</td></tr>';
     return;
   }
 
   assessors.forEach(a => {
     const tr = document.createElement('tr');
     const statusBadge = a.active
-      ? '<span style="background:rgba(16,185,129,0.15); color:#34d399; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">Active</span>'
-      : '<span style="background:rgba(239,68,68,0.15); color:#f87171; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">Inactive</span>';
+      ? '<span style="background:rgba(16,185,129,0.12); color:#059669; border:1px solid #a7f3d0; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">Active</span>'
+      : '<span style="background:rgba(239,68,68,0.12); color:#dc2626; border:1px solid #fecaca; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">Inactive</span>';
 
     const dateStr = a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '—';
+    const escapedName = (a.name || '').replace(/'/g, "\\'");
 
     tr.innerHTML = `
-      <td style="font-weight:700; color:#fff;">${a.name}</td>
-      <td style="font-family:monospace; color:#38bdf8; font-size:12px;">${a.email}</td>
-      <td>${a.organization || 'Independent Practice'}</td>
+      <td style="font-weight:700; color:var(--text-1); font-size:13px;">${a.name}</td>
+      <td style="font-family:monospace; color:#0284c7; font-size:12px; font-weight:600;">${a.email}</td>
+      <td style="color:var(--text-1); font-size:13px;">${a.organization || 'Independent Practice'}</td>
       <td>${statusBadge}</td>
       <td style="color:var(--text-2); font-size:12px;">${dateStr}</td>
+      <td>
+        <button class="btn-action-danger" style="padding:4px 10px; font-size:11px; background:#ef4444; color:#ffffff; border:none; border-radius:6px; font-weight:600; cursor:pointer;" onclick="deleteAssessor('${a._id}', '${escapedName}')">
+          Delete
+        </button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+async function deleteAssessor(id, name) {
+  if (!confirm(`Are you sure you want to permanently delete assessor "${name}"?\n\nThis will remove the assessor from all tenant routing mappings. Existing referral records will remain intact for audit logs.`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/v1/superadmin/assessors/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Assessor Deleted', data.message || 'Assessor deleted successfully.', 'success');
+      await loadSuperadminAssessors();
+      await loadTenantAssessorAssignments();
+    } else {
+      showToast('Error', data.error || 'Failed to delete assessor.', 'error');
+    }
+  } catch (err) {
+    showToast('Error', 'Could not reach server.', 'error');
+  }
 }
 
 async function loadTenantAssessorAssignments() {
@@ -1219,8 +1248,8 @@ function renderTenantAssessorTable(tenants) {
     const tr = document.createElement('tr');
     const activeAssessor = t.activeAssessorId;
     const currentAssessorName = (typeof activeAssessor === 'object' && activeAssessor)
-      ? `${activeAssessor.name} (${activeAssessor.organization || activeAssessor.email})`
-      : '<span style="color:#f59e0b; font-weight:600;">⚠️ Unassigned</span>';
+      ? `<span style="font-weight:600; color:var(--text-1);">${activeAssessor.name}</span> <span style="font-size:11px; color:var(--text-2);">(${activeAssessor.organization || activeAssessor.email})</span>`
+      : '<span style="color:#d97706; font-weight:600;">⚠️ Unassigned</span>';
 
     // Build select options for available assessors
     const currentAssessorId = (typeof activeAssessor === 'object' && activeAssessor)
@@ -1234,12 +1263,12 @@ function renderTenantAssessorTable(tenants) {
     });
 
     tr.innerHTML = `
-      <td style="font-weight:700; color:#fff;">${t.company_name}</td>
-      <td style="font-family:monospace; font-size:12px; color:#94a3b8;">${t.slug || t.company_id}</td>
+      <td style="font-weight:700; color:var(--text-1); font-size:13px;">${t.company_name}</td>
+      <td style="font-family:monospace; font-size:12px; color:var(--text-2);">${t.slug || t.company_id}</td>
       <td>${currentAssessorName}</td>
       <td>
         <div style="display:flex; align-items:center; gap:8px;">
-          <select id="tenant-assessor-select-${t.company_id}" style="padding:6px 10px; background:#1e293b; border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; font-size:12px;">
+          <select id="tenant-assessor-select-${t.company_id}" style="padding:6px 10px; background:#ffffff; border:1px solid var(--border); border-radius:6px; color:var(--text-1); font-size:12px;">
             ${selectOptions}
           </select>
           <button class="btn-action-primary" style="padding:5px 10px; font-size:11px;" onclick="saveTenantAssessor('${t.company_id}')">
@@ -1303,7 +1332,7 @@ function renderStaleReferralsTable(staleList) {
   tbody.innerHTML = '';
 
   if (!staleList || staleList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:#34d399; font-weight:600;">✅ No stale referrals! All clinical referrals are within SLA (< 48 hrs).</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:#059669; font-weight:600;">✅ No stale referrals! All clinical referrals are within SLA (< 48 hrs).</td></tr>';
     return;
   }
 
@@ -1318,23 +1347,23 @@ function renderStaleReferralsTable(staleList) {
     if (r.reassignedFrom) {
       const fromName = r.reassignedFrom.name || 'Previous Assessor';
       const when = r.reassignedAt ? new Date(r.reassignedAt).toLocaleDateString() : '';
-      reassignHistory = `<span style="font-size:11px; color:#f59e0b;">From ${fromName} (${when})</span>`;
+      reassignHistory = `<span style="font-size:11px; color:#d97706; font-weight:600;">From ${fromName} (${when})</span>`;
     }
 
     tr.innerHTML = `
-      <td style="font-family:monospace; font-weight:700; color:#2dd4bf;">${r.referenceCode}</td>
-      <td style="font-weight:600;">${companyName}</td>
-      <td style="color:#f87171; font-weight:600;">${assessorName}</td>
-      <td>${r.departmentName || 'General'}</td>
-      <td style="font-size:12px; color:#94a3b8;">${r.preferredTime || 'As soon as available'}</td>
+      <td style="font-family:monospace; font-weight:700; color:var(--accent); font-size:13px;">${r.referenceCode}</td>
+      <td style="font-weight:700; color:var(--text-1);">${companyName}</td>
+      <td style="color:#dc2626; font-weight:600;">${assessorName}</td>
+      <td style="color:var(--text-1);">${r.departmentName || 'General'}</td>
+      <td style="font-size:12px; color:var(--text-2);">${r.preferredTime || 'As soon as available'}</td>
       <td>
-        <span style="background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid #ef4444; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">
+        <span style="background:rgba(239,68,68,0.12); color:#dc2626; border:1px solid #fca5a5; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">
           ⏱️ ${r.hoursPending || 48}+ hrs
         </span>
       </td>
       <td>${reassignHistory}</td>
       <td>
-        <button class="btn-action-primary" style="padding:4px 10px; font-size:12px; background:linear-gradient(135deg,#ef4444,#dc2626);" onclick="openReassignModal('${r._id}')">
+        <button class="btn-action-primary" style="padding:4px 10px; font-size:12px; background:#dc2626;" onclick="openReassignModal('${r._id}')">
           Reassign Case
         </button>
       </td>

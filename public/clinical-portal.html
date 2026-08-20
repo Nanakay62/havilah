@@ -7,24 +7,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="/js/vendor/jspdf.umd.min.js"></script>
   <style>
     :root {
       --accent: #0D9488;
       --accent-hover: #0F766E;
       --accent-light: #F0FDF4;
-      --bg-base: #0B0F17;
-      --bg-elev: #111827;
-      --bg-card: #161F30;
-      --text-1: #F8FAFC;
-      --text-2: #94A3B8;
-      --text-muted: #64748B;
-      --border: #1E293B;
-      --border-light: #334155;
+      --accent-border: #99F6E4;
+      --bg-base: #F8FAFC;
+      --bg-elev: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --text-1: #0F172A;
+      --text-2: #475569;
+      --text-muted: #94A3B8;
+      --border: #E2E8F0;
+      --border-light: #F1F5F9;
       --radius-sm: 8px;
       --radius-md: 12px;
       --radius-lg: 16px;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
-      --shadow-md: 0 4px 14px rgba(0,0,0,0.4);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,6 +57,7 @@
       position: sticky;
       top: 0;
       z-index: 40;
+      box-shadow: var(--shadow-sm);
     }
 
     .brand {
@@ -63,37 +66,71 @@
       gap: 12px;
       font-size: 1.15rem;
       font-weight: 800;
-      color: #FFFFFF;
+      color: var(--text-1);
       text-decoration: none;
     }
 
     .brand-mark {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       background: linear-gradient(135deg, #0D9488 0%, #14B8A6 100%);
-      border-radius: 8px;
+      border-radius: 9px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
+      box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3);
     }
 
     .brand-tag {
       font-size: 0.68rem;
       font-weight: 700;
-      background: rgba(13, 148, 136, 0.2);
-      color: #2DD4BF;
-      border: 1px solid rgba(45, 212, 191, 0.3);
+      background: #F0FDF4;
+      color: #0D9488;
+      border: 1px solid #99F6E4;
       padding: 2px 8px;
       border-radius: 99px;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .security-timer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      background: #F1F5F9;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-2);
+    }
+
+    .security-timer-badge.warning {
+      background: #FEF2F2;
+      border-color: #FECACA;
+      color: #DC2626;
+      animation: pulseWarning 1s infinite alternate;
+    }
+
+    @keyframes pulseWarning {
+      from { opacity: 1; }
+      to { opacity: 0.7; }
+    }
+
     .user-pill {
       display: flex;
       align-items: center;
       gap: 12px;
+      padding-left: 12px;
+      border-left: 1px solid var(--border);
     }
 
     .user-info {
@@ -108,7 +145,8 @@
 
     .user-org {
       font-size: 0.75rem;
-      color: #2DD4BF;
+      color: var(--accent);
+      font-weight: 600;
     }
 
     /* Buttons */
@@ -128,11 +166,21 @@
     }
 
     .btn-primary {
-      background: #0D9488;
+      background: var(--accent);
       color: white;
     }
     .btn-primary:hover {
-      background: #0F766E;
+      background: var(--accent-hover);
+    }
+
+    .btn-outline {
+      background: #FFFFFF;
+      color: var(--text-1);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover {
+      background: #F8FAFC;
+      border-color: #CBD5E1;
     }
 
     .btn-ghost {
@@ -141,18 +189,16 @@
       border: 1px solid var(--border);
     }
     .btn-ghost:hover {
-      background: var(--border);
+      background: #F1F5F9;
       color: var(--text-1);
     }
 
     .btn-danger {
-      background: rgba(239, 68, 68, 0.15);
-      color: #F87171;
-      border: 1px solid rgba(239, 68, 68, 0.3);
+      background: #DC2626;
+      color: white;
     }
     .btn-danger:hover {
-      background: #EF4444;
-      color: white;
+      background: #B91C1C;
     }
 
     .btn-sm {
@@ -163,7 +209,7 @@
     /* Main Container */
     main {
       flex: 1;
-      max-width: 1280px;
+      max-width: 1380px;
       width: 100%;
       margin: 0 auto;
       padding: 28px 24px;
@@ -194,25 +240,25 @@
 
     .form-input, .form-select, .form-textarea {
       width: 100%;
-      padding: 10px 14px;
-      background: var(--bg-elev);
-      border: 1px solid var(--border-light);
+      padding: 9px 12px;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       color: var(--text-1);
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       outline: none;
       transition: border-color 0.2s ease;
     }
 
     .form-input:focus, .form-select:focus, .form-textarea:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+      box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
     }
 
-    /* Cards & Grids */
+    /* KPI Cards */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -222,11 +268,12 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
     }
 
     .kpi-label {
-      font-size: 0.78rem;
-      font-weight: 600;
+      font-size: 0.74rem;
+      font-weight: 700;
       color: var(--text-2);
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -234,9 +281,15 @@
     }
 
     .kpi-value {
-      font-size: 1.6rem;
+      font-size: 1.55rem;
       font-weight: 800;
       color: var(--text-1);
+    }
+
+    .kpi-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
     }
 
     .card {
@@ -259,7 +312,8 @@
 
     .card-title {
       font-size: 1.15rem;
-      font-weight: 700;
+      font-weight: 800;
+      color: var(--text-1);
     }
 
     .card-subtitle {
@@ -272,8 +326,38 @@
     .filter-bar {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
+      width: 100%;
+      background: #F8FAFC;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 220px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px 8px 34px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.84rem;
+      background: #FFFFFF;
+    }
+
+    .search-box-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
     }
 
     /* Tables */
@@ -281,6 +365,7 @@
       overflow-x: auto;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
+      background: #FFFFFF;
     }
 
     table {
@@ -291,7 +376,7 @@
     }
 
     thead th {
-      background: var(--bg-elev);
+      background: #F8FAFC;
       padding: 12px 14px;
       font-size: 0.72rem;
       font-weight: 700;
@@ -303,12 +388,12 @@
 
     tbody td {
       padding: 13px 14px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-light);
       color: var(--text-1);
     }
 
     tbody tr:hover {
-      background: rgba(255, 255, 255, 0.02);
+      background: #F8FAFC;
     }
 
     /* Badges */
@@ -322,17 +407,33 @@
       font-weight: 700;
     }
 
-    .badge-pending { background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-completed { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-scheduled { background: rgba(56, 189, 248, 0.15); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3); }
-    .badge-cancelled { background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .badge-stale { background: rgba(239, 68, 68, 0.2); color: #FCA5A5; border: 1px solid #EF4444; }
+    .badge-pending { background: #FEF3C7; color: #D97706; border: 1px solid #FDE68A; }
+    .badge-completed { background: #DEF7EC; color: #03543F; border: 1px solid #BCF0DA; }
+    .badge-scheduled { background: #E1EFFE; color: #1E429F; border: 1px solid #B4C6FC; }
+    .badge-cancelled { background: #FDE8E8; color: #9B1C1C; border: 1px solid #FBD5D5; }
+    .badge-stale { background: #FDE8E8; color: #C81E1E; border: 1px solid #F8B4B4; }
+
+    .settlement-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .settlement-settled { background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; }
+    .settlement-pending { background: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; }
+    .settlement-unbilled { background: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1; }
 
     /* Modals */
     .modal-backdrop {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(15, 23, 42, 0.6);
       backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
@@ -350,13 +451,15 @@
     }
 
     .modal {
-      background: var(--bg-card);
-      border: 1px solid var(--border-light);
+      background: #FFFFFF;
+      border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      max-width: 540px;
+      max-width: 580px;
       width: 100%;
-      padding: 26px;
-      box-shadow: var(--shadow-md);
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
       position: relative;
     }
 
@@ -364,31 +467,53 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 14px;
     }
 
     .modal-title {
       font-size: 1.15rem;
-      font-weight: 700;
+      font-weight: 800;
+      color: var(--text-1);
     }
 
     .modal-close {
       background: none;
       border: none;
-      color: var(--text-2);
-      font-size: 1.3rem;
+      color: var(--text-muted);
+      font-size: 1.5rem;
       cursor: pointer;
       padding: 4px;
+      line-height: 1;
     }
     .modal-close:hover { color: var(--text-1); }
+
+    /* Pagination */
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      font-size: 0.82rem;
+      color: var(--text-2);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
     /* Toast */
     .toast {
       position: fixed;
       bottom: 24px;
       right: 24px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-light);
+      background: #FFFFFF;
+      border: 1px solid var(--border);
       border-left: 4px solid var(--accent);
       padding: 14px 20px;
       border-radius: var(--radius-md);
@@ -397,6 +522,7 @@
       transform: translateY(100px);
       opacity: 0;
       transition: all 0.3s ease;
+      color: var(--text-1);
     }
 
     .toast.show {
@@ -411,18 +537,34 @@
   <header>
     <a href="/clinical-portal" class="brand">
       <div class="brand-mark">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/></svg>
       </div>
       <span>Havilah Assessor Portal</span>
       <span class="brand-tag">Clinical Hub</span>
     </a>
     <div id="authHeaderControls" style="display: none;">
-      <div class="user-pill">
-        <div class="user-info">
-          <div class="user-name" id="assessorNameDisplay">Dr. Practitioner</div>
-          <div class="user-org" id="assessorOrgDisplay">Clinical Practice</div>
+      <div class="header-actions">
+        <!-- Inactivity auto-lock indicator -->
+        <div class="security-timer-badge" id="securityTimerBadge" title="Automatic HIPAA lock after 15 mins of inactivity">
+          <span>🔒 Lock:</span>
+          <span id="autoLockTimer" class="tabular-nums" style="font-weight: 700;">15:00</span>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="logoutAssessor()">Sign Out</button>
+
+        <button class="btn btn-outline btn-sm" onclick="openExportModal()">
+          📑 Export Statement
+        </button>
+
+        <button class="btn btn-outline btn-sm" onclick="openClinicSettingsModal()">
+          ⚙️ Clinic Settings
+        </button>
+
+        <div class="user-pill">
+          <div class="user-info">
+            <div class="user-name" id="assessorNameDisplay">Dr. Practitioner</div>
+            <div class="user-org" id="assessorOrgDisplay">Clinical Practice</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="logoutAssessor()">Sign Out</button>
+        </div>
       </div>
     </div>
   </header>
@@ -432,21 +574,21 @@
     <div id="assessorLoginSection" style="display: none;">
       <div class="auth-container">
         <div style="text-align: center; margin-bottom: 24px;">
-          <div class="brand-mark" style="width: 44px; height: 44px; margin: 0 auto 12px; font-size: 20px;">🏥</div>
-          <h2 style="font-size: 1.35rem; font-weight: 800;">Assessor Portal Login</h2>
-          <p style="color: var(--text-2); font-size: 0.85rem; margin-top: 4px;">Multi-tenant medical practitioner access</p>
+          <div class="brand-mark" style="width: 48px; height: 48px; margin: 0 auto 12px; font-size: 22px;">🏥</div>
+          <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-1);">Medical Assessor Login</h2>
+          <p style="color: var(--text-2); font-size: 0.85rem; margin-top: 4px;">Multi-tenant clinical practitioner &amp; billing access</p>
         </div>
         <form id="assessorLoginForm" onsubmit="handleAssessorLogin(event)">
           <div class="form-group">
-            <label class="form-label" for="assessorEmailInput">Assessor Email</label>
-            <input type="email" id="assessorEmailInput" class="form-input" placeholder="practitioner@clinic.com" required autocomplete="email">
+            <label class="form-label" for="assessorEmailInput">Assessor Login Email</label>
+            <input type="email" id="assessorEmailInput" class="form-input" placeholder="e.g. dr.clarke@fzsafety.com" required autocomplete="email">
           </div>
           <div class="form-group">
             <label class="form-label" for="assessorPasswordInput">Password</label>
             <input type="password" id="assessorPasswordInput" class="form-input" placeholder="••••••••" required autocomplete="current-password">
           </div>
           <button type="submit" class="btn btn-primary" id="assessorLoginBtn" style="width: 100%; padding: 11px; margin-top: 8px;">
-            Sign In to Clinical Queue
+            Sign In to Clinical Console
           </button>
         </form>
       </div>
@@ -458,30 +600,39 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
         <div>
           <h1 style="font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em;">Assigned Clinical Referrals</h1>
-          <p style="color: var(--text-2); font-size: 0.85rem;">Manage employee consultations, patient contact info, and billing settlements.</p>
+          <p style="color: var(--text-2); font-size: 0.85rem;">Manage appointments, review patient records, record certificates, and settle monthly invoices.</p>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="fetchAssessorQueue()">
-          ↻ Refresh Queue
-        </button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-outline btn-sm" onclick="openExportModal()">
+            📥 Export Statement (PDF / CSV)
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="fetchAssessorQueue()">
+            ↻ Refresh Queue
+          </button>
+        </div>
       </div>
 
       <!-- KPI Summary -->
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label">Active Queue</div>
+          <div class="kpi-label">Active Cases</div>
           <div class="kpi-value" id="kpiTotalAssigned">0</div>
+          <div class="kpi-sub">Total referrals in queue</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Pending Cases</div>
-          <div class="kpi-value" id="kpiPending" style="color: #FBBF24;">0</div>
+          <div class="kpi-label">Pending / Scheduled</div>
+          <div class="kpi-value" id="kpiPending" style="color: #D97706;">0</div>
+          <div class="kpi-sub"><span id="kpiScheduledCount">0</span> appointments booked</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Completed &amp; Billed</div>
-          <div class="kpi-value" id="kpiCompleted" style="color: #34D399;">0</div>
+          <div class="kpi-value" id="kpiCompleted" style="color: #059669;">0</div>
+          <div class="kpi-sub">Clinical consultations closed</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Total Billed Fees</div>
-          <div class="kpi-value" id="kpiTotalBilled" style="color: #2DD4BF;">GHS 0.00</div>
+          <div class="kpi-label">Total Invoiced Fees</div>
+          <div class="kpi-value" id="kpiTotalBilled" style="color: var(--accent);">GHS 0.00</div>
+          <div class="kpi-sub" id="kpiSettlementBreakdown">0 Settled · 0 Pending</div>
         </div>
       </div>
 
@@ -490,56 +641,104 @@
         <div class="card-header">
           <div>
             <div class="card-title">Patient Intake &amp; Case Ledger</div>
-            <div class="card-subtitle">Showing all assigned referrals across your authorized tenant client companies</div>
-          </div>
-          <div class="filter-bar">
-            <select class="form-select" id="companyFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 180px; padding: 6px 12px; font-size: 0.82rem;">
-              <option value="all">All Client Companies</option>
-            </select>
-            <select class="form-select" id="statusFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 130px; padding: 6px 12px; font-size: 0.82rem;">
-              <option value="all">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+            <div class="card-subtitle">Itemized clinical referrals assigned to your clinic practice</div>
           </div>
         </div>
 
+        <!-- Filter Controls Bar -->
+        <div class="filter-bar">
+          <div class="search-box">
+            <span class="search-box-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search reference, patient, phone, department..." oninput="handleSearchChange()">
+          </div>
+
+          <select class="form-select" id="companyFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 170px;">
+            <option value="all">All Client Companies</option>
+          </select>
+
+          <select class="form-select" id="statusFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 130px;">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+
+          <select class="form-select" id="settlementFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 150px;">
+            <option value="all">All Settlements</option>
+            <option value="settled">Settled / Paid</option>
+            <option value="pending_payment">Pending Payment</option>
+            <option value="unbilled">Unbilled</option>
+          </select>
+
+          <select class="form-select" id="datePresetSelect" onchange="handleDatePresetChange()" style="width: auto; min-width: 130px;">
+            <option value="all">All Dates</option>
+            <option value="this_month">This Month</option>
+            <option value="last_month">Last Month</option>
+            <option value="custom">Custom Range...</option>
+          </select>
+
+          <div id="customDateRangeContainer" style="display: none; align-items: center; gap: 6px;">
+            <input type="date" id="customStartDate" class="form-input" style="width: auto; padding: 6px 10px;" onchange="applyQueueFilter()">
+            <span>to</span>
+            <input type="date" id="customEndDate" class="form-input" style="width: auto; padding: 6px 10px;" onchange="applyQueueFilter()">
+          </div>
+        </div>
+
+        <!-- Table Container -->
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Reference</th>
-                <th>Company</th>
-                <th>Patient Name</th>
-                <th>Contact</th>
+                <th onclick="sortTable('referenceCode')" style="cursor:pointer;">Reference ⇕</th>
+                <th onclick="sortTable('company')" style="cursor:pointer;">Company ⇕</th>
+                <th onclick="sortTable('patientName')" style="cursor:pointer;">Patient Name ⇕</th>
+                <th>Direct Contact</th>
                 <th>Department</th>
-                <th>Submitted</th>
+                <th>Appointment</th>
+                <th onclick="sortTable('createdAt')" style="cursor:pointer;">Submitted ⇕</th>
                 <th>Status</th>
-                <th>Billing</th>
+                <th>Billing Fee</th>
+                <th>Settlement</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="assessorQueueTableBody">
               <tr>
-                <td colspan="9" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                <td colspan="11" style="text-align: center; padding: 32px; color: var(--text-muted);">
                   Loading assigned clinical cases...
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-bar">
+          <div id="paginationSummary">Showing 0-0 of 0 cases</div>
+          <div class="pagination-controls">
+            <label style="margin-right: 6px; font-size: 0.8rem;">Rows per page:</label>
+            <select class="form-select" id="pageSizeSelect" onchange="handlePageSizeChange()" style="width: auto; padding: 4px 8px; font-size: 0.8rem; margin-right: 12px;">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+            <button class="btn btn-outline btn-sm" id="prevPageBtn" onclick="changePage(-1)">‹ Prev</button>
+            <span id="pageIndicator" style="font-weight: 600; padding: 0 8px;">Page 1 of 1</span>
+            <button class="btn btn-outline btn-sm" id="nextPageBtn" onclick="changePage(1)">Next ›</button>
+          </div>
+        </div>
       </div>
     </div>
   </main>
 
-  <!-- Modal: View Clinical Case Details -->
+  <!-- Modal: View Clinical Case & Schedule Appointment -->
   <div class="modal-backdrop" id="caseDetailModal">
     <div class="modal">
       <div class="modal-header">
         <div>
-          <div style="font-size: 0.72rem; font-weight: 700; color: #2DD4BF; text-transform: uppercase;">CONFIDENTIAL CLINICAL RECORD</div>
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--accent); text-transform: uppercase;">CONFIDENTIAL CLINICAL RECORD</div>
           <div class="modal-title" id="modalCaseRefCode">REF-XXXXXXXX</div>
         </div>
         <button class="modal-close" onclick="closeModal('caseDetailModal')">&times;</button>
@@ -547,6 +746,37 @@
       <div id="modalCaseDetailBody" style="display: flex; flex-direction: column; gap: 14px; font-size: 0.88rem;">
         <!-- Filled dynamically -->
       </div>
+      
+      <!-- Direct Scheduling Form Container -->
+      <div id="schedulingSection" style="margin-top: 16px; background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px;">
+        <div style="font-weight: 700; color: var(--text-1); font-size: 0.88rem; margin-bottom: 8px;">📅 Direct Appointment Scheduling</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">
+          <div>
+            <label class="form-label" style="font-size: 0.75rem;">Date *</label>
+            <input type="date" id="scheduleDateInput" class="form-input" style="padding: 6px 10px;">
+          </div>
+          <div>
+            <label class="form-label" style="font-size: 0.75rem;">Time (Optional)</label>
+            <input type="time" id="scheduleTimeInput" class="form-input" style="padding: 6px 10px;">
+          </div>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label class="form-label" style="font-size: 0.75rem;">Appointment Note</label>
+          <input type="text" id="scheduleNotesInput" class="form-input" placeholder="e.g. Telehealth link sent, Clinic Room 3..." style="padding: 6px 10px;">
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="submitScheduleAppointment()">
+          ✓ Stamp Appointment Date
+        </button>
+      </div>
+
+      <!-- Attachments Section -->
+      <div id="modalAttachmentsSection" style="margin-top: 14px;">
+        <div style="font-weight: 700; color: var(--text-1); font-size: 0.88rem; margin-bottom: 6px;">📎 Clinical Documents &amp; Certificates</div>
+        <div id="modalAttachmentsList" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem;">
+          <!-- Filled dynamically -->
+        </div>
+      </div>
+
       <div style="margin-top: 22px; display: flex; justify-content: flex-end; gap: 10px;">
         <button class="btn btn-ghost" onclick="closeModal('caseDetailModal')">Close</button>
         <button class="btn btn-primary" id="modalCompleteCaseBtn" onclick="openCompleteFromDetail()">Complete &amp; Bill</button>
@@ -554,36 +784,214 @@
     </div>
   </div>
 
-  <!-- Modal: Complete Referral Case & Bill -->
+  <!-- Modal: Complete Referral Case & Bill with Attachment -->
   <div class="modal-backdrop" id="completeCaseModal">
     <div class="modal">
       <div class="modal-header">
         <div>
-          <div style="font-size: 0.72rem; font-weight: 700; color: #34D399; text-transform: uppercase;">SETTLE &amp; BILL CASE</div>
+          <div style="font-size: 0.72rem; font-weight: 700; color: #059669; text-transform: uppercase;">SETTLE &amp; BILL CASE</div>
           <div class="modal-title">Complete Clinical Referral</div>
         </div>
         <button class="modal-close" onclick="closeModal('completeCaseModal')">&times;</button>
       </div>
       <form id="completeCaseForm" onsubmit="handleCompleteCaseSubmit(event)">
         <input type="hidden" id="completeReferralId" />
-        <div style="background: var(--bg-elev); padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid var(--border);">
+        <div style="background: #F8FAFC; padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid var(--border);">
           <div style="font-size: 0.8rem; color: var(--text-2);">Patient / Reference:</div>
           <div style="font-weight: 700; color: var(--text-1); font-size: 0.95rem;" id="completePatientSummary">—</div>
         </div>
+
         <div class="form-group">
-          <label class="form-label" for="completeBillingAmount">Assessor Billing Fee (GHS) *</label>
-          <input type="number" step="0.01" min="0" id="completeBillingAmount" class="form-input" placeholder="e.g. 450.00" required />
-          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Enter the non-negative fee in GHS to invoice the employer.</div>
+          <label class="form-label" for="completeBillingAmount">Assessor Billing Fee *</label>
+          <div style="display: flex; gap: 8px;">
+            <select id="completeCurrencySelect" class="form-select" style="width: 90px;">
+              <option value="GHS">GHS</option>
+              <option value="USD">USD</option>
+              <option value="GBP">GBP</option>
+              <option value="EUR">EUR</option>
+            </select>
+            <input type="number" step="0.01" min="0" id="completeBillingAmount" class="form-input" placeholder="e.g. 450.00" required />
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Enter the consultation fee to invoice the employer.</div>
         </div>
+
         <div class="form-group">
-          <label class="form-label" for="completeAssessorNotes">Clinical &amp; Assessment Notes (Confidential)</label>
-          <textarea id="completeAssessorNotes" class="form-textarea" rows="3" placeholder="Consultation notes, recommendations, or outcome summary..."></textarea>
+          <label class="form-label" for="completeAssessorNotes">Clinical Outcome &amp; Assessment Notes (Confidential)</label>
+          <textarea id="completeAssessorNotes" class="form-textarea" rows="3" placeholder="Consultation notes, ergonomic/medical recommendations, fitness-to-work outcome..."></textarea>
         </div>
+
+        <div class="form-group">
+          <label class="form-label">Attach Certificate / Medical Report (PDF, Image, Doc)</label>
+          <input type="file" id="completeAttachmentInput" class="form-input" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" style="padding: 6px 10px; font-size: 0.82rem;" />
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Optional. Stored securely under confidential medical privacy.</div>
+        </div>
+
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
           <button type="button" class="btn btn-ghost" onclick="closeModal('completeCaseModal')">Cancel</button>
           <button type="submit" class="btn btn-primary" id="completeSubmitBtn">Mark Completed &amp; Bill</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Monthly Invoicing & Reconciliation Statement Export -->
+  <div class="modal-backdrop" id="exportStatementModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--accent); text-transform: uppercase;">FINANCIAL RECONCILIATION</div>
+          <div class="modal-title">Export Invoicing Statement</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('exportStatementModal')">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <label class="form-label">Client Company</label>
+          <select id="exportCompanySelect" class="form-select" onchange="updateExportPreview()">
+            <option value="all">All Client Companies</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label class="form-label">Billing Period</label>
+            <select id="exportPeriodSelect" class="form-select" onchange="handleExportPeriodChange()">
+              <option value="this_month">Current Month</option>
+              <option value="last_month">Previous Month</option>
+              <option value="all_time">All Time</option>
+              <option value="custom">Custom Date Range</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Settlement Filter</label>
+            <select id="exportSettlementSelect" class="form-select" onchange="updateExportPreview()">
+              <option value="all">All (Billed &amp; Unbilled)</option>
+              <option value="settled">Settled / Paid Only</option>
+              <option value="pending_payment">Pending Payment Only</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="exportCustomDateContainer" style="display: none; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label class="form-label">Start Date</label>
+            <input type="date" id="exportStartDate" class="form-input" onchange="updateExportPreview()">
+          </div>
+          <div>
+            <label class="form-label">End Date</label>
+            <input type="date" id="exportEndDate" class="form-input" onchange="updateExportPreview()">
+          </div>
+        </div>
+
+        <!-- Statement Summary Preview Card -->
+        <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-top: 6px;">
+          <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-1); margin-bottom: 8px;">Statement Summary Preview</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem;">
+            <div><span style="color: var(--text-muted);">Matching Cases:</span> <strong id="exportCountPreview" style="color: var(--text-1);">0</strong></div>
+            <div><span style="color: var(--text-muted);">Subtotal Fees:</span> <strong id="exportSubtotalPreview" style="color: var(--text-1);">GHS 0.00</strong></div>
+            <div><span style="color: var(--text-muted);">Settled / Paid:</span> <strong id="exportSettledPreview" style="color: #15803D;">GHS 0.00</strong></div>
+            <div><span style="color: var(--text-muted);">Pending Disbursement:</span> <strong id="exportPendingPreview" style="color: #B45309;">GHS 0.00</strong></div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('exportStatementModal')">Cancel</button>
+          <button type="button" class="btn btn-outline" onclick="generateCSVExport()">
+            📊 Export CSV (Excel)
+          </button>
+          <button type="button" class="btn btn-primary" onclick="generatePDFInvoice()">
+            📑 Generate PDF Invoice
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Clinic Profile & Billing Settings -->
+  <div class="modal-backdrop" id="clinicSettingsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--accent); text-transform: uppercase;">PREFERENCES &amp; BILLING</div>
+          <div class="modal-title">Clinic Profile &amp; Settings</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('clinicSettingsModal')">&times;</button>
+      </div>
+
+      <form id="clinicSettingsForm" onsubmit="handleSaveClinicSettings(event)">
+        <div class="form-group">
+          <label class="form-label" for="settingsClinicName">Clinic / Organization Name *</label>
+          <input type="text" id="settingsClinicName" class="form-input" placeholder="e.g. FZ Safety and Health Centre" required />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="settingsPhone">Contact Phone</label>
+            <input type="text" id="settingsPhone" class="form-input" placeholder="+233 24 362 9870" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="settingsNotificationEmail">Notification Email</label>
+            <input type="email" id="settingsNotificationEmail" class="form-input" placeholder="intake@fzsafety.com" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="settingsAddress">Clinic Physical / Postal Address</label>
+          <input type="text" id="settingsAddress" class="form-input" placeholder="Suite 402, Ridge Medical Tower, Accra, Ghana" />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="settingsDefaultRate">Default Consultation Fee *</label>
+            <input type="number" step="0.01" min="0" id="settingsDefaultRate" class="form-input" placeholder="450.00" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="settingsDefaultCurrency">Billing Currency</label>
+            <select id="settingsDefaultCurrency" class="form-select">
+              <option value="GHS">GHS (Ghana Cedi)</option>
+              <option value="USD">USD (US Dollar)</option>
+              <option value="GBP">GBP (British Pound)</option>
+              <option value="EUR">EUR (Euro)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="settingsTaxId">Tax / VAT ID (Optional)</label>
+            <input type="text" id="settingsTaxId" class="form-input" placeholder="e.g. C0012345678" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="settingsTaxRate">Tax / VAT Rate (%)</label>
+            <input type="number" step="0.1" min="0" max="100" id="settingsTaxRate" class="form-input" placeholder="0" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="settingsPaymentInstructions">Bank / Payment Instructions (Printed on Invoices)</label>
+          <textarea id="settingsPaymentInstructions" class="form-textarea" rows="2" placeholder="Bank: Stanbic Bank Ghana | Account: 9040001234567 | MoMo: 0244567890 (FZ Safety Health)"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('clinicSettingsModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveSettingsBtn">Save Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Session Auto-Lock Warning (HIPAA Security) -->
+  <div class="modal-backdrop" id="autoLockWarningModal">
+    <div class="modal" style="max-width: 440px; text-align: center;">
+      <div style="font-size: 38px; margin-bottom: 12px;">🔒</div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-1); margin-bottom: 6px;">Session Security Inactivity Lock</h3>
+      <p style="color: var(--text-2); font-size: 0.88rem; margin-bottom: 18px;">
+        To protect confidential patient records, your session will automatically lock in <strong id="lockWarningCountdown" style="color: #DC2626;">60</strong> seconds due to inactivity.
+      </p>
+      <button class="btn btn-primary" style="width: 100%; padding: 11px;" onclick="resetInactivityTimerFromModal()">
+        Keep Working &amp; Extend Session
+      </button>
     </div>
   </div>
 

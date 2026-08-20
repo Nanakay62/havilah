@@ -9,11 +9,19 @@ const ReferralSchema = new mongoose.Schema({
   departmentName: { type: String, default: 'General' },
   preferredTime: { type: String, default: 'As soon as available' },
   status: { type: String, enum: ['pending', 'scheduled', 'completed', 'cancelled'], default: 'pending' },
+  scheduledAt: { type: Date, default: null },
+  appointmentNotes: { type: String, default: '' },
   billing: {
     amount: { type: Number, default: 0, min: 0 },
     currency: { type: String, default: 'GHS' },
     isBilled: { type: Boolean, default: false },
     billedAt: { type: Date },
+    settlementStatus: {
+      type: String,
+      enum: ['unbilled', 'pending_payment', 'settled'],
+      default: 'unbilled',
+    },
+    settledAt: { type: Date, default: null },
   },
   clinicalDetails: {
     patientName: { type: String, required: true },
@@ -21,6 +29,13 @@ const ReferralSchema = new mongoose.Schema({
     intakeNotes: { type: String },
     assessorNotes: { type: String },
     completedAt: { type: Date },
+    attachments: [{
+      fileName: { type: String, required: true },
+      fileData: { type: String, required: true }, // Base64 / data URI
+      fileType: { type: String },
+      fileSize: { type: Number },
+      uploadedAt: { type: Date, default: Date.now },
+    }],
   },
   reassignedFrom: { type: mongoose.Schema.Types.ObjectId, ref: 'Assessor' },
   reassignedAt: { type: Date },

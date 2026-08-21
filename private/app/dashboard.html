@@ -2022,7 +2022,60 @@ window.submitVaultReport = async function() {
 };
 
 // ═══ Whistleblower Report Tracking & Two-Way Thread ═══
+let vaultTrackPollInterval = null;
+
+function startVaultTrackLiveSync() {
+  stopVaultTrackLiveSync();
+  vaultTrackPollInterval = setInterval(async () => {
+    if (!window.activeTrackedReport || !window.activeTrackedReport.trackingCode || !window.activeTrackedReport.pin) {
+      stopVaultTrackLiveSync();
+      return;
+    }
+    const modal = document.getElementById('vaultTrackModalBackdrop');
+    if (!modal || modal.style.display === 'none') {
+      stopVaultTrackLiveSync();
+      return;
+    }
+
+    try {
+      const res = await apiFetch('/api/v1/whistleblower/track', {
+        method: 'POST',
+        body: JSON.stringify({
+          trackingCode: window.activeTrackedReport.trackingCode,
+          pin: window.activeTrackedReport.pin
+        })
+      });
+      const result = await res.json();
+      if (result && result.success && result.data) {
+        const prevThreadLen = (window.activeTrackedReport.thread || []).length;
+        const newThreadLen = (result.data.thread || []).length;
+        const prevStatus = window.activeTrackedReport.status;
+        const newStatus = result.data.status;
+
+        if (newThreadLen !== prevThreadLen || newStatus !== prevStatus) {
+          window.activeTrackedReport = {
+            trackingCode: window.activeTrackedReport.trackingCode,
+            pin: window.activeTrackedReport.pin,
+            ...result.data
+          };
+          renderTrackedReportView(window.activeTrackedReport);
+        }
+      }
+    } catch (e) {
+      // Live background sync fail gracefully
+    }
+  }, 2500);
+}
+
+function stopVaultTrackLiveSync() {
+  if (vaultTrackPollInterval) {
+    clearInterval(vaultTrackPollInterval);
+    vaultTrackPollInterval = null;
+  }
+}
+
 window.openVaultTrackModal = function() {
+  stopVaultTrackLiveSync();
   const modal = document.getElementById('vaultTrackModalBackdrop');
   if (modal) {
     modal.style.display = 'flex';
@@ -2037,6 +2090,7 @@ window.openVaultTrackModal = function() {
 };
 
 window.closeVaultTrackModal = function() {
+  stopVaultTrackLiveSync();
   const modal = document.getElementById('vaultTrackModalBackdrop');
   if (modal) modal.style.display = 'none';
 };
@@ -2080,6 +2134,7 @@ window.lookupVaultReport = async function() {
         ...result.data,
       };
       renderTrackedReportView(window.activeTrackedReport);
+      startVaultTrackLiveSync();
     } else {
       const errMsg = result.message || 'Invalid Tracking Code or PIN. Please verify and try again.';
       if (errEl) { errEl.style.display = 'block'; errEl.textContent = '❌ ' + errMsg; }

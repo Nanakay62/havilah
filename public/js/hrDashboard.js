@@ -369,6 +369,55 @@
     fetchEthicsReports();
   };
 
+  // ── HR Real-Time Live Sync Polling ──
+  let hrReportPollInterval = null;
+
+  function startHrReportLiveSync() {
+    stopHrReportLiveSync();
+    hrReportPollInterval = setInterval(async () => {
+      if (!state.activeReport) {
+        stopHrReportLiveSync();
+        return;
+      }
+      const modal = document.getElementById('hrReportModalBackdrop');
+      if (!modal || modal.style.display === 'none') {
+        stopHrReportLiveSync();
+        return;
+      }
+
+      try {
+        const data = await apiFetch('/api/v1/hr/reports');
+        if (data && data.success && Array.isArray(data.reports)) {
+          state.ethicsReports = data.reports;
+          renderEthicsReports();
+          const updated = data.reports.find(r => r._id === state.activeReport._id);
+          if (updated) {
+            const prevLen = (state.activeReport.thread || []).length;
+            const newLen = (updated.thread || []).length;
+            const prevStatus = state.activeReport.status;
+            const newStatus = updated.status;
+
+            if (newLen !== prevLen || newStatus !== prevStatus) {
+              state.activeReport = updated;
+              const statusSelect = document.getElementById('hrModalStatusSelect');
+              if (statusSelect && newStatus !== prevStatus) statusSelect.value = newStatus;
+              renderHrModalThread(updated.thread || []);
+            }
+          }
+        }
+      } catch (e) {
+        // Silent background polling
+      }
+    }, 2500);
+  }
+
+  function stopHrReportLiveSync() {
+    if (hrReportPollInterval) {
+      clearInterval(hrReportPollInterval);
+      hrReportPollInterval = null;
+    }
+  }
+
   window.openHrReportModal = (reportId) => {
     const report = (state.ethicsReports || []).find(r => r._id === reportId);
     if (!report) return;
@@ -396,6 +445,7 @@
     renderHrModalThread(report.thread || []);
 
     if (modal) modal.style.display = 'flex';
+    startHrReportLiveSync();
   };
 
   function renderHrModalThread(thread) {
@@ -425,6 +475,7 @@
   }
 
   window.closeHrReportModal = () => {
+    stopHrReportLiveSync();
     const modal = document.getElementById('hrReportModalBackdrop');
     if (modal) modal.style.display = 'none';
     state.activeReport = null;

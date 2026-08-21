@@ -1613,6 +1613,50 @@ function renderConflictReports() {
   }).join('');
 }
 
+let saReportPollInterval = null;
+
+function startSaReportLiveSync() {
+  stopSaReportLiveSync();
+  saReportPollInterval = setInterval(async () => {
+    if (!activeConflictReport) {
+      stopSaReportLiveSync();
+      return;
+    }
+    const modal = document.getElementById('superAdminReportModalBackdrop');
+    if (!modal || modal.style.display === 'none') {
+      stopSaReportLiveSync();
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/v1/superadmin/reports', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.reports)) {
+        superAdminConflictReports = data.reports;
+        renderSuperAdminConflictReports();
+        const updated = data.reports.find(r => r._id === activeConflictReport._id);
+        if (updated) {
+          const prevLen = (activeConflictReport.thread || []).length;
+          const newLen = (updated.thread || []).length;
+          if (newLen !== prevLen || updated.status !== activeConflictReport.status) {
+            activeConflictReport = updated;
+            renderSuperAdminModalThread(updated.thread || []);
+          }
+        }
+      }
+    } catch (e) {}
+  }, 2500);
+}
+
+function stopSaReportLiveSync() {
+  if (saReportPollInterval) {
+    clearInterval(saReportPollInterval);
+    saReportPollInterval = null;
+  }
+}
+
 function openSuperAdminReportModal(reportId) {
   const report = superAdminConflictReports.find(r => r._id === reportId);
   if (!report) return;
@@ -1644,6 +1688,7 @@ function openSuperAdminReportModal(reportId) {
   renderSuperAdminModalThread(report.thread || []);
 
   if (modal) modal.style.display = 'flex';
+  startSaReportLiveSync();
 }
 
 function renderSuperAdminModalThread(thread) {
@@ -1673,6 +1718,7 @@ function renderSuperAdminModalThread(thread) {
 }
 
 function closeSuperAdminReportModal() {
+  stopSaReportLiveSync();
   const modal = document.getElementById('superAdminReportModalBackdrop');
   if (modal) modal.style.display = 'none';
   activeConflictReport = null;

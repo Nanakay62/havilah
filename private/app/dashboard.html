@@ -1965,6 +1965,7 @@ window.submitVaultReport = async function() {
   if (btn) { btn.disabled = true; btn.textContent = 'Submitting Anonymously...'; }
   
   try {
+    const tenantId = (typeof getWorkerTenantId === 'function') ? getWorkerTenantId() : null;
     const resp = await apiFetch('/api/v1/whistleblower/submit', {
       method: 'POST',
       body: JSON.stringify({
@@ -1972,6 +1973,7 @@ window.submitVaultReport = async function() {
         description,
         urgency,
         involvesLeadershipOrHR,
+        tenantId,
       })
     });
     const result = await resp.json();

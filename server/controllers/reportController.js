@@ -11,31 +11,44 @@ const Tenant = require('../models/Tenant');
 const { validateSession, requireRole, superAdminGuard } = require('../middleware/auth');
 const { sendWhistleblowerAlert } = require('../utils/emailService');
 
+const jwt = require('jsonwebtoken');
+
 /**
- * Helper: Resolve Tenant ObjectId from company_id, ObjectId string, slug, or session
+ * Helper: Resolve Tenant ObjectId from company_id, ObjectId string, slug, or JWT session
  */
 async function resolveTenantId(req) {
-  let tenantIdInput = req.body?.tenantId || req.query?.tenantId || req.sessionData?.company_id;
+  let tenantIdInput = req.body?.tenantId || req.body?.companyId || req.body?.company_id || req.query?.tenantId || req.sessionData?.company_id;
 
-  if (!tenantIdInput && req.sessionData?.company_id) {
-    tenantIdInput = req.sessionData.company_id;
+  // Extract from Bearer token if not explicitly provided in body
+  if (!tenantIdInput && req.headers && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    try {
+      const token = req.headers.authorization.slice(7).trim();
+      const decoded = jwt.decode(token);
+      if (decoded && (decoded.companyId || decoded.company_id || decoded.tenantId || decoded.tenant_id)) {
+        tenantIdInput = decoded.companyId || decoded.company_id || decoded.tenantId || decoded.tenant_id;
+      }
+    } catch (e) {}
   }
 
   if (tenantIdInput) {
     if (mongoose.Types.ObjectId.isValid(tenantIdInput)) {
-      const t = await Tenant.findById(tenantIdInput).select('_id company_name').lean();
+      const t = await Tenant.findById(tenantIdInput).select('_id company_name company_id slug').lean();
       if (t) return t;
     }
     const tByCompanyId = await Tenant.findOne({
-      $or: [{ company_id: tenantIdInput }, { slug: tenantIdInput }],
+      $or: [
+        { company_id: tenantIdInput },
+        { slug: String(tenantIdInput).toLowerCase() },
+        { company_name: new RegExp(`^${tenantIdInput}$`, 'i') }
+      ],
     })
-      .select('_id company_name')
+      .select('_id company_name company_id slug')
       .lean();
     if (tByCompanyId) return tByCompanyId;
   }
 
   // Fallback: Default first tenant if present
-  const firstTenant = await Tenant.findOne().select('_id company_name').lean();
+  const firstTenant = await Tenant.findOne().select('_id company_name company_id slug').lean();
   return firstTenant;
 }
 

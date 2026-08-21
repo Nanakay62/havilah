@@ -2032,10 +2032,15 @@ function startVaultTrackLiveSync() {
       return;
     }
     const modal = document.getElementById('vaultTrackModalBackdrop');
-    if (!modal || modal.style.display === 'none') {
+    // Check both inline and computed styles to handle any CSS toggling
+    const isHidden = !modal || modal.style.display === 'none' || getComputedStyle(modal).display === 'none';
+    if (isHidden) {
       stopVaultTrackLiveSync();
       return;
     }
+    // Skip if user hasn't authenticated yet (auth section visible)
+    const authSection = document.getElementById('trackAuthSection');
+    if (authSection && authSection.style.display !== 'none') return;
 
     try {
       const res = await apiFetch('/api/v1/whistleblower/track', {
@@ -2053,16 +2058,18 @@ function startVaultTrackLiveSync() {
         const newStatus = result.data.status;
 
         if (newThreadLen !== prevThreadLen || newStatus !== prevStatus) {
+          // Merge new data but preserve auth credentials
           window.activeTrackedReport = {
             trackingCode: window.activeTrackedReport.trackingCode,
             pin: window.activeTrackedReport.pin,
             ...result.data
           };
-          renderTrackedReportView(window.activeTrackedReport);
+          // Only re-render the thread bubbles and status badge, NOT the whole panel
+          renderVaultThreadOnly(window.activeTrackedReport);
         }
       }
     } catch (e) {
-      // Live background sync fail gracefully
+      console.warn('[Vault Live Sync] poll error:', e);
     }
   }, 2500);
 }
@@ -2071,6 +2078,78 @@ function stopVaultTrackLiveSync() {
   if (vaultTrackPollInterval) {
     clearInterval(vaultTrackPollInterval);
     vaultTrackPollInterval = null;
+  }
+}
+
+// Lightweight thread-only re-renderer used by live sync polling.
+// Updates only the chat bubbles and status badge without rebuilding the full
+// 2-column panel, so there is no visible flash on each 2.5s polling tick.
+function renderVaultThreadOnly(report) {
+  if (!report) return;
+
+  // Update status badge if it changed
+  const statusEl = document.getElementById('trackDisplayStatus');
+  if (statusEl) {
+    const stKey = (report.status || 'submitted').toLowerCase();
+    const statusMap = {
+      submitted: { label: '✓ SUBMITTED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
+      under_investigation: { label: '⏳ INVESTIGATING', bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
+      action_taken: { label: '🛡️ ACTION TAKEN', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' },
+      closed: { label: '🔒 CLOSED', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' }
+    };
+    const conf = statusMap[stKey] || statusMap['submitted'];
+    statusEl.innerHTML = `<span style="font-size:12px;">${conf.label.split(' ')[0]}</span> ${conf.label.split(' ').slice(1).join(' ')}`;
+    statusEl.style.background = conf.bg;
+    statusEl.style.color = conf.color;
+    statusEl.style.borderColor = conf.border;
+  }
+
+  // Re-render only the thread container
+  const threadContainer = document.getElementById('trackThreadContainer');
+  if (!threadContainer) return;
+  threadContainer.innerHTML = '';
+
+  // Date separator pill
+  const datePill = document.createElement('div');
+  datePill.style.cssText = 'align-self:center;background:#f1f5f9;color:#64748b;font-size:11px;font-weight:600;padding:4px 14px;border-radius:9999px;margin-bottom:8px;';
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  datePill.textContent = `Today, ${dateStr}`;
+  threadContainer.appendChild(datePill);
+
+  const thread = report.thread || [];
+  if (thread.length === 0) {
+    const emptyDiv = document.createElement('div');
+    emptyDiv.style.cssText = 'color:#94a3b8;font-size:13px;text-align:center;padding:24px 12px;';
+    emptyDiv.textContent = 'No messages in investigation thread yet. Use the reply box below to send secure notes.';
+    threadContainer.appendChild(emptyDiv);
+  } else {
+    thread.forEach(msg => {
+      const isMe = msg.sender === 'whistleblower';
+      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase() : '';
+      const safeMsg = (msg.message || '').replace(/</g, '&lt;');
+      const row = document.createElement('div');
+      if (isMe) {
+        row.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;align-self:flex-end;max-width:85%;gap:4px;';
+        row.innerHTML = `
+          <div style="font-size:11px;color:#64748b;font-weight:600;margin-right:44px;">You (Whistleblower) • ${timeStr}</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#ffffff;border-radius:18px 18px 4px 18px;padding:12px 18px;font-size:13.5px;line-height:1.5;font-weight:500;box-shadow:0 4px 14px rgba(79,70,229,0.25);word-break:break-word;">${safeMsg}</div>
+            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 6px rgba(168,85,247,0.25);">👤</div>
+          </div>`;
+      } else {
+        const isGreen = safeMsg.toLowerCase().includes('investigat') || safeMsg.toLowerCase().includes('received') || safeMsg.toLowerCase().includes('action');
+        row.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;align-self:flex-start;max-width:85%;gap:4px;';
+        row.innerHTML = `
+          <div style="font-size:11px;color:#64748b;font-weight:600;margin-left:44px;">Case Investigator • ${timeStr}</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 6px rgba(99,102,241,0.25);">👤</div>
+            <div style="background:${isGreen ? '#ecfdf5' : '#f8fafc'};border:1px solid ${isGreen ? '#a7f3d0' : '#e2e8f0'};color:${isGreen ? '#064e3b' : '#0f172a'};border-radius:18px 18px 18px 4px;padding:12px 18px;font-size:13.5px;line-height:1.5;box-shadow:0 2px 6px rgba(0,0,0,0.02);word-break:break-word;font-weight:${isGreen ? '600' : '400'};">${safeMsg}</div>
+          </div>`;
+      }
+      threadContainer.appendChild(row);
+    });
+    setTimeout(() => { threadContainer.scrollTop = threadContainer.scrollHeight; }, 10);
   }
 }
 

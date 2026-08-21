@@ -1623,30 +1623,37 @@ function startSaReportLiveSync() {
       return;
     }
     const modal = document.getElementById('superAdminReportModalBackdrop');
-    if (!modal || modal.style.display === 'none') {
+    // Check both inline style and computed style to handle CSS class toggling
+    const isHidden = !modal || modal.style.display === 'none' || getComputedStyle(modal).display === 'none';
+    if (isHidden) {
       stopSaReportLiveSync();
       return;
     }
 
     try {
-      const res = await fetch('/api/v1/superadmin/reports', {
+      const res = await fetch('/api/v1/superadmin/reports/conflict', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.reports)) {
         superAdminConflictReports = data.reports;
-        renderSuperAdminConflictReports();
+        // Bug fix: function is named renderConflictReports, not renderSuperAdminConflictReports
+        renderConflictReports();
         const updated = data.reports.find(r => r._id === activeConflictReport._id);
         if (updated) {
           const prevLen = (activeConflictReport.thread || []).length;
           const newLen = (updated.thread || []).length;
-          if (newLen !== prevLen || updated.status !== activeConflictReport.status) {
+          const prevStatus = activeConflictReport.status;
+          const newStatus = updated.status;
+          if (newLen !== prevLen || newStatus !== prevStatus) {
             activeConflictReport = updated;
             renderSuperAdminModalThread(updated.thread || []);
           }
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[SA Live Sync] poll error:', e);
+    }
   }, 2500);
 }
 

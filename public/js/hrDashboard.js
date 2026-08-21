@@ -380,7 +380,9 @@
         return;
       }
       const modal = document.getElementById('hrReportModalBackdrop');
-      if (!modal || modal.style.display === 'none') {
+      // Check both inline and computed styles to safely detect visibility
+      const isHidden = !modal || modal.style.display === 'none' || getComputedStyle(modal).display === 'none';
+      if (isHidden) {
         stopHrReportLiveSync();
         return;
       }
@@ -389,7 +391,6 @@
         const data = await apiFetch('/api/v1/hr/reports');
         if (data && data.success && Array.isArray(data.reports)) {
           state.ethicsReports = data.reports;
-          renderEthicsReports();
           const updated = data.reports.find(r => r._id === state.activeReport._id);
           if (updated) {
             const prevLen = (state.activeReport.thread || []).length;
@@ -402,11 +403,13 @@
               const statusSelect = document.getElementById('hrModalStatusSelect');
               if (statusSelect && newStatus !== prevStatus) statusSelect.value = newStatus;
               renderHrModalThread(updated.thread || []);
+              // Only refresh the sidebar list when something actually changed
+              renderEthicsReports();
             }
           }
         }
       } catch (e) {
-        // Silent background polling
+        console.warn('[HR Live Sync] poll error:', e);
       }
     }, 2500);
   }

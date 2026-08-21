@@ -19,67 +19,59 @@ async function sendMail({ to, subject, html, from }) {
 }
 
 /**
- * Sends a structured clinical referral dispatch email to FZ Safety and Health.
+ * Sends a Zero-Knowledge clinical referral notification alert to the designated Medical Assessor.
+ * Strictly contains NO patient name, NO phone/email contact, and NO clinical notes.
+ *
  * @param {object} opts
- * @param {string} opts.referenceCode - Reference code (e.g. REF-A3X9K2)
- * @param {string} [opts.patientName] - Employee / Patient name
- * @param {string} [opts.patientContact] - Phone or Email contact info
- * @param {string} [opts.contactInfo] - Alias for contact info
- * @param {string} [opts.patientEmail] - Alias for email
- * @param {string} [opts.departmentName] - Human-readable department name
- * @param {string} [opts.department] - Alias for department name
- * @param {string} [opts.topic] - Intake reason / consultation topic
- * @param {string} [opts.preferredDate] - Preferred appointment date
- * @param {string} [opts.preferredTime] - Preferred contact / appointment time
- * @param {string} [opts.notes] - Additional optional notes
- * @param {string} [opts.to] - Override recipient (defaults to nanakwamedickson62@gmail.com)
+ * @param {string} opts.referenceCode - Referral reference code (e.g. 'REF-A3X9K2')
+ * @param {string} [opts.companyName] - Organization / Tenant name
+ * @param {string} [opts.to] - Assessor email recipient
  */
-async function sendClinicalDispatch({ referenceCode, patientName, patientContact, contactInfo, patientEmail, department, departmentName, topic, preferredDate, preferredTime, notes, to }) {
+async function sendClinicalDispatch({ referenceCode, companyName, to }) {
   const recipient = to || process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com';
-  const resolvedPatientName = patientName || 'Not provided';
-  const resolvedContact = patientContact || contactInfo || patientEmail || 'Not provided';
-  const resolvedDepartment = departmentName || department || 'General Staff';
-  const resolvedTopic = topic || 'General Clinical Consultation Intake Request';
-  
-  let resolvedSchedule = 'As soon as available';
-  if (preferredDate && preferredTime && preferredTime !== 'As soon as available') {
-    resolvedSchedule = `${preferredDate} at ${preferredTime}`;
-  } else if (preferredDate) {
-    resolvedSchedule = `${preferredDate} (${preferredTime || 'Any time'})`;
-  } else if (preferredTime) {
-    resolvedSchedule = preferredTime;
-  }
-
-  const timestamp = new Date().toISOString();
+  const resolvedCompany = companyName || 'Client Organization';
+  const timestamp = new Date().toUTCString();
 
   const html = `
-    <div style="background-color: #000000; padding: 32px 12px; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;">
-      <div style="max-width: 600px; margin: 0 auto; background-color: #0a0a0e; color: #e2e8f0; border-radius: 12px; overflow: hidden; border: 1px solid #222228;">
-        <div style="background-color: #111116; border-bottom: 1px solid #222228; padding: 24px 32px;">
-          <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 700;">🏥 FZ Safety & Health - Clinical Referral Intake</h1>
-          <p style="margin: 4px 0 0; color: #94a3b8; font-size: 13px;">Havilah Occupational Health Intake System</p>
+    <div style="background-color: #0f172a; padding: 32px 12px; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;">
+      <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; color: #1e293b; border-radius: 14px; overflow: hidden; border: 1px solid #cbd5e1; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #0f766e, #0d9488); padding: 24px 32px; color: #ffffff;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 19px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            🏥 Havilah Clinical Referral Alert
+          </h1>
+          <p style="margin: 4px 0 0; color: #ccfbf1; font-size: 12.5px;">Zero-Knowledge Confidential Patient Intake System</p>
         </div>
-        <div style="padding: 24px 32px;">
-          <div style="background-color: #131318; border: 1px solid #222228; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px;">
-            <strong style="color: #2dd4bf; font-size: 14px; display: block; margin-bottom: 2px;">Direct Patient Intake Request Received</strong>
-            <p style="margin: 0; font-size: 12px; color: #94a3b8;">Please assign a practitioner to contact this patient via their preferred method.</p>
+
+        <!-- Body -->
+        <div style="padding: 28px 32px;">
+          <p style="font-size: 15px; line-height: 1.6; color: #1e293b; margin-top: 0;">
+            A new confidential occupational health referral (<strong>Ref: <span style="font-family: monospace; color: #0d9488; font-weight: 700;">${referenceCode}</span></strong>) has been submitted for company <strong>${resolvedCompany}</strong> and assigned to your clinical queue.
+          </p>
+
+          <!-- Zero-Knowledge Security Notice -->
+          <div style="background-color: #f0fdfa; border-left: 4px solid #14b8a6; padding: 14px 16px; border-radius: 4px; margin: 20px 0;">
+            <strong style="color: #0f766e; font-size: 13px; display: block; margin-bottom: 3px;">🔒 Patient Privacy &amp; Medical Compliance Guarantee:</strong>
+            <p style="margin: 0; font-size: 12px; color: #334155; line-height: 1.5;">
+              To prevent cleartext data exposure and maintain strict medical confidentiality (ISO 45003 / HIPAA / GDPR), patient identities, contact details, and clinical notes are <strong>never transmitted via email</strong>.
+            </p>
           </div>
-          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-            <tr><td style="padding: 9px 0; color: #94a3b8; width: 160px; font-weight: 600;">Reference Code</td><td style="padding: 9px 0; font-weight: 700; color: #2dd4bf; font-family: monospace; font-size: 15px;">${referenceCode}</td></tr>
-            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Patient Name</td><td style="padding: 9px 0; font-weight: 700; color: #ffffff;">${resolvedPatientName}</td></tr>
-            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Contact Phone/Email</td><td style="padding: 9px 0; font-weight: 700; color: #38bdf8;">${resolvedContact}</td></tr>
-            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Department</td><td style="padding: 9px 0; color: #e2e8f0; font-weight: 600;">${resolvedDepartment}</td></tr>
-            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Consultation Topic</td><td style="padding: 9px 0; color: #f8fafc; font-weight: 600;">${resolvedTopic}</td></tr>
-            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Preferred Schedule</td><td style="padding: 9px 0; color: #e2e8f0;">${resolvedSchedule}</td></tr>
-            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Submitted At</td><td style="padding: 9px 0; color: #94a3b8; font-size: 12px;">${timestamp}</td></tr>
-          </table>
-          ${notes ? `<div style="margin-top: 20px; padding: 16px; background-color: #131318; border: 1px solid #222228; border-radius: 8px;"><p style="margin: 0 0 6px; color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Additional Notes</p><p style="margin: 0; line-height: 1.6; color: #f1f5f9;">${notes}</p></div>` : ''}
-          <div style="margin-top: 24px; padding: 14px 18px; background-color: #131318; border: 1px solid #222228; border-radius: 8px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
-            <strong style="color: #cbd5e1;">🔒 Employer Privacy Guarantee:</strong> This intake request is dispatched strictly to FZ Safety & Health. Employer/HR dashboards will NEVER receive this individual patient contact data.
+
+          <p style="font-size: 13.5px; color: #334155; margin-bottom: 24px; line-height: 1.5;">
+            Please log into your Havilah Clinical Portal to decrypt and review patient intake details, access contact preferences, and manage the consultation lifecycle.
+          </p>
+
+          <div style="text-align: center; margin: 28px 0 16px;">
+            <a href="http://localhost:3000/clinical-portal.html" style="background: linear-gradient(135deg, #0d9488, #0f766e); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: 700; font-size: 13.5px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(13,148,136,0.3);">
+              🩺 Access Clinical Hub &amp; Review Queue
+            </a>
           </div>
         </div>
-        <div style="padding: 16px 32px; background-color: #070709; border-top: 1px solid #1a1a1f; font-size: 11px; color: #64748b; text-align: center;">
-          FZ Safety & Health Helpline: ${CLINICAL_HOTLINE} &bull; Powered by Havilah Compliance Platform
+
+        <!-- Footer -->
+        <div style="padding: 14px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; text-align: center;">
+          Assigned: ${timestamp} &bull; Havilah Occupational Health &amp; Clinical Referral Network
         </div>
       </div>
     </div>
@@ -87,7 +79,7 @@ async function sendClinicalDispatch({ referenceCode, patientName, patientContact
 
   return sendMail({
     to: recipient,
-    subject: `🏥 FZ Safety Clinical Referral [${referenceCode}] - Patient: ${resolvedPatientName}`,
+    subject: `🏥 New Clinical Referral Assigned [${referenceCode}]`,
     html
   });
 }

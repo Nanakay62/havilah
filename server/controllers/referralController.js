@@ -178,22 +178,14 @@ router.post(
 
           const result = await sendClinicalDispatch({
             referenceCode,
-            patientName,
-            patientContact,
-            contactInfo: patientContact,
-            departmentName,
-            department: departmentName,
-            topic,
-            preferredDate,
-            preferredTime,
-            notes,
+            companyName: tenant.company_name || tenant.companyName || 'Organization',
             to: targetEmail,
           });
 
           if (!result.success) {
             console.warn('[Referral] Background email dispatch failed:', result.error);
           } else {
-            console.log('[Occupational Health Referral] Email dispatched to assessor:', targetEmail, 'for reference:', referenceCode);
+            console.log('[Occupational Health Referral] Zero-Knowledge Email dispatched to assessor:', targetEmail, 'for reference:', referenceCode);
           }
         } catch (dispatchErr) {
           console.warn('[Referral] Background email dispatch error:', dispatchErr.message);

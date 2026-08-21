@@ -112,13 +112,29 @@ router.post(
       // Generate collision-resistant reference code
       const referenceCode = `REF-${randomUUID().slice(0, 8).toUpperCase()}`;
 
-      const rawDept =
-        req.body.departmentName ||
-        req.body.department ||
-        req.sessionData?.department_name ||
-        req.sessionData?.department_id;
+      // ── Department Resolution ────────────────────────────────────────────
+      // IMPORTANT: We deliberately ignore req.body.departmentName / req.body.department.
+      // Client-supplied values can be stale (old localStorage cache) or spoofed.
+      // Instead, we resolve the department name authoritatively from the authenticated
+      // user's department_id stored in the database.
+      const User = require('../models/User');
+      const userId = req.sessionData?.user_id;
+      let departmentName = 'General Staff';
 
-      const departmentName = await resolveReadableDepartment(rawDept, companyId, req.sessionData);
+      if (userId) {
+        try {
+          const userRecord = await User.findOne({ user_id: userId }).select('department_id').lean();
+          if (userRecord && userRecord.department_id && userRecord.department_id !== 'unassigned') {
+            const deptDoc = await Department.findOne({ department_id: userRecord.department_id }).select('name').lean();
+            if (deptDoc && deptDoc.name) {
+              departmentName = deptDoc.name;
+            }
+          }
+        } catch (deptErr) {
+          console.warn('[Referral] Department resolution error:', deptErr.message);
+        }
+      }
+
       const topic = req.body.topic || req.body.reason || (req.body.notes && !req.body.topic ? req.body.notes : 'General Clinical Consultation Intake Request');
       const preferredDate = req.body.preferredDate || req.body.date || '';
       const preferredTime = req.body.preferredTime || req.body.preferred_time || req.body.time || 'As soon as available';

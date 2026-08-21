@@ -307,6 +307,16 @@ router.get('/me', validateSession, async (req, res, next) => {
       return res.status(401).json({ success: false, error: 'User not found' });
     }
 
+    // Resolve human-readable department name from the department_id in the DB
+    // so the frontend always shows the correct department, not stale localStorage values.
+    let department_name = 'General Staff';
+    if (user.department_id && user.department_id !== 'unassigned') {
+      try {
+        const dept = await Department.findOne({ department_id: user.department_id }).select('name').lean();
+        if (dept && dept.name) department_name = dept.name;
+      } catch (e) {}
+    }
+
     return res.json({
       success: true,
       user: {
@@ -318,6 +328,7 @@ router.get('/me', validateSession, async (req, res, next) => {
         tenant_id: user.company_id,
         company_id: user.company_id,
         department_id: user.department_id,
+        department_name,
         isSystemSuperAdmin: user.isSystemSuperAdmin || false
       }
     });

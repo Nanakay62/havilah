@@ -1721,20 +1721,22 @@ async function sendSuperAdminReportReply() {
   if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
 
   try {
+    const activeToken = localStorage.getItem('havilah_token') || localStorage.getItem('token') || localStorage.getItem('session_token');
     const res = await fetch(`/api/v1/superadmin/reports/${activeConflictReport._id}`, {
       method: 'PATCH',
       headers: {
-        'Authorization': 'Bearer ' + token,
+        'Authorization': 'Bearer ' + activeToken,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ message })
     });
     const data = await res.json();
     if (data.success && data.report) {
-      input.value = '';
+      if (input) input.value = '';
       activeConflictReport.thread = data.report.thread || [];
       renderSuperAdminModalThread(activeConflictReport.thread);
-      await loadConflictReports();
+      // Refresh background table list asynchronously
+      loadConflictReports();
       showToast('Message Dispatched', 'Anonymous message appended to case thread.', 'success');
     } else {
       showToast('Error', data.message || data.error || 'Failed to send message.', 'error');
@@ -1743,6 +1745,7 @@ async function sendSuperAdminReportReply() {
     showToast('Error', 'Could not reach server.', 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
+    if (input) input.focus();
   }
 }
 

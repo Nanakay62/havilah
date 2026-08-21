@@ -2075,19 +2075,30 @@ window.lookupVaultReport = async function() {
 };
 
 function renderTrackedReportView(report) {
+  if (!report) return;
   document.getElementById('trackAuthSection').style.display = 'none';
   document.getElementById('trackDetailsSection').style.display = 'block';
 
-  document.getElementById('trackDisplayCode').textContent = report.trackingCode;
-  document.getElementById('trackDisplayCategory').textContent = report.category;
-  document.getElementById('trackDisplayUrgency').textContent = report.urgency || 'Standard';
-  document.getElementById('trackDisplayDate').textContent = new Date(report.createdAt).toLocaleDateString();
-  
+  const codeEl = document.getElementById('trackDisplayCode');
+  const catEl = document.getElementById('trackDisplayCategory');
+  const urgEl = document.getElementById('trackDisplayUrgency');
+  const dateEl = document.getElementById('trackDisplayDate');
   const statusEl = document.getElementById('trackDisplayStatus');
-  const st = (report.status || 'submitted').replace(/_/g, ' ').toUpperCase();
-  statusEl.textContent = st;
+
+  if (codeEl) codeEl.textContent = report.trackingCode || '—';
+  if (catEl) catEl.textContent = report.category || '—';
+  if (urgEl) urgEl.textContent = report.urgency || 'Standard';
+  if (dateEl) {
+    dateEl.textContent = report.createdAt ? new Date(report.createdAt).toLocaleDateString() : '';
+  }
+  
+  if (statusEl) {
+    const st = (report.status || 'submitted').replace(/_/g, ' ').toUpperCase();
+    statusEl.textContent = st;
+  }
   
   const threadContainer = document.getElementById('trackThreadContainer');
+  if (!threadContainer) return;
   threadContainer.innerHTML = '';
 
   const thread = report.thread || [];
@@ -2102,12 +2113,12 @@ function renderTrackedReportView(report) {
       div.innerHTML = `
         <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">${isMe ? 'You (Whistleblower)' : '🛡️ Case Investigator'} • ${timeStr}</div>
         <div style="max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.4;background:${isMe ? '#4338ca' : '#065f46'};color:#fff;border:1px solid ${isMe ? '#6366f1' : '#10b981'};word-break:break-word;">
-          ${msg.message.replace(/</g, '&lt;')}
+          ${(msg.message || '').replace(/</g, '&lt;')}
         </div>
       `;
       threadContainer.appendChild(div);
     });
-    threadContainer.scrollTop = threadContainer.scrollHeight;
+    setTimeout(() => { threadContainer.scrollTop = threadContainer.scrollHeight; }, 10);
   }
 }
 
@@ -2119,8 +2130,7 @@ window.sendAnonymousReply = async function() {
 
   if (!message) return;
 
-  btn.disabled = true;
-  btn.textContent = 'Sending...';
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
 
   try {
     const res = await apiFetch('/api/v1/whistleblower/reply', {
@@ -2132,19 +2142,22 @@ window.sendAnonymousReply = async function() {
       })
     });
     const result = await res.json();
-    if (result.success) {
-      msgInput.value = '';
-      window.activeTrackedReport.thread = result.thread;
+    if (result && result.success) {
+      if (msgInput) msgInput.value = '';
+      window.activeTrackedReport.thread = result.thread || [];
       renderTrackedReportView(window.activeTrackedReport);
-      if (typeof showToast === 'function') showToast('Message Sent', 'Your reply has been securely appended to the thread.', 'success');
+      if (typeof window.showToast === 'function') {
+        window.showToast('Message Sent', 'Your reply has been securely appended to the thread.', 'success');
+      }
     } else {
-      if (typeof showToast === 'function') showToast('Error', result.message || 'Failed to send message.', 'error');
+      const errMsg = (result && result.message) || 'Failed to send message.';
+      if (typeof window.showToast === 'function') window.showToast('Error', errMsg, 'error');
     }
   } catch (err) {
-    if (typeof showToast === 'function') showToast('Error', 'Could not reach the server.', 'error');
+    if (typeof window.showToast === 'function') window.showToast('Error', 'Could not reach the server.', 'error');
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Send Anonymous Reply';
+    if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
+    if (msgInput) msgInput.focus();
   }
 };
 
@@ -4288,7 +4301,7 @@ window.App = App;
 
       <!-- Reply Box -->
       <div style="display:flex;gap:8px;">
-        <input type="text" id="trackReplyInput" placeholder="Type anonymous follow-up message..." style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:13px;">
+        <input type="text" id="trackReplyInput" placeholder="Type anonymous follow-up message..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendAnonymousReply();}" style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:13px;">
         <button id="trackReplyBtn" onclick="window.sendAnonymousReply()" style="padding:10px 16px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Send Reply</button>
       </div>
     </div>

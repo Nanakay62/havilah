@@ -1138,7 +1138,7 @@
 
       <!-- Investigator Reply -->
       <div style="display:flex;gap:8px;">
-        <input type="text" id="hrModalReplyInput" placeholder="Send message to anonymous whistleblower..." style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+        <input type="text" id="hrModalReplyInput" placeholder="Send message to anonymous whistleblower..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendHrReportReply();}" style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
         <button onclick="window.sendHrReportReply()" class="btn btn-primary btn-sm" id="hrSendReplyBtn" style="padding:9px 16px;font-size:13px;">Send</button>
       </div>
     </div>

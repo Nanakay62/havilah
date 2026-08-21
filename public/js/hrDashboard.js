@@ -479,10 +479,11 @@
         body: JSON.stringify({ message })
       });
       if (data && data.success && data.report) {
-        input.value = '';
+        if (input) input.value = '';
         state.activeReport.thread = data.report.thread || [];
         renderHrModalThread(state.activeReport.thread);
-        await fetchEthicsReports();
+        // Refresh background table list asynchronously
+        fetchEthicsReports();
         if (window.App && typeof App.toast === 'function') {
           App.toast('Message Sent', 'Your message has been sent to the anonymous whistleblower.', 'success');
         }
@@ -497,6 +498,7 @@
       }
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Send'; }
+      if (input) input.focus();
     }
   };
 

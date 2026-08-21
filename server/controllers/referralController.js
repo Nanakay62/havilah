@@ -270,4 +270,112 @@ router.get(
   }
 );
 
+/**
+ * @route   GET /api/v1/referrals/status/:referenceCode
+ * @desc    Employee status lookup & two-way clinical messaging thread
+ * @access  Public / Employee (Zero-Knowledge, authenticated by Reference Code)
+ */
+router.get('/status/:referenceCode', async (req, res, next) => {
+  try {
+    const rawCode = (req.params.referenceCode || '').toString().trim().toUpperCase();
+    if (!rawCode) {
+      return res.status(400).json({ success: false, error: 'VALIDATION_ERROR', message: 'Reference code is required.' });
+    }
+
+    const referral = await Referral.findOne({ referenceCode: rawCode })
+      .select('referenceCode status scheduledAt appointmentNotes preferredTime createdAt thread clinicalDetails.meetingLink')
+      .lean();
+
+    if (!referral) {
+      return res.status(404).json({
+        success: false,
+        error: 'REFERRAL_NOT_FOUND',
+        message: 'No consultation request found matching this reference code.',
+      });
+    }
+
+    // Return sanitized zero-knowledge payload for employee (no internal DB IDs, no billing data, no tenant internals)
+    const sanitizedData = {
+      referenceCode: referral.referenceCode,
+      status: referral.status || 'pending',
+      scheduledAt: referral.scheduledAt || null,
+      appointmentNotes: referral.appointmentNotes || '',
+      meetingLink: referral.clinicalDetails?.meetingLink || '',
+      preferredTime: referral.preferredTime || 'As soon as available',
+      createdAt: referral.createdAt,
+      thread: (referral.thread || []).map(msg => ({
+        sender: msg.sender,
+        senderName: msg.senderName || (msg.sender === 'assessor' ? 'Medical Assessor' : 'You (Employee)'),
+        message: msg.message,
+        timestamp: msg.timestamp,
+      })),
+    };
+
+    res.json({
+      success: true,
+      data: sanitizedData,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   POST /api/v1/referrals/status/:referenceCode/message
+ * @desc    Employee sends reply to Medical Assessor in the two-way clinical thread
+ * @access  Public / Employee (Zero-Knowledge, authenticated by Reference Code)
+ */
+router.post('/status/:referenceCode/message', async (req, res, next) => {
+  try {
+    const rawCode = (req.params.referenceCode || '').toString().trim().toUpperCase();
+    const { message } = req.body;
+
+    if (!rawCode) {
+      return res.status(400).json({ success: false, error: 'VALIDATION_ERROR', message: 'Reference code is required.' });
+    }
+
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'Message content is required.',
+      });
+    }
+
+    const referral = await Referral.findOne({ referenceCode: rawCode });
+    if (!referral) {
+      return res.status(404).json({
+        success: false,
+        error: 'REFERRAL_NOT_FOUND',
+        message: 'No consultation request found matching this reference code.',
+      });
+    }
+
+    const newMsg = {
+      sender: 'employee',
+      senderName: 'Employee',
+      message: message.trim(),
+      timestamp: new Date(),
+    };
+
+    referral.thread = referral.thread || [];
+    referral.thread.push(newMsg);
+    await referral.save();
+
+    console.log(`[Referral] Employee sent message in thread for ${referral.referenceCode}`);
+
+    res.json({
+      success: true,
+      message: 'Reply sent securely to your assigned practitioner.',
+      thread: referral.thread,
+      data: {
+        thread: referral.thread,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
+

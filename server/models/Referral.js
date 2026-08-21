@@ -28,6 +28,7 @@ const ReferralSchema = new mongoose.Schema({
     patientContact: { type: String, required: true },
     intakeNotes: { type: String },
     assessorNotes: { type: String },
+    meetingLink: { type: String, trim: true, default: '' },
     completedAt: { type: Date },
     attachments: [{
       fileName: { type: String, required: true },
@@ -37,6 +38,12 @@ const ReferralSchema = new mongoose.Schema({
       uploadedAt: { type: Date, default: Date.now },
     }],
   },
+  thread: [{
+    sender: { type: String, enum: ['employee', 'assessor'], required: true },
+    senderName: { type: String, trim: true, default: '' },
+    message: { type: String, required: true, trim: true },
+    timestamp: { type: Date, default: Date.now },
+  }],
   reassignedFrom: { type: mongoose.Schema.Types.ObjectId, ref: 'Assessor' },
   reassignedAt: { type: Date },
 }, { timestamps: true });

@@ -274,13 +274,13 @@ router.get('/queue', requireAssessorAuth, async (req, res, next) => {
 
 /**
  * @route   PATCH /api/v1/assessor/referrals/:id/schedule
- * @desc    Direct appointment scheduling / stamping
+ * @desc    Direct appointment scheduling / stamping with optional Telehealth meeting link
  * @access  Assessor Authenticated
  */
 router.patch('/referrals/:id/schedule', requireAssessorAuth, async (req, res, next) => {
   try {
     const referralId = req.params.id;
-    const { scheduledDate, scheduledTime, appointmentNotes } = req.body;
+    const { scheduledDate, scheduledTime, scheduledAt, appointmentNotes, meetingLink } = req.body;
 
     const referral = await Referral.findById(referralId);
     if (!referral) {
@@ -291,24 +291,87 @@ router.patch('/referrals/:id/schedule', requireAssessorAuth, async (req, res, ne
       return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this case.' });
     }
 
-    if (!scheduledDate) {
+    if (!scheduledDate && !scheduledAt) {
       return res.status(400).json({ success: false, error: 'VALIDATION_ERROR', message: 'Scheduled date is required.' });
     }
 
-    const combinedDateTime = scheduledTime ? new Date(`${scheduledDate}T${scheduledTime}`) : new Date(scheduledDate);
+    let combinedDateTime;
+    if (scheduledAt) {
+      combinedDateTime = new Date(scheduledAt);
+    } else {
+      combinedDateTime = scheduledTime ? new Date(`${scheduledDate}T${scheduledTime}`) : new Date(scheduledDate);
+    }
+
     referral.scheduledAt = combinedDateTime;
     if (appointmentNotes !== undefined) {
       referral.appointmentNotes = String(appointmentNotes).trim();
     }
+    if (meetingLink !== undefined) {
+      referral.clinicalDetails = referral.clinicalDetails || {};
+      referral.clinicalDetails.meetingLink = String(meetingLink).trim();
+    }
     referral.status = 'scheduled';
 
     await referral.save();
-    console.log(`[Assessor] Referral ${referral.referenceCode} scheduled for ${referral.scheduledAt}`);
+    console.log(`[Assessor] Referral ${referral.referenceCode} scheduled for ${referral.scheduledAt}, meetingLink: ${referral.clinicalDetails?.meetingLink}`);
 
     res.json({
       success: true,
       message: 'Consultation appointment scheduled successfully.',
       data: referral,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   POST /api/v1/assessor/referrals/:id/message
+ * @desc    Assessor sends two-way clinical dialogue message to patient/employee
+ * @access  Assessor Authenticated
+ */
+router.post('/referrals/:id/message', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const referralId = req.params.id;
+    const { message } = req.body;
+
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'Message content is required.',
+      });
+    }
+
+    const referral = await Referral.findById(referralId);
+    if (!referral) {
+      return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Referral case not found.' });
+    }
+
+    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this case.' });
+    }
+
+    const newMsg = {
+      sender: 'assessor',
+      senderName: req.assessor.name || 'Medical Assessor',
+      message: message.trim(),
+      timestamp: new Date(),
+    };
+
+    referral.thread = referral.thread || [];
+    referral.thread.push(newMsg);
+    await referral.save();
+
+    console.log(`[Assessor] Message added to thread for referral ${referral.referenceCode} by ${newMsg.senderName}`);
+
+    res.json({
+      success: true,
+      message: 'Message dispatched successfully.',
+      thread: referral.thread,
+      data: {
+        thread: referral.thread,
+      },
     });
   } catch (err) {
     next(err);

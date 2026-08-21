@@ -681,7 +681,14 @@
         document.getElementById('scheduleTimeInput').value = '';
       }
       document.getElementById('scheduleNotesInput').value = item.appointmentNotes || '';
+      const meetInput = document.getElementById('scheduleMeetingLinkInput');
+      if (meetInput) meetInput.value = item.clinicalDetails?.meetingLink || '';
     }
+
+    // Render clinical dialogue thread
+    renderAssessorModalThread(item.thread || []);
+    const replyInput = document.getElementById('modalCaseReplyInput');
+    if (replyInput) replyInput.value = '';
 
     // Render attachments
     const attachList = document.getElementById('modalAttachmentsList');
@@ -708,7 +715,130 @@
     }
 
     openModal('caseDetailModal');
+    startAssessorLiveSync();
   };
+
+  // --- Clinical Thread Functions for Assessor ---
+  function renderAssessorModalThread(thread) {
+    const container = document.getElementById('modalCaseThreadContainer');
+    if (!container) return;
+
+    if (!thread || thread.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;text-align:center;padding:16px;">No messages in consultation dialogue yet. Type a note below to initiate communication.</div>';
+      return;
+    }
+
+    container.innerHTML = thread.map(msg => {
+      const isAssessor = msg.sender === 'assessor';
+      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const safeMsg = (msg.message || '').replace(/</g, '&lt;');
+
+      return `
+        <div style="display:flex;flex-direction:column;align-items:${isAssessor ? 'flex-end' : 'flex-start'};gap:2px;margin-bottom:6px;">
+          <div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);padding:0 4px;">
+            ${isAssessor ? '🩺 You (Practitioner)' : '👤 Patient (Employee)'} • ${timeStr}
+          </div>
+          <div style="max-width:82%;padding:8px 12px;border-radius:${isAssessor ? '14px 14px 2px 14px' : '14px 14px 14px 2px'};font-size:0.82rem;line-height:1.45;background:${isAssessor ? 'linear-gradient(135deg, #0d9488, #0f766e)' : '#FFFFFF'};color:${isAssessor ? '#FFFFFF' : 'var(--text-1)'};border:1px solid ${isAssessor ? 'transparent' : 'var(--border)'};box-shadow:0 1px 3px rgba(0,0,0,0.05);word-break:break-word;">
+            ${safeMsg}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    setTimeout(() => { container.scrollTop = container.scrollHeight; }, 10);
+  }
+
+  window.submitAssessorCaseMessage = async () => {
+    if (!state.selectedCase) return;
+    const id = state.selectedCase._id;
+    const inputEl = document.getElementById('modalCaseReplyInput');
+    const msg = inputEl?.value.trim();
+    const btn = document.getElementById('modalCaseSendReplyBtn');
+
+    if (!msg) {
+      alert('Please enter a message before sending.');
+      return;
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/referrals/${id}/message`, {
+        method: 'POST',
+        body: JSON.stringify({ message: msg }),
+      });
+
+      if (res.success && res.thread) {
+        state.selectedCase.thread = res.thread;
+        const item = state.queue.find(r => r._id === id);
+        if (item) item.thread = res.thread;
+
+        if (inputEl) inputEl.value = '';
+        renderAssessorModalThread(res.thread);
+        showToast('Message sent to patient.');
+      }
+    } catch (err) {
+      alert('Error sending message: ' + err.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<span>Send</span> <span>✉️</span>'; }
+    }
+  };
+
+  // --- Real-time Live Sync Polling for Assessor Portal ---
+  let assessorLiveSyncInterval = null;
+
+  function startAssessorLiveSync() {
+    stopAssessorLiveSync();
+    assessorLiveSyncInterval = setInterval(async () => {
+      if (!getAssessorToken()) {
+        stopAssessorLiveSync();
+        return;
+      }
+
+      try {
+        const res = await assessorApiFetch(`${API_BASE}/queue`);
+        if (res && res.data) {
+          const prevLen = state.queue.length;
+          const newLen = res.data.length;
+          state.queue = res.data;
+
+          // If count changed or status changed, re-render queue table & KPIs
+          if (newLen !== prevLen) {
+            updateCompanyFilter();
+            processFilteredQueue();
+            updateKPIs();
+          }
+
+          // If a case modal is currently open, live-sync its thread & status
+          const modal = document.getElementById('caseDetailModal');
+          const isModalOpen = modal && modal.classList.contains('show');
+
+          if (isModalOpen && state.selectedCase) {
+            const updatedCase = res.data.find(r => r._id === state.selectedCase._id);
+            if (updatedCase) {
+              const prevThreadLen = (state.selectedCase.thread || []).length;
+              const newThreadLen = (updatedCase.thread || []).length;
+              const prevStatus = state.selectedCase.status;
+
+              if (newThreadLen !== prevThreadLen || updatedCase.status !== prevStatus) {
+                state.selectedCase = updatedCase;
+                renderAssessorModalThread(updatedCase.thread || []);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // Silent poll error
+      }
+    }, 2500);
+  }
+
+  function stopAssessorLiveSync() {
+    if (assessorLiveSyncInterval) {
+      clearInterval(assessorLiveSyncInterval);
+      assessorLiveSyncInterval = null;
+    }
+  }
 
   window.submitScheduleAppointment = async () => {
     if (!state.selectedCase) return;
@@ -716,6 +846,7 @@
     const dateVal = document.getElementById('scheduleDateInput')?.value;
     const timeVal = document.getElementById('scheduleTimeInput')?.value;
     const notesVal = document.getElementById('scheduleNotesInput')?.value;
+    const meetingVal = document.getElementById('scheduleMeetingLinkInput')?.value.trim();
 
     if (!dateVal) {
       alert('Please select an appointment date.');
@@ -729,6 +860,7 @@
           scheduledDate: dateVal,
           scheduledTime: timeVal,
           appointmentNotes: notesVal,
+          meetingLink: meetingVal,
         }),
       });
 
@@ -737,10 +869,12 @@
       if (item) {
         item.scheduledAt = res.data.scheduledAt;
         item.appointmentNotes = res.data.appointmentNotes;
+        item.clinicalDetails = item.clinicalDetails || {};
+        item.clinicalDetails.meetingLink = res.data.clinicalDetails?.meetingLink || meetingVal;
         item.status = 'scheduled';
       }
 
-      showToast('Appointment scheduled successfully!');
+      showToast('Appointment and meeting link saved successfully!');
       closeModal('caseDetailModal');
       updateKPIs();
       processFilteredQueue();
@@ -1247,6 +1381,9 @@
   };
 
   window.closeModal = (id) => {
+    if (id === 'caseDetailModal') {
+      stopAssessorLiveSync();
+    }
     const modal = document.getElementById(id);
     if (modal) modal.classList.remove('show');
   };

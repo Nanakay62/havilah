@@ -693,6 +693,18 @@
           <button type="submit" class="btn btn-primary" id="assessorLoginBtn" style="width: 100%; padding: 11px; margin-top: 8px;">
             Sign In to Clinical Console
           </button>
+          
+          <div style="margin-top: 16px; padding: 10px; background: #F8FAFC; border: 1px solid var(--border); border-radius: 8px; font-size: 0.75rem; color: var(--text-2); text-align: center;">
+            <span style="font-weight: 700; color: var(--text-1); display: block; margin-bottom: 6px;">⚡ Quick Fill Test Credentials</span>
+            <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+              <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 3px 8px;" onclick="document.getElementById('assessorEmailInput').value='nanakwamedickson62@gmail.com';document.getElementById('assessorPasswordInput').value='Password123!';">
+                Dr. Nana Dickson
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 3px 8px;" onclick="document.getElementById('assessorEmailInput').value='dr.clarke@fzsafety.com';document.getElementById('assessorPasswordInput').value='Password123!';">
+                Dr. Edith Clarke
+              </button>
+            </div>
+          </div>
         </form>
       </div>
     </div>
@@ -864,12 +876,41 @@
           </div>
         </div>
         <div style="margin-bottom: 10px;">
+          <label class="form-label" style="font-size: 0.75rem;">Telehealth / Video Meeting Link (Optional)</label>
+          <input type="url" id="scheduleMeetingLinkInput" class="form-input" placeholder="e.g. https://meet.google.com/abc-defg-hij or Whereby, Zoom, Doxy.me" style="padding: 6px 10px;">
+        </div>
+        <div style="margin-bottom: 10px;">
           <label class="form-label" style="font-size: 0.75rem;">Appointment Note</label>
-          <input type="text" id="scheduleNotesInput" class="form-input" placeholder="e.g. Telehealth link sent, Clinic Room 3..." style="padding: 6px 10px;">
+          <input type="text" id="scheduleNotesInput" class="form-input" placeholder="e.g. Telehealth consultation, Clinic Room 3..." style="padding: 6px 10px;">
         </div>
         <button type="button" class="btn btn-outline btn-sm" onclick="submitScheduleAppointment()">
-          ✓ Stamp Appointment Date
+          ✓ Stamp Appointment &amp; Meeting Link
         </button>
+      </div>
+
+      <!-- Investigation & Clinical Dialogue (Two-Way Messaging Thread) -->
+      <div id="modalDialogueSection" style="margin-top: 16px; background: #FFFFFF; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div style="font-weight: 700; color: var(--text-1); font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+            <span>💬 Clinical Consultation Dialogue</span>
+            <span style="font-size: 0.68rem; background: rgba(13,148,136,0.1); color: #0f766e; padding: 2px 6px; border-radius: 4px; font-weight: 700;">Zero-Knowledge Encrypted</span>
+          </div>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Asynchronous Patient Dialogue</span>
+        </div>
+
+        <!-- Thread Container -->
+        <div id="modalCaseThreadContainer" style="max-height: 220px; min-height: 80px; overflow-y: auto; background: #F8FAFC; border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Reply Input & Send Button -->
+        <div style="display: flex; gap: 8px; align-items: flex-end;">
+          <textarea id="modalCaseReplyInput" class="form-input" rows="2" placeholder="Type a confidential message or follow-up instruction to the employee..." style="flex: 1; padding: 8px 10px; font-size: 0.82rem; resize: vertical; border-radius: 8px;"></textarea>
+          <button type="button" id="modalCaseSendReplyBtn" class="btn btn-primary btn-sm" style="padding: 8px 16px; height: 38px; display: flex; align-items: center; gap: 4px;" onclick="submitAssessorCaseMessage()">
+            <span>Send</span>
+            <span>✉️</span>
+          </button>
+        </div>
       </div>
 
       <!-- Attachments Section -->

@@ -1368,6 +1368,9 @@
                 <textarea id="consultNotesInput" class="input" rows="2" placeholder="Optional details or specific accommodations needed..." style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem; resize: vertical;"></textarea>
               </div>
               <button class="cosmic-pill emerald" style="cursor: pointer; padding: 10px 16px; font-weight: 700; width: 100%; margin-top: 4px; justify-content: center;" onclick="App.submitClinicalConsultation()">Submit Request to FZ Safety Practitioner</button>
+              <button onclick="App.closeHelpCenter(); window.openConsultTrackModal();" style="width: 100%; cursor: pointer; padding: 8px 16px; font-weight: 600; background: rgba(13,148,136,0.1); color: #0d9488; border: 1px solid rgba(13,148,136,0.3); border-radius: 8px; font-size: 0.82rem; margin-top: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <span>🔍</span> <span>Track Existing Consultation &amp; Dialogue</span>
+              </button>
             </div>
           </div>
           
@@ -2399,6 +2402,325 @@ window.sendAnonymousReply = async function() {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
     if (msgInput) msgInput.focus();
+  }
+};
+
+// ═══ Clinical Consultation Tracking & Telehealth Dialogue ═══
+let consultTrackPollInterval = null;
+window.activeTrackedConsultation = null;
+
+function startConsultTrackLiveSync() {
+  stopConsultTrackLiveSync();
+  consultTrackPollInterval = setInterval(async () => {
+    if (!window.activeTrackedConsultation || !window.activeTrackedConsultation.referenceCode) {
+      stopConsultTrackLiveSync();
+      return;
+    }
+    const modal = document.getElementById('consultTrackModalBackdrop');
+    const isHidden = !modal || modal.style.display === 'none' || getComputedStyle(modal).display === 'none';
+    if (isHidden) {
+      stopConsultTrackLiveSync();
+      return;
+    }
+    const authSection = document.getElementById('consultTrackAuthSection');
+    if (authSection && authSection.style.display !== 'none') return;
+
+    try {
+      const res = await fetch(`/api/v1/referrals/status/${encodeURIComponent(window.activeTrackedConsultation.referenceCode)}`);
+      const result = await res.json();
+      if (result && result.success && result.data) {
+        const prevLen = (window.activeTrackedConsultation.thread || []).length;
+        const newLen = (result.data.thread || []).length;
+        const prevStatus = window.activeTrackedConsultation.status;
+        const newStatus = result.data.status;
+        const prevLink = window.activeTrackedConsultation.meetingLink || '';
+        const newLink = result.data.meetingLink || '';
+        const prevSched = window.activeTrackedConsultation.scheduledAt || '';
+        const newSched = result.data.scheduledAt || '';
+
+        if (newLen !== prevLen || newStatus !== prevStatus || newLink !== prevLink || newSched !== prevSched) {
+          window.activeTrackedConsultation = result.data;
+          renderConsultationThreadOnly(result.data);
+        }
+      }
+    } catch (e) {
+      console.warn('[Consult Live Sync] poll error:', e);
+    }
+  }, 2500);
+}
+
+function stopConsultTrackLiveSync() {
+  if (consultTrackPollInterval) {
+    clearInterval(consultTrackPollInterval);
+    consultTrackPollInterval = null;
+  }
+}
+
+window.openConsultTrackModal = function(prefilledCode) {
+  stopConsultTrackLiveSync();
+  const modal = document.getElementById('consultTrackModalBackdrop');
+  if (!modal) return;
+
+  modal.style.display = 'flex';
+  const savedRef = prefilledCode || localStorage.getItem('havilah_last_consult_ref') || '';
+  const inputEl = document.getElementById('consultTrackCodeInput');
+  const errEl = document.getElementById('consultTrackAuthErrorMsg');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  if (savedRef) {
+    if (inputEl) inputEl.value = savedRef;
+    window.lookupConsultationReport(savedRef);
+  } else {
+    document.getElementById('consultTrackAuthSection').style.display = 'block';
+    document.getElementById('consultTrackDetailsSection').style.display = 'none';
+    if (inputEl) {
+      inputEl.value = '';
+      setTimeout(() => inputEl.focus(), 100);
+    }
+  }
+};
+
+window.closeConsultTrackModal = function() {
+  stopConsultTrackLiveSync();
+  const modal = document.getElementById('consultTrackModalBackdrop');
+  if (modal) modal.style.display = 'none';
+};
+
+window.lookupConsultationReport = async function(codeOverride) {
+  const rawCode = codeOverride || document.getElementById('consultTrackCodeInput')?.value || '';
+  const btn = document.getElementById('consultTrackLookupBtn');
+  const errEl = document.getElementById('consultTrackAuthErrorMsg');
+
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  let code = rawCode.replace(/\s+/g, '').toUpperCase();
+  if (!code.startsWith('REF-') && code.length === 8) {
+    code = 'REF-' + code;
+  }
+
+  if (!code) {
+    const msg = 'Please enter your Reference Code (e.g. REF-E0A58FEF).';
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = msg; }
+    if (typeof window.showToast === 'function') window.showToast('Validation Error', msg, 'error');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Verifying Reference Code...'; }
+
+  try {
+    const res = await fetch(`/api/v1/referrals/status/${encodeURIComponent(code)}`);
+    const result = await res.json();
+
+    if (result.success && result.data) {
+      window.activeTrackedConsultation = result.data;
+      localStorage.setItem('havilah_last_consult_ref', code);
+      renderConsultationTrackView(result.data);
+      startConsultTrackLiveSync();
+    } else {
+      const errMsg = result.message || 'No consultation request found matching this reference code.';
+      document.getElementById('consultTrackAuthSection').style.display = 'block';
+      document.getElementById('consultTrackDetailsSection').style.display = 'none';
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = '❌ ' + errMsg; }
+      if (typeof window.showToast === 'function') window.showToast('Not Found', errMsg, 'error');
+    }
+  } catch (err) {
+    const errMsg = 'Could not connect to the server. Please try again.';
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = '⚠️ ' + errMsg; }
+    if (typeof window.showToast === 'function') window.showToast('Connection Error', errMsg, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Track Consultation Status'; }
+  }
+};
+
+function renderConsultationTrackView(data) {
+  if (!data) return;
+
+  document.getElementById('consultTrackAuthSection').style.display = 'none';
+  document.getElementById('consultTrackDetailsSection').style.display = 'block';
+
+  // Format date submitted
+  let dateStr = '—';
+  if (data.createdAt) {
+    const d = new Date(data.createdAt);
+    dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  const codeEl = document.getElementById('consultDisplayCode');
+  const dateEl = document.getElementById('consultDisplayDate');
+  const prefEl = document.getElementById('consultDisplayPreferred');
+  const statusEl = document.getElementById('consultDisplayStatus');
+
+  if (codeEl) codeEl.textContent = data.referenceCode;
+  if (dateEl) dateEl.textContent = dateStr;
+  if (prefEl) prefEl.textContent = data.preferredTime || 'As soon as available';
+
+  // Status mapping
+  if (statusEl) {
+    const st = (data.status || 'pending').toLowerCase();
+    const map = {
+      pending: { label: '⏳ PENDING REVIEW', bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
+      scheduled: { label: '📅 SCHEDULED', bg: '#e0e7ff', color: '#4338ca', border: '#c7d2fe' },
+      completed: { label: '✓ COMPLETED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
+      cancelled: { label: '✕ CANCELLED', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
+    };
+    const conf = map[st] || map.pending;
+    statusEl.textContent = conf.label;
+    statusEl.style.background = conf.bg;
+    statusEl.style.color = conf.color;
+    statusEl.style.borderColor = conf.border;
+  }
+
+  // Telehealth Video Meeting Banner
+  const telehealthBanner = document.getElementById('consultTelehealthBanner');
+  const joinBtn = document.getElementById('consultJoinMeetingBtn');
+  const schedTimeText = document.getElementById('consultScheduleTimeText');
+  const schedInfoCard = document.getElementById('consultScheduleInfoCard');
+  const schedInfoText = document.getElementById('consultScheduleInfoText');
+
+  let formattedSched = '';
+  if (data.scheduledAt) {
+    const d = new Date(data.scheduledAt);
+    formattedSched = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) +
+      ' at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  if (data.meetingLink) {
+    if (telehealthBanner) telehealthBanner.style.display = 'flex';
+    if (joinBtn) joinBtn.href = data.meetingLink;
+    if (schedTimeText) {
+      schedTimeText.textContent = formattedSched ? `Appointment confirmed for ${formattedSched}. Click to join your telehealth room.` : 'Your video consultation link is active.';
+    }
+    if (schedInfoCard) schedInfoCard.style.display = 'none';
+  } else if (data.scheduledAt) {
+    if (telehealthBanner) telehealthBanner.style.display = 'none';
+    if (schedInfoCard) schedInfoCard.style.display = 'flex';
+    if (schedInfoText) {
+      schedInfoText.textContent = `Confirmed Appointment: ${formattedSched}` + (data.appointmentNotes ? ` (${data.appointmentNotes})` : '');
+    }
+  } else {
+    if (telehealthBanner) telehealthBanner.style.display = 'none';
+    if (schedInfoCard) schedInfoCard.style.display = 'none';
+  }
+
+  // Render conversation thread
+  renderConsultationThreadOnly(data);
+}
+
+function renderConsultationThreadOnly(data) {
+  if (!data) return;
+
+  // Status & telehealth banner sync
+  const statusEl = document.getElementById('consultDisplayStatus');
+  if (statusEl) {
+    const st = (data.status || 'pending').toLowerCase();
+    const map = {
+      pending: { label: '⏳ PENDING REVIEW', bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
+      scheduled: { label: '📅 SCHEDULED', bg: '#e0e7ff', color: '#4338ca', border: '#c7d2fe' },
+      completed: { label: '✓ COMPLETED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
+      cancelled: { label: '✕ CANCELLED', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
+    };
+    const conf = map[st] || map.pending;
+    statusEl.textContent = conf.label;
+    statusEl.style.background = conf.bg;
+    statusEl.style.color = conf.color;
+    statusEl.style.borderColor = conf.border;
+  }
+
+  const telehealthBanner = document.getElementById('consultTelehealthBanner');
+  const joinBtn = document.getElementById('consultJoinMeetingBtn');
+  if (data.meetingLink) {
+    if (telehealthBanner) telehealthBanner.style.display = 'flex';
+    if (joinBtn) joinBtn.href = data.meetingLink;
+  }
+
+  const container = document.getElementById('consultThreadContainer');
+  if (!container) return;
+
+  const thread = data.thread || [];
+  if (thread.length === 0) {
+    container.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:24px 12px;">No messages in consultation dialogue yet. Send a note below to communicate with your practitioner.</div>';
+    return;
+  }
+
+  container.innerHTML = thread.map(msg => {
+    const isEmployee = msg.sender === 'employee';
+    const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const safeMsg = (msg.message || '').replace(/</g, '&lt;');
+
+    if (isEmployee) {
+      // Employee ("You") -> Right aligned, Indigo
+      return `
+        <div style="display:flex;flex-direction:column;align-items:flex-end;align-self:flex-end;max-width:85%;gap:3px;margin-bottom:6px;">
+          <div style="font-size:11px;color:#64748b;font-weight:600;margin-right:40px;">You (Employee) • ${timeStr}</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#ffffff;border-radius:18px 18px 4px 18px;padding:10px 16px;font-size:13.5px;line-height:1.45;box-shadow:0 3px 10px rgba(13,148,136,0.2);word-break:break-word;">
+              ${safeMsg}
+            </div>
+            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#14b8a6,#0d9488);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 6px rgba(13,148,136,0.25);">👤</div>
+          </div>
+        </div>
+      `;
+    } else {
+      // Medical Assessor -> Left aligned, Teal/Slate
+      return `
+        <div style="display:flex;flex-direction:column;align-items:flex-start;align-self:flex-start;max-width:85%;gap:3px;margin-bottom:6px;">
+          <div style="font-size:11px;color:#64748b;font-weight:600;margin-left:40px;">${(msg.senderName || 'Medical Assessor').replace(/</g, '&lt;')} • ${timeStr}</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;box-shadow:0 2px 6px rgba(99,102,241,0.25);">🩺</div>
+            <div style="background:#ffffff;border:1px solid #e2e8f0;color:#0f172a;border-radius:18px 18px 18px 4px;padding:10px 16px;font-size:13.5px;line-height:1.45;box-shadow:0 2px 6px rgba(0,0,0,0.03);word-break:break-word;">
+              ${safeMsg}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
+
+  setTimeout(() => { container.scrollTop = container.scrollHeight; }, 10);
+}
+
+window.sendConsultationEmployeeReply = async function() {
+  if (!window.activeTrackedConsultation || !window.activeTrackedConsultation.referenceCode) {
+    if (typeof window.showToast === 'function') window.showToast('Session Expired', 'Please enter your Reference Code to send replies.', 'error');
+    return;
+  }
+
+  const code = window.activeTrackedConsultation.referenceCode;
+  const inputEl = document.getElementById('consultReplyInput');
+  const message = inputEl?.value.trim();
+  const btn = document.getElementById('consultReplyBtn');
+
+  if (!message) {
+    if (typeof window.showToast === 'function') window.showToast('Validation Error', 'Please type a message before sending.', 'warning');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+  try {
+    const res = await fetch(`/api/v1/referrals/status/${encodeURIComponent(code)}/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+    const result = await res.json();
+
+    if (result.success && result.thread) {
+      if (inputEl) inputEl.value = '';
+      window.activeTrackedConsultation.thread = result.thread;
+      renderConsultationThreadOnly(window.activeTrackedConsultation);
+      if (typeof window.showToast === 'function') {
+        window.showToast('Message Sent', 'Your message has been dispatched to your practitioner.', 'success');
+      }
+    } else {
+      const errMsg = result.message || 'Failed to send message.';
+      if (typeof window.showToast === 'function') window.showToast('Error', errMsg, 'error');
+    }
+  } catch (err) {
+    if (typeof window.showToast === 'function') window.showToast('Connection Error', 'Could not reach server.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span>Send</span> <span>✉️</span>'; }
+    if (inputEl) inputEl.focus();
   }
 };
 
@@ -4239,9 +4561,16 @@ const App = (() => {
         }
 
         if (result.success) {
-          showToast('Referral Submitted', 'Your confidential referral has been submitted securely to FZ Safety & Health. Reference: ' + (result.reference_code || ''), 'success');
+          const refCode = result.reference_code || result.referenceCode || (result.data && result.data.referenceCode) || '';
+          if (refCode) {
+            localStorage.setItem('havilah_last_consult_ref', refCode);
+          }
+          showToast('Referral Submitted', `Confidential intake submitted to FZ Safety & Health. Reference: ${refCode}. Use Track Consultation to message your clinician.`, 'success');
           if (document.getElementById('consultTopicInput')) document.getElementById('consultTopicInput').value = '';
           if (document.getElementById('consultNotesInput')) document.getElementById('consultNotesInput').value = '';
+          setTimeout(() => {
+            if (refCode) window.openConsultTrackModal(refCode);
+          }, 1200);
         } else {
           showToast('Submission Failed', result.message || 'Please try calling +233 24 362 9870 directly.', 'error');
         }
@@ -4651,6 +4980,110 @@ window.App = App;
               Send Reply
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- ═══ Confidential Clinical Consultation Tracking Modal (White Acrylic Workspace) ═══ -->
+<div id="consultTrackModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(15,23,42,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;" onclick="if(event.target===this)window.closeConsultTrackModal()">
+  <div id="consultTrackModalCard" style="background:#f8fafc;border:1px solid rgba(226,232,240,0.9);border-radius:28px;width:100%;max-width:920px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px -15px rgba(15,23,42,0.2), 0 0 0 1px rgba(255,255,255,0.8) inset;padding:24px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a;position:relative;">
+    
+    <!-- Step 1: Reference Code Lookup Form -->
+    <div id="consultTrackAuthSection" style="max-width:460px;margin:24px auto;background:#ffffff;border:1px solid rgba(226,232,240,0.9);border-radius:24px;padding:32px 28px;box-shadow:0 10px 30px -5px rgba(148,163,184,0.15);position:relative;">
+      <button onclick="window.closeConsultTrackModal()" style="position:absolute;top:20px;right:20px;background:#f1f5f9;border:none;width:32px;height:32px;border-radius:50%;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
+      
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #ccfbf1, #99f6e4);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(13,148,136,0.2);margin-bottom:14px;">
+          <span style="font-size:26px;">🩺</span>
+        </div>
+        <h3 style="margin:0 0 4px;font-size:20px;font-weight:800;color:#0f172a;">Consultation Tracking</h3>
+        <p style="margin:0;font-size:13px;color:#64748b;">Enter your Reference Code to track appointment status &amp; chat with your practitioner</p>
+      </div>
+
+      <div id="consultTrackAuthErrorMsg" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:12px 14px;border-radius:12px;font-size:13px;margin-bottom:18px;line-height:1.4;"></div>
+
+      <div style="margin-bottom:20px;">
+        <label style="display:block;margin-bottom:6px;font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Reference Code *</label>
+        <input type="text" id="consultTrackCodeInput" placeholder="e.g. REF-E0A58FEF" onkeydown="if(event.key==='Enter')window.lookupConsultationReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:16px;font-weight:700;text-transform:uppercase;box-sizing:border-box;outline:none;transition:all 0.2s;">
+      </div>
+
+      <button id="consultTrackLookupBtn" onclick="window.lookupConsultationReport()" style="width:100%;padding:14px;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 8px 20px rgba(13,148,136,0.3);transition:all 0.2s;">
+        Track Consultation Status
+      </button>
+    </div>
+
+    <!-- Step 2: Consultation Details, Telehealth & Messaging View -->
+    <div id="consultTrackDetailsSection" style="display:none;">
+      
+      <!-- Top Card (Summary Banner) -->
+      <div style="background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#14b8a6,#0d9488);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(13,148,136,0.25);flex-shrink:0;">
+            <span style="font-size:22px;">🩺</span>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span id="consultDisplayCode" style="font-family:monospace;font-size:16px;font-weight:800;color:#0f172a;letter-spacing:0.5px;">REF-XXXXXXXX</span>
+              <span id="consultDisplayStatus" style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:9999px;border:1px solid #86efac;background:#dcfce7;color:#15803d;">
+                ✓ SUBMITTED
+              </span>
+            </div>
+            <div style="font-size:12.5px;color:#64748b;margin-top:3px;">
+              Submitted on <span id="consultDisplayDate" style="color:#0f172a;font-weight:600;">—</span> · Preferred: <span id="consultDisplayPreferred" style="color:#0f172a;font-weight:600;">—</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="window.closeConsultTrackModal()" style="background:#f1f5f9;border:none;width:34px;height:34px;border-radius:50%;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
+      </div>
+
+      <!-- Telehealth / Video Consultation Callout (Dynamic) -->
+      <div id="consultTelehealthBanner" style="display:none;background:linear-gradient(135deg, #042f2e, #115e59);color:#ffffff;border-radius:18px;padding:16px 20px;margin-bottom:16px;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;box-shadow:0 6px 20px rgba(13,148,136,0.25);">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;">
+            📹
+          </div>
+          <div>
+            <div style="font-weight:800;font-size:14.5px;">Telehealth Video Consultation Ready</div>
+            <div style="font-size:12px;color:#ccfbf1;" id="consultScheduleTimeText">Your practitioner has scheduled your appointment.</div>
+          </div>
+        </div>
+        <a id="consultJoinMeetingBtn" href="#" target="_blank" rel="noopener noreferrer" style="background:#ffffff;color:#0f766e;text-decoration:none;font-weight:800;font-size:13.5px;padding:10px 20px;border-radius:10px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:all 0.2s;">
+          <span>Join Video Call</span>
+          <span>&rarr;</span>
+        </a>
+      </div>
+
+      <!-- Appointment Date Callout (When scheduled without meeting link) -->
+      <div id="consultScheduleInfoCard" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:14px;padding:12px 18px;margin-bottom:16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
+        <span>📅</span>
+        <span id="consultScheduleInfoText">Confirmed Appointment: —</span>
+      </div>
+
+      <!-- Two-Way Messaging Card -->
+      <div style="background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid #f1f5f9;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;"></div>
+            <span style="font-weight:700;font-size:14px;color:#0f172a;">Practitioner Clinical Exchange</span>
+          </div>
+          <span style="font-size:12px;color:#64748b;display:flex;align-items:center;gap:4px;">
+            <span>🔒 Confidential &amp; Encrypted</span>
+          </span>
+        </div>
+
+        <!-- Chat Container -->
+        <div id="consultThreadContainer" style="max-height:280px;min-height:120px;overflow-y:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Message Input Area -->
+        <div style="display:flex;gap:10px;align-items:flex-end;">
+          <textarea id="consultReplyInput" rows="2" placeholder="Send a message or follow-up note to your assigned practitioner..." style="flex:1;padding:12px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;color:#0f172a;font-size:13.5px;line-height:1.4;outline:none;resize:vertical;font-family:inherit;transition:all 0.2s;"></textarea>
+          <button id="consultReplyBtn" onclick="window.sendConsultationEmployeeReply()" style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#ffffff;border:none;border-radius:14px;padding:12px 22px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(13,148,136,0.25);transition:all 0.2s;height:46px;">
+            <span>Send</span>
+            <span>✉️</span>
+          </button>
         </div>
       </div>
     </div>

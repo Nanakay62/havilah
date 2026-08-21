@@ -59,17 +59,33 @@ function sensitiveRateLimiter(maxAttempts = 5) {
 
 /**
  * General API rate limiter across all /api/v1/ routes.
- * Limit: max 200 requests per 15 minutes per IP.
- * Excludes health pings and telemetry.
+ * Limit: max 3000 requests per 15 minutes per IP.
+ * Excludes health pings, telemetry, live sync polling, and real-time dialogue endpoints.
  */
-function apiRateLimiter(maxRequests = 200) {
+function apiRateLimiter(maxRequests = 3000) {
   return (req, res, next) => {
-    // Exclude telemetry and health endpoints
-    if (req.path.includes('/telemetry') || req.path.includes('/health')) {
+    // Exclude telemetry, health endpoints, and real-time live-sync / messaging polling
+    const p = req.path || '';
+    if (
+      p.includes('/telemetry') ||
+      p.includes('/health') ||
+      p.includes('/status') ||
+      p.includes('/queue') ||
+      p.includes('/message') ||
+      p.includes('/reply') ||
+      p.includes('/track') ||
+      p.includes('/live')
+    ) {
       return next();
     }
 
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+    
+    // Generous developer limit for localhost / loopback testing
+    if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
+      return next();
+    }
+
     const key = `${ip}:general`;
     const now = Date.now();
 

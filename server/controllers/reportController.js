@@ -164,8 +164,8 @@ router.post('/track', async (req, res, next) => {
       });
     }
 
-    const cleanCode = String(trackingCode).trim().toUpperCase();
-    const cleanPin = String(pin).trim();
+    const cleanCode = String(trackingCode).replace(/\s+/g, '').toUpperCase();
+    const cleanPin = String(pin).replace(/\s+/g, '');
 
     const report = await Report.findOne({ trackingCode: cleanCode });
     if (!report) {
@@ -221,8 +221,8 @@ router.post('/reply', async (req, res, next) => {
       });
     }
 
-    const cleanCode = String(trackingCode).trim().toUpperCase();
-    const cleanPin = String(pin).trim();
+    const cleanCode = String(trackingCode).replace(/\s+/g, '').toUpperCase();
+    const cleanPin = String(pin).replace(/\s+/g, '');
 
     const report = await Report.findOne({ trackingCode: cleanCode });
     if (!report) {

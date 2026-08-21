@@ -2009,6 +2009,9 @@ window.openVaultTrackModal = function() {
     document.getElementById('trackDetailsSection').style.display = 'none';
     document.getElementById('trackCodeInput').value = '';
     document.getElementById('trackPinInput').value = '';
+    const errEl = document.getElementById('trackAuthErrorMsg');
+    if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+    setTimeout(() => { document.getElementById('trackCodeInput')?.focus(); }, 100);
   }
 };
 
@@ -2018,12 +2021,24 @@ window.closeVaultTrackModal = function() {
 };
 
 window.lookupVaultReport = async function() {
-  const code = document.getElementById('trackCodeInput')?.value.trim();
-  const pin = document.getElementById('trackPinInput')?.value.trim();
+  const rawCode = document.getElementById('trackCodeInput')?.value || '';
+  const rawPin = document.getElementById('trackPinInput')?.value || '';
   const btn = document.getElementById('trackLookupBtn');
+  const errEl = document.getElementById('trackAuthErrorMsg');
+
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  let code = rawCode.replace(/\s+/g, '').toUpperCase();
+  let pin = rawPin.replace(/\s+/g, '');
+
+  if (!code.startsWith('WBL-') && code.length === 6) {
+    code = 'WBL-' + code;
+  }
 
   if (!code || !pin) {
-    if (typeof showToast === 'function') showToast('Validation Error', 'Please enter both Tracking Code and PIN.', 'error');
+    const msg = 'Please enter both your Tracking Code and 4-digit PIN.';
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = msg; }
+    if (typeof window.showToast === 'function') window.showToast('Validation Error', msg, 'error');
     return;
   }
 
@@ -2045,10 +2060,14 @@ window.lookupVaultReport = async function() {
       };
       renderTrackedReportView(window.activeTrackedReport);
     } else {
-      if (typeof showToast === 'function') showToast('Authentication Failed', result.message || 'Invalid Tracking Code or PIN.', 'error');
+      const errMsg = result.message || 'Invalid Tracking Code or PIN. Please verify and try again.';
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = '❌ ' + errMsg; }
+      if (typeof window.showToast === 'function') window.showToast('Authentication Failed', errMsg, 'error');
     }
   } catch (err) {
-    if (typeof showToast === 'function') showToast('Error', 'Could not reach the server.', 'error');
+    const errMsg = 'Could not reach the server. Please try again.';
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = '⚠️ ' + errMsg; }
+    if (typeof window.showToast === 'function') window.showToast('Error', errMsg, 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = 'Access Report & Messages';
@@ -3793,6 +3812,7 @@ const App = (() => {
       }
     }, 4000);
   };
+  window.showToast = showToast;
   
   return {
     navigate,
@@ -4227,17 +4247,16 @@ window.App = App;
         </div>
       </div>
       <button onclick="window.closeVaultTrackModal()" style="background:none;border:none;color:#6b7280;font-size:22px;cursor:pointer;padding:4px;">&times;</button>
-    </div>
-
     <!-- Step 1: Authentication Form -->
     <div id="trackAuthSection" style="padding:24px 28px;">
+      <div id="trackAuthErrorMsg" style="display:none;background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:12px 14px;border-radius:10px;font-size:13px;margin-bottom:18px;line-height:1.4;"></div>
       <div style="margin-bottom:16px;">
         <label style="display:block;margin-bottom:6px;font-size:12px;color:#9ca3af;text-transform:uppercase;font-weight:700;">Tracking Code *</label>
-        <input type="text" id="trackCodeInput" placeholder="e.g. WBL-8A1C2D" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:monospace;font-size:15px;text-transform:uppercase;box-sizing:border-box;">
+        <input type="text" id="trackCodeInput" placeholder="e.g. WBL-8A1C2D" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:monospace;font-size:15px;text-transform:uppercase;box-sizing:border-box;">
       </div>
       <div style="margin-bottom:24px;">
         <label style="display:block;margin-bottom:6px;font-size:12px;color:#9ca3af;text-transform:uppercase;font-weight:700;">4-Digit PIN *</label>
-        <input type="password" maxlength="4" id="trackPinInput" placeholder="••••" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:monospace;font-size:18px;letter-spacing:4px;box-sizing:border-box;">
+        <input type="password" maxlength="4" id="trackPinInput" placeholder="••••" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:monospace;font-size:18px;letter-spacing:4px;box-sizing:border-box;">
       </div>
       <button id="trackLookupBtn" onclick="window.lookupVaultReport()" style="width:100%;padding:13px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;">
         Access Report &amp; Messages

@@ -48,6 +48,27 @@
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  #trackThreadContainer::-webkit-scrollbar {
+    width: 6px;
+  }
+  #trackThreadContainer::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  #trackThreadContainer::-webkit-scrollbar-thumb {
+    background: #c7d2fe;
+    border-radius: 9999px;
+  }
+  #trackThreadContainer::-webkit-scrollbar-thumb:hover {
+    background: #a5b4fc;
+  }
+  @media (max-width: 768px) {
+    #vaultTrackModalCard {
+      padding: 16px !important;
+    }
+    #trackDetailsSection > div:last-child {
+      grid-template-columns: 1fr !important;
+    }
+  }
   html { scroll-behavior: smooth; }
   body, button, input, select, textarea {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -2079,44 +2100,117 @@ function renderTrackedReportView(report) {
   document.getElementById('trackAuthSection').style.display = 'none';
   document.getElementById('trackDetailsSection').style.display = 'block';
 
+  // Date formatting e.g. 21/08/2026
+  let formattedDate = '21/08/2026';
+  if (report.createdAt) {
+    const d = new Date(report.createdAt);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    formattedDate = `${day}/${month}/${year}`;
+  }
+
+  const trackingCode = report.trackingCode || '—';
+  const category = report.category || 'General';
+  const urgency = report.urgency || 'Standard';
+
+  // Update Top Banner
   const codeEl = document.getElementById('trackDisplayCode');
   const catEl = document.getElementById('trackDisplayCategory');
   const urgEl = document.getElementById('trackDisplayUrgency');
   const dateEl = document.getElementById('trackDisplayDate');
   const statusEl = document.getElementById('trackDisplayStatus');
 
-  if (codeEl) codeEl.textContent = report.trackingCode || '—';
-  if (catEl) catEl.textContent = report.category || '—';
-  if (urgEl) urgEl.textContent = report.urgency || 'Standard';
-  if (dateEl) {
-    dateEl.textContent = report.createdAt ? new Date(report.createdAt).toLocaleDateString() : '';
+  if (codeEl) codeEl.textContent = trackingCode;
+  if (catEl) catEl.textContent = category;
+  if (urgEl) {
+    urgEl.textContent = urgency;
+    urgEl.style.color = urgency === 'Critical' ? '#dc2626' : urgency === 'Urgent' ? '#ea580c' : '#d97706';
   }
+  if (dateEl) dateEl.textContent = formattedDate;
   
   if (statusEl) {
-    const st = (report.status || 'submitted').replace(/_/g, ' ').toUpperCase();
-    statusEl.textContent = st;
+    const stKey = (report.status || 'submitted').toLowerCase();
+    const statusMap = {
+      submitted: { label: '✓ SUBMITTED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
+      under_investigation: { label: '⏳ INVESTIGATING', bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
+      action_taken: { label: '🛡️ ACTION TAKEN', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' },
+      closed: { label: '🔒 CLOSED', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' }
+    };
+    const conf = statusMap[stKey] || statusMap['submitted'];
+    statusEl.innerHTML = `<span style="font-size:12px;">${conf.label.split(' ')[0]}</span> ${conf.label.split(' ').slice(1).join(' ')}`;
+    statusEl.style.background = conf.bg;
+    statusEl.style.color = conf.color;
+    statusEl.style.borderColor = conf.border;
+  }
+
+  // Update Left Sidebar
+  const sideCode = document.getElementById('trackSidebarCode');
+  const sideDate = document.getElementById('trackSidebarDate');
+  const sideCat = document.getElementById('trackSidebarCategory');
+  const sideUrg = document.getElementById('trackSidebarUrgency');
+
+  if (sideCode) sideCode.textContent = trackingCode;
+  if (sideDate) sideDate.textContent = formattedDate;
+  if (sideCat) sideCat.textContent = category;
+  if (sideUrg) {
+    sideUrg.textContent = urgency;
+    sideUrg.style.color = urgency === 'Critical' ? '#dc2626' : urgency === 'Urgent' ? '#ea580c' : '#d97706';
   }
   
   const threadContainer = document.getElementById('trackThreadContainer');
   if (!threadContainer) return;
   threadContainer.innerHTML = '';
 
+  // Date Separator Pill
+  const datePill = document.createElement('div');
+  datePill.style.cssText = 'align-self:center;background:#f1f5f9;color:#64748b;font-size:11px;font-weight:600;padding:4px 14px;border-radius:9999px;margin-bottom:8px;';
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  datePill.textContent = `Today, ${dateStr}`;
+  threadContainer.appendChild(datePill);
+
   const thread = report.thread || [];
   if (thread.length === 0) {
-    threadContainer.innerHTML = '<div style="color:#9ca3af;font-size:12px;text-align:center;padding:12px;">No messages in thread yet.</div>';
+    const emptyDiv = document.createElement('div');
+    emptyDiv.style.cssText = 'color:#94a3b8;font-size:13px;text-align:center;padding:24px 12px;';
+    emptyDiv.textContent = 'No messages in investigation thread yet. Use the reply box below to send secure notes.';
+    threadContainer.appendChild(emptyDiv);
   } else {
     thread.forEach(msg => {
       const isMe = msg.sender === 'whistleblower';
-      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-      const div = document.createElement('div');
-      div.style.cssText = `display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};margin-bottom:10px;`;
-      div.innerHTML = `
-        <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">${isMe ? 'You (Whistleblower)' : '🛡️ Case Investigator'} • ${timeStr}</div>
-        <div style="max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.4;background:${isMe ? '#4338ca' : '#065f46'};color:#fff;border:1px solid ${isMe ? '#6366f1' : '#10b981'};word-break:break-word;">
-          ${(msg.message || '').replace(/</g, '&lt;')}
-        </div>
-      `;
-      threadContainer.appendChild(div);
+      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase() : '';
+      const safeMsg = (msg.message || '').replace(/</g, '&lt;');
+
+      const row = document.createElement('div');
+      
+      if (isMe) {
+        // Whistleblower ("You") -> Right Aligned
+        row.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;align-self:flex-end;max-width:85%;gap:4px;';
+        row.innerHTML = `
+          <div style="font-size:11px;color:#64748b;font-weight:600;margin-right:44px;">You (Whistleblower) • ${timeStr}</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#ffffff;border-radius:18px 18px 4px 18px;padding:12px 18px;font-size:13.5px;line-height:1.5;font-weight:500;box-shadow:0 4px 14px rgba(79,70,229,0.25);word-break:break-word;">
+              ${safeMsg}
+            </div>
+            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 6px rgba(168,85,247,0.25);">👤</div>
+          </div>
+        `;
+      } else {
+        // Investigator -> Left Aligned
+        const isGreen = safeMsg.toLowerCase().includes('investigat') || safeMsg.toLowerCase().includes('received') || safeMsg.toLowerCase().includes('action');
+        row.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;align-self:flex-start;max-width:85%;gap:4px;';
+        row.innerHTML = `
+          <div style="font-size:11px;color:#64748b;font-weight:600;margin-left:44px;">Case Investigator • ${timeStr}</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 6px rgba(99,102,241,0.25);">👤</div>
+            <div style="background:${isGreen ? '#ecfdf5' : '#f8fafc'};border:1px solid ${isGreen ? '#a7f3d0' : '#e2e8f0'};color:${isGreen ? '#064e3b' : '#0f172a'};border-radius:18px 18px 18px 4px;padding:12px 18px;font-size:13.5px;line-height:1.5;box-shadow:0 2px 6px rgba(0,0,0,0.02);word-break:break-word;font-weight:${isGreen ? '600' : '400'};">
+              ${safeMsg}
+            </div>
+          </div>
+        `;
+      }
+      threadContainer.appendChild(row);
     });
     setTimeout(() => { threadContainer.scrollTop = threadContainer.scrollHeight; }, 10);
   }
@@ -4178,29 +4272,37 @@ const App = (() => {
 window.App = App;
 </script>
 
-<!-- ═══ Whistleblower Vault Modal ═══ -->
-<div id="vaultModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;" onclick="if(event.target===this)window.closeVaultModal()">
-  <div style="background:rgba(15,15,30,0.97);border:1px solid rgba(139,92,246,0.2);border-radius:20px;width:95%;max-width:540px;max-height:85vh;overflow-y:auto;box-shadow:0 0 80px rgba(139,92,246,0.12);">
-    <div style="padding:28px 32px 0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+<!-- ═══ Whistleblower Vault Modal (Report Workplace Hazard) ═══ -->
+<div id="vaultModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(15,23,42,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;" onclick="if(event.target===this)window.closeVaultModal()">
+  <div style="background:#ffffff;border:1px solid rgba(226,232,240,0.9);border-radius:24px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 25px 60px -15px rgba(15,23,42,0.2), 0 0 0 1px rgba(255,255,255,0.8) inset;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a;box-sizing:border-box;">
+    
+    <!-- Modal Header -->
+    <div style="padding:24px 28px 0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <span style="font-size:28px;">🛡️</span>
+          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#818cf8,#6366f1);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(99,102,241,0.25);flex-shrink:0;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
           <div>
-            <h2 style="margin:0;font-size:20px;color:#e0e0e0;">Anonymous Hazard Report</h2>
-            <p style="margin:2px 0 0;font-size:12px;color:#6b7280;">Whistleblower Protection System</p>
+            <h2 style="margin:0;font-size:19px;font-weight:800;color:#0f172a;">Anonymous Hazard Report</h2>
+            <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Whistleblower Protection System</p>
           </div>
         </div>
-        <button onclick="window.closeVaultModal()" style="background:none;border:none;color:#6b7280;font-size:22px;cursor:pointer;padding:4px;">&times;</button>
+        <button onclick="window.closeVaultModal()" style="background:#f1f5f9;border:none;width:32px;height:32px;border-radius:50%;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
       </div>
-      <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:12px;padding:14px 16px;margin-bottom:20px;">
-        <p style="margin:0;font-size:12px;color:#a78bfa;line-height:1.6;"><strong>🔒 100% Anonymous.</strong> No IP addresses, user IDs, or identifying metadata are stored. Your identity is structurally unrecoverable.</p>
+
+      <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:14px;padding:12px 16px;margin-bottom:20px;">
+        <p style="margin:0;font-size:12.5px;color:#5b21b6;line-height:1.5;"><strong>🔒 100% Anonymous.</strong> No IP addresses, user IDs, or identifying metadata are stored. Your identity is structurally unrecoverable.</p>
       </div>
     </div>
 
     <!-- Intake Form -->
-    <div id="vaultFormContainer" style="padding:0 32px 28px;">
-      <label style="display:block;margin-bottom:6px;font-size:13px;color:#9ca3af;">Category *</label>
-      <select id="vaultCategory" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#e0e0e0;font-size:14px;margin-bottom:16px;appearance:auto;">
+    <div id="vaultFormContainer" style="padding:0 28px 28px;">
+      <label style="display:block;margin-bottom:6px;font-size:12.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">Category *</label>
+      <select id="vaultCategory" style="width:100%;padding:12px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-size:14px;margin-bottom:16px;appearance:auto;outline:none;transition:border-color 0.2s;box-sizing:border-box;">
         <option value="">Select a category...</option>
         <option value="Safety Hazard">Safety Hazard</option>
         <option value="Harassment / Bullying">Harassment / Bullying</option>
@@ -4210,112 +4312,212 @@ window.App = App;
         <option value="Other">Other</option>
       </select>
 
-      <label style="display:block;margin-bottom:6px;font-size:13px;color:#9ca3af;">Description *</label>
-      <textarea id="vaultDescription" rows="5" maxlength="5000" placeholder="Describe the workplace hazard or incident in detail..." style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#e0e0e0;font-size:14px;resize:vertical;margin-bottom:4px;font-family:inherit;box-sizing:border-box;"></textarea>
-      <div style="text-align:right;font-size:11px;color:#6b7280;margin-bottom:16px;"><span id="vaultCharCount">0</span>/5000</div>
+      <label style="display:block;margin-bottom:6px;font-size:12.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">Description *</label>
+      <textarea id="vaultDescription" rows="5" maxlength="5000" placeholder="Describe the workplace hazard or incident in detail..." style="width:100%;padding:12px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-size:14px;resize:vertical;margin-bottom:4px;font-family:inherit;box-sizing:border-box;outline:none;transition:border-color 0.2s;line-height:1.5;"></textarea>
+      <div style="text-align:right;font-size:11px;color:#94a3b8;margin-bottom:16px;"><span id="vaultCharCount">0</span>/5000</div>
 
-      <label style="display:block;margin-bottom:6px;font-size:13px;color:#9ca3af;">Urgency Level</label>
+      <label style="display:block;margin-bottom:6px;font-size:12.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">Urgency Level</label>
       <div style="display:flex;gap:10px;margin-bottom:18px;">
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;font-size:13px;color:#9ca3af;"><input type="radio" name="vaultUrgency" value="Standard" checked style="accent-color:#6366f1;"> Standard</label>
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;font-size:13px;color:#f59e0b;"><input type="radio" name="vaultUrgency" value="Urgent" style="accent-color:#f59e0b;"> Urgent</label>
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;font-size:13px;color:#ef4444;"><input type="radio" name="vaultUrgency" value="Critical" style="accent-color:#ef4444;"> Critical</label>
-      </div>
-
-      <!-- Conflict of Interest Checkbox -->
-      <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 14px;margin-bottom:20px;">
-        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:#fca5a5;line-height:1.4;">
-          <input type="checkbox" id="vaultConflictCheck" style="margin-top:2px;accent-color:#ef4444;width:16px;height:16px;">
-          <span><strong>Conflict of Interest Routing:</strong> Does this report involve HR, Senior Leadership, or Executive Management? <em style="display:block;font-size:11px;color:#9ca3af;margin-top:2px;">If checked, this report will completely bypass internal HR and route directly to the Independent SuperAdmin Ombudsman.</em></span>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:11px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;color:#475569;transition:all 0.2s;">
+          <input type="radio" name="vaultUrgency" value="Standard" checked style="accent-color:#6366f1;"> Standard
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:11px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;color:#d97706;transition:all 0.2s;">
+          <input type="radio" name="vaultUrgency" value="Urgent" style="accent-color:#f59e0b;"> Urgent
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:11px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;color:#dc2626;transition:all 0.2s;">
+          <input type="radio" name="vaultUrgency" value="Critical" style="accent-color:#ef4444;"> Critical
         </label>
       </div>
 
-      <button id="vaultSubmitBtn" onclick="window.submitVaultReport()" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.3s;">Submit Anonymous Report</button>
+      <!-- Conflict of Interest Checkbox -->
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:14px;padding:14px 16px;margin-bottom:20px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:#991b1b;line-height:1.4;">
+          <input type="checkbox" id="vaultConflictCheck" style="margin-top:2px;accent-color:#dc2626;width:16px;height:16px;">
+          <span><strong style="color:#991b1b;">Conflict of Interest Routing:</strong> Does this report involve HR, Senior Leadership, or Executive Management? <em style="display:block;font-size:11.5px;color:#7f1d1d;margin-top:3px;font-style:normal;">If checked, this report will completely bypass internal HR and route directly to the Independent SuperAdmin Ombudsman.</em></span>
+        </label>
+      </div>
+
+      <button id="vaultSubmitBtn" onclick="window.submitVaultReport()" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(99,102,241,0.25);transition:all 0.2s;">Submit Anonymous Report</button>
     </div>
 
     <!-- Success Access Card -->
-    <div id="vaultSuccessCard" style="display:none;padding:0 32px 28px;">
-      <div style="background:#1e1b4b;border:2px solid #818cf8;border-radius:14px;padding:20px;text-align:center;">
-        <div style="font-size:32px;margin-bottom:8px;">🔐</div>
-        <h3 style="color:#fff;margin:0 0 6px;font-size:18px;">Anonymous Access Credentials</h3>
-        <p style="color:#c7d2fe;font-size:12px;margin-bottom:16px;line-height:1.5;">Save these credentials now. Since your report is 100% anonymous, these are the <strong>ONLY keys</strong> to look up investigation updates and exchange two-way messages with investigators.</p>
+    <div id="vaultSuccessCard" style="display:none;padding:0 28px 28px;">
+      <div style="background:#f8fafc;border:1.5px solid #e0e7ff;border-radius:20px;padding:24px 20px;text-align:center;box-shadow:0 10px 30px -5px rgba(99,102,241,0.1);">
+        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:12px;box-shadow:0 6px 16px rgba(99,102,241,0.3);">🔐</div>
+        <h3 style="color:#0f172a;margin:0 0 6px;font-size:19px;font-weight:800;">Anonymous Access Credentials</h3>
+        <p style="color:#64748b;font-size:12.5px;margin-bottom:18px;line-height:1.5;">Save these credentials now. Since your report is 100% anonymous, these are the <strong>ONLY keys</strong> to look up investigation updates and exchange two-way messages with investigators.</p>
         
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:rgba(0,0,0,0.3);padding:14px;border-radius:10px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.1);">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#ffffff;padding:16px;border-radius:14px;margin-bottom:16px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
           <div>
-            <div style="font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:700;">Tracking Code</div>
-            <div id="vaultAccessCode" style="font-family:monospace;font-size:18px;font-weight:800;color:#38bdf8;margin-top:4px;">WBL-XXXXXX</div>
+            <div style="font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Tracking Code</div>
+            <div id="vaultAccessCode" style="font-family:monospace;font-size:18px;font-weight:800;color:#4f46e5;margin-top:4px;">WBL-XXXXXX</div>
           </div>
           <div>
-            <div style="font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:700;">4-Digit PIN</div>
-            <div id="vaultAccessPin" style="font-family:monospace;font-size:18px;font-weight:800;color:#34d399;margin-top:4px;">••••</div>
+            <div style="font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">4-Digit PIN</div>
+            <div id="vaultAccessPin" style="font-family:monospace;font-size:18px;font-weight:800;color:#16a34a;margin-top:4px;">••••</div>
           </div>
         </div>
 
-        <div id="vaultRoutingNotice" style="font-size:11px;color:#fbbf24;margin-bottom:16px;font-weight:600;"></div>
+        <div id="vaultRoutingNotice" style="font-size:12px;color:#d97706;margin-bottom:18px;font-weight:700;"></div>
 
-        <div style="display:flex;gap:8px;">
-          <button onclick="window.copyVaultCredentials()" style="flex:1;padding:11px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">📋 Copy Credentials</button>
-          <button onclick="window.closeVaultModal()" style="flex:1;padding:11px;background:rgba(255,255,255,0.1);color:#e0e0e0;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Done</button>
+        <div style="display:flex;gap:10px;">
+          <button onclick="window.copyVaultCredentials()" style="flex:1;padding:12px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:13.5px;box-shadow:0 4px 12px rgba(99,102,241,0.25);">📋 Copy Credentials</button>
+          <button onclick="window.closeVaultModal()" style="flex:1;padding:12px;background:#ffffff;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-weight:600;cursor:pointer;font-size:13.5px;">Done</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ Whistleblower Report Tracking Modal ═══ -->
-<div id="vaultTrackModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;" onclick="if(event.target===this)window.closeVaultTrackModal()">
-  <div style="background:rgba(15,15,30,0.97);border:1px solid rgba(99,102,241,0.25);border-radius:20px;width:95%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 0 80px rgba(99,102,241,0.15);">
-    <div style="padding:24px 28px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:24px;">🔍</span>
-        <div>
-          <h3 style="margin:0;font-size:18px;color:#fff;">Anonymous Report Tracking</h3>
-          <p style="margin:2px 0 0;font-size:11px;color:#9ca3af;">Two-Way Cryptographic Whistleblower Thread</p>
+<!-- ═══ Whistleblower Report Tracking Modal (White Acrylic Workspace) ═══ -->
+<div id="vaultTrackModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(15,23,42,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;" onclick="if(event.target===this)window.closeVaultTrackModal()">
+  <div id="vaultTrackModalCard" style="background:#f8fafc;border:1px solid rgba(226,232,240,0.9);border-radius:28px;width:100%;max-width:980px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px -15px rgba(15,23,42,0.2), 0 0 0 1px rgba(255,255,255,0.8) inset;padding:24px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a;position:relative;">
+    
+    <!-- Step 1: Authentication Form (Clean White Card) -->
+    <div id="trackAuthSection" style="max-width:460px;margin:24px auto;background:#ffffff;border:1px solid rgba(226,232,240,0.9);border-radius:24px;padding:32px 28px;box-shadow:0 10px 30px -5px rgba(148,163,184,0.15);position:relative;">
+      <button onclick="window.closeVaultTrackModal()" style="position:absolute;top:20px;right:20px;background:#f1f5f9;border:none;width:32px;height:32px;border-radius:50%;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
+      
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #e0e7ff, #c7d2fe);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(99,102,241,0.2);margin-bottom:14px;">
+          <span style="font-size:26px;">🔍</span>
         </div>
+        <h3 style="margin:0 0 4px;font-size:20px;font-weight:800;color:#0f172a;">Anonymous Report Tracking</h3>
+        <p style="margin:0;font-size:13px;color:#64748b;">Enter your credentials to unlock your two-way secure thread</p>
       </div>
-      <button onclick="window.closeVaultTrackModal()" style="background:none;border:none;color:#6b7280;font-size:22px;cursor:pointer;padding:4px;">&times;</button>
-    <!-- Step 1: Authentication Form -->
-    <div id="trackAuthSection" style="padding:24px 28px;">
-      <div id="trackAuthErrorMsg" style="display:none;background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:12px 14px;border-radius:10px;font-size:13px;margin-bottom:18px;line-height:1.4;"></div>
+
+      <div id="trackAuthErrorMsg" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:12px 14px;border-radius:12px;font-size:13px;margin-bottom:18px;line-height:1.4;"></div>
+
       <div style="margin-bottom:16px;">
-        <label style="display:block;margin-bottom:6px;font-size:12px;color:#9ca3af;text-transform:uppercase;font-weight:700;">Tracking Code *</label>
-        <input type="text" id="trackCodeInput" placeholder="e.g. WBL-8A1C2D" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:monospace;font-size:15px;text-transform:uppercase;box-sizing:border-box;">
+        <label style="display:block;margin-bottom:6px;font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Tracking Code *</label>
+        <input type="text" id="trackCodeInput" placeholder="e.g. WBL-22891E" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:16px;font-weight:700;text-transform:uppercase;box-sizing:border-box;outline:none;transition:all 0.2s;">
       </div>
+
       <div style="margin-bottom:24px;">
-        <label style="display:block;margin-bottom:6px;font-size:12px;color:#9ca3af;text-transform:uppercase;font-weight:700;">4-Digit PIN *</label>
-        <input type="password" maxlength="4" id="trackPinInput" placeholder="••••" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:monospace;font-size:18px;letter-spacing:4px;box-sizing:border-box;">
+        <label style="display:block;margin-bottom:6px;font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">4-Digit PIN *</label>
+        <input type="password" maxlength="4" id="trackPinInput" placeholder="••••" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:20px;letter-spacing:6px;box-sizing:border-box;outline:none;transition:all 0.2s;">
       </div>
-      <button id="trackLookupBtn" onclick="window.lookupVaultReport()" style="width:100%;padding:13px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;">
+
+      <button id="trackLookupBtn" onclick="window.lookupVaultReport()" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 8px 20px rgba(99,102,241,0.3);transition:all 0.2s;">
         Access Report &amp; Messages
       </button>
     </div>
 
-    <!-- Step 2: Report & Thread View -->
-    <div id="trackDetailsSection" style="display:none;padding:20px 28px 24px;">
-      <!-- Overview Card -->
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 16px;margin-bottom:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div>
-            <span style="font-family:monospace;font-weight:800;color:#38bdf8;font-size:14px;" id="trackDisplayCode">WBL-XXXXXX</span>
-            <span style="color:#9ca3af;font-size:12px;margin-left:8px;" id="trackDisplayDate">Date</span>
+    <!-- Step 2: Report & Thread View (Reference White UI Exact Implementation) -->
+    <div id="trackDetailsSection" style="display:none;">
+      
+      <!-- Top Card (Summary Banner) -->
+      <div style="background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <!-- Shield Icon Badge -->
+          <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#818cf8,#6366f1);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(99,102,241,0.25);flex-shrink:0;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
           </div>
-          <span id="trackDisplayStatus" style="background:#065f46;color:#34d399;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:800;border:1px solid #10b981;">SUBMITTED</span>
+          <div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:3px;">
+              <span style="font-family:monospace;font-size:18px;font-weight:800;color:#0f172a;letter-spacing:0.02em;" id="trackDisplayCode">WBL-XXXXXX</span>
+              <span style="color:#64748b;font-size:13.5px;font-weight:500;" id="trackDisplayDate">21/08/2026</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;font-size:12.5px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="color:#6366f1;font-size:14px;">📁</span>
+                <span style="color:#64748b;font-weight:500;">Category</span>
+                <strong style="color:#0f172a;font-weight:700;" id="trackDisplayCategory">General</strong>
+              </div>
+              <div style="width:1px;height:14px;background:#e2e8f0;"></div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="color:#f59e0b;font-size:14px;">⚡</span>
+                <span style="color:#64748b;font-weight:500;">Urgency</span>
+                <strong style="color:#d97706;font-weight:700;" id="trackDisplayUrgency">Standard</strong>
+              </div>
+            </div>
+          </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
-          <div><span style="color:#9ca3af;">Category:</span> <strong style="color:#fff;" id="trackDisplayCategory">—</strong></div>
-          <div><span style="color:#9ca3af;">Urgency:</span> <strong style="color:#f59e0b;" id="trackDisplayUrgency">—</strong></div>
+
+        <!-- Status & Close Actions -->
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span id="trackDisplayStatus" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;border-radius:9999px;padding:6px 16px;font-size:12px;font-weight:800;letter-spacing:0.5px;box-shadow:0 2px 8px rgba(34,197,94,0.15);display:inline-flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;">✓</span> SUBMITTED
+          </span>
+          <button onclick="window.closeVaultTrackModal()" title="Close Tracking" style="width:36px;height:36px;border-radius:12px;border:1px solid #e2e8f0;background:#ffffff;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+            &times;
+          </button>
         </div>
       </div>
 
-      <!-- Thread Feed -->
-      <div style="font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:8px;">Investigation Exchange</div>
-      <div id="trackThreadContainer" style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;max-height:220px;overflow-y:auto;margin-bottom:14px;">
-        <!-- Filled dynamically -->
-      </div>
+      <!-- Bottom Two-Column Grid -->
+      <div style="display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start;">
+        
+        <!-- Left Sidebar Card -->
+        <div style="background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:24px 20px;display:flex;flex-direction:column;">
+          <!-- Glowing Search Icon -->
+          <div style="width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #e0e7ff, #c7d2fe);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(99,102,241,0.2);margin-bottom:16px;">
+            <span style="font-size:24px;">🔍</span>
+          </div>
 
-      <!-- Reply Box -->
-      <div style="display:flex;gap:8px;">
-        <input type="text" id="trackReplyInput" placeholder="Type anonymous follow-up message..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendAnonymousReply();}" style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:13px;">
-        <button id="trackReplyBtn" onclick="window.sendAnonymousReply()" style="padding:10px 16px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Send Reply</button>
+          <h4 style="margin:0 0 4px;font-size:17px;font-weight:800;color:#0f172a;line-height:1.3;">Anonymous Report Tracking</h4>
+          <p style="margin:0 0 20px;font-size:11.5px;color:#64748b;line-height:1.4;">Two-Way Cryptographic Whistleblower Thread</p>
+          
+          <div style="height:1px;background:#f1f5f9;margin-bottom:18px;"></div>
+
+          <!-- Info Meta List -->
+          <div style="display:flex;flex-direction:column;gap:14px;font-size:12.5px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"><span>🛡️</span> Report ID</span>
+              <strong style="color:#0f172a;font-family:monospace;font-size:13px;" id="trackSidebarCode">WBL-22891E</strong>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"><span>📅</span> Submitted</span>
+              <strong style="color:#0f172a;" id="trackSidebarDate">21/08/2026</strong>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"><span>📁</span> Category</span>
+              <strong style="color:#0f172a;" id="trackSidebarCategory">Discrimination</strong>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"><span>⚡</span> Urgency</span>
+              <strong style="color:#d97706;" id="trackSidebarUrgency">Standard</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Chat Area Card -->
+        <div style="background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:22px 24px;display:flex;flex-direction:column;">
+          <!-- Chat Header -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">💬</span>
+              <h4 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">Investigation Exchange</h4>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#10b981;">
+              <span style="width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block;"></span>
+              Secure &amp; Encrypted
+              <span style="color:#6366f1;font-size:13px;margin-left:2px;">🔒</span>
+            </div>
+          </div>
+
+          <!-- Messages Thread Scroll Area -->
+          <div id="trackThreadContainer" style="min-height:280px;max-height:360px;overflow-y:auto;padding:16px 4px;display:flex;flex-direction:column;gap:14px;">
+            <!-- Dynamically rendered bubbles -->
+          </div>
+
+          <!-- Bottom Input Capsule -->
+          <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9999px;padding:6px 6px 6px 14px;margin-top:14px;box-shadow:0 2px 6px rgba(0,0,0,0.02);transition:border-color 0.2s;">
+            <button type="button" style="background:none;border:none;color:#64748b;font-size:18px;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;" title="Attach file (optional)">
+              📎
+            </button>
+            <input type="text" id="trackReplyInput" placeholder="Type anonymous follow-up message..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendAnonymousReply();}" style="flex:1;border:none;background:transparent;color:#0f172a;font-size:13.5px;outline:none;padding:6px 4px;">
+            <button id="trackReplyBtn" onclick="window.sendAnonymousReply()" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#ffffff;border:none;border-radius:9999px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(79,70,229,0.3);transition:all 0.2s;flex-shrink:0;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+              Send Reply
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

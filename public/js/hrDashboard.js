@@ -245,9 +245,8 @@
   // ── Anonymous Ethics & Hazard Reports ──
   async function fetchEthicsReports() {
     try {
-      const res = await apiFetch('/api/v1/hr/reports');
-      const data = await res.json();
-      if (data.success) {
+      const data = await apiFetch('/api/v1/hr/reports');
+      if (data && data.success) {
         state.ethicsReports = data.reports || [];
         renderEthicsReports();
       }
@@ -440,12 +439,11 @@
     if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
 
     try {
-      const res = await apiFetch(`/api/v1/hr/reports/${state.activeReport._id}`, {
+      const data = await apiFetch(`/api/v1/hr/reports/${state.activeReport._id}`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus })
       });
-      const data = await res.json();
-      if (data.success) {
+      if (data && data.success) {
         state.activeReport.status = newStatus;
         await fetchEthicsReports();
         if (window.App && typeof App.toast === 'function') {
@@ -453,7 +451,7 @@
         }
       } else {
         if (window.App && typeof App.toast === 'function') {
-          App.toast('Error', data.message || 'Failed to update status.', 'error');
+          App.toast('Error', (data && data.message) || 'Failed to update status.', 'error');
         }
       }
     } catch (err) {
@@ -476,12 +474,11 @@
     if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
 
     try {
-      const res = await apiFetch(`/api/v1/hr/reports/${state.activeReport._id}`, {
+      const data = await apiFetch(`/api/v1/hr/reports/${state.activeReport._id}`, {
         method: 'PATCH',
         body: JSON.stringify({ message })
       });
-      const data = await res.json();
-      if (data.success && data.report) {
+      if (data && data.success && data.report) {
         input.value = '';
         state.activeReport.thread = data.report.thread || [];
         renderHrModalThread(state.activeReport.thread);
@@ -491,7 +488,7 @@
         }
       } else {
         if (window.App && typeof App.toast === 'function') {
-          App.toast('Error', data.message || 'Failed to send message.', 'error');
+          App.toast('Error', (data && data.message) || 'Failed to send message.', 'error');
         }
       }
     } catch (err) {

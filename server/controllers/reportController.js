@@ -134,14 +134,9 @@ router.post('/submit', async (req, res, next) => {
         try {
           await sendWhistleblowerAlert({
             reportId: report.trackingCode,
-            category: report.category,
-            description: report.description,
-            urgency: report.urgency,
-            companyName: tenant.company_name || 'Confidential',
             to: recipientEmail,
-            involvesLeadershipOrHR: isConflict,
           });
-          console.log(`[Whistleblower] Alert email dispatched for ${report.trackingCode}`);
+          console.log(`[Whistleblower] Zero-knowledge alert dispatched for ${report.trackingCode}`);
         } catch (mailErr) {
           console.warn('[Whistleblower] Background mail dispatch error:', mailErr.message);
         }

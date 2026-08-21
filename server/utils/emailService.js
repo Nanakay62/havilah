@@ -147,57 +147,59 @@ async function sendInterventionAlert({ surveyType, severityBand, department, to 
  * @param {string} [opts.description] - Hazard description / incident narrative
  * @param {string} opts.urgency - Urgency level
  * @param {string} [opts.companyName] - Company name for context
+/**
+ * Sends a Zero-Knowledge whistleblower generic notification alert (ISO 37002 / GDPR / HIPAA compliant).
+ * Strictly contains NO description, NO category, NO urgency, and NO PII.
+ *
+ * @param {object} opts
+ * @param {string} opts.reportId - Tracking code reference (e.g. 'WBL-8A1C2D')
+ * @param {string} [opts.companyName] - Organization name (optional)
  * @param {string} [opts.to] - Override recipient
  */
-async function sendWhistleblowerAlert({ reportId, category, description, urgency, companyName, to }) {
-  const recipient = to || CLINICAL_EMAIL;
-  const timestamp = new Date().toISOString();
-
-  const categoryLabels = {
-    harassment: 'Harassment',
-    unsafe_conditions: 'Unsafe Working Conditions',
-    systemic_burnout: 'Systemic Burnout',
-    discrimination: 'Discrimination',
-    retaliation: 'Retaliation',
-    other: 'Other Workplace Hazard'
-  };
-  const resolvedCategory = categoryLabels[category] || (category || '').replace(/_/g, ' ');
-
-  const urgencyColors = {
-    critical: '#ef4444',
-    urgent: '#f59e0b',
-    standard: '#818cf8'
-  };
-  const color = urgencyColors[urgency] || urgencyColors.standard;
+async function sendWhistleblowerAlert({ reportId, companyName, to }) {
+  const recipient = to || process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || 'nanakwamedickson62@gmail.com';
+  const timestamp = new Date().toUTCString();
 
   const html = `
-    <div style="background-color: #000000; padding: 32px 12px; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;">
-      <div style="max-width: 600px; margin: 0 auto; background-color: #0a0a0e; color: #e2e8f0; border-radius: 12px; overflow: hidden; border: 1px solid #222228;">
-        <div style="background-color: #111116; border-bottom: 1px solid #222228; padding: 24px 32px;">
-          <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 700;">🛡️ Anonymous Hazard Escalation Report</h1>
-          <p style="margin: 4px 0 0; color: #94a3b8; font-size: 13px;">Whistleblower Protection - Confidential</p>
+    <div style="background-color: #0f172a; padding: 32px 12px; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;">
+      <div style="max-width: 560px; margin: 0 auto; background-color: #ffffff; color: #1e293b; border-radius: 14px; overflow: hidden; border: 1px solid #cbd5e1; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #1e1b4b, #312e81); padding: 24px 32px; color: #ffffff;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            🛡️ Havilah Confidential Security Alert
+          </h1>
+          <p style="margin: 4px 0 0; color: #c7d2fe; font-size: 12px;">Zero-Knowledge Whistleblower Notification System</p>
         </div>
-        <div style="padding: 24px 32px;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-            <tr><td style="padding: 9px 0; color: #94a3b8; width: 140px; font-weight: 600;">Report ID</td><td style="padding: 9px 0; font-weight: 700; color: #a78bfa; font-family: monospace; font-size: 15px;">${reportId}</td></tr>
-            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Category</td><td style="padding: 9px 0; font-weight: 700; color: #ffffff;">${resolvedCategory}</td></tr>
-            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Urgency</td><td style="padding: 9px 0; color: ${color}; font-weight: 700; text-transform: uppercase;">${urgency}</td></tr>
-            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Organization</td><td style="padding: 9px 0; color: #e2e8f0; font-weight: 600;">${companyName || 'Confidential'}</td></tr>
-            <tr><td style="padding: 9px 0; color: #94a3b8; font-weight: 600;">Received At</td><td style="padding: 9px 0; color: #94a3b8; font-size: 12px;">${timestamp}</td></tr>
-          </table>
-          
-          <!-- Hazard Description Card (Clean Dark Card, No Colored Edge) -->
-          <div style="margin-top: 20px; padding: 16px; background-color: #131318; border: 1px solid #222228; border-radius: 8px;">
-            <p style="margin: 0 0 6px; color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Hazard Description & Incident Details</p>
-            <p style="margin: 0; line-height: 1.6; color: #f1f5f9; white-space: pre-wrap; font-size: 13.5px;">${description || 'No additional narrative provided.'}</p>
+
+        <!-- Body -->
+        <div style="padding: 28px 32px;">
+          <p style="font-size: 15px; line-height: 1.6; color: #1e293b; margin-top: 0;">
+            A new confidential report (<strong>Ref: <span style="font-family: monospace; color: #4f46e5;">${reportId}</span></strong>) has been submitted to the secure portal.
+          </p>
+
+          <!-- Zero-Knowledge Security Callout -->
+          <div style="background-color: #f1f5f9; border-left: 4px solid #6366f1; padding: 14px 16px; border-radius: 4px; margin: 20px 0;">
+            <strong style="color: #1e293b; font-size: 13px; display: block; margin-bottom: 3px;">🔒 Zero-Knowledge Compliance Standard (ISO 37002 / GDPR / HIPAA):</strong>
+            <p style="margin: 0; font-size: 12px; color: #475569; line-height: 1.5;">
+              To prevent cleartext exposure and unauthorized leaks in transit, confidential incident details, categories, and descriptions are <strong>never transmitted via email</strong>.
+            </p>
           </div>
 
-          <div style="margin-top: 24px; padding: 14px 18px; background-color: #131318; border: 1px solid #222228; border-radius: 8px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
-            <strong style="color: #cbd5e1;">🔒 Anonymity Guarantee:</strong> This report was submitted through the Havilah Anonymous Vault. No IP addresses, user IDs, or identifying metadata have been stored. The submitter's identity is structurally unrecoverable.
+          <p style="font-size: 13.5px; color: #334155; margin-bottom: 24px; line-height: 1.5;">
+            Please log into your authorized Havilah compliance dashboard to decrypt and review the full filing and exchange secure, two-way communications with the reporter.
+          </p>
+
+          <div style="text-align: center; margin: 28px 0 16px;">
+            <a href="http://localhost:3000/login.html" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: 700; font-size: 13.5px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(99,102,241,0.3);">
+              🔐 Authenticate &amp; Access Dashboard
+            </a>
           </div>
         </div>
-        <div style="padding: 16px 32px; background-color: #070709; border-top: 1px solid #1a1a1f; font-size: 11px; color: #64748b; text-align: center;">
-          Clinical Hotline: ${CLINICAL_HOTLINE} &bull; Havilah Whistleblower Protection System
+
+        <!-- Footer -->
+        <div style="padding: 14px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; text-align: center;">
+          Received: ${timestamp} &bull; Havilah Whistleblower Protection Engine
         </div>
       </div>
     </div>
@@ -205,7 +207,7 @@ async function sendWhistleblowerAlert({ reportId, category, description, urgency
 
   return sendMail({
     to: recipient,
-    subject: `🛡️ Anonymous Hazard Report ${reportId} - ${(urgency || 'standard').toUpperCase()} Priority`,
+    subject: `🛡️ New Confidential Report Received [Ref: ${reportId}] - Dashboard Access Required`,
     html
   });
 }

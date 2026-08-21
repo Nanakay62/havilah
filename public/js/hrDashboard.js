@@ -8,7 +8,7 @@
   };
 
   async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('havilah_token') || localStorage.getItem('token') || localStorage.getItem('session_token');
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers
@@ -464,12 +464,20 @@
   };
 
   window.sendHrReportReply = async () => {
-    if (!state.activeReport) return;
+    if (!state.activeReport) {
+      console.warn('sendHrReportReply called without activeReport');
+      return;
+    }
     const input = document.getElementById('hrModalReplyInput');
     const message = input?.value.trim();
     const btn = document.getElementById('hrSendReplyBtn');
 
-    if (!message) return;
+    if (!message) {
+      if (window.App && typeof App.toast === 'function') {
+        App.toast('Warning', 'Please type a message before sending.', 'warning');
+      }
+      return;
+    }
 
     if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
 
@@ -488,13 +496,15 @@
           App.toast('Message Sent', 'Your message has been sent to the anonymous whistleblower.', 'success');
         }
       } else {
+        const errMsg = (data && (data.message || data.error)) || 'Failed to send message.';
         if (window.App && typeof App.toast === 'function') {
-          App.toast('Error', (data && data.message) || 'Failed to send message.', 'error');
+          App.toast('Error', errMsg, 'error');
         }
       }
     } catch (err) {
+      const errMsg = err.message || 'Could not reach the server.';
       if (window.App && typeof App.toast === 'function') {
-        App.toast('Error', 'Could not reach the server.', 'error');
+        App.toast('Error', errMsg, 'error');
       }
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Send'; }

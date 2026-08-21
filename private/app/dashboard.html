@@ -2123,12 +2123,21 @@ function renderTrackedReportView(report) {
 }
 
 window.sendAnonymousReply = async function() {
-  if (!window.activeTrackedReport) return;
+  const code = (window.activeTrackedReport && window.activeTrackedReport.trackingCode) || document.getElementById('trackCodeInput')?.value.trim();
+  const pin = (window.activeTrackedReport && window.activeTrackedReport.pin) || document.getElementById('trackPinInput')?.value.trim();
   const msgInput = document.getElementById('trackReplyInput');
   const message = msgInput?.value.trim();
   const btn = document.getElementById('trackReplyBtn');
 
-  if (!message) return;
+  if (!code || !pin) {
+    if (typeof window.showToast === 'function') window.showToast('Session Expired', 'Please enter your Tracking Code and PIN to send replies.', 'error');
+    return;
+  }
+
+  if (!message) {
+    if (typeof window.showToast === 'function') window.showToast('Validation Error', 'Please type a message before sending.', 'warning');
+    return;
+  }
 
   if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
 
@@ -2136,25 +2145,29 @@ window.sendAnonymousReply = async function() {
     const res = await apiFetch('/api/v1/whistleblower/reply', {
       method: 'POST',
       body: JSON.stringify({
-        trackingCode: window.activeTrackedReport.trackingCode,
-        pin: window.activeTrackedReport.pin,
+        trackingCode: code,
+        pin: pin,
         message,
       })
     });
     const result = await res.json();
     if (result && result.success) {
       if (msgInput) msgInput.value = '';
+      if (!window.activeTrackedReport) {
+        window.activeTrackedReport = { trackingCode: code, pin: pin };
+      }
       window.activeTrackedReport.thread = result.thread || [];
       renderTrackedReportView(window.activeTrackedReport);
       if (typeof window.showToast === 'function') {
         window.showToast('Message Sent', 'Your reply has been securely appended to the thread.', 'success');
       }
     } else {
-      const errMsg = (result && result.message) || 'Failed to send message.';
+      const errMsg = (result && (result.message || result.error)) || 'Failed to send message.';
       if (typeof window.showToast === 'function') window.showToast('Error', errMsg, 'error');
     }
   } catch (err) {
-    if (typeof window.showToast === 'function') window.showToast('Error', 'Could not reach the server.', 'error');
+    const errMsg = err.message || 'Could not reach the server.';
+    if (typeof window.showToast === 'function') window.showToast('Error', errMsg, 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
     if (msgInput) msgInput.focus();

@@ -628,23 +628,33 @@ router.post('/toggle-assessment', handleToggleAssessment);
 
 // ── Anonymous Whistleblower Ethics Ledger (HR / Tenant Scope) ──
 
-// GET /api/v1/hr/reports - Standard reports only (involvesLeadershipOrHR: false)
+// GET /api/v1/hr/reports - List standard reports for this tenant (excludes conflict of interest)
 router.get('/reports', async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;
+    const mongoose = require('mongoose');
     const Tenant = require('../models/Tenant');
     const Report = require('../models/Report');
 
-    const tenant = await Tenant.findOne({ company_id }).select('_id').lean();
-    if (!tenant) {
+    let tenant = null;
+    if (company_id) {
+      tenant = await Tenant.findOne({
+        $or: [
+          { company_id },
+          ...(mongoose.Types.ObjectId.isValid(company_id) ? [{ _id: company_id }] : [])
+        ]
+      }).select('_id').lean();
+    }
+
+    let query = { involvesLeadershipOrHR: false };
+    if (tenant) {
+      query.tenantId = tenant._id;
+    } else if (req.sessionData.role !== 'super_admin' && !req.sessionData.isSystemSuperAdmin) {
       return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND', message: 'Tenant not found.' });
     }
 
     // Critical: Exclude any reports where involvesLeadershipOrHR === true
-    const reports = await Report.find({
-      tenantId: tenant._id,
-      involvesLeadershipOrHR: false,
-    })
+    const reports = await Report.find(query)
       .sort({ createdAt: -1 })
       .lean();
 
@@ -663,19 +673,28 @@ router.patch('/reports/:id', async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;
     const { status, message } = req.body;
+    const mongoose = require('mongoose');
     const Tenant = require('../models/Tenant');
     const Report = require('../models/Report');
 
-    const tenant = await Tenant.findOne({ company_id }).select('_id').lean();
-    if (!tenant) {
+    let tenant = null;
+    if (company_id) {
+      tenant = await Tenant.findOne({
+        $or: [
+          { company_id },
+          ...(mongoose.Types.ObjectId.isValid(company_id) ? [{ _id: company_id }] : [])
+        ]
+      }).select('_id').lean();
+    }
+
+    let query = { _id: req.params.id, involvesLeadershipOrHR: false };
+    if (tenant) {
+      query.tenantId = tenant._id;
+    } else if (req.sessionData.role !== 'super_admin' && !req.sessionData.isSystemSuperAdmin) {
       return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND', message: 'Tenant not found.' });
     }
 
-    const report = await Report.findOne({
-      _id: req.params.id,
-      tenantId: tenant._id,
-      involvesLeadershipOrHR: false,
-    });
+    const report = await Report.findOne(query);
 
     if (!report) {
       return res.status(404).json({ success: false, error: 'REPORT_NOT_FOUND', message: 'Report not found or not accessible.' });

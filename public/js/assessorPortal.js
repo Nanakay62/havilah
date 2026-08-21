@@ -514,13 +514,13 @@
       let statusBadge = '';
       const st = (r.status || 'pending').toLowerCase();
       if (st === 'completed') {
-        statusBadge = '<span class="badge badge-completed">Completed</span>';
+        statusBadge = '<span class="badge badge-completed">✓ Completed</span>';
       } else if (st === 'scheduled') {
-        statusBadge = '<span class="badge badge-scheduled">Scheduled</span>';
+        statusBadge = '<span class="badge badge-scheduled">📅 Scheduled</span>';
       } else if (st === 'cancelled') {
-        statusBadge = '<span class="badge badge-cancelled">Cancelled</span>';
+        statusBadge = '<span class="badge badge-cancelled">✕ Cancelled</span>';
       } else {
-        statusBadge = '<span class="badge badge-pending">Pending</span>';
+        statusBadge = '<span class="badge badge-pending">⏳ Pending</span>';
       }
 
       const staleBadge = r.isStale ? '<span class="badge badge-stale" title="Pending >48hrs">⏱️ 48h+</span>' : '';
@@ -545,7 +545,7 @@
       } else if (settlement === 'pending_payment') {
         settlementPill = `<span class="settlement-pill settlement-pending" onclick="toggleSettlementStatus('${r._id}', 'pending_payment')" title="Click to mark Settled / Paid">⏳ Pending Pay</span>`;
       } else {
-        settlementPill = '<span class="settlement-pill settlement-unbilled">Unbilled</span>';
+        settlementPill = '<span class="settlement-pill settlement-unbilled">○ Unbilled</span>';
       }
 
       // Action links for contact

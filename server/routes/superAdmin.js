@@ -1031,5 +1031,71 @@ router.patch('/referrals/:id/reassign', async (req, res, next) => {
   }
 });
 
+// ── Protected Whistleblower Conflict Reports (SuperAdmin Scope) ──
+
+// GET /api/v1/superadmin/reports/conflict
+router.get('/reports/conflict', async (req, res, next) => {
+  try {
+    const Report = require('../models/Report');
+    const reports = await Report.find({ involvesLeadershipOrHR: true })
+      .populate('tenantId', 'company_name company_id slug')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      count: reports.length,
+      data: reports,
+      reports,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/v1/superadmin/reports/:id
+router.patch('/reports/:id', async (req, res, next) => {
+  try {
+    const { status, message } = req.body;
+    const Report = require('../models/Report');
+
+    const report = await Report.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ success: false, error: 'REPORT_NOT_FOUND', message: 'Report not found.' });
+    }
+
+    if (status) {
+      const validStatuses = ['submitted', 'under_investigation', 'action_taken', 'closed'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: 'VALIDATION_ERROR',
+          message: `Status must be one of: ${validStatuses.join(', ')}`,
+        });
+      }
+      report.status = status;
+    }
+
+    if (message && String(message).trim()) {
+      report.thread = report.thread || [];
+      report.thread.push({
+        sender: 'investigator',
+        message: String(message).trim(),
+        timestamp: new Date(),
+      });
+    }
+
+    await report.save();
+
+    res.json({
+      success: true,
+      message: 'Conflict report updated successfully.',
+      report,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
 

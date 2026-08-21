@@ -626,4 +626,92 @@ router.get('/modules', async (req, res, next) => {
 const { handleToggleAssessment } = require('./assessment');
 router.post('/toggle-assessment', handleToggleAssessment);
 
+// ── Anonymous Whistleblower Ethics Ledger (HR / Tenant Scope) ──
+
+// GET /api/v1/hr/reports - Standard reports only (involvesLeadershipOrHR: false)
+router.get('/reports', async (req, res, next) => {
+  try {
+    const { company_id } = req.sessionData;
+    const Tenant = require('../models/Tenant');
+    const Report = require('../models/Report');
+
+    const tenant = await Tenant.findOne({ company_id }).select('_id').lean();
+    if (!tenant) {
+      return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND', message: 'Tenant not found.' });
+    }
+
+    // Critical: Exclude any reports where involvesLeadershipOrHR === true
+    const reports = await Report.find({
+      tenantId: tenant._id,
+      involvesLeadershipOrHR: false,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      count: reports.length,
+      reports,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/v1/hr/reports/:id - Status update and/or investigator reply
+router.patch('/reports/:id', async (req, res, next) => {
+  try {
+    const { company_id } = req.sessionData;
+    const { status, message } = req.body;
+    const Tenant = require('../models/Tenant');
+    const Report = require('../models/Report');
+
+    const tenant = await Tenant.findOne({ company_id }).select('_id').lean();
+    if (!tenant) {
+      return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND', message: 'Tenant not found.' });
+    }
+
+    const report = await Report.findOne({
+      _id: req.params.id,
+      tenantId: tenant._id,
+      involvesLeadershipOrHR: false,
+    });
+
+    if (!report) {
+      return res.status(404).json({ success: false, error: 'REPORT_NOT_FOUND', message: 'Report not found or not accessible.' });
+    }
+
+    if (status) {
+      const validStatuses = ['submitted', 'under_investigation', 'action_taken', 'closed'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: 'VALIDATION_ERROR',
+          message: `Status must be one of: ${validStatuses.join(', ')}`,
+        });
+      }
+      report.status = status;
+    }
+
+    if (message && String(message).trim()) {
+      report.thread = report.thread || [];
+      report.thread.push({
+        sender: 'investigator',
+        message: String(message).trim(),
+        timestamp: new Date(),
+      });
+    }
+
+    await report.save();
+
+    res.json({
+      success: true,
+      message: 'Report updated successfully.',
+      report,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

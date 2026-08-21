@@ -7,6 +7,8 @@ if (dns.setDefaultResultOrder) {
 
 if (process.env.NODE_ENV !== 'production') {
   try {
+    const path = require('path');
+    require('dotenv').config({ path: path.join(__dirname, '.env') });
     require('dotenv').config();
   } catch (e) {
     console.log('dotenv not found or not required in production environment');
@@ -38,6 +40,7 @@ const hrRouter = require('./routes/hrAdmin');
 const superAdminRouter = require('./routes/superAdmin');
 const assessmentCyclesRouter = require('./routes/assessmentCycles');
 const whistleblowerRouter = require('./routes/whistleblowerRoutes');
+const reportController = require('./controllers/reportController');
 const assessmentRouter = require('./routes/assessment');
 const alertsRouter = require('./routes/alerts');
 
@@ -162,6 +165,7 @@ app.use('/api/v1/hr', hrRouter);
 app.use('/api/v1/superadmin', superAdminRouter);
 app.use('/api/v1/assessment-cycles', assessmentCyclesRouter);
 app.use('/api/v1/vault', whistleblowerRouter);
+app.use('/api/v1/whistleblower', reportController);
 app.use('/api/v1/assessments', assessmentRouter.router || assessmentRouter);
 app.use('/api/v1/alerts', alertsRouter);
 

@@ -619,6 +619,10 @@
       <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
       5. Medical Assessors &amp; Routing
     </a>
+    <a class="nav-item" id="nav-whistleblower" onclick="switchTab('whistleblower')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      6. Protected Whistleblower Inquiries
+    </a>
   </nav>
 
   <div class="sidebar-footer">
@@ -1042,9 +1046,131 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
         </table>
       </div>
     </div>
+  <!-- TAB 6: Protected Whistleblower Inquiries -->
+  <section id="view-whistleblower" class="page-view">
+    <div class="section-label">Conflict of Interest &amp; Ombudsman Ledger</div>
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">Protected Whistleblower Inquiries</h1>
+        <p class="page-subtitle">Dedicated independent investigation queue for reports involving HR, Senior Leadership, or Executive Management across all client tenants. Internal HR is completely bypassed.</p>
+      </div>
+      <button class="btn-action-secondary" onclick="loadConflictReports()">
+        ↻ Refresh Inquiries
+      </button>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid" style="margin-bottom: 24px;">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Conflict Inquiries</div>
+        <div class="kpi-value" id="saConflictTotal">0</div>
+        <div class="kpi-hint">All tenant conflict filings</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Under Investigation</div>
+        <div class="kpi-value" id="saConflictInvestigating" style="color: #f59e0b;">0</div>
+        <div class="kpi-hint">Ombudsman active reviews</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Action Taken</div>
+        <div class="kpi-value" id="saConflictAction" style="color: #0284c7;">0</div>
+        <div class="kpi-hint">Protective measures enacted</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Resolved / Closed</div>
+        <div class="kpi-value" id="saConflictClosed" style="color: #10b981;">0</div>
+        <div class="kpi-hint">Closed cases</div>
+      </div>
+    </div>
+
+    <!-- Table Box -->
+    <div class="card-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <h3>Confidential Case Queue</h3>
+          <p>Direct encrypted dialogue feed with anonymous employees bypassing organization leadership.</p>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Tracking Code</th>
+              <th>Organization</th>
+              <th>Category</th>
+              <th>Urgency</th>
+              <th>Date Filed</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="saConflictTableBody">
+            <tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-2);">Loading whistleblower inquiries...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </section>
 
 </main>
+
+<!-- SuperAdmin Whistleblower Case Modal -->
+<div class="modal-overlay" id="superAdminReportModalBackdrop" style="display: none; align-items: center; justify-content: center; z-index: 9999;" onclick="if(event.target===this)closeSuperAdminReportModal()">
+  <div class="modal cosmic-glass-panel" style="max-width: 650px; width: 95%; max-height: 88vh; overflow-y: auto;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h2 class="modal-title" style="margin: 0;" id="saModalTitle">Case Details</h2>
+          <span id="saModalCodeChip" style="font-family: monospace; font-size: 13px; font-weight: 800; background: rgba(99,102,241,0.15); color: #818cf8; padding: 2px 8px; border-radius: 6px;">WBL-XXXXXX</span>
+        </div>
+        <p style="margin: 3px 0 0; font-size: 12px; color: var(--text-2);" id="saModalTenantName">Organization: —</p>
+      </div>
+      <button onclick="closeSuperAdminReportModal()" style="background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-2);">&times;</button>
+    </div>
+
+    <!-- Metadata Grid -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--bg-base); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 16px;">
+      <div>
+        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Category</div>
+        <div style="font-weight: 600; color: var(--text-1); font-size: 13px; margin-top: 2px;" id="saModalCategory">—</div>
+      </div>
+      <div>
+        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Urgency Level</div>
+        <div style="font-weight: 700; font-size: 13px; margin-top: 2px;" id="saModalUrgency">—</div>
+      </div>
+    </div>
+
+    <!-- Incident Description -->
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-2); text-transform: uppercase; margin-bottom: 6px;">Incident Description</label>
+      <div id="saModalDescription" style="background: var(--bg-base); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--text-1); line-height: 1.5; max-height: 120px; overflow-y: auto; white-space: pre-wrap;">—</div>
+    </div>
+
+    <!-- Status Control -->
+    <div style="display: flex; align-items: center; gap: 10px; background: rgba(243,244,246,0.8); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 18px;">
+      <label style="font-size: 12px; font-weight: 700; color: var(--text-1); white-space: nowrap;">Investigation Status:</label>
+      <select id="saModalStatusSelect" style="flex: 1; padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 13px; background: #fff; color: var(--text-1);">
+        <option value="submitted">Submitted</option>
+        <option value="under_investigation">Under Investigation</option>
+        <option value="action_taken">Action Taken</option>
+        <option value="closed">Closed / Resolved</option>
+      </select>
+      <button onclick="saveSuperAdminReportStatus()" class="btn-action-primary" id="saSaveStatusBtn" style="padding: 6px 14px; font-size: 12px;">Save Status</button>
+    </div>
+
+    <!-- Thread Feed -->
+    <div style="font-size: 12px; font-weight: 700; color: var(--text-2); text-transform: uppercase; margin-bottom: 8px;">Ombudsman Dialogue Feed</div>
+    <div id="saModalThreadContainer" style="background: var(--bg-base); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; max-height: 200px; overflow-y: auto; margin-bottom: 14px;">
+      <!-- Thread messages dynamically inserted -->
+    </div>
+
+    <!-- Ombudsman Reply Box -->
+    <div style="display: flex; gap: 8px;">
+      <input type="text" id="saModalReplyInput" placeholder="Reply anonymously to whistleblower..." style="flex: 1; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px;">
+      <button onclick="sendSuperAdminReportReply()" class="btn-action-primary" id="saSendReplyBtn" style="padding: 10px 16px; font-size: 13px;">Send Reply</button>
+    </div>
+  </div>
+</div>
 
 <!-- Provision Tenant Modal -->
 <div class="modal-overlay" id="provisionModal">

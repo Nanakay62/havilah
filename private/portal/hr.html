@@ -583,6 +583,7 @@
     <nav class="nav" role="navigation" aria-label="Primary">
       <button class="nav-item active" id="hr-tab-analytics" onclick="window.switchHrViewTab('analytics')">HR Analytics</button>
       <button class="nav-item" id="hr-tab-billing" onclick="window.switchHrViewTab('billing')">Clinical Billing</button>
+      <button class="nav-item" id="hr-tab-ethics" onclick="window.switchHrViewTab('ethics')">Ethics &amp; Hazard Reports</button>
     </nav>
     
     <div class="header-right">
@@ -1002,6 +1003,144 @@
           <tr><td colspan="7" style="padding: 24px; text-align: center; color: var(--text-3); font-size: 0.875rem;">Loading billing records...</td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ETHICS & HAZARD REPORTS VIEW ============ -->
+<div id="hr-section-ethics" style="display: none; padding-top: 10px;">
+  <div class="page-head">
+    <div>
+      <span class="eyebrow" style="color: #6366f1;">Anonymous Governance</span>
+      <h1>Ethics &amp; Hazard Reports</h1>
+      <p style="color: var(--text-2); font-size: 0.875rem;">
+        Confidential workplace hazard reports, safety alerts, and anonymous whistleblower threads.
+      </p>
+    </div>
+    <div class="page-head-actions">
+      <button class="btn btn-ghost btn-sm" onclick="window.refreshEthicsReports()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        ↻ Refresh Reports
+      </button>
+    </div>
+  </div>
+
+  <!-- Privacy Guarantee Alert -->
+  <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+    <div style="font-size: 1.3rem;">🛡️</div>
+    <div style="font-size: 0.84rem; color: var(--text-2); line-height: 1.5;">
+      <strong style="color: var(--text-1);">Whistleblower Anonymity:</strong> Submissions are cryptographically severed from user accounts and IP logs. Reports involving HR or Executive Leadership are automatically routed to the SuperAdmin Ombudsman and do not appear in this ledger.
+    </div>
+  </div>
+
+  <!-- KPI Grid -->
+  <div class="kpi-grid" style="margin-bottom: 20px;">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Reports</div>
+      <div class="kpi-value" id="ethicsTotalCount">0</div>
+      <div class="kpi-hint">Filed organization reports</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Under Investigation</div>
+      <div class="kpi-value" id="ethicsInvestigatingCount" style="color: #f59e0b;">0</div>
+      <div class="kpi-hint">Active inquiry underway</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Action Taken</div>
+      <div class="kpi-value" id="ethicsActionCount" style="color: #0284c7;">0</div>
+      <div class="kpi-hint">Mitigations applied</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Resolved / Closed</div>
+      <div class="kpi-value" id="ethicsClosedCount" style="color: #10b981;">0</div>
+      <div class="kpi-hint">Completed case files</div>
+    </div>
+  </div>
+
+  <!-- Reports Table Card -->
+  <div class="chart-card">
+    <div class="chart-head" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div class="chart-title">Whistleblower Incident Ledger</div>
+        <div class="chart-subtitle">Direct records of submitted workplace concerns and ongoing investigator threads</div>
+      </div>
+    </div>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border-strong); background: var(--bg-base);">
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Tracking Code</th>
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Category</th>
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Urgency</th>
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Submitted Date</th>
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Status</th>
+            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="hrEthicsTableBody">
+          <tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-3); font-size: 0.875rem;">Loading ethics reports...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HR REPORT VIEW & RESPOND MODAL ============ -->
+<div id="hrReportModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);align-items:center;justify-content:center;" onclick="if(event.target===this)window.closeHrReportModal()">
+  <div style="background:#fff;border-radius:16px;width:95%;max-width:620px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);border:1px solid var(--border);">
+    <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <h3 style="margin:0;font-size:17px;color:var(--text-1);" id="hrModalTitle">Report Details</h3>
+          <span id="hrModalCodeChip" style="font-family:monospace;font-size:12px;font-weight:700;background:rgba(99,102,241,0.1);color:#4f46e5;padding:2px 8px;border-radius:6px;">WBL-XXXXXX</span>
+        </div>
+        <p style="margin:2px 0 0;font-size:12px;color:var(--text-3);">Confidential Case Investigation &amp; Whistleblower Dialogue</p>
+      </div>
+      <button onclick="window.closeHrReportModal()" style="background:none;border:none;color:var(--text-3);font-size:20px;cursor:pointer;">&times;</button>
+    </div>
+
+    <div style="padding:20px 24px;">
+      <!-- Metadata & Status -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;background:var(--bg-base);padding:12px 16px;border-radius:10px;border:1px solid var(--border);">
+        <div>
+          <span style="font-size:11px;color:var(--text-3);text-transform:uppercase;font-weight:600;">Category</span>
+          <div style="font-weight:600;color:var(--text-1);font-size:13px;" id="hrModalCategory">—</div>
+        </div>
+        <div>
+          <span style="font-size:11px;color:var(--text-3);text-transform:uppercase;font-weight:600;">Urgency</span>
+          <div style="font-weight:600;font-size:13px;" id="hrModalUrgency">—</div>
+        </div>
+      </div>
+
+      <!-- Incident Description -->
+      <div style="margin-bottom:18px;">
+        <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;">Incident Description</label>
+        <div id="hrModalDescription" style="padding:12px 14px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text-1);line-height:1.5;max-height:120px;overflow-y:auto;white-space:pre-wrap;">—</div>
+      </div>
+
+      <!-- Status Manager -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;background:rgba(243,244,246,0.8);padding:10px 14px;border-radius:8px;">
+        <label style="font-size:12px;font-weight:700;color:var(--text-1);white-space:nowrap;">Case Status:</label>
+        <select id="hrModalStatusSelect" style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);font-size:13px;background:#fff;color:var(--text-1);">
+          <option value="submitted">Submitted</option>
+          <option value="under_investigation">Under Investigation</option>
+          <option value="action_taken">Action Taken</option>
+          <option value="closed">Closed / Resolved</option>
+        </select>
+        <button onclick="window.saveHrReportStatus()" class="btn btn-secondary btn-sm" id="hrSaveStatusBtn" style="padding:6px 12px;font-size:12px;">Save Status</button>
+      </div>
+
+      <!-- Thread Feed -->
+      <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;margin-bottom:8px;">Investigation Thread</div>
+      <div id="hrModalThreadContainer" style="background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;max-height:180px;overflow-y:auto;margin-bottom:14px;">
+        <!-- Thread messages -->
+      </div>
+
+      <!-- Investigator Reply -->
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="hrModalReplyInput" placeholder="Send message to anonymous whistleblower..." style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+        <button onclick="window.sendHrReportReply()" class="btn btn-primary btn-sm" id="hrSendReplyBtn" style="padding:9px 16px;font-size:13px;">Send</button>
+      </div>
     </div>
   </div>
 </div>

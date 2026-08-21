@@ -242,11 +242,89 @@
     }
   }
 
+  // ── Anonymous Ethics & Hazard Reports ──
+  async function fetchEthicsReports() {
+    try {
+      const res = await apiFetch('/api/v1/hr/reports');
+      const data = await res.json();
+      if (data.success) {
+        state.ethicsReports = data.reports || [];
+        renderEthicsReports();
+      }
+    } catch (e) {
+      console.error('Ethics reports load error', e);
+    }
+  }
+
+  function renderEthicsReports() {
+    const tableBody = document.getElementById('hrEthicsTableBody');
+    const reports = state.ethicsReports || [];
+
+    // Update KPIs
+    const totalEl = document.getElementById('ethicsTotalCount');
+    const investigatingEl = document.getElementById('ethicsInvestigatingCount');
+    const actionEl = document.getElementById('ethicsActionCount');
+    const closedEl = document.getElementById('ethicsClosedCount');
+
+    if (totalEl) totalEl.textContent = reports.length;
+    if (investigatingEl) investigatingEl.textContent = reports.filter(r => r.status === 'under_investigation').length;
+    if (actionEl) actionEl.textContent = reports.filter(r => r.status === 'action_taken').length;
+    if (closedEl) closedEl.textContent = reports.filter(r => r.status === 'closed').length;
+
+    if (!tableBody) return;
+
+    if (reports.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="6" style="padding: 28px; text-align: center; color: var(--text-3); font-size: 0.875rem;">No whistleblower or ethics reports submitted for your organization.</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = reports.map(r => {
+      const urgencyColors = {
+        Critical: '#ef4444',
+        Urgent: '#f59e0b',
+        Standard: '#6366f1',
+      };
+      const urgencyColor = urgencyColors[r.urgency] || '#6366f1';
+      const statusLabels = {
+        submitted: { label: 'Submitted', bg: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' },
+        under_investigation: { label: 'Investigating', bg: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' },
+        action_taken: { label: 'Action Taken', bg: 'rgba(14, 165, 233, 0.1)', color: '#0ea5e9' },
+        closed: { label: 'Closed', bg: 'rgba(16, 185, 129, 0.1)', color: '#10b981' },
+      };
+      const st = statusLabels[r.status] || { label: r.status, bg: '#f3f4f6', color: '#6b7280' };
+      const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+      return `
+        <tr style="border-bottom: 1px solid var(--border); font-size: 0.84rem;">
+          <td style="padding: 12px 14px; font-family: monospace; font-weight: 700; color: #4f46e5;">${r.trackingCode || '—'}</td>
+          <td style="padding: 12px 14px; font-weight: 600; color: var(--text-1);">${r.category || 'General'}</td>
+          <td style="padding: 12px 14px;">
+            <span style="font-size: 0.75rem; font-weight: 700; color: ${urgencyColor}; border: 1px solid ${urgencyColor}40; background: ${urgencyColor}15; padding: 2px 8px; border-radius: 99px;">
+              ${r.urgency || 'Standard'}
+            </span>
+          </td>
+          <td style="padding: 12px 14px; color: var(--text-2);">${dateStr}</td>
+          <td style="padding: 12px 14px;">
+            <span style="font-size: 0.75rem; font-weight: 700; color: ${st.color}; background: ${st.bg}; padding: 2px 8px; border-radius: 99px;">
+              ${st.label}
+            </span>
+          </td>
+          <td style="padding: 12px 14px;">
+            <button onclick="window.openHrReportModal('${r._id}')" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.78rem; font-weight: 600;">
+              View &amp; Respond
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
   async function init() {
     await Promise.all([
       fetchInvites(),
       fetchDepartments(),
-      fetchClinicalBilling()
+      fetchClinicalBilling(),
+      fetchEthicsReports()
     ]);
   }
 
@@ -255,19 +333,25 @@
     state.activeTab = tabName;
     const analyticsTabBtn = document.getElementById('hr-tab-analytics');
     const billingTabBtn = document.getElementById('hr-tab-billing');
+    const ethicsTabBtn = document.getElementById('hr-tab-ethics');
     const analyticsSection = document.getElementById('hr-section-analytics');
     const billingSection = document.getElementById('hr-section-billing');
+    const ethicsSection = document.getElementById('hr-section-ethics');
+
+    // Reset all tabs
+    [analyticsTabBtn, billingTabBtn, ethicsTabBtn].forEach(btn => btn && btn.classList.remove('active'));
+    [analyticsSection, billingSection, ethicsSection].forEach(sec => sec && (sec.style.display = 'none'));
 
     if (tabName === 'billing') {
-      if (analyticsTabBtn) analyticsTabBtn.classList.remove('active');
       if (billingTabBtn) billingTabBtn.classList.add('active');
-      if (analyticsSection) analyticsSection.style.display = 'none';
       if (billingSection) billingSection.style.display = 'block';
       fetchClinicalBilling();
+    } else if (tabName === 'ethics') {
+      if (ethicsTabBtn) ethicsTabBtn.classList.add('active');
+      if (ethicsSection) ethicsSection.style.display = 'block';
+      fetchEthicsReports();
     } else {
-      if (billingTabBtn) billingTabBtn.classList.remove('active');
       if (analyticsTabBtn) analyticsTabBtn.classList.add('active');
-      if (billingSection) billingSection.style.display = 'none';
       if (analyticsSection) analyticsSection.style.display = 'block';
     }
   };
@@ -280,6 +364,143 @@
 
   window.refreshClinicalBilling = () => {
     fetchClinicalBilling();
+  };
+
+  window.refreshEthicsReports = () => {
+    fetchEthicsReports();
+  };
+
+  window.openHrReportModal = (reportId) => {
+    const report = (state.ethicsReports || []).find(r => r._id === reportId);
+    if (!report) return;
+
+    state.activeReport = report;
+
+    const modal = document.getElementById('hrReportModalBackdrop');
+    const titleEl = document.getElementById('hrModalTitle');
+    const codeChip = document.getElementById('hrModalCodeChip');
+    const catEl = document.getElementById('hrModalCategory');
+    const urgEl = document.getElementById('hrModalUrgency');
+    const descEl = document.getElementById('hrModalDescription');
+    const statusSelect = document.getElementById('hrModalStatusSelect');
+
+    if (titleEl) titleEl.textContent = `Case #${report.trackingCode}`;
+    if (codeChip) codeChip.textContent = report.trackingCode;
+    if (catEl) catEl.textContent = report.category || 'General';
+    if (urgEl) {
+      urgEl.textContent = report.urgency || 'Standard';
+      urgEl.style.color = report.urgency === 'Critical' ? '#ef4444' : report.urgency === 'Urgent' ? '#f59e0b' : '#6366f1';
+    }
+    if (descEl) descEl.textContent = report.description || '—';
+    if (statusSelect) statusSelect.value = report.status || 'submitted';
+
+    renderHrModalThread(report.thread || []);
+
+    if (modal) modal.style.display = 'flex';
+  };
+
+  function renderHrModalThread(thread) {
+    const container = document.getElementById('hrModalThreadContainer');
+    if (!container) return;
+
+    if (!thread || thread.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:12px;">No messages in thread yet.</div>';
+      return;
+    }
+
+    container.innerHTML = thread.map(msg => {
+      const isInvestigator = msg.sender === 'investigator';
+      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      return `
+        <div style="display:flex;flex-direction:column;align-items:${isInvestigator ? 'flex-end' : 'flex-start'};margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:2px;">
+            ${isInvestigator ? '🛡️ You (Investigator)' : '👤 Anonymous Whistleblower'} • ${timeStr}
+          </div>
+          <div style="max-width:85%;padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.4;background:${isInvestigator ? '#4f46e5' : '#f3f4f6'};color:${isInvestigator ? '#fff' : 'var(--text-1)'};word-break:break-word;">
+            ${(msg.message || '').replace(/</g, '&lt;')}
+          </div>
+        </div>
+      `;
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+  }
+
+  window.closeHrReportModal = () => {
+    const modal = document.getElementById('hrReportModalBackdrop');
+    if (modal) modal.style.display = 'none';
+    state.activeReport = null;
+  };
+
+  window.saveHrReportStatus = async () => {
+    if (!state.activeReport) return;
+    const statusSelect = document.getElementById('hrModalStatusSelect');
+    const newStatus = statusSelect?.value;
+    const btn = document.getElementById('hrSaveStatusBtn');
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+    try {
+      const res = await apiFetch(`/api/v1/hr/reports/${state.activeReport._id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        state.activeReport.status = newStatus;
+        await fetchEthicsReports();
+        if (window.App && typeof App.toast === 'function') {
+          App.toast('Status Updated', `Case status changed to ${newStatus}.`, 'success');
+        }
+      } else {
+        if (window.App && typeof App.toast === 'function') {
+          App.toast('Error', data.message || 'Failed to update status.', 'error');
+        }
+      }
+    } catch (err) {
+      if (window.App && typeof App.toast === 'function') {
+        App.toast('Error', 'Could not reach the server.', 'error');
+      }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Save Status'; }
+    }
+  };
+
+  window.sendHrReportReply = async () => {
+    if (!state.activeReport) return;
+    const input = document.getElementById('hrModalReplyInput');
+    const message = input?.value.trim();
+    const btn = document.getElementById('hrSendReplyBtn');
+
+    if (!message) return;
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+    try {
+      const res = await apiFetch(`/api/v1/hr/reports/${state.activeReport._id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+      if (data.success && data.report) {
+        input.value = '';
+        state.activeReport.thread = data.report.thread || [];
+        renderHrModalThread(state.activeReport.thread);
+        await fetchEthicsReports();
+        if (window.App && typeof App.toast === 'function') {
+          App.toast('Message Sent', 'Your message has been sent to the anonymous whistleblower.', 'success');
+        }
+      } else {
+        if (window.App && typeof App.toast === 'function') {
+          App.toast('Error', data.message || 'Failed to send message.', 'error');
+        }
+      }
+    } catch (err) {
+      if (window.App && typeof App.toast === 'function') {
+        App.toast('Error', 'Could not reach the server.', 'error');
+      }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Send'; }
+    }
   };
 
   window.openNewDeptModal = () => {

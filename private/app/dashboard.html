@@ -1356,9 +1356,14 @@
               <span class="cosmic-pill purple" style="background:rgba(139,92,246,0.1);color:#a78bfa;">Anonymous</span>
             </div>
             <p style="font-size: 0.78rem; color: var(--cosmic-text-secondary); margin-bottom: 12px;">Report workplace hazards, harassment, or safety violations. Your identity is structurally unrecoverable.</p>
-            <button onclick="window.openVaultModal()" style="width: 100%; cursor: pointer; padding: 10px 16px; font-weight: 700; background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; border: none; border-radius: 8px; font-size: 0.85rem; transition: all 0.2s;">
-              🛡️ Report Workplace Hazard
-            </button>
+            <div style="display: flex; gap: 8px; flex-direction: column;">
+              <button onclick="window.openVaultModal()" style="width: 100%; cursor: pointer; padding: 10px 16px; font-weight: 700; background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; border: none; border-radius: 8px; font-size: 0.85rem; transition: all 0.2s;">
+                🛡️ Report Workplace Hazard
+              </button>
+              <button onclick="window.openVaultTrackModal()" style="width: 100%; cursor: pointer; padding: 8px 16px; font-weight: 600; background: rgba(99,102,241,0.1); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); border-radius: 8px; font-size: 0.82rem; transition: all 0.2s;">
+                🔍 Track Existing Report &amp; Thread
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1907,25 +1912,49 @@ window.openDailyPulseModal = function(opts = {}) {
   }
 };
 
-// ═══ Whistleblower Vault ═══
+// ═══ Whistleblower Vault & Conflict Routing ═══
 window.openVaultModal = function() {
   const modal = document.getElementById('vaultModalBackdrop');
-  if (modal) { modal.style.display = 'flex'; }
+  if (modal) {
+    modal.style.display = 'flex';
+    const formCont = document.getElementById('vaultFormContainer');
+    const successCard = document.getElementById('vaultSuccessCard');
+    if (formCont) formCont.style.display = 'block';
+    if (successCard) successCard.style.display = 'none';
+  }
 };
+
 window.closeVaultModal = function() {
   const modal = document.getElementById('vaultModalBackdrop');
   if (modal) { modal.style.display = 'none'; }
   const cat = document.getElementById('vaultCategory');
   const desc = document.getElementById('vaultDescription');
   const counter = document.getElementById('vaultCharCount');
+  const conflict = document.getElementById('vaultConflictCheck');
   if (cat) cat.value = '';
   if (desc) desc.value = '';
   if (counter) counter.textContent = '0';
+  if (conflict) conflict.checked = false;
 };
+
+window.copyVaultCredentials = function() {
+  const code = document.getElementById('vaultAccessCode')?.textContent || '';
+  const pin = document.getElementById('vaultAccessPin')?.textContent || '';
+  const text = `Havilah Whistleblower Access Credentials:\nTracking Code: ${code}\nPIN: ${pin}\nLookup URL: ${window.location.origin}/app/dashboard.html`;
+  navigator.clipboard.writeText(text).then(() => {
+    if (typeof showToast === 'function') showToast('Copied to Clipboard', 'Credentials copied securely.', 'success');
+  }).catch(() => {
+    alert(`Tracking Code: ${code}\nPIN: ${pin}`);
+  });
+};
+
 window.submitVaultReport = async function() {
   const category = document.getElementById('vaultCategory')?.value;
   const description = document.getElementById('vaultDescription')?.value;
-  const urgency = document.querySelector('input[name="vaultUrgency"]:checked')?.value || 'standard';
+  const urgencyRadio = document.querySelector('input[name="vaultUrgency"]:checked')?.value || 'Standard';
+  const urgencyMap = { standard: 'Standard', urgent: 'Urgent', critical: 'Critical' };
+  const urgency = urgencyMap[urgencyRadio.toLowerCase()] || urgencyRadio;
+  const involvesLeadershipOrHR = Boolean(document.getElementById('vaultConflictCheck')?.checked);
   
   if (!category || !description) {
     if (typeof showToast === 'function') showToast('Validation Error', 'Please select a category and provide a description.', 'error');
@@ -1933,18 +1962,32 @@ window.submitVaultReport = async function() {
   }
   
   const btn = document.getElementById('vaultSubmitBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting Anonymously...'; }
   
   try {
-    const resp = await apiFetch('/api/v1/vault/submit', {
+    const resp = await apiFetch('/api/v1/whistleblower/submit', {
       method: 'POST',
-      body: JSON.stringify({ category, description, urgency })
+      body: JSON.stringify({
+        category,
+        description,
+        urgency,
+        involvesLeadershipOrHR,
+      })
     });
     const result = await resp.json();
     
     if (result.success) {
-      if (typeof showToast === 'function') showToast('Report Submitted', 'Anonymous report ID: ' + result.report_id + '. No identifying information was stored.', 'success');
-      closeVaultModal();
+      document.getElementById('vaultFormContainer').style.display = 'none';
+      document.getElementById('vaultSuccessCard').style.display = 'block';
+      document.getElementById('vaultAccessCode').textContent = result.trackingCode;
+      document.getElementById('vaultAccessPin').textContent = result.pin;
+      
+      const routingDesc = result.involvesLeadershipOrHR
+        ? '⚠️ Routed directly to SuperAdmin Ombudsman (Internal HR Bypassed).'
+        : 'Routed to Tenant Ethics Compliance Team.';
+      document.getElementById('vaultRoutingNotice').textContent = routingDesc;
+      
+      if (typeof showToast === 'function') showToast('Report Filed Anonymously', `Tracking Code: ${result.trackingCode}`, 'success');
     } else {
       if (typeof showToast === 'function') showToast('Error', result.message || 'Failed to submit report.', 'error');
     }
@@ -1954,6 +1997,136 @@ window.submitVaultReport = async function() {
     if (btn) { btn.disabled = false; btn.textContent = 'Submit Anonymous Report'; }
   }
 };
+
+// ═══ Whistleblower Report Tracking & Two-Way Thread ═══
+window.openVaultTrackModal = function() {
+  const modal = document.getElementById('vaultTrackModalBackdrop');
+  if (modal) {
+    modal.style.display = 'flex';
+    document.getElementById('trackAuthSection').style.display = 'block';
+    document.getElementById('trackDetailsSection').style.display = 'none';
+    document.getElementById('trackCodeInput').value = '';
+    document.getElementById('trackPinInput').value = '';
+  }
+};
+
+window.closeVaultTrackModal = function() {
+  const modal = document.getElementById('vaultTrackModalBackdrop');
+  if (modal) modal.style.display = 'none';
+};
+
+window.lookupVaultReport = async function() {
+  const code = document.getElementById('trackCodeInput')?.value.trim();
+  const pin = document.getElementById('trackPinInput')?.value.trim();
+  const btn = document.getElementById('trackLookupBtn');
+
+  if (!code || !pin) {
+    if (typeof showToast === 'function') showToast('Validation Error', 'Please enter both Tracking Code and PIN.', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Verifying Credentials...';
+
+  try {
+    const res = await apiFetch('/api/v1/whistleblower/track', {
+      method: 'POST',
+      body: JSON.stringify({ trackingCode: code, pin })
+    });
+    const result = await res.json();
+
+    if (result.success && result.data) {
+      window.activeTrackedReport = {
+        trackingCode: code,
+        pin: pin,
+        ...result.data,
+      };
+      renderTrackedReportView(window.activeTrackedReport);
+    } else {
+      if (typeof showToast === 'function') showToast('Authentication Failed', result.message || 'Invalid Tracking Code or PIN.', 'error');
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') showToast('Error', 'Could not reach the server.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Access Report & Messages';
+  }
+};
+
+function renderTrackedReportView(report) {
+  document.getElementById('trackAuthSection').style.display = 'none';
+  document.getElementById('trackDetailsSection').style.display = 'block';
+
+  document.getElementById('trackDisplayCode').textContent = report.trackingCode;
+  document.getElementById('trackDisplayCategory').textContent = report.category;
+  document.getElementById('trackDisplayUrgency').textContent = report.urgency || 'Standard';
+  document.getElementById('trackDisplayDate').textContent = new Date(report.createdAt).toLocaleDateString();
+  
+  const statusEl = document.getElementById('trackDisplayStatus');
+  const st = (report.status || 'submitted').replace(/_/g, ' ').toUpperCase();
+  statusEl.textContent = st;
+  
+  const threadContainer = document.getElementById('trackThreadContainer');
+  threadContainer.innerHTML = '';
+
+  const thread = report.thread || [];
+  if (thread.length === 0) {
+    threadContainer.innerHTML = '<div style="color:#9ca3af;font-size:12px;text-align:center;padding:12px;">No messages in thread yet.</div>';
+  } else {
+    thread.forEach(msg => {
+      const isMe = msg.sender === 'whistleblower';
+      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const div = document.createElement('div');
+      div.style.cssText = `display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};margin-bottom:10px;`;
+      div.innerHTML = `
+        <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">${isMe ? 'You (Whistleblower)' : '🛡️ Case Investigator'} • ${timeStr}</div>
+        <div style="max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.4;background:${isMe ? '#4338ca' : '#065f46'};color:#fff;border:1px solid ${isMe ? '#6366f1' : '#10b981'};word-break:break-word;">
+          ${msg.message.replace(/</g, '&lt;')}
+        </div>
+      `;
+      threadContainer.appendChild(div);
+    });
+    threadContainer.scrollTop = threadContainer.scrollHeight;
+  }
+}
+
+window.sendAnonymousReply = async function() {
+  if (!window.activeTrackedReport) return;
+  const msgInput = document.getElementById('trackReplyInput');
+  const message = msgInput?.value.trim();
+  const btn = document.getElementById('trackReplyBtn');
+
+  if (!message) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  try {
+    const res = await apiFetch('/api/v1/whistleblower/reply', {
+      method: 'POST',
+      body: JSON.stringify({
+        trackingCode: window.activeTrackedReport.trackingCode,
+        pin: window.activeTrackedReport.pin,
+        message,
+      })
+    });
+    const result = await res.json();
+    if (result.success) {
+      msgInput.value = '';
+      window.activeTrackedReport.thread = result.thread;
+      renderTrackedReportView(window.activeTrackedReport);
+      if (typeof showToast === 'function') showToast('Message Sent', 'Your reply has been securely appended to the thread.', 'success');
+    } else {
+      if (typeof showToast === 'function') showToast('Error', result.message || 'Failed to send message.', 'error');
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') showToast('Error', 'Could not reach the server.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Anonymous Reply';
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   const desc = document.getElementById('vaultDescription');
   const counter = document.getElementById('vaultCharCount');
@@ -3975,27 +4148,128 @@ window.App = App;
         <p style="margin:0;font-size:12px;color:#a78bfa;line-height:1.6;"><strong>🔒 100% Anonymous.</strong> No IP addresses, user IDs, or identifying metadata are stored. Your identity is structurally unrecoverable.</p>
       </div>
     </div>
-    <div style="padding:0 32px 28px;">
+
+    <!-- Intake Form -->
+    <div id="vaultFormContainer" style="padding:0 32px 28px;">
       <label style="display:block;margin-bottom:6px;font-size:13px;color:#9ca3af;">Category *</label>
       <select id="vaultCategory" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#e0e0e0;font-size:14px;margin-bottom:16px;appearance:auto;">
         <option value="">Select a category...</option>
-        <option value="harassment">Harassment</option>
-        <option value="unsafe_conditions">Unsafe Working Conditions</option>
-        <option value="systemic_burnout">Systemic Burnout</option>
-        <option value="discrimination">Discrimination</option>
-        <option value="retaliation">Retaliation</option>
-        <option value="other">Other</option>
+        <option value="Safety Hazard">Safety Hazard</option>
+        <option value="Harassment / Bullying">Harassment / Bullying</option>
+        <option value="Fraud / Financial">Fraud / Financial</option>
+        <option value="Discrimination">Discrimination</option>
+        <option value="Retaliation">Retaliation</option>
+        <option value="Other">Other</option>
       </select>
+
       <label style="display:block;margin-bottom:6px;font-size:13px;color:#9ca3af;">Description *</label>
-      <textarea id="vaultDescription" rows="5" maxlength="5000" placeholder="Describe the workplace hazard in detail..." style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#e0e0e0;font-size:14px;resize:vertical;margin-bottom:4px;font-family:inherit;box-sizing:border-box;"></textarea>
+      <textarea id="vaultDescription" rows="5" maxlength="5000" placeholder="Describe the workplace hazard or incident in detail..." style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#e0e0e0;font-size:14px;resize:vertical;margin-bottom:4px;font-family:inherit;box-sizing:border-box;"></textarea>
       <div style="text-align:right;font-size:11px;color:#6b7280;margin-bottom:16px;"><span id="vaultCharCount">0</span>/5000</div>
+
       <label style="display:block;margin-bottom:6px;font-size:13px;color:#9ca3af;">Urgency Level</label>
-      <div style="display:flex;gap:10px;margin-bottom:24px;">
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;font-size:13px;color:#9ca3af;"><input type="radio" name="vaultUrgency" value="standard" checked style="accent-color:#6366f1;"> Standard</label>
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;font-size:13px;color:#f59e0b;"><input type="radio" name="vaultUrgency" value="urgent" style="accent-color:#f59e0b;"> Urgent</label>
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;font-size:13px;color:#ef4444;"><input type="radio" name="vaultUrgency" value="critical" style="accent-color:#ef4444;"> Critical</label>
+      <div style="display:flex;gap:10px;margin-bottom:18px;">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;font-size:13px;color:#9ca3af;"><input type="radio" name="vaultUrgency" value="Standard" checked style="accent-color:#6366f1;"> Standard</label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;font-size:13px;color:#f59e0b;"><input type="radio" name="vaultUrgency" value="Urgent" style="accent-color:#f59e0b;"> Urgent</label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;font-size:13px;color:#ef4444;"><input type="radio" name="vaultUrgency" value="Critical" style="accent-color:#ef4444;"> Critical</label>
       </div>
+
+      <!-- Conflict of Interest Checkbox -->
+      <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 14px;margin-bottom:20px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:#fca5a5;line-height:1.4;">
+          <input type="checkbox" id="vaultConflictCheck" style="margin-top:2px;accent-color:#ef4444;width:16px;height:16px;">
+          <span><strong>Conflict of Interest Routing:</strong> Does this report involve HR, Senior Leadership, or Executive Management? <em style="display:block;font-size:11px;color:#9ca3af;margin-top:2px;">If checked, this report will completely bypass internal HR and route directly to the Independent SuperAdmin Ombudsman.</em></span>
+        </label>
+      </div>
+
       <button id="vaultSubmitBtn" onclick="window.submitVaultReport()" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.3s;">Submit Anonymous Report</button>
+    </div>
+
+    <!-- Success Access Card -->
+    <div id="vaultSuccessCard" style="display:none;padding:0 32px 28px;">
+      <div style="background:#1e1b4b;border:2px solid #818cf8;border-radius:14px;padding:20px;text-align:center;">
+        <div style="font-size:32px;margin-bottom:8px;">🔐</div>
+        <h3 style="color:#fff;margin:0 0 6px;font-size:18px;">Anonymous Access Credentials</h3>
+        <p style="color:#c7d2fe;font-size:12px;margin-bottom:16px;line-height:1.5;">Save these credentials now. Since your report is 100% anonymous, these are the <strong>ONLY keys</strong> to look up investigation updates and exchange two-way messages with investigators.</p>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:rgba(0,0,0,0.3);padding:14px;border-radius:10px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.1);">
+          <div>
+            <div style="font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:700;">Tracking Code</div>
+            <div id="vaultAccessCode" style="font-family:monospace;font-size:18px;font-weight:800;color:#38bdf8;margin-top:4px;">WBL-XXXXXX</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:700;">4-Digit PIN</div>
+            <div id="vaultAccessPin" style="font-family:monospace;font-size:18px;font-weight:800;color:#34d399;margin-top:4px;">••••</div>
+          </div>
+        </div>
+
+        <div id="vaultRoutingNotice" style="font-size:11px;color:#fbbf24;margin-bottom:16px;font-weight:600;"></div>
+
+        <div style="display:flex;gap:8px;">
+          <button onclick="window.copyVaultCredentials()" style="flex:1;padding:11px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">📋 Copy Credentials</button>
+          <button onclick="window.closeVaultModal()" style="flex:1;padding:11px;background:rgba(255,255,255,0.1);color:#e0e0e0;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Whistleblower Report Tracking Modal ═══ -->
+<div id="vaultTrackModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;" onclick="if(event.target===this)window.closeVaultTrackModal()">
+  <div style="background:rgba(15,15,30,0.97);border:1px solid rgba(99,102,241,0.25);border-radius:20px;width:95%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 0 80px rgba(99,102,241,0.15);">
+    <div style="padding:24px 28px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:24px;">🔍</span>
+        <div>
+          <h3 style="margin:0;font-size:18px;color:#fff;">Anonymous Report Tracking</h3>
+          <p style="margin:2px 0 0;font-size:11px;color:#9ca3af;">Two-Way Cryptographic Whistleblower Thread</p>
+        </div>
+      </div>
+      <button onclick="window.closeVaultTrackModal()" style="background:none;border:none;color:#6b7280;font-size:22px;cursor:pointer;padding:4px;">&times;</button>
+    </div>
+
+    <!-- Step 1: Authentication Form -->
+    <div id="trackAuthSection" style="padding:24px 28px;">
+      <div style="margin-bottom:16px;">
+        <label style="display:block;margin-bottom:6px;font-size:12px;color:#9ca3af;text-transform:uppercase;font-weight:700;">Tracking Code *</label>
+        <input type="text" id="trackCodeInput" placeholder="e.g. WBL-8A1C2D" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:monospace;font-size:15px;text-transform:uppercase;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:24px;">
+        <label style="display:block;margin-bottom:6px;font-size:12px;color:#9ca3af;text-transform:uppercase;font-weight:700;">4-Digit PIN *</label>
+        <input type="password" maxlength="4" id="trackPinInput" placeholder="••••" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:monospace;font-size:18px;letter-spacing:4px;box-sizing:border-box;">
+      </div>
+      <button id="trackLookupBtn" onclick="window.lookupVaultReport()" style="width:100%;padding:13px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;">
+        Access Report &amp; Messages
+      </button>
+    </div>
+
+    <!-- Step 2: Report & Thread View -->
+    <div id="trackDetailsSection" style="display:none;padding:20px 28px 24px;">
+      <!-- Overview Card -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div>
+            <span style="font-family:monospace;font-weight:800;color:#38bdf8;font-size:14px;" id="trackDisplayCode">WBL-XXXXXX</span>
+            <span style="color:#9ca3af;font-size:12px;margin-left:8px;" id="trackDisplayDate">Date</span>
+          </div>
+          <span id="trackDisplayStatus" style="background:#065f46;color:#34d399;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:800;border:1px solid #10b981;">SUBMITTED</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+          <div><span style="color:#9ca3af;">Category:</span> <strong style="color:#fff;" id="trackDisplayCategory">—</strong></div>
+          <div><span style="color:#9ca3af;">Urgency:</span> <strong style="color:#f59e0b;" id="trackDisplayUrgency">—</strong></div>
+        </div>
+      </div>
+
+      <!-- Thread Feed -->
+      <div style="font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:8px;">Investigation Exchange</div>
+      <div id="trackThreadContainer" style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;max-height:220px;overflow-y:auto;margin-bottom:14px;">
+        <!-- Filled dynamically -->
+      </div>
+
+      <!-- Reply Box -->
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="trackReplyInput" placeholder="Type anonymous follow-up message..." style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:13px;">
+        <button id="trackReplyBtn" onclick="window.sendAnonymousReply()" style="padding:10px 16px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Send Reply</button>
+      </div>
     </div>
   </div>
 </div>

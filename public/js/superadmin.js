@@ -31,6 +31,8 @@ function switchTab(tabId) {
 
   if (tabId === 'assessors') {
     loadAssessorsTab();
+  } else if (tabId === 'whistleblower') {
+    loadConflictReports();
   }
 }
 
@@ -1507,6 +1509,240 @@ async function submitReassignCase(event) {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Confirm Reassignment';
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════
+// 6. PROTECTED WHISTLEBLOWER CONFLICT INQUIRIES (OMBUDSMAN)
+// ═════════════════════════════════════════════════════════════════════
+
+let superAdminConflictReports = [];
+let activeConflictReport = null;
+
+async function loadConflictReports() {
+  const tbody = document.getElementById('saConflictTableBody');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-2);">Loading conflict inquiries...</td></tr>';
+  }
+
+  try {
+    const res = await fetch('/api/v1/superadmin/reports/conflict', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      superAdminConflictReports = data.reports || data.data || [];
+      renderConflictReports();
+    } else {
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: #ef4444;">Error: ${data.error || 'Failed to load inquiries'}</td></tr>`;
+      }
+    }
+  } catch (err) {
+    console.error('loadConflictReports error:', err);
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 24px; color: #ef4444;">Could not load conflict inquiries.</td></tr>';
+    }
+  }
+}
+
+function renderConflictReports() {
+  const tbody = document.getElementById('saConflictTableBody');
+  const reports = superAdminConflictReports || [];
+
+  // Update KPI counters
+  const totalEl = document.getElementById('saConflictTotal');
+  const investigatingEl = document.getElementById('saConflictInvestigating');
+  const actionEl = document.getElementById('saConflictAction');
+  const closedEl = document.getElementById('saConflictClosed');
+
+  if (totalEl) totalEl.textContent = reports.length;
+  if (investigatingEl) investigatingEl.textContent = reports.filter(r => r.status === 'under_investigation').length;
+  if (actionEl) actionEl.textContent = reports.filter(r => r.status === 'action_taken').length;
+  if (closedEl) closedEl.textContent = reports.filter(r => r.status === 'closed').length;
+
+  if (!tbody) return;
+
+  if (reports.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 28px; color: var(--text-2);">No protected conflict inquiries submitted across any tenant.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = reports.map(r => {
+    const orgName = r.tenantId?.company_name || r.tenantId?.companyName || 'Organization';
+    const urgencyColors = {
+      Critical: '#ef4444',
+      Urgent: '#f59e0b',
+      Standard: '#6366f1',
+    };
+    const urgencyColor = urgencyColors[r.urgency] || '#6366f1';
+
+    const statusMap = {
+      submitted: { label: 'Submitted', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
+      under_investigation: { label: 'Investigating', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+      action_taken: { label: 'Action Taken', color: '#0ea5e9', bg: 'rgba(14,165,233,0.1)' },
+      closed: { label: 'Closed', color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+    };
+    const st = statusMap[r.status] || { label: r.status, color: '#6b7280', bg: '#f3f4f6' };
+    const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—';
+
+    return `
+      <tr>
+        <td style="font-family: monospace; font-weight: 700; color: #4f46e5;">${r.trackingCode || '—'}</td>
+        <td style="font-weight: 600; color: var(--text-1);">${orgName}</td>
+        <td>${r.category || 'General'}</td>
+        <td>
+          <span style="font-size: 11px; font-weight: 700; color: ${urgencyColor}; border: 1px solid ${urgencyColor}40; background: ${urgencyColor}15; padding: 2px 8px; border-radius: 99px;">
+            ${r.urgency || 'Standard'}
+          </span>
+        </td>
+        <td style="color: var(--text-2);">${dateStr}</td>
+        <td>
+          <span style="font-size: 11px; font-weight: 700; color: ${st.color}; background: ${st.bg}; padding: 2px 8px; border-radius: 99px;">
+            ${st.label}
+          </span>
+        </td>
+        <td>
+          <button class="btn-action-secondary" onclick="openSuperAdminReportModal('${r._id}')" style="padding: 4px 10px; font-size: 12px;">
+            Investigate &amp; Reply
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openSuperAdminReportModal(reportId) {
+  const report = superAdminConflictReports.find(r => r._id === reportId);
+  if (!report) return;
+
+  activeConflictReport = report;
+
+  const modal = document.getElementById('superAdminReportModalBackdrop');
+  const titleEl = document.getElementById('saModalTitle');
+  const codeChip = document.getElementById('saModalCodeChip');
+  const tenantNameEl = document.getElementById('saModalTenantName');
+  const catEl = document.getElementById('saModalCategory');
+  const urgEl = document.getElementById('saModalUrgency');
+  const descEl = document.getElementById('saModalDescription');
+  const statusSelect = document.getElementById('saModalStatusSelect');
+
+  const orgName = report.tenantId?.company_name || report.tenantId?.companyName || 'Organization';
+
+  if (titleEl) titleEl.textContent = `Conflict Case #${report.trackingCode}`;
+  if (codeChip) codeChip.textContent = report.trackingCode;
+  if (tenantNameEl) tenantNameEl.textContent = `Organization: ${orgName}`;
+  if (catEl) catEl.textContent = report.category || 'General';
+  if (urgEl) {
+    urgEl.textContent = report.urgency || 'Standard';
+    urgEl.style.color = report.urgency === 'Critical' ? '#ef4444' : report.urgency === 'Urgent' ? '#f59e0b' : '#6366f1';
+  }
+  if (descEl) descEl.textContent = report.description || '—';
+  if (statusSelect) statusSelect.value = report.status || 'submitted';
+
+  renderSuperAdminModalThread(report.thread || []);
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function renderSuperAdminModalThread(thread) {
+  const container = document.getElementById('saModalThreadContainer');
+  if (!container) return;
+
+  if (!thread || thread.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-2);font-size:12px;text-align:center;padding:12px;">No messages in thread yet.</div>';
+    return;
+  }
+
+  container.innerHTML = thread.map(msg => {
+    const isInvestigator = msg.sender === 'investigator';
+    const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    return `
+      <div style="display:flex;flex-direction:column;align-items:${isInvestigator ? 'flex-end' : 'flex-start'};margin-bottom:10px;">
+        <div style="font-size:10px;color:var(--text-2);margin-bottom:2px;">
+          ${isInvestigator ? '🛡️ You (SuperAdmin Ombudsman)' : '👤 Anonymous Whistleblower'} • ${timeStr}
+        </div>
+        <div style="max-width:85%;padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.4;background:${isInvestigator ? '#4f46e5' : 'var(--bg-elev)'};color:${isInvestigator ? '#fff' : 'var(--text-1)'};border:1px solid ${isInvestigator ? '#6366f1' : 'var(--border)'};word-break:break-word;">
+          ${(msg.message || '').replace(/</g, '&lt;')}
+        </div>
+      </div>
+    `;
+  }).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+function closeSuperAdminReportModal() {
+  const modal = document.getElementById('superAdminReportModalBackdrop');
+  if (modal) modal.style.display = 'none';
+  activeConflictReport = null;
+}
+
+async function saveSuperAdminReportStatus() {
+  if (!activeConflictReport) return;
+  const statusSelect = document.getElementById('saModalStatusSelect');
+  const newStatus = statusSelect?.value;
+  const btn = document.getElementById('saSaveStatusBtn');
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+  try {
+    const res = await fetch(`/api/v1/superadmin/reports/${activeConflictReport._id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const data = await res.json();
+    if (data.success) {
+      activeConflictReport.status = newStatus;
+      await loadConflictReports();
+      showToast('Status Updated', `Investigation status changed to ${newStatus}.`, 'success');
+    } else {
+      showToast('Error', data.message || data.error || 'Failed to update status.', 'error');
+    }
+  } catch (err) {
+    showToast('Error', 'Could not reach server.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Status'; }
+  }
+}
+
+async function sendSuperAdminReportReply() {
+  if (!activeConflictReport) return;
+  const input = document.getElementById('saModalReplyInput');
+  const message = input?.value.trim();
+  const btn = document.getElementById('saSendReplyBtn');
+
+  if (!message) return;
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+  try {
+    const res = await fetch(`/api/v1/superadmin/reports/${activeConflictReport._id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message })
+    });
+    const data = await res.json();
+    if (data.success && data.report) {
+      input.value = '';
+      activeConflictReport.thread = data.report.thread || [];
+      renderSuperAdminModalThread(activeConflictReport.thread);
+      await loadConflictReports();
+      showToast('Message Dispatched', 'Anonymous message appended to case thread.', 'success');
+    } else {
+      showToast('Error', data.message || data.error || 'Failed to send message.', 'error');
+    }
+  } catch (err) {
+    showToast('Error', 'Could not reach server.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
   }
 }
 

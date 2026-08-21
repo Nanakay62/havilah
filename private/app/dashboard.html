@@ -1333,7 +1333,9 @@
               <span class="cosmic-pill purple">Direct Intake</span>
             </div>
             <p style="font-size: 0.78rem; color: var(--cosmic-text-secondary); margin-bottom: 12px;">Submit an encrypted request to connect with a licensed practitioner from <strong id="helpProviderFormName">FZ Safety and Health</strong>. Employer is never notified.</p>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
+            
+            <!-- Intake Form Container -->
+            <div id="clinicalIntakeFormContainer" style="display: flex; flex-direction: column; gap: 10px;">
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <div>
                   <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Employee Name *</label>
@@ -1367,10 +1369,43 @@
                 <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Additional Notes (Optional)</label>
                 <textarea id="consultNotesInput" class="input" rows="2" placeholder="Optional details or specific accommodations needed..." style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem; resize: vertical;"></textarea>
               </div>
-              <button class="cosmic-pill emerald" style="cursor: pointer; padding: 10px 16px; font-weight: 700; width: 100%; margin-top: 4px; justify-content: center;" onclick="App.submitClinicalConsultation()">Submit Request to FZ Safety Practitioner</button>
-              <button onclick="App.closeHelpCenter(); window.openConsultTrackModal();" style="width: 100%; cursor: pointer; padding: 8px 16px; font-weight: 600; background: rgba(13,148,136,0.1); color: #0d9488; border: 1px solid rgba(13,148,136,0.3); border-radius: 8px; font-size: 0.82rem; margin-top: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;">
+              <button type="button" class="cosmic-pill emerald" style="cursor: pointer; padding: 10px 16px; font-weight: 700; width: 100%; margin-top: 4px; justify-content: center;" onclick="App.submitClinicalConsultation()">Submit Request to FZ Safety Practitioner</button>
+              <button type="button" onclick="window.openConsultTrackModal();" style="width: 100%; cursor: pointer; padding: 9px 16px; font-weight: 700; background: rgba(13,148,136,0.1); color: #0d9488; border: 1.5px solid rgba(13,148,136,0.35); border-radius: 8px; font-size: 0.82rem; margin-top: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;">
                 <span>🔍</span> <span>Track Existing Consultation &amp; Dialogue</span>
               </button>
+            </div>
+
+            <!-- In-Place Submission Success & Reference Code Box -->
+            <div id="clinicalIntakeSuccessContainer" style="display: none; flex-direction: column; gap: 12px; background: #ffffff; border: 1px solid #bbf7d0; border-radius: 14px; padding: 18px; box-shadow: 0 4px 14px rgba(16,185,129,0.1);">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">✓</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #15803d;">Request Submitted Successfully!</h4>
+                  <p style="margin: 2px 0 0; font-size: 0.75rem; color: #64748b;">Dispatched securely to your assigned practitioner.</p>
+                </div>
+              </div>
+
+              <!-- Prominent Reference Code Box -->
+              <div style="background: #f0fdf4; border: 1.5px dashed #22c55e; border-radius: 12px; padding: 14px 16px; text-align: center;">
+                <div style="font-size: 0.7rem; color: #15803d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Your Unique Reference Code</div>
+                <div id="clinicalSuccessRefCode" style="font-family: monospace; font-size: 1.5rem; font-weight: 800; color: #0f766e; letter-spacing: 1.5px; margin: 4px 0 8px;">REF-XXXXXXXX</div>
+                <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('clinicalSuccessRefCode').textContent); showToast('Copied to Clipboard', 'Reference code copied!', 'success');" style="background: #ffffff; border: 1px solid #86efac; color: #15803d; font-weight: 700; font-size: 0.75rem; padding: 5px 14px; border-radius: 6px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: inline-flex; align-items: center; gap: 4px;">
+                  <span>📋</span> <span>Copy Reference Code</span>
+                </button>
+              </div>
+
+              <p style="margin: 0; font-size: 0.75rem; color: #475569; line-height: 1.45;">
+                🔒 <strong>Zero-Knowledge Privacy:</strong> Please save this Reference Code. You can use it anytime to track appointment confirmations, join your telehealth video room, and message your practitioner directly.
+              </p>
+
+              <div style="display: flex; gap: 8px; margin-top: 4px;">
+                <button type="button" id="clinicalSuccessOpenTrackerBtn" onclick="window.openConsultTrackModal(document.getElementById('clinicalSuccessRefCode').textContent);" style="flex: 1; padding: 10px 14px; background: linear-gradient(135deg,#0d9488,#0f766e); color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 3px 10px rgba(13,148,136,0.25);">
+                  <span>🩺</span> <span>Open Consultation Tracker Now</span>
+                </button>
+                <button type="button" onclick="document.getElementById('clinicalIntakeSuccessContainer').style.display='none'; document.getElementById('clinicalIntakeFormContainer').style.display='flex';" style="padding: 10px 12px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600; font-size: 0.78rem; cursor: pointer;">
+                  New Form
+                </button>
+              </div>
             </div>
           </div>
           
@@ -2458,6 +2493,10 @@ function stopConsultTrackLiveSync() {
 
 window.openConsultTrackModal = function(prefilledCode) {
   stopConsultTrackLiveSync();
+  try {
+    if (typeof closeModal === 'function') closeModal('helpCenterModalBackdrop');
+  } catch (e) {}
+
   const modal = document.getElementById('consultTrackModalBackdrop');
   if (!modal) return;
 
@@ -2467,15 +2506,18 @@ window.openConsultTrackModal = function(prefilledCode) {
   const errEl = document.getElementById('consultTrackAuthErrorMsg');
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
 
-  if (savedRef) {
-    if (inputEl) inputEl.value = savedRef;
-    window.lookupConsultationReport(savedRef);
+  if (prefilledCode) {
+    if (inputEl) inputEl.value = prefilledCode;
+    window.lookupConsultationReport(prefilledCode);
   } else {
     document.getElementById('consultTrackAuthSection').style.display = 'block';
     document.getElementById('consultTrackDetailsSection').style.display = 'none';
     if (inputEl) {
-      inputEl.value = '';
-      setTimeout(() => inputEl.focus(), 100);
+      inputEl.value = savedRef;
+      setTimeout(() => {
+        inputEl.focus();
+        if (savedRef) inputEl.select();
+      }, 100);
     }
   }
 };
@@ -4565,12 +4607,21 @@ const App = (() => {
           if (refCode) {
             localStorage.setItem('havilah_last_consult_ref', refCode);
           }
-          showToast('Referral Submitted', `Confidential intake submitted to FZ Safety & Health. Reference: ${refCode}. Use Track Consultation to message your clinician.`, 'success');
+          
+          // Display the in-place prominent reference code card
+          const codeEl = document.getElementById('clinicalSuccessRefCode');
+          if (codeEl) codeEl.textContent = refCode;
+
+          const formContainer = document.getElementById('clinicalIntakeFormContainer');
+          const successContainer = document.getElementById('clinicalIntakeSuccessContainer');
+          if (formContainer && successContainer) {
+            formContainer.style.display = 'none';
+            successContainer.style.display = 'flex';
+          }
+
+          showToast('Referral Submitted', `Confidential intake submitted to FZ Safety & Health. Reference: ${refCode}`, 'success');
           if (document.getElementById('consultTopicInput')) document.getElementById('consultTopicInput').value = '';
           if (document.getElementById('consultNotesInput')) document.getElementById('consultNotesInput').value = '';
-          setTimeout(() => {
-            if (refCode) window.openConsultTrackModal(refCode);
-          }, 1200);
         } else {
           showToast('Submission Failed', result.message || 'Please try calling +233 24 362 9870 directly.', 'error');
         }
@@ -4984,6 +5035,8 @@ window.App = App;
       </div>
     </div>
   </div>
+</div>
+
 <!-- ═══ Confidential Clinical Consultation Tracking Modal (White Acrylic Workspace) ═══ -->
 <div id="consultTrackModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(15,23,42,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;" onclick="if(event.target===this)window.closeConsultTrackModal()">
   <div id="consultTrackModalCard" style="background:#f8fafc;border:1px solid rgba(226,232,240,0.9);border-radius:28px;width:100%;max-width:920px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px -15px rgba(15,23,42,0.2), 0 0 0 1px rgba(255,255,255,0.8) inset;padding:24px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a;position:relative;">

@@ -1571,41 +1571,49 @@ function renderConflictReports() {
 
   tbody.innerHTML = reports.map(r => {
     const orgName = r.tenantId?.company_name || r.tenantId?.companyName || 'Organization';
-    const urgencyColors = {
-      Critical: '#ef4444',
-      Urgent: '#f59e0b',
-      Standard: '#6366f1',
-    };
-    const urgencyColor = urgencyColors[r.urgency] || '#6366f1';
+    const orgSlug = r.tenantId?.slug ? `${r.tenantId.slug}.havilah.io` : 'Tenant Workspace';
+
+    let urgencyBadge = '<span class="badge badge-state-pending">Standard</span>';
+    if (r.urgency === 'Critical') {
+      urgencyBadge = '<span class="badge badge-state-suspended">🚨 Critical</span>';
+    } else if (r.urgency === 'Urgent') {
+      urgencyBadge = '<span class="badge badge-state-expired">⚠️ Urgent</span>';
+    }
 
     const statusMap = {
-      submitted: { label: 'Submitted', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
-      under_investigation: { label: 'Investigating', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-      action_taken: { label: 'Action Taken', color: '#0ea5e9', bg: 'rgba(14,165,233,0.1)' },
-      closed: { label: 'Closed', color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+      submitted: '<span class="badge badge-state-pending">Submitted</span>',
+      under_investigation: '<span class="badge badge-state-expired">⏳ Investigating</span>',
+      action_taken: '<span class="badge badge-state-active">🛡️ Action Taken</span>',
+      closed: '<span class="badge" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1;">🔒 Closed</span>',
     };
-    const st = statusMap[r.status] || { label: r.status, color: '#6b7280', bg: '#f3f4f6' };
-    const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—';
+    const stBadge = statusMap[r.status] || `<span class="badge badge-billing">${r.status}</span>`;
+    const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
     return `
       <tr>
-        <td style="font-family: monospace; font-weight: 700; color: #4f46e5;">${r.trackingCode || '—'}</td>
-        <td style="font-weight: 600; color: var(--text-1);">${orgName}</td>
-        <td>${r.category || 'General'}</td>
         <td>
-          <span style="font-size: 11px; font-weight: 700; color: ${urgencyColor}; border: 1px solid ${urgencyColor}40; background: ${urgencyColor}15; padding: 2px 8px; border-radius: 99px;">
-            ${r.urgency || 'Standard'}
-          </span>
-        </td>
-        <td style="color: var(--text-2);">${dateStr}</td>
-        <td>
-          <span style="font-size: 11px; font-weight: 700; color: ${st.color}; background: ${st.bg}; padding: 2px 8px; border-radius: 99px;">
-            ${st.label}
+          <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; font-weight: 700; background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; padding: 4px 8px; border-radius: 6px; display: inline-block;">
+            ${r.trackingCode || '—'}
           </span>
         </td>
         <td>
-          <button class="btn-action-secondary" onclick="openSuperAdminReportModal('${r._id}')" style="padding: 4px 10px; font-size: 12px;">
-            Investigate &amp; Reply
+          <div class="company-cell-title">${orgName}</div>
+          <div class="company-cell-sub">${orgSlug}</div>
+        </td>
+        <td>
+          <span class="badge badge-billing">${r.category || 'General'}</span>
+        </td>
+        <td>
+          ${urgencyBadge}
+        </td>
+        <td style="color: var(--text-2); font-size: 13px; font-weight: 500;">${dateStr}</td>
+        <td>
+          ${stBadge}
+        </td>
+        <td>
+          <button class="btn-action-primary" onclick="openSuperAdminReportModal('${r._id}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; gap: 4px;">
+            <span>🔍</span>
+            <span>Investigate &amp; Reply</span>
           </button>
         </td>
       </tr>
@@ -1637,7 +1645,6 @@ function startSaReportLiveSync() {
       const data = await res.json();
       if (data.success && Array.isArray(data.reports)) {
         superAdminConflictReports = data.reports;
-        // Bug fix: function is named renderConflictReports, not renderSuperAdminConflictReports
         renderConflictReports();
         const updated = data.reports.find(r => r._id === activeConflictReport._id);
         if (updated) {
@@ -1675,7 +1682,7 @@ function openSuperAdminReportModal(reportId) {
   const codeChip = document.getElementById('saModalCodeChip');
   const tenantNameEl = document.getElementById('saModalTenantName');
   const catEl = document.getElementById('saModalCategory');
-  const urgEl = document.getElementById('saModalUrgency');
+  const urgContainer = document.getElementById('saModalUrgencyContainer');
   const descEl = document.getElementById('saModalDescription');
   const statusSelect = document.getElementById('saModalStatusSelect');
 
@@ -1685,10 +1692,17 @@ function openSuperAdminReportModal(reportId) {
   if (codeChip) codeChip.textContent = report.trackingCode;
   if (tenantNameEl) tenantNameEl.textContent = `Organization: ${orgName}`;
   if (catEl) catEl.textContent = report.category || 'General';
-  if (urgEl) {
-    urgEl.textContent = report.urgency || 'Standard';
-    urgEl.style.color = report.urgency === 'Critical' ? '#ef4444' : report.urgency === 'Urgent' ? '#f59e0b' : '#6366f1';
+  
+  if (urgContainer) {
+    if (report.urgency === 'Critical') {
+      urgContainer.innerHTML = '<span class="badge badge-state-suspended">🚨 Critical Priority</span>';
+    } else if (report.urgency === 'Urgent') {
+      urgContainer.innerHTML = '<span class="badge badge-state-expired">⚠️ Urgent</span>';
+    } else {
+      urgContainer.innerHTML = '<span class="badge badge-state-pending">Standard</span>';
+    }
   }
+
   if (descEl) descEl.textContent = report.description || '—';
   if (statusSelect) statusSelect.value = report.status || 'submitted';
 
@@ -1703,25 +1717,47 @@ function renderSuperAdminModalThread(thread) {
   if (!container) return;
 
   if (!thread || thread.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-2);font-size:12px;text-align:center;padding:12px;">No messages in thread yet.</div>';
+    container.innerHTML = '<div style="color: var(--text-muted); font-size: 12.5px; text-align: center; padding: 20px;">No messages in ombudsman dialogue yet. Use the reply box below to send an encrypted message to the employee.</div>';
     return;
   }
 
   container.innerHTML = thread.map(msg => {
     const isInvestigator = msg.sender === 'investigator';
     const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-    return `
-      <div style="display:flex;flex-direction:column;align-items:${isInvestigator ? 'flex-end' : 'flex-start'};margin-bottom:10px;">
-        <div style="font-size:10px;color:var(--text-2);margin-bottom:2px;">
-          ${isInvestigator ? '🛡️ You (SuperAdmin Ombudsman)' : '👤 Anonymous Whistleblower'} • ${timeStr}
+    const safeMsg = (msg.message || '').replace(/</g, '&lt;');
+
+    if (isInvestigator) {
+      // SuperAdmin Ombudsman -> Right aligned, Indigo
+      return `
+        <div style="display: flex; flex-direction: column; align-items: flex-end; max-width: 85%; align-self: flex-end; margin-bottom: 4px;">
+          <div style="font-size: 11px; color: var(--text-2); font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 4px;">
+            <span>🛡️ You (SuperAdmin Ombudsman)</span>
+            <span>•</span>
+            <span>${timeStr}</span>
+          </div>
+          <div style="background: linear-gradient(135deg, #4F46E5, #4338CA); color: #FFFFFF; border-radius: 14px 14px 2px 14px; padding: 10px 14px; font-size: 13px; line-height: 1.45; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25); word-break: break-word;">
+            ${safeMsg}
+          </div>
         </div>
-        <div style="max-width:85%;padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.4;background:${isInvestigator ? '#4f46e5' : 'var(--bg-elev)'};color:${isInvestigator ? '#fff' : 'var(--text-1)'};border:1px solid ${isInvestigator ? '#6366f1' : 'var(--border)'};word-break:break-word;">
-          ${(msg.message || '').replace(/</g, '&lt;')}
+      `;
+    } else {
+      // Whistleblower Employee -> Left aligned, White card with border
+      return `
+        <div style="display: flex; flex-direction: column; align-items: flex-start; max-width: 85%; align-self: flex-start; margin-bottom: 4px;">
+          <div style="font-size: 11px; color: var(--text-2); font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 4px;">
+            <span>👤 Anonymous Whistleblower</span>
+            <span>•</span>
+            <span>${timeStr}</span>
+          </div>
+          <div style="background: #FFFFFF; color: var(--text-1); border: 1px solid var(--border); border-radius: 14px 14px 14px 2px; padding: 10px 14px; font-size: 13px; line-height: 1.45; box-shadow: 0 1px 3px rgba(0,0,0,0.04); word-break: break-word;">
+            ${safeMsg}
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    }
   }).join('');
-  container.scrollTop = container.scrollHeight;
+
+  setTimeout(() => { container.scrollTop = container.scrollHeight; }, 10);
 }
 
 function closeSuperAdminReportModal() {

@@ -131,10 +131,10 @@ AuditLogSchema.pre('deleteMany', function blockDeleteMany(next) {
   return next(new Error(BLOCK_MSG));
 });
 
-/* ───── pre-save: freeze payload, compute hash chain ───── */
-AuditLogSchema.pre('save', async function preSaveAuditHash(next) {
+/* ───── pre-validate: freeze payload, compute hash chain ───── */
+AuditLogSchema.pre('validate', async function preValidateAuditHash() {
   if (!this.isNew) {
-    return next(new Error(BLOCK_MSG));
+    throw new Error(BLOCK_MSG);
   }
 
   // Deep-freeze the event payload to prevent mutation after persistence
@@ -145,22 +145,16 @@ AuditLogSchema.pre('save', async function preSaveAuditHash(next) {
 
   // Retrieve the most recent audit entry for this company to chain the hash
   if (!this.sha256_hash) {
-    try {
-      const AuditLogModel = mongoose.model('AuditLog');
-      const lastEntry = await AuditLogModel
-        .findOne({ company_id: this.company_id })
-        .sort({ created_at: -1 })
-        .select('sha256_hash')
-        .lean();
+    const AuditLogModel = mongoose.model('AuditLog');
+    const lastEntry = await AuditLogModel
+      .findOne({ company_id: this.company_id })
+      .sort({ created_at: -1 })
+      .select('sha256_hash')
+      .lean();
 
-      this.previous_hash = lastEntry ? lastEntry.sha256_hash : 'GENESIS';
-      this.sha256_hash = computeAuditHash(this.previous_hash, this.event_payload);
-    } catch (err) {
-      return next(err);
-    }
+    this.previous_hash = lastEntry ? lastEntry.sha256_hash : 'GENESIS';
+    this.sha256_hash = computeAuditHash(this.previous_hash, this.event_payload);
   }
-
-  next();
 });
 
 /* ───── statics ───── */

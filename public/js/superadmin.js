@@ -33,6 +33,10 @@ function switchTab(tabId) {
     loadAssessorsTab();
   } else if (tabId === 'whistleblower') {
     loadConflictReports();
+  } else if (tabId === 'audit') {
+    if (typeof App !== 'undefined' && App.fetchAuditLog) {
+      App.fetchAuditLog();
+    }
   }
 }
 

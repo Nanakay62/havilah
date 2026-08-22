@@ -1422,6 +1422,34 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
 <script src="/js/superadmin.js"></script>
 <script>
   const App = (function() {
+    function getAuthToken() {
+      return localStorage.getItem('havilah_token') || localStorage.getItem('token') || localStorage.getItem('session_token') || '';
+    }
+
+    async function fetchGlobalDefaults() {
+      try {
+        const token = getAuthToken();
+        const res = await fetch('/api/v1/superadmin/global-defaults', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.locks) {
+            if (document.getElementById('lock-phq9')) document.getElementById('lock-phq9').checked = !!data.locks.phq9;
+            if (document.getElementById('lock-gad7')) document.getElementById('lock-gad7').checked = !!data.locks.gad7;
+            if (document.getElementById('lock-pss10')) document.getElementById('lock-pss10').checked = !!data.locks.pss10;
+            if (document.getElementById('lock-fas10')) document.getElementById('lock-fas10').checked = !!data.locks.fas10;
+            if (document.getElementById('lock-copsoq')) document.getElementById('lock-copsoq').checked = !!data.locks.copsoq;
+          }
+          if (data.copsoqDepth && document.getElementById('copsoq-depth')) {
+            document.getElementById('copsoq-depth').value = data.copsoqDepth;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load global defaults:', e);
+      }
+    }
+
     async function saveGlobalLockDefaults() {
       try {
         const phq9 = document.getElementById('lock-phq9').checked;
@@ -1431,9 +1459,13 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
         const copsoq = document.getElementById('lock-copsoq').checked;
         const copsoqDepth = document.getElementById('copsoq-depth').value;
 
+        const token = getAuthToken();
         const res = await fetch('/api/v1/superadmin/global-defaults', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({
             locks: { phq9, gad7, pss10, fas10, copsoq },
             copsoqDepth
@@ -1442,6 +1474,7 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
         
         if (res.ok) {
           showToast('Lock Defaults Saved', 'Global lock policy matrix updated successfully.', 'success');
+          fetchAuditLog();
         } else {
           showToast('Save Failed', 'Failed to update global defaults.', 'error');
         }
@@ -1453,7 +1486,7 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
 
     async function fetchAuditLog() {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         const res = await fetch('/api/v1/superadmin/audit-log', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -1567,13 +1600,15 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
       showToast('Disclosure Saved', 'Master Privacy & ISO 45003 Markdown Disclosure updated.', 'success');
     }
 
-    // Auto load audit log on page init
+    // Auto load audit log and global defaults on page init
     window.addEventListener('DOMContentLoaded', () => {
       fetchAuditLog();
+      fetchGlobalDefaults();
     });
 
     return {
       saveGlobalLockDefaults,
+      fetchGlobalDefaults,
       fetchAuditLog,
       filterAuditLog,
       executeDataPurge,

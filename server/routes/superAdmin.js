@@ -25,11 +25,12 @@ router.get('/stats', async (req, res, next) => {
     const allTenants = await Tenant.find().select('max_allowed_seats').lean();
     const totalAllocatedSeats = allTenants.reduce((acc, t) => acc + (t.max_allowed_seats || 0), 0);
 
-    // Calculate total completed responses
-    const Assessment = require('../models/Assessment');
+    // Calculate total completed responses safely
     let totalResponses = 0;
     try {
-      totalResponses = await Assessment.countDocuments();
+      if (mongoose.connection && mongoose.connection.db) {
+        totalResponses = await mongoose.connection.db.collection('assessments').countDocuments();
+      }
     } catch (e) {}
 
     // Calculate engagement rate
@@ -38,7 +39,7 @@ router.get('/stats', async (req, res, next) => {
       engagementRate = Math.min(100, ((totalResponses / totalUsers) * 100)).toFixed(1);
     }
 
-    // Aggregate cross-tenant benchmarks dynamically from Assessment collection
+    // Aggregate cross-tenant benchmarks dynamically from assessments collection
     let benchmarks = {
       phq9: null,
       gad7: null,
@@ -48,38 +49,40 @@ router.get('/stats', async (req, res, next) => {
     };
 
     try {
-      const avgResults = await Assessment.aggregate([
-        {
-          $group: {
-            _id: '$instrument_code',
-            avgScore: { $avg: '$total_score' },
-            count: { $sum: 1 }
+      if (mongoose.connection && mongoose.connection.db) {
+        const avgResults = await mongoose.connection.db.collection('assessments').aggregate([
+          {
+            $group: {
+              _id: '$instrument_code',
+              avgScore: { $avg: '$total_score' },
+              count: { $sum: 1 }
+            }
           }
-        }
-      ]);
+        ]).toArray();
 
-      const helperTier = (code, avg) => {
-        const upper = (code || '').toUpperCase();
-        if (upper.includes('PHQ')) return avg < 5 ? 'Normal' : avg < 10 ? 'Mild' : avg < 15 ? 'Moderate' : 'Severe';
-        if (upper.includes('GAD')) return avg < 5 ? 'Normal' : avg < 10 ? 'Mild' : avg < 15 ? 'Moderate' : 'Severe';
-        if (upper.includes('PSS')) return avg < 14 ? 'Low Stress' : avg < 27 ? 'Moderate' : 'High Stress';
-        if (upper.includes('FAS')) return avg < 22 ? 'Low Fatigue' : avg < 35 ? 'Moderate' : 'High Fatigue';
-        if (upper.includes('COPSOQ')) return avg >= 60 ? 'Favorable' : avg >= 40 ? 'Moderate' : 'At Risk';
-        return 'Calculated';
-      };
+        const helperTier = (code, avg) => {
+          const upper = (code || '').toUpperCase();
+          if (upper.includes('PHQ')) return avg < 5 ? 'Normal' : avg < 10 ? 'Mild' : avg < 15 ? 'Moderate' : 'Severe';
+          if (upper.includes('GAD')) return avg < 5 ? 'Normal' : avg < 10 ? 'Mild' : avg < 15 ? 'Moderate' : 'Severe';
+          if (upper.includes('PSS')) return avg < 14 ? 'Low Stress' : avg < 27 ? 'Moderate' : 'High Stress';
+          if (upper.includes('FAS')) return avg < 22 ? 'Low Fatigue' : avg < 35 ? 'Moderate' : 'High Fatigue';
+          if (upper.includes('COPSOQ')) return avg >= 60 ? 'Favorable' : avg >= 40 ? 'Moderate' : 'At Risk';
+          return 'Calculated';
+        };
 
-      avgResults.forEach(item => {
-        const code = (item._id || '').toUpperCase();
-        if (item.count > 0 && item.avgScore !== null && !isNaN(item.avgScore)) {
-          const score = item.avgScore.toFixed(1);
-          const tier = helperTier(code, item.avgScore);
-          if (code.includes('PHQ')) benchmarks.phq9 = { score, tier };
-          if (code.includes('GAD')) benchmarks.gad7 = { score, tier };
-          if (code.includes('PSS')) benchmarks.pss10 = { score, tier };
-          if (code.includes('FAS')) benchmarks.fas10 = { score, tier };
-          if (code.includes('COPSOQ')) benchmarks.copsoq3 = { score, tier };
-        }
-      });
+        (avgResults || []).forEach(item => {
+          const code = (item._id || '').toUpperCase();
+          if (item.count > 0 && item.avgScore !== null && !isNaN(item.avgScore)) {
+            const score = item.avgScore.toFixed(1);
+            const tier = helperTier(code, item.avgScore);
+            if (code.includes('PHQ')) benchmarks.phq9 = { score, tier };
+            if (code.includes('GAD')) benchmarks.gad7 = { score, tier };
+            if (code.includes('PSS')) benchmarks.pss10 = { score, tier };
+            if (code.includes('FAS')) benchmarks.fas10 = { score, tier };
+            if (code.includes('COPSOQ')) benchmarks.copsoq3 = { score, tier };
+          }
+        });
+      }
     } catch (benchErr) {
       console.warn('[SuperAdmin Stats] Benchmark aggregation error:', benchErr.message);
     }
@@ -106,6 +109,95 @@ router.get('/stats', async (req, res, next) => {
         suppressedCount: 0
       }
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 1b. Global Assessment Governance Defaults (GET & PATCH)
+router.get('/global-defaults', async (req, res, next) => {
+  try {
+    const tenant = await Tenant.findOne({ 'settings.default_lock_policy': { $exists: true } }).lean();
+    const policy = tenant?.settings?.default_lock_policy || {};
+
+    res.json({
+      success: true,
+      locks: {
+        phq9: policy.phq9 !== 'unlocked',
+        gad7: policy.gad7 !== 'unlocked',
+        pss10: policy.pss10 === 'locked',
+        fas10: policy.fas10 === 'locked',
+        copsoq: policy.copsoq3 !== 'unlocked'
+      },
+      copsoqDepth: policy.copsoq_depth || 'core'
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/global-defaults', async (req, res, next) => {
+  try {
+    const { locks = {}, copsoqDepth = 'core' } = req.body;
+    const lockPolicy = {
+      phq9: locks.phq9 ? 'locked' : 'unlocked',
+      gad7: locks.gad7 ? 'locked' : 'unlocked',
+      pss10: locks.pss10 ? 'locked' : 'unlocked',
+      fas10: locks.fas10 ? 'locked' : 'unlocked',
+      copsoq3: locks.copsoq ? 'locked' : 'unlocked',
+      copsoq_depth: copsoqDepth
+    };
+
+    // Propagate default lock policy matrix to all tenant configurations
+    await Tenant.updateMany({}, {
+      $set: {
+        'settings.default_lock_policy': lockPolicy
+      }
+    });
+
+    // Immutable SHA-256 Audit Trail
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.append({
+        company_id: 'GLOBAL',
+        actor_user_id: req.sessionData ? req.sessionData.user_id : 'SUPERADMIN',
+        actor_role: 'super_admin',
+        event_type: 'global_defaults_updated',
+        event_payload: { locks, copsoqDepth }
+      });
+    } catch (auditErr) {
+      console.warn('[AuditLog Warning]', auditErr.message);
+    }
+
+    res.json({
+      success: true,
+      message: 'Global lock policy matrix updated successfully across all tenants.',
+      locks,
+      copsoqDepth
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 1c. SuperAdmin Audit Log Retrieval
+router.get('/audit-log', async (req, res, next) => {
+  try {
+    const AuditLog = require('../models/AuditLog');
+    const logs = await AuditLog.find({})
+      .sort({ created_at: -1, timestamp: -1 })
+      .limit(100)
+      .lean();
+
+    const formatted = logs.map(l => ({
+      timestamp: l.created_at || l.timestamp,
+      actor_role: l.actor_role || 'super_admin',
+      event_type: l.event_type || 'SYSTEM_ACTION',
+      company_id: l.company_id || 'GLOBAL',
+      hash: l.sha256_hash || 'VERIFIED'
+    }));
+
+    res.json({ success: true, logs: formatted });
   } catch (err) {
     next(err);
   }

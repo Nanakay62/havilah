@@ -468,6 +468,47 @@ router.post('/referrals/:id/attachments', requireAssessorAuth, async (req, res, 
 });
 
 /**
+ * @route   DELETE /api/v1/assessor/referrals/:id/attachments/:attachmentIndex
+ * @desc    Delete a clinical document attachment from a referral case
+ * @access  Assessor Authenticated
+ */
+router.delete('/referrals/:id/attachments/:attachmentIndex', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const referralId = req.params.id;
+    const index = parseInt(req.params.attachmentIndex, 10);
+
+    const referral = await Referral.findById(referralId);
+    if (!referral) {
+      return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Referral case not found.' });
+    }
+
+    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this case.' });
+    }
+
+    referral.clinicalDetails = referral.clinicalDetails || {};
+    referral.clinicalDetails.attachments = referral.clinicalDetails.attachments || [];
+
+    if (isNaN(index) || index < 0 || index >= referral.clinicalDetails.attachments.length) {
+      return res.status(400).json({ success: false, error: 'INVALID_INDEX', message: 'Invalid attachment index.' });
+    }
+
+    const removed = referral.clinicalDetails.attachments.splice(index, 1);
+    await referral.save();
+
+    console.log(`[Assessor] Removed document "${removed[0]?.fileName}" from referral ${referral.referenceCode}`);
+
+    res.json({
+      success: true,
+      message: 'Attachment removed successfully.',
+      data: referral.clinicalDetails.attachments,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * @route   PATCH /api/v1/assessor/referrals/:id/complete
  * @desc    Complete a referral case, apply billing amount, clinical notes, and optional attachments
  * @access  Assessor Authenticated

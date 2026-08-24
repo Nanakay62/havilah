@@ -914,8 +914,28 @@
       </div>
 
       <!-- Attachments Section -->
-      <div id="modalAttachmentsSection" style="margin-top: 14px;">
-        <div style="font-weight: 700; color: var(--text-1); font-size: 0.88rem; margin-bottom: 6px;">📎 Clinical Documents &amp; Certificates</div>
+      <div id="modalAttachmentsSection" style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <div style="font-weight: 700; color: var(--text-1); font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+              <span>📎</span>
+              <span>Clinical Documents &amp; Certificates</span>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Issue medical certificates, fit-to-work notes, or clinical reports for the employee.</div>
+          </div>
+          <div>
+            <input type="file" id="modalCaseAttachmentInput" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" style="display: none;" onchange="handleAssessorDirectUpload(event)" />
+            <button type="button" class="btn btn-outline btn-sm" id="modalAttachDocBtn" onclick="document.getElementById('modalCaseAttachmentInput').click()" style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.78rem;">
+              <span>+</span>
+              <span>Attach Certificate</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="modalAttachmentUploadStatus" style="display: none; padding: 6px 10px; margin-bottom: 8px; border-radius: 6px; font-size: 0.78rem; background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE;">
+          ⏳ Uploading confidential medical document...
+        </div>
+
         <div id="modalAttachmentsList" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem;">
           <!-- Filled dynamically -->
         </div>

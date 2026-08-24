@@ -283,7 +283,7 @@ router.get('/status/:referenceCode', async (req, res, next) => {
     }
 
     const referral = await Referral.findOne({ referenceCode: rawCode })
-      .select('referenceCode status scheduledAt appointmentNotes preferredTime createdAt thread clinicalDetails.meetingLink')
+      .select('referenceCode status scheduledAt appointmentNotes preferredTime createdAt thread clinicalDetails.meetingLink clinicalDetails.attachments')
       .lean();
 
     if (!referral) {
@@ -303,6 +303,13 @@ router.get('/status/:referenceCode', async (req, res, next) => {
       meetingLink: referral.clinicalDetails?.meetingLink || '',
       preferredTime: referral.preferredTime || 'As soon as available',
       createdAt: referral.createdAt,
+      attachments: (referral.clinicalDetails?.attachments || []).map(att => ({
+        fileName: att.fileName,
+        fileData: att.fileData,
+        fileType: att.fileType,
+        fileSize: att.fileSize,
+        uploadedAt: att.uploadedAt,
+      })),
       thread: (referral.thread || []).map(msg => ({
         sender: msg.sender,
         senderName: msg.senderName || (msg.sender === 'assessor' ? 'Medical Assessor' : 'You (Employee)'),

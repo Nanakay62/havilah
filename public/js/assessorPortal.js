@@ -691,23 +691,7 @@
     if (replyInput) replyInput.value = '';
 
     // Render attachments
-    const attachList = document.getElementById('modalAttachmentsList');
-    if (attachList) {
-      const attachments = item.clinicalDetails?.attachments || [];
-      if (attachments.length === 0) {
-        attachList.innerHTML = '<div style="color:var(--text-muted);">No documents attached to this case.</div>';
-      } else {
-        attachList.innerHTML = attachments.map((att, idx) => `
-          <div style="display:flex; justify-content:space-between; align-items:center; background:#F8FAFC; border:1px solid var(--border); padding:8px 12px; border-radius:6px;">
-            <div>
-              <strong style="color:var(--text-1);">📄 ${att.fileName}</strong>
-              <span style="color:var(--text-muted); font-size:0.75rem; margin-left:6px;">(${Math.round((att.fileSize || 0) / 1024)} KB)</span>
-            </div>
-            <a href="${att.fileData}" download="${att.fileName}" class="btn btn-outline btn-sm" style="padding:3px 8px; font-size:0.75rem;">Download</a>
-          </div>
-        `).join('');
-      }
-    }
+    renderAssessorAttachments(item.clinicalDetails?.attachments || []);
 
     const completeBtn = document.getElementById('modalCompleteCaseBtn');
     if (completeBtn) {
@@ -716,6 +700,132 @@
 
     openModal('caseDetailModal');
     startAssessorLiveSync();
+  };
+
+  // --- Clinical Attachment Functions for Assessor ---
+  function renderAssessorAttachments(attachments) {
+    const attachList = document.getElementById('modalAttachmentsList');
+    if (!attachList) return;
+
+    if (!attachments || attachments.length === 0) {
+      attachList.innerHTML = `
+        <div style="color: var(--text-muted); font-size: 0.8rem; background: #F8FAFC; border: 1px dashed var(--border); border-radius: 8px; padding: 14px; text-align: center;">
+          No medical documents attached yet. Click <strong>+ Attach Certificate</strong> above to issue a medical certificate or clinical report.
+        </div>
+      `;
+      return;
+    }
+
+    attachList.innerHTML = attachments.map((att, idx) => {
+      const isPdf = (att.fileName || '').toLowerCase().endsWith('.pdf') || (att.fileType || '').includes('pdf');
+      const isImg = /\.(png|jpg|jpeg|webp)$/i.test(att.fileName || '') || (att.fileType || '').includes('image');
+      const icon = isPdf ? '📕' : isImg ? '🖼️' : '📝';
+      
+      const sizeStr = att.fileSize 
+        ? (att.fileSize > 1024 * 1024 
+            ? `${(att.fileSize / (1024 * 1024)).toFixed(1)} MB` 
+            : `${Math.round(att.fileSize / 1024)} KB`)
+        : '';
+
+      const timeStr = att.uploadedAt 
+        ? new Date(att.uploadedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        : 'Recently';
+
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+            <div style="font-size: 1.4rem; flex-shrink: 0;">${icon}</div>
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-weight: 700; color: var(--text-1); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${att.fileName || 'Clinical_Document'}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                <span>${timeStr}</span>
+                ${sizeStr ? `<span>•</span><span>${sizeStr}</span>` : ''}
+                <span style="color: #059669; font-weight: 600;">• Verified</span>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+            <a href="${att.fileData}" download="${att.fileName}" class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+              <span>📥</span>
+              <span>Download</span>
+            </a>
+            <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteAssessorAttachment(${idx})" style="padding: 4px 8px; font-size: 0.75rem; color: #DC2626; border-color: #FECACA;" title="Remove Document">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.handleAssessorDirectUpload = async (event) => {
+    const fileInput = event.target;
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+    if (!state.selectedCase) {
+      alert('Please open a referral case before uploading an attachment.');
+      return;
+    }
+
+    const file = fileInput.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File exceeds 10MB maximum limit. Please choose a smaller PDF or image file.');
+      fileInput.value = '';
+      return;
+    }
+
+    const statusEl = document.getElementById('modalAttachmentUploadStatus');
+    if (statusEl) statusEl.style.display = 'block';
+
+    try {
+      const base64Data = await readFileAsBase64(file);
+      const res = await assessorApiFetch(`${API_BASE}/referrals/${state.selectedCase._id}/attachments`, {
+        method: 'POST',
+        body: JSON.stringify({
+          fileName: file.name,
+          fileData: base64Data,
+          fileType: file.type || 'application/octet-stream',
+          fileSize: file.size,
+        }),
+      });
+
+      if (res && res.data) {
+        state.selectedCase.clinicalDetails = state.selectedCase.clinicalDetails || {};
+        state.selectedCase.clinicalDetails.attachments = res.data;
+        renderAssessorAttachments(res.data);
+        showToast(`Document "${file.name}" attached successfully!`);
+      }
+    } catch (err) {
+      alert('Error uploading medical certificate: ' + err.message);
+    } finally {
+      if (statusEl) statusEl.style.display = 'none';
+      fileInput.value = '';
+    }
+  };
+
+  window.handleDeleteAssessorAttachment = async (index) => {
+    if (!state.selectedCase) return;
+    const attachments = state.selectedCase.clinicalDetails?.attachments || [];
+    const target = attachments[index];
+    const docName = target?.fileName || 'this document';
+
+    if (!confirm(`Are you sure you want to remove "${docName}" from this case?`)) {
+      return;
+    }
+
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/referrals/${state.selectedCase._id}/attachments/${index}`, {
+        method: 'DELETE',
+      });
+
+      if (res && res.data) {
+        state.selectedCase.clinicalDetails = state.selectedCase.clinicalDetails || {};
+        state.selectedCase.clinicalDetails.attachments = res.data;
+        renderAssessorAttachments(res.data);
+        showToast('Document removed successfully.');
+      }
+    } catch (err) {
+      alert('Error removing attachment: ' + err.message);
+    }
   };
 
   // --- Clinical Thread Functions for Assessor ---
@@ -818,11 +928,14 @@
             if (updatedCase) {
               const prevThreadLen = (state.selectedCase.thread || []).length;
               const newThreadLen = (updatedCase.thread || []).length;
+              const prevAttLen = (state.selectedCase.clinicalDetails?.attachments || []).length;
+              const newAttLen = (updatedCase.clinicalDetails?.attachments || []).length;
               const prevStatus = state.selectedCase.status;
 
-              if (newThreadLen !== prevThreadLen || updatedCase.status !== prevStatus) {
+              if (newThreadLen !== prevThreadLen || updatedCase.status !== prevStatus || newAttLen !== prevAttLen) {
                 state.selectedCase = updatedCase;
                 renderAssessorModalThread(updatedCase.thread || []);
+                renderAssessorAttachments(updatedCase.clinicalDetails?.attachments || []);
               }
             }
           }

@@ -602,10 +602,10 @@
       </button>
       <div style="position: relative;">
         <button class="profile" id="profileBtn" aria-haspopup="true" aria-expanded="false">
-          <div class="avatar" id="user-avatar-initials">DV</div>
+          <div class="avatar" id="user-avatar-initials">HR</div>
           <div>
-            <div class="profile-name" id="user-display-name">Dollyvic</div>
-            <div class="profile-role" id="user-role-label">HR Admin</div>
+            <div class="profile-name" id="user-display-name">HR Admin</div>
+            <div class="profile-role" id="user-role-label">HR Administrator</div>
           </div>
         </button>
         <div class="dropdown" id="profileDropdown" role="menu">
@@ -2273,7 +2273,7 @@ const App = (() => {
     if (state.providerRouting && state.providerRouting.providerName) {
       return state.providerRouting.providerName;
     }
-    return state.companyName || (state.user && state.user.company_name) || 'Dollyvic';
+    return state.companyName || (state.user && state.user.company_name) || 'FZ Safety and Health';
   }
 
   function openSettingsForm() {
@@ -2848,9 +2848,9 @@ const App = (() => {
     </div>
   `;
 
-  function loadUserProfile() {
+  async function loadUserProfile() {
     let user = null;
-    const rawUser = localStorage.getItem('wf_user') || localStorage.getItem('user');
+    const rawUser = localStorage.getItem('havilah_user') || localStorage.getItem('wf_user') || localStorage.getItem('user');
     if (rawUser) {
       try { user = JSON.parse(rawUser); } catch(e) {}
     }
@@ -2860,29 +2860,56 @@ const App = (() => {
       tokenPayload = Auth.parseToken();
     }
 
-    const storedName = localStorage.getItem('wf_user_name');
-    const storedEmail = localStorage.getItem('wf_user_email') || (user && user.email) || 'dollyvic@gmail.com';
+    let storedName = (user && (user.full_name || user.name)) || localStorage.getItem('wf_user_name');
+    let storedEmail = (user && user.email) || localStorage.getItem('wf_user_email') || '';
 
-    let fullName = (user && (user.full_name || user.name)) || storedName;
-    if (!fullName || fullName === 'HR Admin' || fullName === 'HR Administrator') {
-      const prefix = storedEmail.split('@')[0] || 'Dollyvic';
-      fullName = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    // Synchronize or fill from live /api/v1/auth/me endpoint if details are incomplete or need verification
+    const token = (typeof Auth !== 'undefined' && Auth.getToken) ? Auth.getToken() : (localStorage.getItem('havilah_token') || localStorage.getItem('token'));
+    if (token && (!storedName || !storedEmail || storedName === 'HR Admin' || storedName === 'HR Administrator')) {
+      try {
+        const res = await fetch('/api/v1/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.user) {
+            user = data.user;
+            if (data.user.full_name) storedName = data.user.full_name;
+            if (data.user.email) storedEmail = data.user.email;
+            localStorage.setItem('havilah_user', JSON.stringify(data.user));
+            localStorage.setItem('wf_user', JSON.stringify(data.user));
+            if (data.user.full_name) localStorage.setItem('wf_user_name', data.user.full_name);
+            if (data.user.email) localStorage.setItem('wf_user_email', data.user.email);
+          }
+        }
+      } catch (err) {
+        console.warn('[hr.html] User session sync notice:', err.message);
+      }
     }
 
-    let initials = 'DV';
-    const emailPrefix = storedEmail.split('@')[0] || '';
-    const parts = emailPrefix.split(/[._-]/);
-    if (parts.length >= 2 && parts[0] && parts[1]) {
-      initials = (parts[0][0] + parts[1][0]).toUpperCase();
-    } else if (emailPrefix.length >= 2) {
-      initials = (emailPrefix[0] + emailPrefix[emailPrefix.length - 1]).toUpperCase();
-    } else {
-      initials = fullName.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'DV';
+    let fullName = storedName || 'HR Administrator';
+    let displayEmail = storedEmail || 'hr@company.com';
+
+    let initials = 'HR';
+    if (fullName && fullName !== 'HR Administrator' && fullName !== 'HR Admin') {
+      const nameParts = fullName.trim().split(/\s+/);
+      if (nameParts.length >= 2) {
+        initials = (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+      } else if (nameParts[0].length >= 2) {
+        initials = nameParts[0].slice(0, 2).toUpperCase();
+      } else {
+        initials = nameParts[0][0].toUpperCase();
+      }
+    } else if (storedEmail && storedEmail.includes('@')) {
+      const prefix = storedEmail.split('@')[0];
+      initials = prefix.slice(0, 2).toUpperCase();
     }
 
-    let role = (user && user.role) === 'super_admin' ? 'System Super Admin' : 'HR Admin';
+    let role = (user && user.role) === 'super_admin' || (tokenPayload && tokenPayload.isSystemSuperAdmin) 
+      ? 'System Super Admin' 
+      : 'HR Admin';
 
-    state.user = { name: fullName, email: storedEmail, role: role, avatar: initials };
+    state.user = { name: fullName, email: displayEmail, role: role, avatar: initials };
 
     const setElemText = (id, val) => {
       const el = document.getElementById(id);
@@ -2897,7 +2924,7 @@ const App = (() => {
     document.querySelectorAll('.profile-name').forEach(el => el.textContent = fullName);
     document.querySelectorAll('.profile-role').forEach(el => el.textContent = role);
     document.querySelectorAll('.dropdown-header-name').forEach(el => el.textContent = fullName);
-    document.querySelectorAll('.dropdown-header-email').forEach(el => el.textContent = storedEmail);
+    document.querySelectorAll('.dropdown-header-email').forEach(el => el.textContent = displayEmail);
   }
 
   function getRiskBrickStyle(score) {

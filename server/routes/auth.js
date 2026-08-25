@@ -339,11 +339,24 @@ router.get('/me', validateSession, async (req, res, next) => {
       } catch (e) {}
     }
 
+    // Decrypt user email for authenticated profile display
+    let userEmail = null;
+    if (user.email_encrypted) {
+      try {
+        const parsed = typeof user.email_encrypted === 'string' ? JSON.parse(user.email_encrypted) : user.email_encrypted;
+        if (parsed && parsed.iv && parsed.encrypted && parsed.authTag) {
+          const { decryptField } = require('../utils/crypto');
+          userEmail = decryptField(parsed.iv, parsed.encrypted, parsed.authTag);
+        }
+      } catch (e) {}
+    }
+
     return res.json({
       success: true,
       user: {
         id: user.user_id,
         user_id: user.user_id,
+        email: userEmail,
         email_hash: user.email_hash,
         full_name: user.full_name,
         role: user.role,

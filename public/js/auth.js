@@ -139,6 +139,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (data.user.full_name) {
           localStorage.setItem('wf_user_name', data.user.full_name);
         }
+        if (data.user.email) {
+          localStorage.setItem('wf_user_email', data.user.email);
+        }
       }
     }
   } catch (err) {

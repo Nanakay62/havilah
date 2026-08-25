@@ -935,7 +935,14 @@
           if (data.token) {
             localStorage.setItem('havilah_token', data.token);
             localStorage.setItem('token', data.token);
-            if (data.user) localStorage.setItem('havilah_user', JSON.stringify(data.user));
+            localStorage.setItem('session_token', data.token);
+            document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+            if (data.user) {
+              localStorage.setItem('havilah_user', JSON.stringify(data.user));
+              localStorage.setItem('wf_user', JSON.stringify(data.user));
+              if (data.user.full_name) localStorage.setItem('wf_user_name', data.user.full_name);
+            }
+            if (email) localStorage.setItem('wf_user_email', email);
           }
           window.location.href = data.redirectUrl || '/portal/hr.html';
         } else {

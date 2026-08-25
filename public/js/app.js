@@ -301,8 +301,14 @@
         document.getElementById('surveyQuestionContainer').innerHTML = `
             <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
             <h4 class="text-xl font-bold text-gray-800 mb-2">Check-in Complete</h4>
-            <p class="text-sm text-gray-500">Your secure response has been recorded.</p>
-            <button class="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700" onclick="window.app.closeSurvey()">Done</button>
+            <p class="text-sm text-gray-500 mb-6">Your secure response has been recorded.</p>
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <button class="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium text-sm rounded-lg shadow-sm transition" onclick="if (window.generateAssessmentReportPdf) { window.generateAssessmentReportPdf({ surveyType: state.surveyState.type }); }">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <span>Download Confidential Report (PDF)</span>
+                </button>
+                <button class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm rounded-lg transition" onclick="window.app.closeSurvey()">Done</button>
+            </div>
         `;
         document.getElementById('surveyBtnPrev').classList.add('hidden');
         document.getElementById('surveyBtnNext').classList.add('hidden');

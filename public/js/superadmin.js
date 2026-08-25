@@ -223,6 +223,7 @@ async function fetchTenants() {
               <button class="btn-action-toggle" style="background:var(--bg-base); color:var(--text-1); border-color:var(--border);" onclick="toggleActionMenu('menu-${t.company_id}', event)">•••</button>
               
               <div id="menu-${t.company_id}" class="action-popover" style="display: none; position: absolute; right: 0; background: #FFFFFF; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 500; min-width: 190px; padding: 4px 0;">
+                <a onclick="extendTrial14Days('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">⏳ Extend Trial (+14 Days)</a>
                 <a onclick="editSeatCapacity('${t.company_id}', '${t.company_name}', ${max})" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">✏️ Edit Seat Limit</a>
                 <a onclick="resetHRCredentials('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">🔑 Set HR Password</a>
                 <a onclick="openGenerateCodesModal('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">🎫 Generate Codes</a>
@@ -462,6 +463,38 @@ async function changeTenantTier(companyId, companyName, oldTier, newTier, select
   } catch (err) {
     console.error('Error changing tier:', err);
     if (selectElem) selectElem.value = oldTier;
+  }
+}
+
+async function extendTrial14Days(companyId, companyName) {
+  const confirmed = await showCustomConfirm({
+    title: '⚡ Extend 14-Day Trial?',
+    message: `Extend trial for ${companyName} by +14 days?`,
+    confirmText: 'Extend +14 Days',
+    cancelText: 'Cancel',
+    icon: '⏳'
+  });
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`/api/v1/superadmin/tenants/${companyId}/subscription`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ extendDays: 14 })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Trial Extended', `Extended ${companyName} trial by 14 days.`, 'success');
+      fetchTenants();
+      fetchStats();
+    } else {
+      showToast('Error', data.error || 'Failed to extend trial', 'error');
+    }
+  } catch (err) {
+    showToast('Error', err.message, 'error');
   }
 }
 

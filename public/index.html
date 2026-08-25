@@ -375,6 +375,63 @@
     .stat-num { font-size: 2rem; }
     .float-card-1, .float-card-2 { display: none; }
   }
+
+  /* ============ PRICING ============ */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    align-items: stretch;
+  }
+  @media (max-width: 960px) {
+    .pricing-grid { grid-template-columns: 1fr; max-width: 460px; }
+  }
+  .pricing-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s var(--ease-out);
+  }
+  .pricing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-strong);
+  }
+  .pricing-card.popular {
+    border: 2px solid var(--accent);
+    box-shadow: 0 12px 36px rgba(13, 148, 136, 0.15);
+  }
+  .pricing-badge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--indigo) 100%);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 99px;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+    white-space: nowrap;
+  }
+  .pricing-tier-name { font-size: 1.25rem; font-weight: 700; color: var(--text-1); margin-bottom: 6px; }
+  .pricing-desc { font-size: 0.875rem; color: var(--text-2); min-height: 42px; margin-bottom: 20px; line-height: 1.45; }
+  .pricing-price-wrap { display: flex; align-items: baseline; gap: 8px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .pricing-price-main { font-size: 2.2rem; font-weight: 800; color: var(--text-1); letter-spacing: -0.03em; }
+  .pricing-price-alt { font-size: 0.95rem; color: var(--text-3); font-weight: 500; }
+  .pricing-features { list-style: none; padding: 0; margin: 0 0 32px 0; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+  .pricing-feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 0.875rem; color: var(--text-2); line-height: 1.4; }
+  .pricing-feature-item svg { width: 18px; height: 18px; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
 </style>
 </head>
 <body>
@@ -397,18 +454,22 @@
       <svg class="close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <nav class="nav" role="navigation" aria-label="Primary">
-      <button class="nav-item active">Platform Overview</button>
+      <button class="nav-item active" onclick="window.scrollTo({top:0, behavior:'smooth'})">Platform Overview</button>
+      <a href="#pricing" class="nav-item" style="text-decoration:none;">Pricing</a>
     </nav>
     <div class="header-right">
       <button class="btn btn-ghost btn-sm" onclick="App.bookDemo()">Book Demo</button>
-      <a href="/login.html" class="btn btn-primary btn-sm" style="text-decoration:none;">Login</a>
+      <button class="btn btn-primary btn-sm" onclick="App.openRegisterModal('pro')">Start Pro Trial</button>
+      <a href="/login.html" class="btn btn-ghost btn-sm" style="text-decoration:none;">Login</a>
     </div>
   </div>
   <!-- Mobile Collapsible Menu Drawer -->
   <div class="mobile-menu-drawer" id="mobileMenuDrawer">
-    <button class="mobile-nav-item active" onclick="toggleMobileMenu()">Platform Overview</button>
+    <button class="mobile-nav-item active" onclick="toggleMobileMenu(); window.scrollTo({top:0, behavior:'smooth'});">Platform Overview</button>
+    <a href="#pricing" class="mobile-nav-item" onclick="toggleMobileMenu();" style="text-decoration:none;">Pricing</a>
+    <button class="btn btn-primary btn-sm mobile-drawer-btn" onclick="toggleMobileMenu(); App.openRegisterModal('pro');">Start Pro Trial</button>
     <button class="btn btn-ghost btn-sm mobile-drawer-btn" onclick="toggleMobileMenu(); App.bookDemo();">Book Demo</button>
-    <a href="/login.html" class="btn btn-primary btn-sm mobile-drawer-btn" style="text-decoration:none;">Login</a>
+    <a href="/login.html" class="btn btn-ghost btn-sm mobile-drawer-btn" style="text-decoration:none;">Login</a>
   </div>
 </header>
 
@@ -559,18 +620,170 @@
       <div class="stat"><div class="stat-num">$2.7M</div><div class="stat-label">Average annual turnover cost avoided per 1,000 employees</div></div>
     </div>
   </section>
+
+  <!-- ============ PRICING SECTION ============ -->
+  <section class="section" id="pricing" aria-label="Transparent Pricing Tiers">
+    <div class="section-header">
+      <span class="eyebrow">Predictable Pricing</span>
+      <h2 class="h1">Transparent plans for organizations<br>of every size.</h2>
+      <p>Start with our full-access 30-day Pro reverse trial. No credit card required, instant automated setup.</p>
+    </div>
+
+    <!-- 30-Day Pro Reverse Trial Banner -->
+    <div style="max-width: 1200px; margin: 0 auto 40px; background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(79, 70, 229, 0.08) 100%); border: 1.5px solid rgba(13, 148, 136, 0.25); border-radius: 20px; padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; box-shadow: 0 4px 20px rgba(13, 148, 136, 0.08);">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="width: 42px; height: 42px; border-radius: 12px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);">⚡</div>
+        <div>
+          <div style="font-weight: 700; color: var(--text-1); font-size: 1.05rem;">All new accounts start with a full-access 30-day Pro trial</div>
+          <div style="font-size: 0.875rem; color: var(--text-2); margin-top: 2px;">Experience complete clinical assessment batteries, whistleblower guard &amp; analytics. No credit card required.</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="App.openRegisterModal('pro')">
+        Start 30-Day Pro Trial
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- 3 Pricing Cards -->
+    <div class="pricing-grid">
+      <!-- Tier 1: Free (Community) -->
+      <article class="pricing-card">
+        <div class="pricing-tier-name">Free (Community)</div>
+        <p class="pricing-desc">Standard psychosocial hazard logging and baseline metrics for micro teams.</p>
+        <div class="pricing-price-wrap">
+          <div class="pricing-price-main">GHS 0</div>
+          <div class="pricing-price-alt">/ $0 free forever</div>
+        </div>
+        <ul class="pricing-features">
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Standard Hazard Reporting</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 1 HR Administrator Account</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Max 10 Employees</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Hardcoded Privacy Shield ($N \ge 5$)</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Core COPSOQ-III Screening</li>
+        </ul>
+        <button class="btn btn-ghost" onclick="App.openRegisterModal('free')" style="width: 100%;">Get Started Free</button>
+      </article>
+
+      <!-- Tier 2: Starter -->
+      <article class="pricing-card">
+        <div class="pricing-tier-name">Starter</div>
+        <p class="pricing-desc">Clinical EAP intakes and structured reporting for growing organizations.</p>
+        <div class="pricing-price-wrap">
+          <div class="pricing-price-main">GHS 490</div>
+          <div class="pricing-price-alt">/ $39/mo</div>
+        </div>
+        <ul class="pricing-features">
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 100 Employees</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Clinical EAP Intake Routing</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Dedicated Medical Assessor Link</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> HR Analytics Ledger &amp; Heatmaps</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Automated Department Pulse Cycles</li>
+        </ul>
+        <button class="btn btn-primary" onclick="App.openRegisterModal('starter')" style="width: 100%;">Start 30-Day Pro Trial</button>
+      </article>
+
+      <!-- Tier 3: Pro (Recommended) -->
+      <article class="pricing-card popular">
+        <div class="pricing-badge">RECOMMENDED • 30-DAY FREE TRIAL</div>
+        <div class="pricing-tier-name">Pro</div>
+        <p class="pricing-desc">Full psychological safety, conflict guard, assessor dialogue &amp; board reports.</p>
+        <div class="pricing-price-wrap">
+          <div class="pricing-price-main">GHS 1,450</div>
+          <div class="pricing-price-alt">/ $119/mo</div>
+        </div>
+        <ul class="pricing-features">
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> <strong>Unlimited Employees &amp; Seats</strong></li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Full Whistleblower Conflict Guard</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Assessor Dialogue &amp; Video Links</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Board-Ready CSV &amp; PDF Audits</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ISO 45003 Psychosocial Risk Engine</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Priority 24/7 Support SLA</li>
+        </ul>
+        <button class="btn btn-primary" onclick="App.openRegisterModal('pro')" style="width: 100%; box-shadow: var(--shadow-accent);">Start 30-Day Pro Trial</button>
+      </article>
+    </div>
+  </section>
   
   <section class="section" style="text-align: center;">
     <h2 class="h1" style="margin-bottom: 16px;">Begin the conversation.</h2>
     <p class="lead" style="max-width: 540px; margin: 0 auto 32px;">Set up your workspace in under fifteen minutes. Your first 50 employees are always free.</p>
     <div class="hero-cta" style="justify-content: center;">
-      <button class="btn btn-primary" onclick="App.startTrial()">Start Free Trial<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+      <button class="btn btn-primary" onclick="App.openRegisterModal('pro')">Start Free Trial<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
       <button class="btn btn-ghost" onclick="App.bookDemo()">Book Enterprise Demo</button>
     </div>
   </section>
 </section>
 
 </main>
+
+<!-- Self-Serve HR Tenant Registration Modal -->
+<div id="registerModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+  <div style="background: #ffffff; border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 24px; width: 100%; max-width: 520px; box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2); overflow: hidden; max-height: 92vh; display: flex; flex-direction: column;">
+    <div style="padding: 24px 28px 16px; border-bottom: 1px solid rgba(15, 23, 42, 0.08); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+      <div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #0d9488; letter-spacing: 0.08em; text-transform: uppercase;">Instant Self-Serve Onboarding</div>
+        <h3 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-top: 2px;">Start Your 30-Day Pro Trial</h3>
+      </div>
+      <button onclick="App.closeRegisterModal()" style="width: 32px; height: 32px; border-radius: 8px; border: none; background: rgba(15, 23, 42, 0.05); color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div style="padding: 24px 28px; overflow-y: auto; flex: 1;">
+      <p style="font-size: 0.875rem; color: #475569; margin-bottom: 20px; line-height: 1.5;">Create your organization's compliance workspace. Full access to all Pro features with zero credit card commitment.</p>
+      
+      <div id="registerErrorMsg" style="display: none; padding: 12px 16px; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; border-radius: 12px; font-size: 0.875rem; margin-bottom: 18px; font-weight: 500;"></div>
+
+      <form id="registerTenantForm" onsubmit="event.preventDefault(); App.submitRegister();">
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Organization / Company Name *</label>
+          <input type="text" id="regCompanyName" required placeholder="e.g. Acme Health Corp" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">HR Admin Full Name *</label>
+          <input type="text" id="regFullName" required placeholder="e.g. Jane Doe" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Work Email Address *</label>
+          <input type="email" id="regEmail" required placeholder="you@company.com" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Create Secure Password *</label>
+          <div style="position: relative;">
+            <input type="password" id="regPassword" required minlength="6" placeholder="At least 6 characters" style="width: 100%; padding: 12px 42px 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
+            <button type="button" onclick="const p=document.getElementById('regPassword'); if(p.type==='password'){p.type='text';this.textContent='🙈';}else{p.type='password';this.textContent='👁️';}" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 16px; cursor: pointer; opacity: 0.7;">👁️</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Industry (Optional)</label>
+          <select id="regIndustry" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; background: white;">
+            <option value="Technology">Technology &amp; Software</option>
+            <option value="Healthcare">Healthcare &amp; Pharmaceuticals</option>
+            <option value="Financial Services">Financial Services &amp; Banking</option>
+            <option value="Manufacturing">Manufacturing &amp; Industrial</option>
+            <option value="Mining & Energy">Mining, Energy &amp; Oil</option>
+            <option value="Education">Education &amp; Academic</option>
+            <option value="Public Sector">Government &amp; Public Sector</option>
+            <option value="Professional Services">Professional &amp; Legal Services</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 24px; padding: 12px 16px; background: rgba(13, 148, 136, 0.06); border-radius: 12px; border: 1px solid rgba(13, 148, 136, 0.15);">
+          <div style="width: 22px; height: 22px; border-radius: 6px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0;">✓</div>
+          <div style="font-size: 0.78125rem; color: #0f766e; font-weight: 600;">Includes 30 days of full Pro access with automated assessment cadencing &amp; analytics.</div>
+        </div>
+
+        <button type="submit" id="btnSubmitRegister" class="btn btn-primary" style="width: 100%; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; background: linear-gradient(135deg, #0d9488, #0078D4); color: white; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);">
+          Create Organization &amp; Start Trial
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
 
 <!-- Light Mode Working Demo Modal -->
 <div id="demoModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
@@ -674,7 +887,75 @@
 
   window.App = { 
     navigate: function(view) { if(view==="employee") handleCta("employee"); if(view==="hr") handleCta("hr_admin"); }, 
-    startTrial: function() { window.location.href="/register.html"; }, 
+    startTrial: function() { App.openRegisterModal('pro'); }, 
+    openRegisterModal: function(tier = 'pro') {
+      const modal = document.getElementById('registerModal');
+      const errBox = document.getElementById('registerErrorMsg');
+      if (errBox) { errBox.style.display = 'none'; errBox.innerText = ''; }
+      if (modal) modal.style.display = 'flex';
+      const nameInput = document.getElementById('regCompanyName');
+      if (nameInput) setTimeout(() => nameInput.focus(), 100);
+    },
+    closeRegisterModal: function() {
+      const modal = document.getElementById('registerModal');
+      if (modal) modal.style.display = 'none';
+    },
+    submitRegister: async function() {
+      const companyName = document.getElementById('regCompanyName')?.value.trim();
+      const fullName = document.getElementById('regFullName')?.value.trim();
+      const email = document.getElementById('regEmail')?.value.trim();
+      const password = document.getElementById('regPassword')?.value;
+      const industry = document.getElementById('regIndustry')?.value;
+      const errBox = document.getElementById('registerErrorMsg');
+      const btn = document.getElementById('btnSubmitRegister');
+
+      if (!companyName || !fullName || !email || !password) {
+        if (errBox) {
+          errBox.innerText = 'Please complete all required fields.';
+          errBox.style.display = 'block';
+        }
+        return;
+      }
+
+      if (errBox) errBox.style.display = 'none';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Creating Organization...';
+      }
+
+      try {
+        const res = await fetch('/api/v1/auth/register-tenant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyName, fullName, email, password, industry })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          if (data.token) {
+            localStorage.setItem('havilah_token', data.token);
+            localStorage.setItem('token', data.token);
+            if (data.user) localStorage.setItem('havilah_user', JSON.stringify(data.user));
+          }
+          window.location.href = data.redirectUrl || '/portal/hr.html';
+        } else {
+          if (errBox) {
+            errBox.innerText = data.error || data.message || 'Registration failed. Please check your details.';
+            errBox.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        if (errBox) {
+          errBox.innerText = 'Network error during registration. Please try again.';
+          errBox.style.display = 'block';
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = 'Create Organization & Start Trial';
+        }
+      }
+    },
     bookDemo: function() { document.getElementById('demoModal').style.display = 'flex'; },
     closeDemo: function() { document.getElementById('demoModal').style.display = 'none'; },
     submitDemo: async function() { 

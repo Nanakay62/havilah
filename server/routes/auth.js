@@ -293,6 +293,11 @@ const handleRegistration = async (req, res, next) => {
   }
 };
 
+const authController = require('../controllers/authController');
+
+// POST /api/v1/auth/register-tenant - Self-serve HR & Organization Registration with 30-Day Pro Reverse Trial
+router.post('/register-tenant', sensitiveRateLimiter(5), authController.registerTenant);
+
 // GET /api/v1/auth/me - Validate bearer token freshness and return user profile
 const { validateSession } = require('../middleware/auth');
 router.get('/me', validateSession, async (req, res, next) => {
@@ -317,6 +322,23 @@ router.get('/me', validateSession, async (req, res, next) => {
       } catch (e) {}
     }
 
+    // Resolve tenant subscription and effective tier
+    let tenantInfo = null;
+    if (user.company_id) {
+      try {
+        const tenant = await Tenant.findOne({ company_id: user.company_id });
+        if (tenant) {
+          tenantInfo = {
+            company_id: tenant.company_id,
+            company_name: tenant.company_name,
+            subscription: tenant.subscription,
+            effectiveTier: tenant.getEffectiveTier ? tenant.getEffectiveTier() : (tenant.subscription?.tier || 'free'),
+            activeAssessorId: tenant.activeAssessorId,
+          };
+        }
+      } catch (e) {}
+    }
+
     return res.json({
       success: true,
       user: {
@@ -329,8 +351,9 @@ router.get('/me', validateSession, async (req, res, next) => {
         company_id: user.company_id,
         department_id: user.department_id,
         department_name,
-        isSystemSuperAdmin: user.isSystemSuperAdmin || false
-      }
+        isSystemSuperAdmin: user.isSystemSuperAdmin || false,
+      },
+      tenant: tenantInfo,
     });
   } catch (err) {
     return res.status(401).json({ success: false, error: 'Invalid token' });

@@ -20,9 +20,7 @@ router.get(
     try {
       const companyId = req.tenantScope.company_id;
       
-      const tenant = await Tenant.findOne({ company_id: companyId })
-        .select('hotline_config resource_links company_name slug settings')
-        .lean();
+      const tenant = await Tenant.findOne({ company_id: companyId });
 
       if (!tenant) {
         return res.status(404).json({
@@ -32,9 +30,12 @@ router.get(
         });
       }
 
+      const tenantData = tenant.toObject();
+      tenantData.effectiveTier = tenant.getEffectiveTier();
+
       return res.status(200).json({
         success: true,
-        data: tenant,
+        data: tenantData,
       });
     } catch (err) {
       next(err);

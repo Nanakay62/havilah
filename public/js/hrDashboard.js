@@ -318,12 +318,53 @@
     }).join('');
   }
 
+  async function checkTrialStatus() {
+    try {
+      const banner = document.getElementById('hrTrialBanner');
+      const bannerText = document.getElementById('hrTrialBannerText');
+      if (!banner || !bannerText) return;
+
+      const data = await apiFetch('/api/v1/tenant/config');
+      if (data && data.success && data.data) {
+        const tenant = data.data;
+        const sub = tenant.subscription || {};
+        const effectiveTier = tenant.effectiveTier || sub.tier || 'pro';
+        const status = sub.status || 'active';
+
+        if (status === 'trialing') {
+          const trialEnd = sub.trialEndsAt ? new Date(sub.trialEndsAt) : null;
+          const now = new Date();
+          if (trialEnd && now < trialEnd) {
+            const msLeft = trialEnd.getTime() - now.getTime();
+            const daysLeft = Math.max(1, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+            bannerText.innerHTML = `⚡ <strong>Pro Reverse Trial:</strong> ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining. You have full access to all Pro analytics, conflict guards & clinical linkages.`;
+            banner.style.display = 'block';
+            banner.style.background = 'linear-gradient(90deg, #0f766e 0%, #0d9488 50%, #0284c7 100%)';
+          } else {
+            bannerText.innerHTML = `⚠️ <strong>Pro Trial Expired:</strong> Your 30-day Pro trial has ended and your account is currently on the <strong>Free Community tier</strong>. Upgrade to restore full Pro capabilities.`;
+            banner.style.display = 'block';
+            banner.style.background = 'linear-gradient(90deg, #b45309 0%, #d97706 100%)';
+          }
+        } else if (effectiveTier === 'free') {
+          bannerText.innerHTML = `ℹ️ You are currently on the <strong>Free Community tier</strong> (Max 10 employees). Upgrade to unlock unlimited seats & clinical routing.`;
+          banner.style.display = 'block';
+          banner.style.background = 'linear-gradient(90deg, #334155 0%, #475569 100%)';
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+    } catch (err) {
+      console.warn('[hrDashboard] Could not resolve trial status:', err.message);
+    }
+  }
+
   async function init() {
     await Promise.all([
       fetchInvites(),
       fetchDepartments(),
       fetchClinicalBilling(),
-      fetchEthicsReports()
+      fetchEthicsReports(),
+      checkTrialStatus()
     ]);
   }
 

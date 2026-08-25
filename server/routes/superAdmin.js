@@ -10,6 +10,7 @@ const { encryptField, hashField, decryptField } = require('../utils/crypto');
 const { validateSession, superAdminGuard } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
+const superAdminController = require('../controllers/superAdminController');
 
 // Apply guards to ALL superadmin endpoints
 router.use(validateSession, superAdminGuard);
@@ -523,6 +524,12 @@ router.patch('/tenants/:id/status', async (req, res, next) => {
   }
 });
 
+// 7b. Update Tenant Subscription & Trial Overrides
+router.patch('/tenants/:id/subscription', superAdminController.updateTenantSubscription);
+
+// 7c. Manual Provision Tenant (Offline/Enterprise creation)
+router.post('/tenants/manual-provision', superAdminController.manualProvisionTenant);
+
 // 8. Update Tenant Billing Tier
 router.patch('/tenants/:id/tier', async (req, res, next) => {
   try {
@@ -961,63 +968,7 @@ router.delete('/assessors/:id', async (req, res, next) => {
 // 5.1 Switching a tenant's active assessor (superadmin action)
 // Updates tenant.activeAssessorId only.
 // Does NOT modify existing Referral documents.
-router.patch('/tenants/:id/assessor', async (req, res, next) => {
-  try {
-    const { assessorId, activeAssessorId } = req.body;
-    const targetAssessorId = assessorId !== undefined ? assessorId : activeAssessorId;
-
-    const Assessor = require('../models/Assessor');
-    const mongoose = require('mongoose');
-
-    if (targetAssessorId) {
-      if (!mongoose.isValidObjectId(targetAssessorId)) {
-        return res.status(400).json({ success: false, error: 'Invalid assessor ID format.' });
-      }
-      const assessor = await Assessor.findById(targetAssessorId);
-      if (!assessor) {
-        return res.status(404).json({ success: false, error: 'Assessor not found.' });
-      }
-    }
-
-    const tenant = await Tenant.findOne({
-      $or: [
-        { company_id: req.params.id },
-        ...(mongoose.isValidObjectId(req.params.id) ? [{ _id: req.params.id }] : []),
-      ],
-    });
-
-    if (!tenant) {
-      return res.status(404).json({ success: false, error: 'Tenant not found.' });
-    }
-
-    tenant.activeAssessorId = targetAssessorId || null;
-    await tenant.save();
-
-    // Audit log
-    try {
-      const AuditLog = require('../models/AuditLog');
-      if (AuditLog.append) {
-        await AuditLog.append({
-          company_id: tenant.company_id,
-          actor_user_id: req.sessionData ? req.sessionData.user_id : 'SUPERADMIN',
-          actor_role: 'super_admin',
-          event_type: 'TENANT_ASSESSOR_ASSIGNED',
-          event_payload: { activeAssessorId: targetAssessorId },
-        });
-      }
-    } catch (auditErr) {
-      console.warn('[AuditLog Warning]', auditErr.message);
-    }
-
-    res.json({
-      success: true,
-      message: 'Active assessor updated successfully for tenant.',
-      tenant,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+router.patch('/tenants/:id/assessor', superAdminController.updateTenantAssessor);
 
 // 5.2 Stale referral flagging (48-hour threshold)
 // Returns all platform-wide stale referrals with tenant and current assessor populated

@@ -164,6 +164,30 @@ const ResourceLinkSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const SubscriptionSchema = new mongoose.Schema(
+  {
+    tier: {
+      type: String,
+      enum: ['free', 'starter', 'pro', 'enterprise'],
+      default: 'pro',
+    },
+    status: {
+      type: String,
+      enum: ['trialing', 'active', 'past_due', 'canceled'],
+      default: 'trialing',
+    },
+    trialEndsAt: {
+      type: Date,
+      default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+    currentPeriodEnd: { type: Date },
+    customerId: { type: String, default: null },
+    subscriptionCode: { type: String, default: null },
+    maxEmployees: { type: Number, default: 100 },
+  },
+  { _id: false }
+);
+
 /**
  * Tenant / Company schema - root entity of the multi-tenant hierarchy.
  */
@@ -206,6 +230,10 @@ const TenantSchema = new mongoose.Schema(
       },
       default: 'trial',
     },
+    subscription: {
+      type: SubscriptionSchema,
+      default: () => ({}),
+    },
     domain: {
       type: String,
       trim: true,
@@ -223,6 +251,7 @@ const TenantSchema = new mongoose.Schema(
     max_allowed_seats: {
       type: Number,
       required: [true, 'max_allowed_seats is required'],
+      default: 100,
       min: [1, 'max_allowed_seats must be at least 1'],
       validate: {
         validator: Number.isInteger,
@@ -280,6 +309,29 @@ const TenantSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
+/**
+ * Resolves the effective tier:
+ * If subscription.status === 'trialing':
+ *   If new Date() < new Date(subscription.trialEndsAt), effective tier is 'pro'.
+ *   If trial expired, effective tier gracefully falls back to 'free'.
+ * Else return subscription.tier || 'free'.
+ */
+TenantSchema.methods.getEffectiveTier = function getEffectiveTier() {
+  if (!this.subscription) return 'pro';
+  if (this.subscription.status === 'trialing') {
+    const trialEnd = this.subscription.trialEndsAt ? new Date(this.subscription.trialEndsAt) : null;
+    if (trialEnd && new Date() < trialEnd) {
+      return 'pro';
+    }
+    return 'free';
+  }
+  return this.subscription.tier || 'free';
+};
+
+TenantSchema.virtual('effectiveTier').get(function () {
+  return this.getEffectiveTier();
+});
 
 /* ───── indexes ───── */
 TenantSchema.index({ company_id: 1 }, { unique: true, name: 'idx_company_id_unique' });

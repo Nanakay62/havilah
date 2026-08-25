@@ -1,0 +1,46 @@
+# ========================================================
+# Cloudflare Pages Clean Route Rewrites (Status 200)
+# ========================================================
+
+# Clean App & Portal Routes
+/app/dashboard          /private/app/dashboard.html   200
+/app/dashboard.html     /private/app/dashboard.html   200
+/dashboard              /private/app/dashboard.html   200
+/dashboard.html         /private/app/dashboard.html   200
+
+/portal/hr              /private/portal/hr.html       200
+/portal/hr.html         /private/portal/hr.html       200
+/hr                     /private/portal/hr.html       200
+/hr.html                /private/portal/hr.html       200
+
+/app/superadmin          /private/app/superadmin.html 200
+/app/superadmin.html     /private/app/superadmin.html 200
+/superadmin              /private/app/superadmin.html 200
+/superadmin.html         /private/app/superadmin.html 200
+
+/portal/clinical        /public/clinical-portal.html  200
+/portal/clinical.html   /public/clinical-portal.html  200
+/clinical               /public/clinical-portal.html  200
+/clinical-portal.html   /public/clinical-portal.html  200
+
+/activate               /public/activate.html         200
+/activate.html          /public/activate.html         200
+
+/login                  /public/login.html            200
+/login.html             /public/login.html            200
+
+/register               /public/register.html         200
+/register.html          /public/register.html         200
+
+/admin                  /public/admin.html            200
+/admin.html             /public/admin.html            200
+
+# Static Asset Aliases
+/css/*                  /public/css/:splat            200
+/js/*                   /public/js/:splat             200
+/assets/*               /public/assets/:splat         200
+/favicon.ico            /public/favicon.ico           200
+
+# Root and index fallbacks
+/                       /public/index.html            200
+/index.html             /public/index.html            200

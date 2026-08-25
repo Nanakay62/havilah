@@ -63,7 +63,9 @@ app.use(cors({
     'http://localhost:5000',
     'http://127.0.0.1:5000',
     /\.vercel\.app$/,
-    /\.netlify\.app$/
+    /\.netlify\.app$/,
+    /\.pages\.dev$/,
+    ...(process.env.CLIENT_ORIGIN ? [process.env.CLIENT_ORIGIN] : [])
   ],
   credentials: true
 }));

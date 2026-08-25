@@ -1,0 +1,43 @@
+/* ================================================================
+   HAVILAH - Microsoft Fluent / Acrylic Material Design CSS
+   private/app/css/style.css
+   ================================================================ */
+
+/* ── Global Acrylic Card System ── */
+.acrylic-card, .card, .assessment-card, .dashboard-card, .cosmic-card, .stat-card, .kpi-card, .risk-card, .heatmap-card {
+  /* Translucent background with hardware-accelerated blur */
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(20px) saturate(125%);
+  -webkit-backdrop-filter: blur(20px) saturate(125%);
+  
+  /* Rounded Fluent Geometry */
+  border-radius: 12px !important;
+  
+  /* Subtle Fluent 1px stroke border */
+  border: 1px solid rgba(229, 231, 235, 0.8) !important;
+  
+  /* Multi-layered ambient depth shadow */
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.02),
+    0 8px 16px -4px rgba(0, 0, 0, 0.06) !important;
+  
+  /* Smooth hover state lift */
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.acrylic-card:hover, .card:hover, .assessment-card:hover, .dashboard-card:hover, .cosmic-card:hover, .stat-card:hover, .kpi-card:hover, .risk-card:hover, .heatmap-card:hover {
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    0 12px 24px -6px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Dark theme acrylic card override */
+.dark .acrylic-card, .dark .card, .dark .assessment-card, .dark .dashboard-card, .dark .cosmic-card, .dark .stat-card,
+[data-theme="dark"] .acrylic-card, [data-theme="dark"] .card, [data-theme="dark"] .assessment-card, [data-theme="dark"] .dashboard-card, [data-theme="dark"] .cosmic-card, [data-theme="dark"] .stat-card {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    0 8px 16px -4px rgba(0, 0, 0, 0.4) !important;
+}

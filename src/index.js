@@ -75,8 +75,36 @@ export default {
       }
     }
 
-    // Delegate all static assets and clean rewrites to Cloudflare Assets
+    // Static Route Mapping & Rewrites
+    const path = url.pathname;
+    let targetPath = path;
+
+    if (path === '/app/dashboard' || path === '/dashboard' || path === '/dashboard.html') {
+      targetPath = '/app/dashboard.html';
+    } else if (path === '/portal/hr' || path === '/hr' || path === '/hr.html') {
+      targetPath = '/portal/hr.html';
+    } else if (path === '/app/superadmin' || path === '/superadmin' || path === '/superadmin.html') {
+      targetPath = '/app/superadmin.html';
+    } else if (path === '/portal/clinical' || path === '/portal/clinical.html' || path === '/clinical') {
+      targetPath = '/clinical-portal.html';
+    } else if (path === '/login') {
+      targetPath = '/login.html';
+    } else if (path === '/register') {
+      targetPath = '/register.html';
+    } else if (path === '/activate') {
+      targetPath = '/activate.html';
+    } else if (path === '/') {
+      targetPath = '/index.html';
+    }
+
+    // Delegate to Cloudflare Static Assets
     if (env.ASSETS && typeof env.ASSETS.fetch === 'function') {
+      if (targetPath !== path) {
+        const rewrittenUrl = new URL(request.url);
+        rewrittenUrl.pathname = targetPath;
+        const rewrittenRequest = new Request(rewrittenUrl.toString(), request);
+        return env.ASSETS.fetch(rewrittenRequest);
+      }
       return env.ASSETS.fetch(request);
     }
 

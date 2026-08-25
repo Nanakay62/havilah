@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISO 45003 Compliance Console - Havilah Super Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="/js/auth.js"></script>
+<style>
+  :root {
+    --accent: #0D9488;
+    --accent-hover: #0F766E;
+    --accent-light: #F0FDF4;
+    --bg-base: #F8FAFC;
+    --bg-elev: #FFFFFF;
+    --text-1: #0F172A;
+    --text-2: #64748B;
+    --text-muted: #94A3B8;
+    --border: #E2E8F0;
+    --border-light: #F1F5F9;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body, button, input, select, textarea {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .metric-value, .score-display, .chart-value, .tabular-nums, .tooltip-bar-value, .kpi-value, .stat-value {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-1);
+    display: flex;
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 260px;
+    background: var(--bg-elev);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  .sidebar-header {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .sidebar-brand-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .sidebar-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-1);
+    letter-spacing: -0.02em;
+  }
+
+  .sidebar-nav {
+    padding: 20px 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    color: var(--text-2);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+  }
+
+  .nav-item:hover {
+    background: var(--bg-base);
+    color: var(--text-1);
+  }
+
+  .nav-item.active {
+    background: #E6F7F5;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.8;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .user-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .user-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-1);
+  }
+
+  .user-role {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .btn-signout {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-signout:hover {
+    background: #FEF2F2;
+    color: #DC2626;
+    border-color: #FCA5A5;
+  }
+
+  /* Main Content */
+  .main-content {
+    flex: 1;
+    padding: 32px 40px;
+    overflow-y: auto;
+  }
+
+  .page-view {
+    display: none;
+  }
+
+  .page-view.active {
+    display: block;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .page-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
+  .page-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text-1);
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+  }
+
+  .page-subtitle {
+    color: var(--text-2);
+    font-size: 14px;
+    max-width: 680px;
+    line-height: 1.5;
+  }
+
+  .btn-action-primary {
+    background: var(--accent);
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-action-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+  }
+
+  /* Macro Stats Cards Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .stat-card-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 8px;
+  }
+
+  .stat-card-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-1);
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+
+  .stat-card-trend {
+    font-size: 11px;
+    font-weight: 600;
+    color: #10B981; /* green */
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Registry Panel & Table */
+  .registry-panel {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: visible;
+  }
+
+  .action-popover a:hover {
+    background: #F1F5F9;
+  }
+
+  .registry-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #FAFAFC;
+  }
+
+  .registry-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-1);
+  }
+
+  .registry-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-outline {
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-outline:hover {
+    border-color: var(--text-2);
+    color: var(--text-1);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  th {
+    padding: 12px 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: #FAFBFD;
+  }
+
+  td {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: #F8FAFC;
+  }
+
+  /* Subdomain Subtitle */
+  .company-cell-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-1);
+  }
+
+  .company-cell-sub {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* Seat Progress Meter */
+  .seat-meter-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 140px;
+  }
+
+  .seat-count-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+
+  .seat-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #E2E8F0;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .seat-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+
+  .seat-progress-fill.green { background: #10B981; }
+  .seat-progress-fill.amber { background: #F59E0B; }
+  .seat-progress-fill.red { background: #EF4444; }
+
+  /* Status Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .badge-billing {
+    background: #F1F5F9;
+    color: #475569;
+    border: 1px solid #E2E8F0;
+  }
+
+  .badge-sso-active {
+    background: #ECFDF5;
+    color: #047857;
+    border: 1px solid #A7F3D0;
+  }
+
+  .badge-sso-none {
+    background: #FAF5FF;
+    color: #6B21A8;
+    border: 1px solid #E9D5FF;
+  }
+
+  .badge-state-active {
+    background: #E6F7F5;
+    color: #0D9488;
+    border: 1px solid #99F6E4;
+  }
+
+  .badge-state-suspended {
+    background: #FEF2F2;
+    color: #DC2626;
+    border: 1px solid #FCA5A5;
+  }
+
+  .badge-state-expired {
+    background: #FFFBEB;
+    color: #D97706;
+    border: 1px solid #FDE68A;
+  }
+
+  .badge-state-churned {
+    background: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #CBD5E1;
+  }
+
+  .badge-state-pending {
+    background: #EFF6FF;
+    color: #2563EB;
+    border: 1px solid #BFDBFE;
+  }
+
+  /* Action Buttons */
+  .btn-action-toggle {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+  }
+
+  .btn-action-toggle.suspend {
+    background: #FEF2F2;
+    color: #E11D48;
+    border-color: #FECDD3;
+  }
+
+  .btn-action-toggle.suspend:hover {
+    background: #FFE4E6;
+    color: #BE123C;
+  }
+
+  .btn-action-toggle.activate {
+    background: #ECFDF5;
+    color: #059669;
+    border-color: #A7F3D0;
+  }
+
+  .btn-action-toggle.activate:hover {
+    background: #D1FAE5;
+    color: #047857;
+  }
+
+  /* Modal Overlay */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    overflow-y: auto;
+    padding: 20px 12px;
+  }
+
+  .modal {
+    background: #FFFFFF;
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    width: 100%;
+    max-width: 540px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+    border: 1px solid var(--border);
+    margin: auto;
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 18px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 6px;
+  }
+
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--text-1);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  /* Placeholder Sections for Tabs 2, 3, 4 */
+  .card-box {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 28px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
+  }
+
+  .card-box h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text-1);
+  }
+
+  .card-box p {
+    color: var(--text-2);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .audit-log-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+
+  .audit-log-item:last-child {
+    border-bottom: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- Left Navigation Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-brand-badge">ISO 45003</div>
+    <div class="sidebar-title">Compliance Console</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="nav-item active" id="nav-tenants" onclick="switchTab('tenants')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h5m-5 0V11m0 0h5m-5 0h-5"/></svg>
+      1. Tenants & Global
+    </a>
+    <a class="nav-item" id="nav-onboarding" onclick="switchTab('onboarding')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+      2. Onboarding & Consent
+    </a>
+    <a class="nav-item" id="nav-anonymity" onclick="switchTab('anonymity')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      3. Anonymity Engine
+    </a>
+    <a class="nav-item" id="nav-audit" onclick="switchTab('audit')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      4. Safety & Audit
+    </a>
+    <a class="nav-item" id="nav-assessors" onclick="switchTab('assessors')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      5. Medical Assessors &amp; Routing
+    </a>
+    <a class="nav-item" id="nav-whistleblower" onclick="switchTab('whistleblower')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      6. Protected Whistleblower Inquiries
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <span class="user-name">Super Admin</span>
+      <span class="user-role">Platform Operator</span>
+    </div>
+    <button class="btn-signout" onclick="logout()">Sign Out</button>
+  </div>
+</aside>
+
+<!-- Main Workspace -->
+<main class="main-content">
+
+  <!-- TAB 1: Tenants & Global -->
+  <section id="view-tenants" class="page-view active">
+    <div class="section-label">Decoupled Architecture</div>
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">Tenants & Global Schemas</h1>
+        <p class="page-subtitle">Platform-wide SaaS operations isolated in a Super Admin domain. Tracks billing tiers, seat allowances, SSO/SAML configurations, and aggregated system health.</p>
+      </div>
+      <button class="btn-action-primary" onclick="openModal()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+        Provision Tenant
+      </button>
+    </div>
+
+    <!-- Global Assessment Governance Section -->
+    <div class="card-box">
+      <h3>Global Assessment Governance</h3>
+      <p>Configure default lock policies and resolution depths for new tenant provisioning.</p>
+      
+      <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <!-- Lock Policy Matrix -->
+        <div style="flex: 1; min-width: 300px;">
+          <h4 style="margin-bottom: 8px;">Default Lock Policy Matrix</h4>
+          <label style="display: block; margin-bottom: 4px;"><input type="checkbox" id="lock-phq9" checked> PHQ-9 Locked</label>
+          <label style="display: block; margin-bottom: 4px;"><input type="checkbox" id="lock-gad7" checked> GAD-7 Locked</label>
+          <label style="display: block; margin-bottom: 4px;"><input type="checkbox" id="lock-pss10"> PSS-10 Locked</label>
+          <label style="display: block; margin-bottom: 4px;"><input type="checkbox" id="lock-fas10"> FAS-10 Locked</label>
+          <label style="display: block; margin-bottom: 4px;"><input type="checkbox" id="lock-copsoq" checked> COPSOQ III Locked</label>
+        </div>
+
+        <div style="flex: 1; min-width: 300px;">
+          <!-- COPSOQ Resolution Depth -->
+          <h4 style="margin-bottom: 8px;">Default COPSOQ Resolution Depth</h4>
+          <select id="copsoq-depth" class="form-group" style="padding: 6px; border-radius: 4px; border: 1px solid var(--border); width: 100%; max-width: 200px;">
+            <option value="core">Core</option>
+            <option value="middle">Middle</option>
+            <option value="long">Long</option>
+          </select>
+          
+          <!-- Anonymity Rule Badge -->
+          <div style="margin-top: 16px;">
+            <h4 style="margin-bottom: 8px;">Privacy Constraints</h4>
+            <span class="badge badge-state-active">Global N &ge; 5 Anonymity Rule Enforced</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <button class="btn-action-primary" onclick="App.saveGlobalLockDefaults()">Save Global Lock Defaults</button>
+      </div>
+    </div>
+
+    <!-- Macro Metrics Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-title">Total Active Tenants</div>
+        <div class="stat-card-value" id="statTotalTenants">-</div>
+        <div class="stat-card-trend" id="statTenantsTrend">Active Workspaces</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Global Active Seats</div>
+        <div class="stat-card-value" id="statTotalUsers">-</div>
+        <div class="stat-card-trend" id="statUsersTrend">Registered Workers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Aggregated Engagement</div>
+        <div class="stat-card-value" id="statEngagementRate">0.0%</div>
+        <div class="stat-card-trend" id="statEngagementTrend">Response Compliance</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">System Health</div>
+        <div class="stat-card-value" id="statSystemHealth">100%</div>
+        <div class="stat-card-trend">Operational & Isolated</div>
+      </div>
+    </div>
+
+    <!-- Cross-Tenant Benchmark Analytics Card -->
+    <div class="card-box">
+      <h3>Cross-Tenant Benchmark Analytics</h3>
+      <p>Aggregated anonymized psychosocial hazard scores across all active tenants.</p>
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;">
+        <div class="stat-card">
+          <div class="stat-card-title">PHQ-9 Avg</div>
+          <div class="stat-card-value" id="benchPhq9Value">--</div>
+          <div class="stat-card-trend" id="benchPhq9Trend">No Data</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">GAD-7 Avg</div>
+          <div class="stat-card-value" id="benchGad7Value">--</div>
+          <div class="stat-card-trend" id="benchGad7Trend">No Data</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">PSS-10 Avg</div>
+          <div class="stat-card-value" id="benchPss10Value">--</div>
+          <div class="stat-card-trend" id="benchPss10Trend">No Data</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">FAS-10 Avg</div>
+          <div class="stat-card-value" id="benchFas10Value">--</div>
+          <div class="stat-card-trend" id="benchFas10Trend">No Data</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">COPSOQ III</div>
+          <div class="stat-card-value" id="benchCopsoqValue">--</div>
+          <div class="stat-card-trend" id="benchCopsoqTrend">No Data</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Telemetry & External Services Monitor -->
+    <div class="card-box" style="margin-top: 20px;">
+      <h3>System Health & External Services Telemetry</h3>
+      <p>Real-time telemetry pings for platform infrastructure across all client tenants.</p>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+        <div style="padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 10px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 4px;">Email Gateway</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--text-1);" id="telemEmailStatus">Operational</div>
+          <div style="font-size: 11px; color: var(--text-2); margin-top: 4px;" id="telemEmailSub">SMTP / Nodemailer Relay Active</div>
+        </div>
+        <div style="padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 10px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 4px;">Database Connection Pool</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--text-1);" id="telemDbStatus">Healthy (Pool: 10)</div>
+          <div style="font-size: 11px; color: var(--text-2); margin-top: 4px;">MongoDB Socket Active</div>
+        </div>
+        <div style="padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 10px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 4px;">Background Cron Scheduler</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--text-1);" id="telemCronStatus">Verified Active</div>
+          <div style="font-size: 11px; color: var(--text-2); margin-top: 4px;">Midnight Cycle Lock Checks OK</div>
+        </div>
+        <div style="padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 10px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 4px;">Anonymity Engine</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--text-1);" id="telemAnonStatus">N &ge; 5 Active</div>
+          <div style="font-size: 11px; color: var(--text-2); margin-top: 4px;" id="telemAnonSub">Privacy Shield Enforced (N &ge; 5)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tenant Registry Table -->
+    <div class="registry-panel">
+      <div class="registry-header" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+        <div class="registry-title">Tenant Registry</div>
+        <div class="registry-actions" style="display: flex; gap: 10px; align-items: center;">
+          <input type="text" id="tenantSearchInput" placeholder="🔍 Search company name, slug, or domain..." style="padding: 7px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; min-width: 260px;" oninput="filterTenantsTable()">
+          <select id="tenantTierFilter" style="padding: 7px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px;" onchange="filterTenantsTable()">
+            <option value="all">All Tiers</option>
+            <option value="trial">Trial</option>
+            <option value="starter">Starter</option>
+            <option value="professional">Professional</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+          <select id="tenantStateFilter" style="padding: 7px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px;" onchange="filterTenantsTable()">
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+            <option value="archived">Archived</option>
+          </select>
+          <button class="btn-outline" onclick="fetchTenants()">Refresh Data</button>
+        </div>
+      </div>
+      <table id="tenantsTable">
+        <thead>
+          <tr>
+            <th>Tenant Name</th>
+            <th>Billing Tier</th>
+            <th>Active / Max Seats</th>
+            <th>SSO Status</th>
+            <th>Lifecycle State</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- JS dynamic population -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TAB 2: Onboarding & Consent -->
+  <section id="view-onboarding" class="page-view">
+    <div class="section-label">Compliance & Legal Governance</div>
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">Onboarding, Consent & Crisis Fallbacks</h1>
+        <p class="page-subtitle">Manage double opt-in consent terms, ISO 45003 Markdown disclosures, and tenant crisis hotline fallbacks.</p>
+      </div>
+      <button class="btn-action-primary" onclick="App.saveOnboardingPolicy()">Save Policy Settings</button>
+    </div>
+
+    <!-- ISO 45003 Double Opt-in Policy Box -->
+    <div class="card-box">
+      <h3>ISO 45003 Worker Double Opt-In Policy</h3>
+      <p>All active employees must accept the anonymized data processing terms prior to participating in COPSOQ III, PSS-10, PHQ-9, or FAS-10 surveys. Consent is non-coercive and revocable at any time.</p>
+      <div style="display: flex; gap: 20px; margin-top: 14px;">
+        <label style="font-weight: 600;"><input type="checkbox" id="optin-enforced" checked> Mandatory Worker Double Opt-In Enforced</label>
+        <label style="font-weight: 600;"><input type="checkbox" id="optin-revocable" checked> Allow Immediate Worker Consent Revocation</label>
+      </div>
+    </div>
+
+    <!-- Master Terms & Privacy Disclosure Editor -->
+    <div class="card-box">
+      <h3>Master Privacy & Data Processing Disclosure Editor (ISO 45003)</h3>
+      <p>Edit platform-wide privacy disclosures displayed to workers across all client tenants.</p>
+      <textarea id="masterDisclosureText" style="width: 100%; height: 140px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: monospace; font-size: 12px; line-height: 1.5;" placeholder="Enter Markdown disclosure policy..."># ISO 45003 Worker Data Protection Disclosure
+Your survey responses are encrypted and stored in your private employee vault.
+Individual scores are NEVER shared with HR, supervisors, or management.
+HR only receives aggregated reports when at least N >= 5 employees participate in a department.</textarea>
+      <div style="margin-top: 10px; text-align: right;">
+        <button class="btn-outline" onclick="App.saveDisclosurePolicy()">Save Markdown Disclosure</button>
+      </div>
+    </div>
+
+    <!-- Global Crisis Fallback Hotlines -->
+    <div class="card-box">
+      <h3>Global EAP & Crisis Support Fallback Engine</h3>
+      <p>Set system-wide fallback crisis hotlines that automatically populate employee help centers if a client's HR profile leaves theirs blank.</p>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-2); display: block; margin-bottom: 4px;">Fallback EAP Helpline</label>
+          <input type="text" id="globalEapHelpline" value="1-800-555-WELL" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-2); display: block; margin-bottom: 4px;">Fallback Crisis Text Line</label>
+          <input type="text" id="globalCrisisTextline" value="Text HOME to 741741" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: Anonymity Engine -->
+  <section id="view-anonymity" class="page-view">
+    <div class="section-label">Differential Privacy Controls</div>
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">Anonymity Telemetry & Retention Purge</h1>
+        <p class="page-subtitle">Configure strict N-size aggregation thresholds ($N \ge 5$) and automated data retention policies to enforce worker confidentiality.</p>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
+      <div class="card-box" style="margin-bottom: 0;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase;">Middleware Threshold</div>
+        <div style="font-size: 24px; font-weight: 800; color: var(--text-1); margin: 6px 0;">N &ge; 5 Rule</div>
+        <div style="font-size: 12px; color: var(--text-2);">Strict STABILITY_HIGH enforcement</div>
+      </div>
+      <div class="card-box" style="margin-bottom: 0;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase;">Suppressed Reports Counter</div>
+        <div style="font-size: 24px; font-weight: 800; color: var(--accent-hover); margin: 6px 0;" id="statSuppressedCount">0</div>
+        <div style="font-size: 12px; color: var(--text-2);">Department reports masked due to N &lt; 5</div>
+      </div>
+      <div class="card-box" style="margin-bottom: 0;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase;">Telemetry Protection Status</div>
+        <div style="font-size: 24px; font-weight: 800; color: #059669; margin: 6px 0;">VERIFIED ✔️</div>
+        <div style="font-size: 12px; color: var(--text-2);">Re-identification risk: &lt; 0.001%</div>
+      </div>
+    </div>
+
+    <!-- Data Retention Purge Controls -->
+    <div class="card-box">
+      <h3>Automated Data Retention & Purging Engine</h3>
+      <p>Configure automated data retention rules to purge raw micro check-in logs older than the specified retention window while preserving aggregate statistical trends.</p>
+      <div style="display: flex; gap: 16px; align-items: center; margin-top: 14px;">
+        <select id="retentionMonthsSelect" style="padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px;">
+          <option value="12">Purge Logs Older Than 12 Months</option>
+          <option value="24" selected>Purge Logs Older Than 24 Months (Recommended)</option>
+          <option value="36">Purge Logs Older Than 36 Months</option>
+        </select>
+        <button class="btn-action-primary" style="background: #DC2626;" onclick="App.executeDataPurge()">Execute Retention Purge Now</button>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 10px;" id="purgeStatusMessage">Last purge executed 30 days ago. Next scheduled cycle: Midnight.</div>
+    </div>
+  </section>
+
+  <!-- TAB 4: Safety & Audit -->
+  <section id="view-audit" class="page-view">
+    <div class="section-label">Audit Trail & Compliance</div>
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">Safety & Cryptographic Audit Trail</h1>
+        <p class="page-subtitle">Cryptographically verifiable, tamper-evident SHA-256 event logs recording all tenant provisioning, cycle unlocks, and administrative actions.</p>
+      </div>
+      <button class="btn-action-primary" onclick="App.exportAuditCSV()">Export Compliance Audit (CSV)</button>
+    </div>
+    <div class="card-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3>Tamper-Evident SHA-256 Event Log</h3>
+        <button class="btn-outline" onclick="App.fetchAuditLog()">Refresh Audit Log</button>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <input type="text" id="audit-filter" placeholder="Filter by event type, company ID, or actor role..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);" oninput="App.filterAuditLog()">
+      </div>
+      <div style="overflow-x: auto;">
+        <table id="auditLogTable">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Actor Role</th>
+              <th>Event Type</th>
+              <th>Company ID</th>
+              <th>Hash Chain Verification</th>
+            </tr>
+          </thead>
+          <tbody id="audit-log-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 5: Medical Assessors & Reassignment -->
+  <section id="view-assessors" class="page-view">
+    <div class="section-label">Multi-Tenant Clinical Routing &amp; Governance</div>
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">Medical Assessors &amp; Clinical Operations</h1>
+        <p class="page-subtitle">Manage third-party clinical assessment partners, configure tenant-level active assessor routing, and supervise referral queue SLAs &amp; stale reassignments.</p>
+      </div>
+      <button class="btn-action-primary" onclick="openCreateAssessorModal()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+        Provision Medical Assessor
+      </button>
+    </div>
+
+    <!-- 1. Assessors Directory -->
+    <div class="card-box" style="margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <h3>Registered Medical Assessors</h3>
+          <p>Third-party clinical providers serving tenant organizations across the platform.</p>
+        </div>
+        <button class="btn-action-secondary" onclick="loadSuperadminAssessors()">↻ Refresh Assessors</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Assessor Name</th>
+              <th>Email</th>
+              <th>Practice / Organization</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="assessors-table-body">
+            <tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-2);">Loading medical assessors...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. Tenant Active Assessor Routing -->
+    <div class="card-box" style="margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <h3>Tenant Active Assessor Routing</h3>
+          <p>Assign or switch the active medical assessor for each tenant company. Existing referrals remain with their original assessor; new referrals route to the updated assessor.</p>
+        </div>
+        <button class="btn-action-secondary" onclick="loadTenantAssessorAssignments()">↻ Refresh Tenants</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Company Name</th>
+              <th>Slug / Domain</th>
+              <th>Current Active Assessor</th>
+              <th>Assigned Assessor Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tenant-assessor-table-body">
+            <tr><td colspan="4" style="text-align: center; padding: 24px; color: var(--text-2);">Loading tenant routing configurations...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. Stale Referral Reassignment Hub (Pending 48+ Hrs) -->
+    <div class="card-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3>Stale Referrals SLA &amp; Reassignment Hub</h3>
+            <span style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;">48h+ SLA Exceeded</span>
+          </div>
+          <p>Referrals pending over 48 hours without assessor completion. SuperAdmin can manually reassign cases with full audit tracking.</p>
+        </div>
+        <button class="btn-action-secondary" onclick="loadSuperadminStaleReferrals()">↻ Refresh Stale Referrals</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Reference Code</th>
+              <th>Company</th>
+              <th>Assigned Assessor</th>
+              <th>Department</th>
+              <th>Preferred Schedule</th>
+              <th>Pending Time</th>
+              <th>Reassigned History</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="stale-referrals-table-body">
+            <tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-2);">Loading stale referrals...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 6: Protected Whistleblower Inquiries -->
+  <section id="view-whistleblower" class="page-view">
+    <div class="section-label">Conflict of Interest &amp; Ombudsman Ledger</div>
+    <div class="page-header-row">
+      <div>
+        <h1 class="page-title">Protected Whistleblower Inquiries</h1>
+        <p class="page-subtitle">Dedicated independent investigation queue for reports involving HR, Senior Leadership, or Executive Management across all client tenants. Internal HR is cryptographically isolated and bypassed.</p>
+      </div>
+      <button class="btn-outline" onclick="loadConflictReports()" style="display: flex; align-items: center; gap: 6px;">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Refresh Inquiries
+      </button>
+    </div>
+
+    <!-- Macro Metrics Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-title">Total Conflict Inquiries</div>
+        <div class="stat-card-value" id="saConflictTotal">0</div>
+        <div class="stat-card-trend" style="color: #6366F1;">
+          <span>🛡️</span> All Tenant Conflict Filings
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Under Investigation</div>
+        <div class="stat-card-value" id="saConflictInvestigating" style="color: #D97706;">0</div>
+        <div class="stat-card-trend" style="color: #D97706;">
+          <span>⏳</span> Active Ombudsman Reviews
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Action Taken</div>
+        <div class="stat-card-value" id="saConflictAction" style="color: #0D9488;">0</div>
+        <div class="stat-card-trend" style="color: #0D9488;">
+          <span>✓</span> Protective Measures Enacted
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Resolved / Closed</div>
+        <div class="stat-card-value" id="saConflictClosed" style="color: #10B981;">0</div>
+        <div class="stat-card-trend" style="color: #10B981;">
+          <span>🔒</span> Closed Cases
+        </div>
+      </div>
+    </div>
+
+    <!-- Confidential Case Queue Table Box -->
+    <div class="card-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div>
+          <h3>Confidential Case Queue</h3>
+          <p>Direct encrypted dialogue feed with anonymous employees bypassing organization leadership.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="badge badge-state-active" style="display: flex; align-items: center; gap: 4px;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #0D9488; display: inline-block;"></span>
+            Zero-Knowledge Isolated
+          </span>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Tracking Code</th>
+              <th>Organization</th>
+              <th>Category</th>
+              <th>Urgency</th>
+              <th>Date Filed</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="saConflictTableBody">
+            <tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-2);">Loading whistleblower inquiries...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- SuperAdmin Whistleblower Case Modal -->
+<div class="modal-overlay" id="superAdminReportModalBackdrop" style="display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.6);" onclick="if(event.target===this)closeSuperAdminReportModal()">
+  <div class="modal" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto; border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 14px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h2 class="modal-title" style="margin: 0; font-size: 1.15rem;" id="saModalTitle">Case Details</h2>
+          <span id="saModalCodeChip" class="badge" style="font-family: monospace; font-size: 12px; background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE;">WBL-XXXXXX</span>
+        </div>
+        <p style="margin: 4px 0 0; font-size: 12.5px; color: var(--text-2);" id="saModalTenantName">Organization: —</p>
+      </div>
+      <button onclick="closeSuperAdminReportModal()" style="background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px; width: 32px; height: 32px; font-size: 18px; cursor: pointer; color: var(--text-2); display: flex; align-items: center; justify-content: center; transition: all 0.15s;">&times;</button>
+    </div>
+
+    <!-- Metadata Grid -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--bg-base); padding: 14px 16px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 18px;">
+      <div>
+        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Incident Category</div>
+        <div style="font-weight: 700; color: var(--text-1); font-size: 13.5px; margin-top: 3px;" id="saModalCategory">—</div>
+      </div>
+      <div>
+        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Urgency Classification</div>
+        <div style="margin-top: 3px;" id="saModalUrgencyContainer">
+          <span class="badge" id="saModalUrgency" style="font-size: 11.5px; font-weight: 700;">Standard</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incident Description -->
+    <div style="margin-bottom: 18px;">
+      <label style="display: block; font-size: 11px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Confidential Incident Description</label>
+      <div id="saModalDescription" style="background: var(--bg-base); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--text-1); line-height: 1.55; max-height: 130px; overflow-y: auto; white-space: pre-wrap;">—</div>
+    </div>
+
+    <!-- Status Control -->
+    <div style="display: flex; align-items: center; gap: 10px; background: #FAFBFD; border: 1px solid var(--border); padding: 12px 16px; border-radius: var(--radius-md); margin-bottom: 20px;">
+      <label style="font-size: 12px; font-weight: 700; color: var(--text-1); white-space: nowrap;">Investigation Status:</label>
+      <select id="saModalStatusSelect" style="flex: 1; padding: 7px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 13px; background: #fff; color: var(--text-1); font-weight: 600;">
+        <option value="submitted">Submitted (New Report)</option>
+        <option value="under_investigation">Under Investigation (Active Review)</option>
+        <option value="action_taken">Action Taken (Safeguards Enacted)</option>
+        <option value="closed">Closed / Resolved (Investigation Concluded)</option>
+      </select>
+      <button onclick="saveSuperAdminReportStatus()" class="btn-action-primary" id="saSaveStatusBtn" style="padding: 7px 16px; font-size: 12px;">Save Status</button>
+    </div>
+
+    <!-- Thread Feed -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <span style="font-size: 11px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em;">Ombudsman Two-Way Dialogue</span>
+      <span style="font-size: 11px; color: var(--accent); font-weight: 600;">🔒 End-to-End Encrypted</span>
+    </div>
+    <div id="saModalThreadContainer" style="background: var(--bg-base); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; max-height: 220px; min-height: 120px; overflow-y: auto; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px;">
+      <!-- Thread messages dynamically inserted -->
+    </div>
+
+    <!-- Ombudsman Reply Box -->
+    <div style="display: flex; gap: 8px;">
+      <input type="text" id="saModalReplyInput" placeholder="Send secure follow-up note to whistleblower..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendSuperAdminReportReply();}" style="flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; outline: none;">
+      <button onclick="sendSuperAdminReportReply()" class="btn-action-primary" id="saSendReplyBtn" style="padding: 10px 18px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+        <span>Send Note</span>
+        <span>✉️</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Provision Tenant Modal -->
+<div class="modal-overlay" id="provisionModal">
+  <div class="modal cosmic-glass-panel">
+    <div class="modal-title">Provision New Tenant</div>
+    <div class="form-group">
+      <label>Company Name</label>
+      <input type="text" id="tenantName" placeholder="e.g. FZ Safety and Health Centre">
+    </div>
+    <div class="form-group">
+      <label>Subdomain Slug <span style="font-weight: normal; opacity: 0.7;">(Required - auto-generated)</span></label>
+      <input type="text" id="tenantSlug" placeholder="fz-safety-and-health-centre">
+    </div>
+    <div class="form-group">
+      <label>Corporate Email Domain <span style="font-weight: normal; opacity: 0.7;">(Optional - e.g., fzsafety.com)</span></label>
+      <input type="text" id="tenantDomain" placeholder="Leave blank if using generic emails or invite links">
+    </div>
+    <div class="form-group">
+      <label>Billing Tier</label>
+      <select id="tenantTier">
+        <option value="trial">Trial</option>
+        <option value="starter">Starter</option>
+        <option value="professional">Professional</option>
+        <option value="enterprise" selected>Enterprise</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Seat Limit</label>
+      <input type="number" id="tenantSeats" value="100">
+    </div>
+    
+    <div style="margin: 16px 0; border-top: 1px dashed var(--border); padding-top: 12px; font-weight: 700; color: var(--accent); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
+      🔑 Initial HR Admin Login & Activation Setup
+    </div>
+    <div class="form-group">
+      <label>HR Admin Work Email <span style="font-weight: normal; opacity: 0.7;">(Optional - e.g. hr@company.com)</span></label>
+      <input type="email" id="tenantHrEmail" placeholder="hr@company.com">
+    </div>
+    <div class="form-group">
+      <label>HR Admin Password</label>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="position: relative; flex: 1;">
+          <input type="password" id="tenantHrPassword" placeholder="Set or generate password" style="padding-right: 40px; width: 100%;">
+          <button type="button" onclick="togglePasswordVisibility('tenantHrPassword', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 16px; cursor: pointer; opacity: 0.8;" title="Show/Hide Password">👁️</button>
+        </div>
+        <button type="button" onclick="generateRandomPassword('tenantHrPassword')" style="background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;">⚡ Auto-Generate</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Initial Employee Activation Codes Count</label>
+      <input type="number" id="tenantInviteCount" value="5" min="1" max="100">
+    </div>
+
+    <div class="form-group">
+      <label>Default Clinical Partner</label>
+      <select id="tenantClinicalPartner">
+        <option value="FZ Safety and Health" selected>FZ Safety and Health (Default)</option>
+        <option value="Wellframe National Network">Wellframe National Network</option>
+        <option value="Internal EAP Team">Internal EAP Team</option>
+        <option value="Custom External Provider">Custom External Provider</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
+        <input type="checkbox" id="tenantAllowCustomEap" checked>
+        <span>Allow Custom EAP Overrides per Tenant (HR Default Enabled)</span>
+      </label>
+      <div style="font-size: 12px; color: var(--text-2); margin-top: 4px; margin-left: 24px;">
+        Enables HR Administrators to configure custom EAP contact numbers and clinical routing.
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Employee Activation Codes (Optional)</label>
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+        <input type="checkbox" id="provGenerateCodes">
+        <span>Generate initial employee codes during setup (HR Admin manages codes in HR Portal by default)</span>
+      </label>
+    </div>
+    <div class="form-group">
+      <label>Module Entitlements</label>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <label><input type="checkbox" id="entitlement-copsoq" checked> COPSOQ III</label>
+        <label><input type="checkbox" id="entitlement-pss10" checked> PSS-10</label>
+        <label><input type="checkbox" id="entitlement-phq9" checked> PHQ-9</label>
+        <label><input type="checkbox" id="entitlement-gad7" checked> GAD-7</label>
+        <label><input type="checkbox" id="entitlement-fas10"> FAS-10</label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn-action-primary" onclick="createTenant()">Provision Tenant</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Module Flags Modal -->
+<div class="modal-overlay" id="moduleFlagsModal">
+  <div class="modal" style="max-width: 460px;">
+    <div class="modal-title">Edit Survey Module Entitlements</div>
+    <div style="font-size: 13px; color: var(--text-2); margin-bottom: 16px;">
+      Configuring contract add-on entitlements for <strong id="moduleModalCompanyName">Tenant</strong>.
+    </div>
+    <div class="form-group">
+      <label style="font-weight: 700; margin-bottom: 10px; display: block;">Active Framework Entitlements</label>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;"><input type="checkbox" id="mod-daily-pulse" checked> <strong>DAILY_PULSE</strong> - Daily Micro Check-in</label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;"><input type="checkbox" id="mod-phq9" checked> <strong>PHQ-9</strong> - Depression Screening</label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;"><input type="checkbox" id="mod-gad7" checked> <strong>GAD-7</strong> - Anxiety Scale</label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;"><input type="checkbox" id="mod-pss10" checked> <strong>PSS-10</strong> - Perceived Stress Scale</label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;"><input type="checkbox" id="mod-fas10" checked> <strong>FAS-10</strong> - Fatigue Assessment Scale</label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;"><input type="checkbox" id="mod-copsoq" checked> <strong>COPSOQ_III</strong> - Psychosocial Work Environment</label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeModuleFlagsModal()">Cancel</button>
+      <button class="btn-action-primary" onclick="saveModuleFlags()">Save Entitlements</button>
+    </div>
+  </div>
+</div>
+
+<!-- Provision Success Summary Modal -->
+<div class="modal-overlay" id="provisionSuccessModal" style="display: none;">
+  <div class="modal cosmic-glass-panel" style="max-width: 520px; border-radius: 16px;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700;">🚀</div>
+      <div>
+        <h3 style="font-size: 18px; font-weight: 800; margin: 0; color: var(--text-1);" id="succCompanyName">Tenant Provisioned!</h3>
+        <p style="font-size: 12px; color: var(--text-2); margin: 2px 0 0 0;" id="succCompanyMeta">Billing Tier: TRIAL | Seat Limit: 50</p>
+      </div>
+    </div>
+
+    <!-- HR Credentials Box -->
+    <div style="background: var(--bg-base); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px;">🔑 HR Admin Login Credentials</span>
+        <button onclick="copyHrCredentials()" style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copy Login Info</button>
+      </div>
+      <div style="font-size: 13px; display: flex; flex-direction: column; gap: 6px;">
+        <div><strong>Login URL:</strong> <a id="succLoginUrlLink" href="/login.html" target="_blank" style="color: var(--accent); text-decoration: underline;">/login.html</a></div>
+        <div><strong>HR Email:</strong> <span id="succHrEmail" style="font-family: monospace; font-weight: 700; color: var(--text-1);"></span></div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <strong>Password:</strong> 
+          <input type="password" id="succHrPassInput" readonly style="font-family: monospace; font-weight: 700; background: none; border: none; color: var(--text-1); width: 140px;" value="">
+          <button type="button" onclick="togglePasswordVisibility('succHrPassInput', this)" style="background: none; border: none; font-size: 14px; cursor: pointer;">👁️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Employee Activation Codes Box -->
+    <div style="background: var(--bg-base); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #10b981; letter-spacing: 0.5px;">🎫 Employee Activation Codes</span>
+        <button onclick="copyAllActivationCodes()" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #10b981; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copy All Codes</button>
+      </div>
+      <div style="font-size: 12px; color: var(--text-2); margin-bottom: 8px;">Activation URL: <a id="succActivationUrlLink" href="/register.html" target="_blank" style="color: var(--accent); text-decoration: underline;">/register.html</a></div>
+      <div id="succCodesContainer" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; padding: 4px 0;"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-action-primary" onclick="closeProvisionSuccessModal()" style="width: 100%;">Done & Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset HR Password Modal -->
+<div class="modal-overlay" id="resetHrModal" style="display: none;">
+  <div class="modal cosmic-glass-panel" style="max-width: 440px; border-radius: 16px;">
+    <div class="modal-title">🔑 Set HR Admin Password</div>
+    <div style="font-size: 13px; color: var(--text-2); margin-bottom: 16px;">
+      Set a simple custom password or generate one for the HR Administrator of <strong id="resetHrCompanyName">Company</strong>.
+    </div>
+    <div class="form-group">
+      <label>New HR Admin Password</label>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="position: relative; flex: 1;">
+          <input type="password" id="resetHrCustomPassword" placeholder="Enter new password" style="padding-right: 40px; width: 100%;">
+          <button type="button" onclick="togglePasswordVisibility('resetHrCustomPassword', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 16px; cursor: pointer; opacity: 0.8;" title="Show/Hide Password">👁️</button>
+        </div>
+        <button type="button" onclick="generateRandomPassword('resetHrCustomPassword')" style="background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;">⚡ Auto-Generate</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeResetHrModal()">Cancel</button>
+      <button class="btn-action-primary" onclick="submitResetHrPassword()">Save New Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generate Extra Activation Codes Modal -->
+<div class="modal-overlay" id="generateCodesModal" style="display: none;">
+  <div class="modal cosmic-glass-panel" style="max-width: 440px; border-radius: 16px;">
+    <div class="modal-title">🎫 Generate Activation Codes</div>
+    <div style="font-size: 13px; color: var(--text-2); margin-bottom: 16px;">
+      Generate additional employee activation codes for <strong id="genCodesCompanyName">Company</strong>.
+    </div>
+    <div class="form-group">
+      <label>Number of Codes to Generate</label>
+      <input type="number" id="genCodesCount" value="5" min="1" max="100">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeGenerateCodesModal()">Cancel</button>
+      <button class="btn-action-primary" onclick="submitGenerateCodes()">Generate Codes</button>
+    </div>
+  </div>
+</div>
+
+<!-- GLOBAL CUSTOM DIALOG OVERLAY & TOAST CONTAINER -->
+<div class="modal-overlay" id="customDialogOverlay" style="display: none; z-index: 9999; backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.5);">
+  <div class="modal" id="customDialogBox" style="max-width: 440px; border-radius: 16px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+      <div id="customDialogIcon" style="width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; flex-shrink: 0;">⚡</div>
+      <h3 id="customDialogTitle" style="font-size: 1.125rem; font-weight: 700; color: var(--text-1); margin: 0;">Notification</h3>
+    </div>
+    <div id="customDialogMessage" style="font-size: 0.875rem; color: var(--text-2); line-height: 1.5; margin-bottom: 20px; white-space: pre-wrap;"></div>
+    <div id="customDialogActions" style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button class="btn-outline" id="customDialogCancelBtn" style="display: none;">Cancel</button>
+      <button class="btn-action-primary" id="customDialogConfirmBtn">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="customToastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+
+<script src="/js/superadmin.js"></script>
+<script>
+  const App = (function() {
+    function getAuthToken() {
+      return localStorage.getItem('havilah_token') || localStorage.getItem('token') || localStorage.getItem('session_token') || '';
+    }
+
+    async function fetchGlobalDefaults() {
+      try {
+        const token = getAuthToken();
+        const res = await fetch('/api/v1/superadmin/global-defaults', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.locks) {
+            if (document.getElementById('lock-phq9')) document.getElementById('lock-phq9').checked = !!data.locks.phq9;
+            if (document.getElementById('lock-gad7')) document.getElementById('lock-gad7').checked = !!data.locks.gad7;
+            if (document.getElementById('lock-pss10')) document.getElementById('lock-pss10').checked = !!data.locks.pss10;
+            if (document.getElementById('lock-fas10')) document.getElementById('lock-fas10').checked = !!data.locks.fas10;
+            if (document.getElementById('lock-copsoq')) document.getElementById('lock-copsoq').checked = !!data.locks.copsoq;
+          }
+          if (data.copsoqDepth && document.getElementById('copsoq-depth')) {
+            document.getElementById('copsoq-depth').value = data.copsoqDepth;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load global defaults:', e);
+      }
+    }
+
+    async function saveGlobalLockDefaults() {
+      try {
+        const phq9 = document.getElementById('lock-phq9').checked;
+        const gad7 = document.getElementById('lock-gad7').checked;
+        const pss10 = document.getElementById('lock-pss10').checked;
+        const fas10 = document.getElementById('lock-fas10').checked;
+        const copsoq = document.getElementById('lock-copsoq').checked;
+        const copsoqDepth = document.getElementById('copsoq-depth').value;
+
+        const token = getAuthToken();
+        const res = await fetch('/api/v1/superadmin/global-defaults', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            locks: { phq9, gad7, pss10, fas10, copsoq },
+            copsoqDepth
+          })
+        });
+        
+        if (res.ok) {
+          showToast('Lock Defaults Saved', 'Global lock policy matrix updated successfully.', 'success');
+          fetchAuditLog();
+        } else {
+          showToast('Save Failed', 'Failed to update global defaults.', 'error');
+        }
+      } catch (err) {
+        console.error('Error saving global defaults:', err);
+        showToast('Error', 'Error saving global defaults.', 'error');
+      }
+    }
+
+    async function fetchAuditLog() {
+      try {
+        const token = getAuthToken();
+        const res = await fetch('/api/v1/superadmin/audit-log', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          renderAuditLogs(data.logs || []);
+        } else {
+          console.error('Failed to fetch audit log');
+        }
+      } catch (err) {
+        console.error('Error fetching audit logs:', err);
+      }
+    }
+
+    function filterAuditLog() {
+      const filterValue = document.getElementById('audit-filter').value.toLowerCase();
+      const rows = document.querySelectorAll('#audit-log-body tr');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (text.includes(filterValue)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+    
+    function renderAuditLogs(logs) {
+      const tbody = document.getElementById('audit-log-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:16px;">No audit records found.</td></tr>';
+        return;
+      }
+      logs.forEach(log => {
+        const tr = document.createElement('tr');
+        const dateStr = log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A';
+        const actor = log.actor_role || log.actorRole || 'System';
+        const event = log.event_type || log.eventType || 'N/A';
+        const company = log.company_id || log.companyId || 'GLOBAL';
+        tr.innerHTML = `
+          <td>${dateStr}</td>
+          <td><span class="badge badge-billing">${actor}</span></td>
+          <td><strong>${event}</strong></td>
+          <td><code>${company}</code></td>
+          <td><span class="badge badge-state-active">VERIFIED ✔️</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function executeDataPurge() {
+      const months = document.getElementById('retentionMonthsSelect').value;
+      const confirmed = await showCustomConfirm({
+        title: '⚠️ Execute Data Retention Purge?',
+        message: `Are you sure you want to execute data retention purge for raw check-in logs older than ${months} months?\n\nThis action cannot be undone. Aggregate trend metrics will be preserved.`,
+        confirmText: 'Execute Purge',
+        cancelText: 'Cancel',
+        danger: true,
+        icon: '⚠️'
+      });
+
+      if (!confirmed) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/v1/superadmin/purge-data', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ retention_months: parseInt(months) })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Data Purged', `Purged ${data.purged_count} raw log entries older than ${months} months.`, 'success');
+          if (document.getElementById('purgeStatusMessage')) {
+            document.getElementById('purgeStatusMessage').innerText = `Purge completed cleanly at ${new Date().toLocaleTimeString()} (Purged ${data.purged_count} logs).`;
+          }
+        } else {
+          showToast('Purge Failed', data.error || 'Unknown error', 'error');
+        }
+      } catch (err) {
+        console.error('Error executing purge:', err);
+      }
+    }
+
+    function exportAuditCSV() {
+      const rows = Array.from(document.querySelectorAll('#audit-log-body tr'));
+      if (rows.length === 0) return showToast('Export Empty', 'No audit logs available to export.', 'warning');
+
+      let csv = 'Timestamp,Actor Role,Event Type,Company ID,Hash Verification\n';
+      rows.forEach(tr => {
+        const cells = Array.from(tr.querySelectorAll('td')).map(td => `"${td.innerText.replace(/"/g, '""')}"`);
+        csv += cells.join(',') + '\n';
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `havilah_compliance_audit_log_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      link.remove();
+      showToast('Audit Exported', 'Compliance audit log exported as CSV.', 'success');
+    }
+
+    function saveOnboardingPolicy() {
+      showToast('Policy Saved', 'ISO 45003 double opt-in & onboarding policy updated.', 'success');
+    }
+
+    function saveDisclosurePolicy() {
+      showToast('Disclosure Saved', 'Master Privacy & ISO 45003 Markdown Disclosure updated.', 'success');
+    }
+
+    // Auto load audit log and global defaults on page init
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchAuditLog();
+      fetchGlobalDefaults();
+    });
+
+    return {
+      saveGlobalLockDefaults,
+      fetchGlobalDefaults,
+      fetchAuditLog,
+      filterAuditLog,
+      executeDataPurge,
+      exportAuditCSV,
+      saveOnboardingPolicy,
+      saveDisclosurePolicy
+    };
+  })();
+</script>
+
+<!-- Glassmorphic Privacy & Anonymity Modal -->
+<div id="privacy-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(2,6,23,0.85); backdrop-filter:blur(8px); justify-content:center; align-items:center; z-index:9999;">
+  <div style="background:rgba(15,23,42,0.95); border:1px solid rgba(45,212,191,0.3); border-radius:16px; padding:24px; max-width:500px; width:100%; color:#e2e8f0; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:12px; margin-bottom:16px;">
+      <h3 style="color:#2dd4bf; margin:0; font-size:1.25rem; font-weight:700;">🔒 Data Retention & Anonymity Guarantee</h3>
+      <button onclick="document.getElementById('privacy-modal').style.display='none'" style="background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer;">&times;</button>
+    </div>
+    <div style="font-size:0.875rem; line-height:1.6;">
+      <p style="font-weight:600; color:#f8fafc; margin-top:8px;">🔒 Hardcoded Anonymity Threshold (N ≥ 5)</p>
+      <p style="margin-bottom:12px;">Department risk scores are displayed ONLY when at least 5 responses (N ≥ 5) have been submitted. Smaller team metrics are automatically suppressed or rolled up.</p>
+      <p style="font-weight:600; color:#f8fafc; margin-top:8px;">🛡️ Zero Raw Data Exposure to HR</p>
+      <p style="margin-bottom:12px;">HR Administrators view aggregate statistical trends only. Individual PHQ-9, GAD-7, and COPSOQ III responses are cryptographically detached from employee accounts and never accessible.</p>
+      <p style="font-weight:600; color:#f8fafc; margin-top:8px;">⏳ Data Retention Policy</p>
+      <p style="margin-bottom:0;">Aggregated logs are retained for ISO 45003 compliance audit reporting according to company policies and automatically purged thereafter.</p>
+    </div>
+    <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+      <button onclick="document.getElementById('privacy-modal').style.display='none'" style="background:rgba(45,212,191,0.2); border:1px solid rgba(45,212,191,0.4); color:#5eead4; font-weight:600; padding:8px 16px; border-radius:8px; cursor:pointer;">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Extend Access Modal ═══ -->
+<div id="extendAccessOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeExtendModal()">
+  <div style="background:rgba(15,15,30,0.97);border:1px solid rgba(99,102,241,0.2);border-radius:20px;width:95%;max-width:480px;box-shadow:0 0 80px rgba(99,102,241,0.12);padding:32px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:24px;">📅</span>
+        <div>
+          <h3 style="margin:0;color:#e0e0e0;font-size:18px;">Extend Tenant Access</h3>
+          <p id="extendCompanyName" style="margin:2px 0 0;font-size:12px;color:#6b7280;"></p>
+        </div>
+      </div>
+      <button onclick="closeExtendModal()" style="background:none;border:none;color:#6b7280;font-size:20px;cursor:pointer;">&times;</button>
+    </div>
+    <div style="margin-bottom:20px;padding:14px 16px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.06);">
+      <span style="font-size:12px;color:#6b7280;">Current Expiration</span>
+      <p id="extendCurrentExpiry" style="margin:4px 0 0;font-size:16px;color:#e0e0e0;font-weight:600;"></p>
+    </div>
+    <div style="margin-bottom:20px;">
+      <p style="font-size:13px;color:#9ca3af;margin:0 0 10px;">Quick Select</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <button onclick="setExtendDays(15)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+15d</button>
+        <button onclick="setExtendDays(30)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+30d</button>
+        <button onclick="setExtendDays(60)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+60d</button>
+        <button onclick="setExtendDays(90)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+90d</button>
+      </div>
+    </div>
+    <div style="margin-bottom:24px;">
+      <p style="font-size:13px;color:#9ca3af;margin:0 0 8px;">Custom (days)</p>
+      <input type="number" id="extendCustomDays" min="1" max="365" placeholder="Enter number of days..." style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#e0e0e0;font-size:14px;box-sizing:border-box;">
+    </div>
+    <button id="extendSubmitBtn" onclick="submitExtendAccess()" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.3s;">Extend Access</button>
+  </div>
+</div>
+
+<!-- ═══ Create Medical Assessor Modal ═══ -->
+<div id="createAssessorModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(15,23,42,0.6);backdrop-filter:blur(8px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeCreateAssessorModal()">
+  <div style="background:#ffffff;border:1px solid var(--border);border-radius:16px;width:95%;max-width:480px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);padding:32px;color:var(--text-1);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:24px;">🏥</span>
+        <div>
+          <h3 style="margin:0;color:var(--text-1);font-size:18px;font-weight:700;">Provision Medical Assessor</h3>
+          <p style="margin:2px 0 0;font-size:12px;color:var(--text-2);">Register a clinical partner entity</p>
+        </div>
+      </div>
+      <button onclick="closeCreateAssessorModal()" style="background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+    <form onsubmit="submitCreateAssessor(event)">
+      <div style="margin-bottom:16px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px;">Assessor Full Name *</label>
+        <input type="text" id="newAssessorName" class="form-input" placeholder="e.g. Dr. Edith Clarke" required style="width:100%;padding:10px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:14px;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px;">Login Email *</label>
+        <input type="email" id="newAssessorEmail" class="form-input" placeholder="e.g. nanakwamedickson62@gmail.com" required style="width:100%;padding:10px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:14px;">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px;">Practice / Clinic Organization</label>
+        <input type="text" id="newAssessorOrg" class="form-input" placeholder="e.g. FZ Safety & Health" style="width:100%;padding:10px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:14px;">
+      </div>
+      <div style="margin-bottom:24px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px;">Temporary Password *</label>
+        <input type="password" id="newAssessorPassword" class="form-input" placeholder="••••••••" required style="width:100%;padding:10px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:14px;">
+      </div>
+      <button type="submit" id="createAssessorBtn" style="width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Provision Assessor</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ Reassign Referral Modal ═══ -->
+<div id="reassignReferralModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(15,23,42,0.6);backdrop-filter:blur(8px);align-items:center;justify-content:center;" onclick="if(event.target===this)closeReassignModal()">
+  <div style="background:#ffffff;border:1px solid var(--border);border-radius:16px;width:95%;max-width:500px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);padding:32px;color:var(--text-1);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:24px;">🔄</span>
+        <div>
+          <h3 style="margin:0;color:var(--text-1);font-size:18px;font-weight:700;">Reassign Stale Referral</h3>
+          <p id="reassignModalRefCode" style="margin:2px 0 0;font-size:13px;color:#dc2626;font-family:monospace;font-weight:700;"></p>
+        </div>
+      </div>
+      <button onclick="closeReassignModal()" style="background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+    
+    <div style="margin-bottom:18px;padding:12px 16px;background:#f8fafc;border-radius:8px;border:1px solid var(--border);font-size:13px;">
+      <div style="color:var(--text-2);margin-bottom:4px;">Organization: <strong id="reassignModalCompany" style="color:var(--text-1);">—</strong></div>
+      <div style="color:var(--text-2);">Current Assessor: <strong id="reassignModalCurrentAssessor" style="color:#dc2626;">—</strong></div>
+    </div>
+
+    <div style="margin-bottom:18px;padding:12px 16px;background:#F0FDF4;border-radius:8px;border:1px solid #BBF7D0;font-size:12px;color:#15803D;">
+      💡 <strong>Default Recommendation:</strong> <span id="reassignModalActiveSuggestion" style="font-weight:600;">Tenant Active Assessor</span>
+    </div>
+
+    <form onsubmit="submitReassignCase(event)">
+      <input type="hidden" id="reassignReferralId" />
+      <div style="margin-bottom:24px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px;">Select New Medical Assessor (or override):</label>
+        <select id="reassignNewAssessorSelect" required style="width:100%;padding:10px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:13px;">
+          <option value="">Choose an active assessor...</option>
+        </select>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" onclick="closeReassignModal()" style="padding:10px 16px;background:#f1f5f9;border:1px solid var(--border);border-radius:8px;color:var(--text-2);font-weight:500;cursor:pointer;">Cancel</button>
+        <button type="submit" id="reassignSubmitBtn" style="padding:10px 20px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Confirm Reassignment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>

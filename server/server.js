@@ -65,6 +65,7 @@ app.use(cors({
     /\.vercel\.app$/,
     /\.netlify\.app$/,
     /\.pages\.dev$/,
+    /\.workers\.dev$/,
     ...(process.env.CLIENT_ORIGIN ? [process.env.CLIENT_ORIGIN] : [])
   ],
   credentials: true

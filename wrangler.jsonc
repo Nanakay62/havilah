@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "havilah",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-25",
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  },
+  "vars": {
+    "BACKEND_API_URL": "https://havilah-api.onrender.com"
+  }
+}

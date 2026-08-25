@@ -1,11 +1,1127 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0; url=public/index.html">
-  <title>Redirecting...</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Havilah - Occupational Health & Wellness Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --accent: #0d9488;
+    --accent-deep: #0f766e;
+    --accent-soft: rgba(13, 148, 136, 0.08);
+    --blue: #0284c7;
+    --indigo: #4f46e5;
+    --purple: #7c3aed;
+    --critical: #e11d48;
+    --moderate: #d97706;
+    --healthy: #059669;
+    --bg-base: #FFFFFF;
+    --bg-elev: #FFFFFF;
+    --bg-acrylic: rgba(255, 255, 255, 0.88);
+    --bg-acrylic-strong: rgba(255, 255, 255, 0.96);
+    --text-1: #0f172a;
+    --text-2: #334155;
+    --text-3: #64748b;
+    --text-on-accent: #FFFFFF;
+    --border: rgba(15, 23, 42, 0.08);
+    --border-strong: rgba(15, 23, 42, 0.14);
+    --radius-sm: 10px;
+    --radius: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.03);
+    --shadow-md: 0 8px 28px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.03);
+    --shadow-lg: 0 18px 48px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04);
+    --shadow-accent: 0 12px 32px rgba(13, 148, 136, 0.22);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body, button, input, select, textarea {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .metric-value, .score-display, .chart-value, .tabular-nums, .tooltip-bar-value, .kpi-value, .stat-value {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+  body {
+    background: #FFFFFF;
+    color: var(--text-1);
+    line-height: 1.6;
+    font-size: 15px;
+    overflow-x: hidden;
+    min-height: 100vh;
+    position: relative;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background:
+      radial-gradient(ellipse 80% 60% at 12% 8%, rgba(13, 148, 136, 0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 50% at 88% 18%, rgba(79, 70, 229, 0.05) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 50% 95%, rgba(2, 132, 199, 0.05) 0%, transparent 55%),
+      #FFFFFF;
+    pointer-events: none;
+  }
+  h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; line-height: 1.18; color: var(--text-1); }
+  .display { font-size: clamp(2.4rem, 5.2vw, 4.2rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; }
+  .h1 { font-size: clamp(2rem, 3.6vw, 2.8rem); font-weight: 700; letter-spacing: -0.03em; }
+  .h2 { font-size: clamp(1.5rem, 2.4vw, 2rem); font-weight: 600; letter-spacing: -0.025em; }
+  .h3 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.015em; }
+  .h4 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+  .lead { font-size: 1.125rem; color: var(--text-2); line-height: 1.55; }
+  .eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-deep); }
+  .meta { font-size: 0.8125rem; color: var(--text-3); }
+
+  /* ============ HEADER ============ */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg-acrylic);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border-bottom: 1px solid var(--border);
+  }
+  .header-inner {
+    max-width: 1440px; margin: 0 auto; padding: 0 32px;
+    height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text-1);
+    font-weight: 700; font-size: 1.0625rem; letter-spacing: -0.02em;
+    background: none; border: none; cursor: pointer; font-family: inherit;
+  }
+  .brand-mark {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--indigo) 100%);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+  }
+  .brand-mark svg { width: 16px; height: 16px; }
+  .nav {
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(241, 245, 249, 0.8);
+    padding: 4px; border-radius: 12px; border: 1px solid var(--border);
+  }
+  .nav-item {
+    padding: 8px 16px; border-radius: 9px;
+    font-size: 0.875rem; font-weight: 500; color: var(--text-2);
+    cursor: pointer; border: none; background: transparent; font-family: inherit;
+    transition: all 0.2s var(--ease-out); white-space: nowrap;
+  }
+  .nav-item:hover { color: var(--text-1); background: #ffffff; }
+  .nav-item.active { background: var(--bg-elev); color: var(--text-1); box-shadow: var(--shadow-xs); }
+  .header-right { display: flex; align-items: center; gap: 12px; justify-content: flex-end; }
+
+  /* ============ BUTTONS ============ */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 22px; border-radius: 12px; font-family: inherit;
+    font-size: 0.9rem; font-weight: 600; cursor: pointer;
+    border: 1px solid transparent; transition: all 0.25s var(--ease-out);
+    text-decoration: none; letter-spacing: -0.01em; white-space: nowrap;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+    color: white; box-shadow: var(--shadow-accent), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(13, 148, 136, 0.32), inset 0 1px 0 rgba(255,255,255,0.25); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-ghost {
+    background: var(--bg-acrylic-strong); color: var(--text-1);
+    border-color: var(--border-strong); backdrop-filter: blur(20px);
+  }
+  .btn-ghost:hover { background: var(--bg-elev); transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--accent); }
+  .btn-ghost:active { transform: translateY(0); }
+  .btn-sm { padding: 8px 16px; font-size: 0.8125rem; border-radius: 10px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+  .btn svg { width: 16px; height: 16px; }
+
+  /* ============ HERO ============ */
+  .hero { padding: 80px 0 60px; display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+  .hero-content { max-width: 580px; }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px 6px 6px; border-radius: 100px;
+    background: rgba(13, 148, 136, 0.06); border: 1px solid rgba(13, 148, 136, 0.18);
+    font-size: 0.75rem; font-weight: 600; color: var(--text-2); margin-bottom: 28px;
+    backdrop-filter: blur(20px);
+  }
+  .hero-tag-pill {
+    background: var(--accent-soft); color: var(--accent-deep);
+    padding: 3px 10px; border-radius: 100px;
+    font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em;
+  }
+  .hero h1 { margin-bottom: 20px; }
+  .hero h1 .accent {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 40%, #4f46e5 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero-lead { margin-bottom: 36px; max-width: 520px; }
+  .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
+  .hero-trust { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .hero-trust-item { display: flex; flex-direction: column; gap: 2px; }
+  .hero-trust-num { font-size: 1.5rem; font-weight: 700; color: var(--text-1); letter-spacing: -0.025em; }
+  .hero-trust-label { font-size: 0.75rem; color: var(--text-3); }
+
+  /* ============ DEVICE FRAME ============ */
+  .device-frame {
+    position: relative; padding: 14px;
+    background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+    border-radius: 22px;
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12), 0 8px 20px rgba(15, 23, 42, 0.05);
+  }
+  .device-screen {
+    background: #ffffff; border-radius: 12px; overflow: hidden;
+    aspect-ratio: 16 / 11; position: relative;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+  }
+  .device-stand {
+    width: 38%; height: 36px; margin: 0 auto;
+    background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+    clip-path: polygon(15% 0, 85% 0, 100% 100%, 0% 100%);
+    margin-top: -1px; position: relative; z-index: -1;
+  }
+  .mini-dash { padding: 14px 16px; height: 100%; display: flex; flex-direction: column; gap: 10px; font-size: 9px; }
+  .mini-dash-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .mini-dash-title { font-weight: 700; font-size: 11px; letter-spacing: -0.01em; color: var(--text-1); }
+  .mini-dash-pills { display: flex; gap: 4px; }
+  .mini-pill { padding: 2px 7px; border-radius: 5px; background: rgba(0,0,0,0.05); font-size: 8px; font-weight: 600; color: var(--text-2); }
+  .mini-pill.active { background: var(--accent); color: white; }
+  .mini-dash-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .mini-kpi { background: white; border-radius: 7px; padding: 7px 8px; border: 1px solid var(--border); }
+  .mini-kpi-label { font-size: 7px; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mini-kpi-value { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; margin-top: 1px; color: var(--text-1); }
+  .mini-kpi-trend { font-size: 7px; color: var(--healthy); font-weight: 600; }
+  .mini-kpi-trend.down { color: var(--critical); }
+  .mini-dash-charts { display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; flex: 1; min-height: 0; }
+  .mini-chart-card { background: white; border-radius: 8px; padding: 9px; border: 1px solid var(--border); display: flex; flex-direction: column; }
+  .mini-chart-title { font-size: 8px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; }
+  .mini-bars { display: flex; align-items: flex-end; gap: 3px; height: 100%; padding-top: 4px; }
+  .mini-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 4px; }
+  .mini-radar { width: 100%; aspect-ratio: 1; max-height: 100%; }
+  .float-card {
+    position: absolute; background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--border-strong); border-radius: 14px; padding: 12px 14px;
+    box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px;
+    animation: floatCard 4s ease-in-out infinite;
+  }
+  @keyframes floatCard { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .float-card-1 { top: 8%; left: -32px; animation-delay: 0s; }
+  .float-card-2 { bottom: 12%; right: -28px; animation-delay: 1.5s; }
+  .float-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .float-icon-teal { background: var(--accent-soft); color: var(--accent-deep); }
+  .float-icon-purple { background: rgba(124, 58, 237, 0.1); color: var(--purple); }
+  .float-icon svg { width: 17px; height: 17px; }
+  .float-label { font-size: 0.6875rem; color: var(--text-3); font-weight: 600; }
+  .float-value { font-size: 0.9375rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-1); }
+
+  /* ============ SECTIONS ============ */
+  .section { padding: 80px 0; }
+  .section-header { text-align: center; max-width: 680px; margin: 0 auto 56px; }
+  .section-header .eyebrow { display: inline-block; margin-bottom: 14px; }
+  .section-header h2 { margin-bottom: 14px; }
+  .section-header p { color: var(--text-2); font-size: 1.0625rem; }
+  .trust-strip {
+    display: flex; align-items: center; justify-content: center; gap: 48px;
+    padding: 32px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; opacity: 0.85;
+  }
+  .trust-strip-item { font-weight: 700; font-size: 1.0625rem; letter-spacing: -0.02em; color: var(--text-2); display: flex; align-items: center; gap: 8px; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .feature {
+    background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px);
+    border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px;
+    transition: all 0.4s var(--ease-out); position: relative; overflow: hidden;
+    box-shadow: var(--shadow-xs);
+  }
+  .feature::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--indigo));
+    transform: scaleX(0); transform-origin: left; transition: transform 0.4s var(--ease-out);
+  }
+  .feature:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--border-strong); }
+  .feature:hover::before { transform: scaleX(1); }
+  .feature-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-deep); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
+  .feature-icon svg { width: 22px; height: 22px; }
+  .feature h3 { margin-bottom: 8px; font-size: 1.0625rem; }
+  .feature p { color: var(--text-2); font-size: 0.9rem; line-height: 1.55; }
+  
+  .experiences { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .experience-card {
+    background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-xl);
+    padding: 36px; position: relative; overflow: hidden; transition: all 0.4s var(--ease-out);
+    box-shadow: var(--shadow-sm);
+  }
+  .experience-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .experience-tag { display: inline-block; padding: 5px 12px; border-radius: 100px; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 18px; }
+  .experience-card.employee .experience-tag { background: var(--accent-soft); color: var(--accent-deep); }
+  .experience-card.hr .experience-tag { background: rgba(124, 58, 237, 0.1); color: var(--purple); }
+  .experience-card h3 { font-size: 1.5rem; margin-bottom: 12px; }
+  .experience-card p { color: var(--text-2); margin-bottom: 24px; }
+  .experience-list { list-style: none; margin-bottom: 28px; }
+  .experience-list li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 0.9rem; color: var(--text-1); }
+  .experience-list svg { width: 18px; height: 18px; color: var(--accent-deep); flex-shrink: 0; margin-top: 1px; }
+  .experience-card.hr .experience-list svg { color: var(--purple); }
+
+  .stats-band {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: var(--radius-xl); padding: 56px 48px; color: white;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; position: relative; overflow: hidden;
+    box-shadow: var(--shadow-lg);
+  }
+  .stats-band::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 50% 80% at 10% 50%, rgba(13, 148, 136, 0.25) 0%, transparent 60%), radial-gradient(ellipse 40% 70% at 90% 50%, rgba(79, 70, 229, 0.20) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .stat { position: relative; }
+  .stat-num { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.035em; background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; line-height: 1; }
+  .stat-label { color: rgba(255,255,255,0.75); font-size: 0.875rem; }
+
+  /* ============ MAIN ============ */
+  main { max-width: 1440px; margin: 0 auto; padding: 0 32px; }
+
+  .mobile-menu-btn {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: var(--text-1);
+    cursor: pointer;
+  }
+  .mobile-menu-btn svg { width: 20px; height: 20px; }
+  .mobile-menu-drawer {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 20px;
+    background: var(--bg-acrylic-strong);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    transition: all 0.3s var(--ease-out);
+  }
+  .mobile-menu-drawer.open { display: flex; }
+  .mobile-nav-item {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-1);
+    background: rgba(0,0,0,0.03);
+    border: 1px solid var(--border);
+    text-align: left;
+    cursor: pointer;
+  }
+  .mobile-drawer-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 1100px) {
+    .hero { grid-template-columns: 1fr; gap: 40px; }
+    .features { grid-template-columns: repeat(2, 1fr); }
+    .experiences { grid-template-columns: 1fr; }
+    .stats-band { grid-template-columns: repeat(2, 1fr); padding: 40px 32px; }
+  }
+  @media (max-width: 768px) {
+    .nav, .header-right { display: none !important; }
+    .mobile-menu-btn { display: flex !important; align-items: center; justify-content: center; }
+    
+    /* Contrast & Accessibility for Hero Text */
+    #particle-brain-container { opacity: 0.25 !important; }
+    .hero-content { position: relative; z-index: 10; }
+    .display, .hero h1 { text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9); }
+    .lead, .hero-lead { color: #1e293b !important; font-weight: 500 !important; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9); }
+
+    /* ISO Badge Vertical Stacking */
+    .hero-tag {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      border-radius: 14px !important;
+      padding: 10px 14px !important;
+      gap: 6px !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      white-space: normal !important;
+    }
+    .hero-tag-pill {
+      align-self: flex-start !important;
+      white-space: nowrap !important;
+    }
+  }
+  @media (max-width: 720px) {
+    main { padding: 0 20px; }
+    .header-inner { padding: 0 20px; }
+    .hero { padding: 48px 0 40px; }
+    .section { padding: 56px 0; }
+    .features { grid-template-columns: 1fr; }
+    .stats-band { grid-template-columns: 1fr 1fr; gap: 24px; padding: 32px 24px; }
+    .stat-num { font-size: 2rem; }
+    .float-card-1, .float-card-2 { display: none; }
+  }
+
+  /* ============ PRICING ============ */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    align-items: stretch;
+  }
+  @media (max-width: 960px) {
+    .pricing-grid { grid-template-columns: 1fr; max-width: 460px; }
+  }
+  .pricing-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s var(--ease-out);
+  }
+  .pricing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-strong);
+  }
+  .pricing-card.popular {
+    border: 2px solid var(--accent);
+    box-shadow: 0 12px 36px rgba(13, 148, 136, 0.15);
+  }
+  .pricing-badge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--indigo) 100%);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 99px;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+    white-space: nowrap;
+  }
+  .pricing-tier-name { font-size: 1.25rem; font-weight: 700; color: var(--text-1); margin-bottom: 6px; }
+  .pricing-desc { font-size: 0.875rem; color: var(--text-2); min-height: 42px; margin-bottom: 20px; line-height: 1.45; }
+  .pricing-price-wrap { display: flex; align-items: baseline; gap: 8px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .pricing-price-main { font-size: 2.2rem; font-weight: 800; color: var(--text-1); letter-spacing: -0.03em; }
+  .pricing-price-alt { font-size: 0.95rem; color: var(--text-3); font-weight: 500; }
+  .pricing-features { list-style: none; padding: 0; margin: 0 0 32px 0; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+  .pricing-feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 0.875rem; color: var(--text-2); line-height: 1.4; }
+  .pricing-feature-item svg { width: 18px; height: 18px; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+</style>
 </head>
 <body>
-  <p>The architecture has been updated. If you are not redirected automatically, please <a href="public/index.html">click here to go to the new Landing Page</a>.</p>
+
+<div id="particle-brain-container" style="position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: #FFFFFF;">
+  <canvas id="brainCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+</div>
+
+<!-- ============ HEADER ============ -->
+<header class="header" role="banner">
+  <div class="header-inner">
+    <button class="brand" onclick="window.location.href='/'" aria-label="Havilah home">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/></svg>
+      </div>
+      Havilah
+    </button>
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
+      <svg class="hamburger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <svg class="close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <nav class="nav" role="navigation" aria-label="Primary">
+      <button class="nav-item active" onclick="window.scrollTo({top:0, behavior:'smooth'})">Platform Overview</button>
+      <a href="#pricing" class="nav-item" style="text-decoration:none;">Pricing</a>
+    </nav>
+    <div class="header-right">
+      <button class="btn btn-ghost btn-sm" onclick="App.bookDemo()">Book Demo</button>
+      <button class="btn btn-primary btn-sm" onclick="App.openRegisterModal('pro')">Start Pro Trial</button>
+      <a href="/login.html" class="btn btn-ghost btn-sm" style="text-decoration:none;">Login</a>
+    </div>
+  </div>
+  <!-- Mobile Collapsible Menu Drawer -->
+  <div class="mobile-menu-drawer" id="mobileMenuDrawer">
+    <button class="mobile-nav-item active" onclick="toggleMobileMenu(); window.scrollTo({top:0, behavior:'smooth'});">Platform Overview</button>
+    <a href="#pricing" class="mobile-nav-item" onclick="toggleMobileMenu();" style="text-decoration:none;">Pricing</a>
+    <button class="btn btn-primary btn-sm mobile-drawer-btn" onclick="toggleMobileMenu(); App.openRegisterModal('pro');">Start Pro Trial</button>
+    <button class="btn btn-ghost btn-sm mobile-drawer-btn" onclick="toggleMobileMenu(); App.bookDemo();">Book Demo</button>
+    <a href="/login.html" class="btn btn-ghost btn-sm mobile-drawer-btn" style="text-decoration:none;">Login</a>
+  </div>
+</header>
+
+<main id="main" style="position: relative; z-index: 10;">
+
+<!-- ============ LANDING VIEW ============ -->
+<section class="view active" id="view-landing" aria-label="Platform overview">
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-tag">
+        <span class="hero-tag-pill">✓ ISO 45003 COMPLIANT</span>
+        Clinical Psychosocial Risk & Wellbeing Platform
+      </div>
+      <h1 class="display">Workplace wellbeing,<br><span class="accent">measured with care.</span></h1>
+        <p class="lead">Havilah gives your people a confidential space to check in on their mental health, and gives your HR team aggregated, actionable insight - without ever compromising privacy.</p>
+      <div class="hero-cta">
+        <button class="btn btn-primary" onclick="App.startTrial()">
+          Start Free Trial
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button class="btn btn-ghost" onclick="App.bookDemo()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Book Enterprise Demo
+        </button>
+      </div>
+      <div class="hero-trust">
+        <div class="hero-trust-item"><div class="hero-trust-num">98%</div><div class="hero-trust-label">Survey completion</div></div>
+        <div class="hero-trust-item"><div class="hero-trust-num">240+</div><div class="hero-trust-label">Enterprises served</div></div>
+        <div class="hero-trust-item"><div class="hero-trust-num">ISO 45003</div><div class="hero-trust-label">Certified &amp; HIPAA</div></div>
+      </div>
+    </div>
+    <div style="position: relative;">
+      <div class="device-frame">
+        <div class="device-screen">
+          <div class="mini-dash">
+            <div class="mini-dash-header">
+              <div class="mini-dash-title">Havilah · Analytics</div>
+              <div class="mini-dash-pills"><span class="mini-pill active">30d</span><span class="mini-pill">90d</span><span class="mini-pill">1y</span></div>
+            </div>
+            <div class="mini-dash-kpis">
+              <div class="mini-kpi"><div class="mini-kpi-label">Participants</div><div class="mini-kpi-value">1,842</div><div class="mini-kpi-trend">+12.4%</div></div>
+              <div class="mini-kpi"><div class="mini-kpi-label">Avg Score</div><div class="mini-kpi-value">74</div><div class="mini-kpi-trend">+3.1%</div></div>
+              <div class="mini-kpi"><div class="mini-kpi-label">At Risk</div><div class="mini-kpi-value">8.2%</div><div class="mini-kpi-trend down">+0.4%</div></div>
+              <div class="mini-kpi"><div class="mini-kpi-label">Response</div><div class="mini-kpi-value">91%</div><div class="mini-kpi-trend">+5.0%</div></div>
+            </div>
+            <div class="mini-dash-charts">
+              <div class="mini-chart-card">
+                <div class="mini-chart-title">Risk distribution · 8 weeks</div>
+                <div class="mini-bars">
+                  <div class="mini-bar" style="height: 35%; background: linear-gradient(180deg, #059669, #047857);"></div>
+                  <div class="mini-bar" style="height: 45%; background: linear-gradient(180deg, #059669, #047857);"></div>
+                  <div class="mini-bar" style="height: 40%; background: linear-gradient(180deg, #059669, #047857);"></div>
+                  <div class="mini-bar" style="height: 55%; background: linear-gradient(180deg, #d97706, #b45309);"></div>
+                  <div class="mini-bar" style="height: 50%; background: linear-gradient(180deg, #d97706, #b45309);"></div>
+                  <div class="mini-bar" style="height: 60%; background: linear-gradient(180deg, #d97706, #b45309);"></div>
+                  <div class="mini-bar" style="height: 38%; background: linear-gradient(180deg, #059669, #047857);"></div>
+                  <div class="mini-bar" style="height: 30%; background: linear-gradient(180deg, #059669, #047857);"></div>
+                </div>
+              </div>
+              <div class="mini-chart-card">
+                <div class="mini-chart-title">5-Dimension radar</div>
+                <svg viewBox="0 0 100 100" class="mini-radar">
+                  <polygon points="50,8 88,30 88,70 50,92 12,70 12,30" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="0.5"/>
+                  <polygon points="50,18 78,35 78,65 50,82 22,65 22,35" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="0.5"/>
+                  <polygon points="50,28 68,40 68,60 50,72 32,60 32,40" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="0.5"/>
+                  <polygon points="50,15 82,32 80,68 50,85 18,65 20,38" fill="rgba(13,148,136,0.25)" stroke="#0d9488" stroke-width="1.2"/>
+                  <circle cx="50" cy="15" r="1.6" fill="#0d9488"/><circle cx="82" cy="32" r="1.6" fill="#0d9488"/>
+                  <circle cx="80" cy="68" r="1.6" fill="#0d9488"/><circle cx="50" cy="85" r="1.6" fill="#0d9488"/>
+                  <circle cx="18" cy="65" r="1.6" fill="#0d9488"/><circle cx="20" cy="38" r="1.6" fill="#0d9488"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="device-stand"></div>
+      <div class="float-card float-card-1">
+        <div class="float-icon float-icon-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+        <div><div class="float-label">Wellbeing Index</div><div class="float-value">74 · Healthy</div></div>
+      </div>
+      <div class="float-card float-card-2">
+        <div class="float-icon float-icon-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+        <div><div class="float-label">Engagement trend</div><div class="float-value">+18% MoM</div></div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="trust-strip">
+    <div class="trust-strip-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>HIPAA Compliant</div>
+    <div class="trust-strip-item">SOC 2 Type II</div>
+    <div class="trust-strip-item">GDPR Ready</div>
+    <div class="trust-strip-item">ISO 27001</div>
+    <div class="trust-strip-item">ISO 45003</div>
+  </div>
+  
+  <section class="section" aria-label="Features">
+    <div class="section-header">
+      <span class="eyebrow">Platform Capabilities</span>
+      <h2 class="h1">Everything your people need.<br>Nothing they don't.</h2>
+      <p>A unified workspace for clinical-grade assessments, organizational insight, and confidential self-care - built on validated psychometric instruments.</p>
+    </div>
+    <div class="features">
+      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H1l8-8 8 8h-8v8a8 8 0 0 0 8-8"/></svg></div><h3>Validated instruments</h3><p>PHQ-9, GAD-7, PSS-10, FAS-10, and the full COPSOQ-II battery - administered and scored to clinical standards.</p></article>
+      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></div><h3>Multi-tenant architecture</h3><p>Department, role, and location segmentation with role-based access control. Your data, partitioned by design.</p></article>
+      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>Privacy-first by design</h3><p>Individual responses are encrypted and never exposed. HR sees aggregated distributions only - never individual scores.</p></article>
+      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div><h3>Predictive heatmaps</h3><p>Spot burnout hotspots before they become turnover. Spatial risk mapping across teams, roles, and time windows.</p></article>
+      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><h3>Pulse cadencing</h3><p>Schedule quarterly deep assessments or weekly pulse check-ins. Adaptive reminders respect each employee's rhythm.</p></article>
+      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></div><h3>Care pathway routing</h3><p>When results indicate risk, the platform privately surfaces EAP resources, counseling, or occupational health referrals.</p></article>
+    </div>
+  </section>
+  
+  <section class="section" aria-label="Two experiences">
+    <div class="section-header">
+      <span class="eyebrow">One platform, two experiences</span>
+      <h2 class="h1">Designed for both sides<br>of the wellbeing conversation.</h2>
+    </div>
+    <div class="experiences">
+      <article class="experience-card employee">
+        <span class="experience-tag">For Employees</span>
+        <h3>A private space to check in.</h3>
+        <p>Complete validated self-assessments in a calm, judgment-free interface. Your results stay yours - visualized as a gentle balance, never a frightening clinical score.</p>
+        <ul class="experience-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Five validated surveys, 3–7 minutes each</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Personal trends over weeks and months</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Curated self-care resources</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Direct, confidential EAP routing</li>
+        </ul>
+      </article>
+      <article class="experience-card hr">
+        <span class="experience-tag">For HR &amp; Leaders</span>
+        <h3>The pulse of your organization.</h3>
+        <p>A dense, filterable analytics workspace. Heatmaps, radar profiles, severity distributions - all aggregated to prevent re-identification, all actionable.</p>
+        <ul class="experience-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 12-column masonry analytics grid</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Filter by department, role, tenure, time</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Predictive risk heatmaps</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Exportable board-ready reports</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+  
+  <section class="section" aria-label="Impact">
+    <div class="stats-band">
+      <div class="stat"><div class="stat-num">38%</div><div class="stat-label">Reduction in self-reported burnout within 6 months</div></div>
+      <div class="stat"><div class="stat-num">4.2x</div><div class="stat-label">Faster identification of high-risk departments</div></div>
+      <div class="stat"><div class="stat-num">91%</div><div class="stat-label">Average pulse-survey response rate</div></div>
+      <div class="stat"><div class="stat-num">$2.7M</div><div class="stat-label">Average annual turnover cost avoided per 1,000 employees</div></div>
+    </div>
+  </section>
+
+  <!-- ============ PRICING SECTION ============ -->
+  <section class="section" id="pricing" aria-label="Transparent Pricing Tiers">
+    <div class="section-header">
+      <span class="eyebrow">Predictable Pricing</span>
+      <h2 class="h1">Transparent plans for organizations<br>of every size.</h2>
+      <p>Start with our full-access 30-day Pro reverse trial. No credit card required, instant automated setup.</p>
+    </div>
+
+    <!-- 30-Day Pro Reverse Trial Banner -->
+    <div style="max-width: 1200px; margin: 0 auto 40px; background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(79, 70, 229, 0.08) 100%); border: 1.5px solid rgba(13, 148, 136, 0.25); border-radius: 20px; padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; box-shadow: 0 4px 20px rgba(13, 148, 136, 0.08);">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="width: 42px; height: 42px; border-radius: 12px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);">⚡</div>
+        <div>
+          <div style="font-weight: 700; color: var(--text-1); font-size: 1.05rem;">All new accounts start with a full-access 30-day Pro trial</div>
+          <div style="font-size: 0.875rem; color: var(--text-2); margin-top: 2px;">Experience complete clinical assessment batteries, whistleblower guard &amp; analytics. No credit card required.</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="App.openRegisterModal('pro')">
+        Start 30-Day Pro Trial
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- 3 Pricing Cards -->
+    <div class="pricing-grid">
+      <!-- Tier 1: Free (Community) -->
+      <article class="pricing-card">
+        <div class="pricing-tier-name">Free (Community)</div>
+        <p class="pricing-desc">Standard psychosocial hazard logging and baseline metrics for micro teams.</p>
+        <div class="pricing-price-wrap">
+          <div class="pricing-price-main">GHS 0</div>
+          <div class="pricing-price-alt">/ $0 free forever</div>
+        </div>
+        <ul class="pricing-features">
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Standard Hazard Reporting</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 1 HR Administrator Account</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Max 10 Employees</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Hardcoded Privacy Shield ($N \ge 5$)</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Core COPSOQ-III Screening</li>
+        </ul>
+        <button class="btn btn-ghost" onclick="App.openRegisterModal('free')" style="width: 100%;">Get Started Free</button>
+      </article>
+
+      <!-- Tier 2: Starter -->
+      <article class="pricing-card">
+        <div class="pricing-tier-name">Starter</div>
+        <p class="pricing-desc">Clinical EAP intakes and structured reporting for growing organizations.</p>
+        <div class="pricing-price-wrap">
+          <div class="pricing-price-main">GHS 490</div>
+          <div class="pricing-price-alt">/ $39/mo</div>
+        </div>
+        <ul class="pricing-features">
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 100 Employees</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Clinical EAP Intake Routing</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Dedicated Medical Assessor Link</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> HR Analytics Ledger &amp; Heatmaps</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Automated Department Pulse Cycles</li>
+        </ul>
+        <button class="btn btn-primary" onclick="App.openRegisterModal('starter')" style="width: 100%;">Start 30-Day Pro Trial</button>
+      </article>
+
+      <!-- Tier 3: Pro (Recommended) -->
+      <article class="pricing-card popular">
+        <div class="pricing-badge">RECOMMENDED • 30-DAY FREE TRIAL</div>
+        <div class="pricing-tier-name">Pro</div>
+        <p class="pricing-desc">Full psychological safety, conflict guard, assessor dialogue &amp; board reports.</p>
+        <div class="pricing-price-wrap">
+          <div class="pricing-price-main">GHS 1,450</div>
+          <div class="pricing-price-alt">/ $119/mo</div>
+        </div>
+        <ul class="pricing-features">
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> <strong>Unlimited Employees &amp; Seats</strong></li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Full Whistleblower Conflict Guard</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Assessor Dialogue &amp; Video Links</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Board-Ready CSV &amp; PDF Audits</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ISO 45003 Psychosocial Risk Engine</li>
+          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Priority 24/7 Support SLA</li>
+        </ul>
+        <button class="btn btn-primary" onclick="App.openRegisterModal('pro')" style="width: 100%; box-shadow: var(--shadow-accent);">Start 30-Day Pro Trial</button>
+      </article>
+    </div>
+  </section>
+  
+  <section class="section" style="text-align: center;">
+    <h2 class="h1" style="margin-bottom: 16px;">Begin the conversation.</h2>
+    <p class="lead" style="max-width: 540px; margin: 0 auto 32px;">Set up your workspace in under fifteen minutes. Your first 50 employees are always free.</p>
+    <div class="hero-cta" style="justify-content: center;">
+      <button class="btn btn-primary" onclick="App.openRegisterModal('pro')">Start Free Trial<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+      <button class="btn btn-ghost" onclick="App.bookDemo()">Book Enterprise Demo</button>
+    </div>
+  </section>
+</section>
+
+</main>
+
+<!-- Self-Serve HR Tenant Registration Modal -->
+<div id="registerModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+  <div style="background: #ffffff; border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 24px; width: 100%; max-width: 520px; box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2); overflow: hidden; max-height: 92vh; display: flex; flex-direction: column;">
+    <div style="padding: 24px 28px 16px; border-bottom: 1px solid rgba(15, 23, 42, 0.08); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+      <div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #0d9488; letter-spacing: 0.08em; text-transform: uppercase;">Instant Self-Serve Onboarding</div>
+        <h3 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-top: 2px;">Start Your 30-Day Pro Trial</h3>
+      </div>
+      <button onclick="App.closeRegisterModal()" style="width: 32px; height: 32px; border-radius: 8px; border: none; background: rgba(15, 23, 42, 0.05); color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div style="padding: 24px 28px; overflow-y: auto; flex: 1;">
+      <p style="font-size: 0.875rem; color: #475569; margin-bottom: 20px; line-height: 1.5;">Create your organization's compliance workspace. Full access to all Pro features with zero credit card commitment.</p>
+      
+      <div id="registerErrorMsg" style="display: none; padding: 12px 16px; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; border-radius: 12px; font-size: 0.875rem; margin-bottom: 18px; font-weight: 500;"></div>
+
+      <form id="registerTenantForm" onsubmit="event.preventDefault(); App.submitRegister();">
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Organization / Company Name *</label>
+          <input type="text" id="regCompanyName" required placeholder="e.g. Acme Health Corp" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">HR Admin Full Name *</label>
+          <input type="text" id="regFullName" required placeholder="e.g. Jane Doe" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Work Email Address *</label>
+          <input type="email" id="regEmail" required placeholder="you@company.com" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Create Secure Password *</label>
+          <div style="position: relative;">
+            <input type="password" id="regPassword" required minlength="6" placeholder="At least 6 characters" style="width: 100%; padding: 12px 42px 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
+            <button type="button" onclick="const p=document.getElementById('regPassword'); if(p.type==='password'){p.type='text';this.textContent='🙈';}else{p.type='password';this.textContent='👁️';}" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 16px; cursor: pointer; opacity: 0.7;">👁️</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Industry (Optional)</label>
+          <select id="regIndustry" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; background: white;">
+            <option value="Technology">Technology &amp; Software</option>
+            <option value="Healthcare">Healthcare &amp; Pharmaceuticals</option>
+            <option value="Financial Services">Financial Services &amp; Banking</option>
+            <option value="Manufacturing">Manufacturing &amp; Industrial</option>
+            <option value="Mining & Energy">Mining, Energy &amp; Oil</option>
+            <option value="Education">Education &amp; Academic</option>
+            <option value="Public Sector">Government &amp; Public Sector</option>
+            <option value="Professional Services">Professional &amp; Legal Services</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 24px; padding: 12px 16px; background: rgba(13, 148, 136, 0.06); border-radius: 12px; border: 1px solid rgba(13, 148, 136, 0.15);">
+          <div style="width: 22px; height: 22px; border-radius: 6px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0;">✓</div>
+          <div style="font-size: 0.78125rem; color: #0f766e; font-weight: 600;">Includes 30 days of full Pro access with automated assessment cadencing &amp; analytics.</div>
+        </div>
+
+        <button type="submit" id="btnSubmitRegister" class="btn btn-primary" style="width: 100%; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; background: linear-gradient(135deg, #0d9488, #0078D4); color: white; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);">
+          Create Organization &amp; Start Trial
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Light Mode Working Demo Modal -->
+<div id="demoModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+  <div style="background: #ffffff; border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 24px; width: 100%; max-width: 480px; box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2); overflow: hidden; transform: scale(1);">
+    <div style="padding: 24px 28px 16px; border-bottom: 1px solid rgba(15, 23, 42, 0.08); display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #0d9488; letter-spacing: 0.08em; text-transform: uppercase;">Enterprise Demo</div>
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-top: 2px;">Book a Personal Guided Demo</h3>
+      </div>
+      <button onclick="App.closeDemo()" style="width: 32px; height: 32px; border-radius: 8px; border: none; background: rgba(15, 23, 42, 0.05); color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div style="padding: 24px 28px;">
+      <p style="font-size: 0.875rem; color: #475569; margin-bottom: 20px; line-height: 1.5;">See how Havilah's ISO 45003 assessment engine and anonymized risk heatmaps protect your organization.</p>
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Work Email Address</label>
+        <input type="email" id="demoEmail" placeholder="you@company.com" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 24px; padding: 12px; background: rgba(13, 148, 136, 0.06); border-radius: 12px; border: 1px solid rgba(13, 148, 136, 0.15);">
+        <div style="width: 24px; height: 24px; border-radius: 6px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">✓</div>
+        <div style="font-size: 0.75rem; color: #0f766e; font-weight: 600;">Includes 14-day full enterprise trial with pre-loaded ISO 45003 benchmarks.</div>
+      </div>
+      <button class="btn btn-primary" onclick="App.submitDemo()" style="width: 100%; padding: 14px; border-radius: 12px; font-size: 0.9375rem; font-weight: 600; background: linear-gradient(135deg, #0d9488, #0078D4); color: white; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);">
+        Submit Demo Request
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Enterprise B2B Footer -->
+<footer style="background: #ffffff; border-top: 1px solid rgba(15, 23, 42, 0.08); padding: 48px 32px 32px; color: #475569; font-size: 0.875rem; position: relative; z-index: 10;">
+  <div style="max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; margin-bottom: 40px;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #0f172a; font-size: 1.2rem; margin-bottom: 10px;">
+        <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #0d9488, #0284c7); display: flex; align-items: center; justify-content: center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" style="width: 16px; height: 16px;"><path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/></svg>
+        </div>
+        Havilah
+      </div>
+      <p style="font-size: 0.8125rem; line-height: 1.6; color: #64748b; margin-bottom: 10px;">Clinical-grade occupational health & psychometrics platform aligned with ISO 45003 and global wellbeing standards.</p>
+      <div style="font-size: 0.8125rem; font-weight: 600; color: #0d9488; display: flex; align-items: center; gap: 6px;">
+        Made by Nana Kwame Dickson
+      </div>
+    </div>
+
+    <div>
+      <h4 style="color: #0f172a; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Platform</h4>
+      <ul style="list-style: none; padding: 0; line-height: 2;">
+        <li><a href="#" style="color: #475569; text-decoration: none;">5-Dimension Check-in</a></li>
+        <li><a href="#" style="color: #475569; text-decoration: none;">ISO 45003 Assessment Engine</a></li>
+        <li><a href="#" style="color: #475569; text-decoration: none;">Anonymized HR Heatmaps</a></li>
+        <li><a href="#" style="color: #475569; text-decoration: none;">Predictive Risk Alerts</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 style="color: #0f172a; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Compliance & Governance</h4>
+      <ul style="list-style: none; padding: 0; line-height: 2;">
+        <li><span style="color: #0d9488; font-weight: 600;">✓ ISO 45003 Certified</span></li>
+        <li><span style="color: #0d9488; font-weight: 600;">✓ N ≥ 5 Privacy Enforcement</span></li>
+        <li><span style="color: #475569;">HIPAA & GDPR Article 9</span></li>
+        <li><span style="color: #475569;">SOC 2 Type II Audited</span></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 style="color: #0f172a; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Access Portals</h4>
+      <ul style="list-style: none; padding: 0; line-height: 2;">
+        <li><a href="/login.html?redirect=employee" style="color: #475569; text-decoration: none;">Employee Hub</a></li>
+        <li><a href="/login.html?redirect=hr" style="color: #475569; text-decoration: none;">HR Analytics Console</a></li>
+        <li><a href="/register.html" style="color: #0d9488; text-decoration: none; font-weight: 600;">Redeem Magic Link</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="max-width: 1440px; margin: 0 auto; padding-top: 24px; border-top: 1px solid rgba(15, 23, 42, 0.08); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; font-size: 0.75rem; color: #64748b;">
+      <div>© 2026 Havilah Health & Technologies. All rights reserved. Strictly confidential & anonymized.</div>
+    <div style="display: flex; gap: 16px;">
+      <a href="#" style="color: #64748b; text-decoration: none;">Privacy Policy</a>
+      <a href="#" style="color: #64748b; text-decoration: none;">Terms of Service</a>
+      <a href="#" style="color: #64748b; text-decoration: none;">Security & Trust</a>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/auth.js"></script>
+<script>
+  function handleCta(role) {
+    if (typeof Auth !== 'undefined' && Auth.parseToken) {
+      const tokenPayload = Auth.parseToken();
+      if (!tokenPayload) { window.location.href = "/login.html?redirect=" + role; return; }
+      if (role === "employee" && tokenPayload.role === "employee") window.location.href = "/app/dashboard.html";
+      else if (role === "hr_admin" && (tokenPayload.role === "hr_admin" || tokenPayload.role === "tenant_admin")) window.location.href = "/portal/hr.html";
+      else if (tokenPayload.isSystemSuperAdmin) window.location.href = "/super-admin.html";
+      else window.location.href = "/login.html?redirect=" + role;
+    } else {
+      window.location.href = "/login.html?redirect=" + role;
+    }
+  }
+
+  window.App = { 
+    navigate: function(view) { if(view==="employee") handleCta("employee"); if(view==="hr") handleCta("hr_admin"); }, 
+    startTrial: function() { App.openRegisterModal('pro'); }, 
+    openRegisterModal: function(tier = 'pro') {
+      const modal = document.getElementById('registerModal');
+      const errBox = document.getElementById('registerErrorMsg');
+      if (errBox) { errBox.style.display = 'none'; errBox.innerText = ''; }
+      if (modal) modal.style.display = 'flex';
+      const nameInput = document.getElementById('regCompanyName');
+      if (nameInput) setTimeout(() => nameInput.focus(), 100);
+    },
+    closeRegisterModal: function() {
+      const modal = document.getElementById('registerModal');
+      if (modal) modal.style.display = 'none';
+    },
+    submitRegister: async function() {
+      const companyName = document.getElementById('regCompanyName')?.value.trim();
+      const fullName = document.getElementById('regFullName')?.value.trim();
+      const email = document.getElementById('regEmail')?.value.trim();
+      const password = document.getElementById('regPassword')?.value;
+      const industry = document.getElementById('regIndustry')?.value;
+      const errBox = document.getElementById('registerErrorMsg');
+      const btn = document.getElementById('btnSubmitRegister');
+
+      if (!companyName || !fullName || !email || !password) {
+        if (errBox) {
+          errBox.innerText = 'Please complete all required fields.';
+          errBox.style.display = 'block';
+        }
+        return;
+      }
+
+      if (errBox) errBox.style.display = 'none';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Creating Organization...';
+      }
+
+      try {
+        const res = await fetch('/api/v1/auth/register-tenant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyName, fullName, email, password, industry })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          if (data.token) {
+            localStorage.setItem('havilah_token', data.token);
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('session_token', data.token);
+            document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+            if (data.user) {
+              localStorage.setItem('havilah_user', JSON.stringify(data.user));
+              localStorage.setItem('wf_user', JSON.stringify(data.user));
+              if (data.user.full_name) localStorage.setItem('wf_user_name', data.user.full_name);
+            }
+            if (email) localStorage.setItem('wf_user_email', email);
+          }
+          window.location.href = data.redirectUrl || '/portal/hr.html';
+        } else {
+          if (errBox) {
+            errBox.innerText = data.error || data.message || 'Registration failed. Please check your details.';
+            errBox.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        if (errBox) {
+          errBox.innerText = 'Network error during registration. Please try again.';
+          errBox.style.display = 'block';
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = 'Create Organization & Start Trial';
+        }
+      }
+    },
+    bookDemo: function() { document.getElementById('demoModal').style.display = 'flex'; },
+    closeDemo: function() { document.getElementById('demoModal').style.display = 'none'; },
+    submitDemo: async function() { 
+      const emailInput = document.getElementById('demoEmail');
+      const email = emailInput ? emailInput.value.trim() : '';
+      if (!email || !email.includes('@')) {
+        if (typeof showToast === 'function') showToast('Invalid Email', 'Please enter a valid work email.', 'warning');
+        return;
+      }
+
+      const submitBtn = document.querySelector('#demoModal button.btn-primary');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Submitting...'; }
+
+      try {
+        const res = await fetch('/api/v1/demo-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (typeof showToast === 'function') showToast('Demo Requested', data.message || "Thank you! We'll reach out shortly.", 'success');
+          if (emailInput) emailInput.value = '';
+          App.closeDemo();
+        } else {
+          if (typeof showToast === 'function') showToast('Submission Failed', data.error || 'Failed to submit demo request.', 'error');
+        }
+      } catch (err) {
+        if (typeof showToast === 'function') showToast('Network Error', 'Network error submitting request. Please try again.', 'error');
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Submit Demo Request'; }
+      }
+    }
+  };
+
+  // ----------------------------------------------------
+  // 3D Three.js Particle Brain Neural Network Canvas
+  // ----------------------------------------------------
+  (function initThreeBrainCanvas() {
+    const container = document.getElementById('particle-brain-container');
+    const canvas = document.getElementById('brainCanvas');
+    if (!container || !canvas || typeof THREE === 'undefined') return;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 22;
+
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    // Create Particle Brain Mesh (1,400 points)
+    const particleCount = 1400;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const scales = new Float32Array(particleCount);
+
+    for (let i = 0; i < particleCount; i++) {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * 2.0 * Math.PI;
+      const phi = Math.acos(2.0 * v - 1.0);
+      const r = 7.5 + (Math.random() - 0.5) * 1.8;
+
+      let x = r * Math.sin(phi) * Math.cos(theta);
+      let y = r * Math.sin(phi) * Math.sin(theta) * 0.72;
+      let z = r * Math.cos(phi);
+
+      if (x > 0) x += 0.4;
+      else x -= 0.4;
+
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+
+      scales[i] = Math.random() * 0.14 + 0.06;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    // Particle texture/material with vibrant rich teal (#0d9488) and standard depth blending for light canvas visibility
+    const canvasTexture = document.createElement('canvas');
+    canvasTexture.width = 64;
+    canvasTexture.height = 64;
+    const ctx = canvasTexture.getContext('2d');
+    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(13, 148, 136, 1)');       // Rich teal (#0d9488)
+    gradient.addColorStop(0.4, 'rgba(13, 148, 136, 0.75)');
+    gradient.addColorStop(1, 'rgba(13, 148, 136, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+
+    const texture = new THREE.CanvasTexture(canvasTexture);
+    const material = new THREE.PointsMaterial({
+      color: 0x0d9488,
+      size: 0.42,
+      map: texture,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.NormalBlending, // Standard depth blending for light canvas visibility
+      depthWrite: false
+    });
+
+    const brainPoints = new THREE.Points(geometry, material);
+    scene.add(brainPoints);
+
+    // Mouse Parallax & Magnetism
+    let mouseX = 0;
+    let mouseY = 0;
+    let targetRotationX = 0;
+    let targetRotationY = 0;
+
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+      mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+    });
+
+    // Resize Handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Animation Loop (60 FPS)
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Continuous Idle Orbital Drift (0.002 rad/frame)
+      brainPoints.rotation.y += 0.002;
+
+      // Smooth Mouse Parallax Magnetism (lerp factor 0.05)
+      targetRotationY = mouseX * 0.45;
+      targetRotationX = mouseY * 0.35;
+
+      brainPoints.rotation.y += (targetRotationY - brainPoints.rotation.y) * 0.05;
+      brainPoints.rotation.x += (targetRotationX - brainPoints.rotation.x) * 0.05;
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  })();
+
+  function toggleMobileMenu() {
+    const drawer = document.getElementById('mobileMenuDrawer');
+    const btn = document.querySelector('.mobile-menu-btn');
+    if (!drawer) return;
+    const isOpen = drawer.classList.toggle('open');
+    if (btn) {
+      const hamburger = btn.querySelector('.hamburger-icon');
+      const closeIcon = btn.querySelector('.close-icon');
+      if (hamburger && closeIcon) {
+        hamburger.style.display = isOpen ? 'none' : 'block';
+        closeIcon.style.display = isOpen ? 'block' : 'none';
+      }
+    }
+  }
+  window.toggleMobileMenu = toggleMobileMenu;
+</script>
 </body>
 </html>

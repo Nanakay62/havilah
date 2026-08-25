@@ -1,11 +1,93 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0; url=public/login.html">
-  <title>Redirecting...</title>
+  <title>Havilah - Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/auth.js"></script>
 </head>
-<body>
-  <p>The architecture has been updated. If you are not redirected automatically, please <a href="public/login.html">click here to go to the new Login Page</a>.</p>
+<body class="bg-slate-900 text-slate-100 flex items-center justify-center min-h-screen font-['Inter',sans-serif]">
+  <div class="bg-slate-800 p-8 rounded-lg shadow-md w-full max-w-md">
+    
+    <h2 class="text-3xl font-bold text-center mb-2">Havilah</h2>
+    <p class="text-slate-400 text-center text-sm mb-6">Secure Authentication</p>
+    
+    <form id="loginForm" class="space-y-4">
+      <div id="errorBox" class="hidden bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded text-sm mb-4"></div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Corporate Email</label>
+        <input type="email" id="email" required class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 transition-colors" placeholder="you@company.com">
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Password</label>
+        <div class="relative">
+          <input type="password" id="password" required class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:border-cyan-500 transition-colors" placeholder="••••••••">
+          <button type="button" id="togglePasswordBtn" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-base focus:outline-none" title="Toggle Password Visibility">👁️</button>
+        </div>
+      </div>
+      <script>
+        document.getElementById('togglePasswordBtn')?.addEventListener('click', () => {
+          const pass = document.getElementById('password');
+          const btn = document.getElementById('togglePasswordBtn');
+          if (pass.type === 'password') {
+            pass.type = 'text';
+            btn.textContent = '🙈';
+          } else {
+            pass.type = 'password';
+            btn.textContent = '👁️';
+          }
+        });
+      </script>
+      <button type="submit" id="submitBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 transition duration-200 py-2.5 rounded-lg font-semibold mt-4 shadow-lg shadow-cyan-600/20 flex justify-center items-center">
+        <span>Sign In</span>
+      </button>
+    </form>
+
+    <!-- Footer link -->
+    <div class="text-center text-xs text-slate-500 mt-6 pt-4 border-t border-white/10">
+      Have an invite code? <a href="/activate.html" class="text-cyan-400 hover:underline">Activate Account</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('submitBtn');
+      const errorBox = document.getElementById('errorBox');
+      
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+      errorBox.classList.add('hidden');
+      
+      try {
+        await Auth.login(email, password);
+        const tokenData = Auth.parseToken();
+        
+        if (!tokenData) throw new Error('Invalid token received');
+        
+        if (tokenData.isSystemSuperAdmin || tokenData.role === 'super_admin') {
+          window.location.href = '/app/superadmin.html';
+        } else if (tokenData.role === 'hr_admin' || tokenData.role === 'tenant_admin') {
+          window.location.href = '/portal/hr.html';
+        } else if (tokenData.role === 'employee') {
+          window.location.href = '/app/dashboard.html';
+        } else {
+          throw new Error('Unknown role assignment');
+        }
+      } catch (err) {
+        errorBox.innerText = err.message;
+        errorBox.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<span>Sign In</span>';
+      }
+    });
+  </script>
 </body>
 </html>

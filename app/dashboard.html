@@ -3213,17 +3213,17 @@ const App = (() => {
     }
 
     // Show result to user
-    const providerName = (state.clinicalProvider && state.clinicalProvider.name) ? state.clinicalProvider.name : 'FZ Safety and Health';
+    const providerName = (state.clinicalProvider && state.clinicalProvider.name) ? state.clinicalProvider.name : 'Dr. Edith Clarke (FZ Safety and Health)';
     let lowScoreTriggerHtml = '';
     if (normalized < 50 || statusLabel.toLowerCase().includes('risk') || statusLabel.toLowerCase().includes('critical') || statusLabel.toLowerCase().includes('adjusting')) {
       lowScoreTriggerHtml = `
         <div class="cosmic-glass-panel" style="margin-top: 20px; padding: 18px; text-align: left; border: 1px solid rgba(244, 63, 94, 0.35); background: rgba(15, 23, 42, 0.9);">
           <div style="font-size: 0.875rem; font-weight: 700; color: #fb7185; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-            <span>⚡ Clinical Partner Support Recommended</span>
+            <span>⚡ Confidential Doctor Support Recommended</span>
             <span class="cosmic-pill rose">Low Score Trigger</span>
           </div>
-          <p style="font-size: 0.8125rem; color: #cbd5e1; margin-bottom: 12px; line-height: 1.5;">Your score indicates elevated strain on the ${dimLabel} scale. We strongly recommend reaching out to our active clinical partner, <strong>${providerName}</strong>, for free, confidential consultation.</p>
-          <button class="cosmic-pill success" style="cursor: pointer; padding: 8px 16px; font-weight: 700; font-size: 0.8125rem;" onclick="App.closeSurvey(); App.openContact();">Contact ${providerName}</button>
+          <p style="font-size: 0.8125rem; color: #cbd5e1; margin-bottom: 12px; line-height: 1.5;">Your score indicates elevated pressure on the ${dimLabel} area. We strongly encourage you to speak with our registered medical assessor, <strong>${providerName}</strong> (024 362 9870), for a free, 100% private consultation.</p>
+          <button class="cosmic-pill success" style="cursor: pointer; padding: 8px 16px; font-weight: 700; font-size: 0.8125rem;" onclick="App.closeSurvey(); App.openContact();">Contact Dr. Edith Clarke</button>
         </div>
       `;
     }

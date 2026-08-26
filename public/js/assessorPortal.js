@@ -3,6 +3,7 @@
 
   let state = {
     assessor: null,
+    doctors: [],
     queue: [],
     filteredQueue: [],
     selectedCase: null,
@@ -19,6 +20,7 @@
     filters: {
       search: '',
       company: 'all',
+      doctor: 'all',
       status: 'all',
       settlement: 'all',
       datePreset: 'all',
@@ -175,16 +177,29 @@
       const res = await assessorApiFetch(`${API_BASE}/me`);
       state.assessor = res.assessor;
 
+      const isClinicAdmin = (res.assessor.role === 'clinic_admin' || res.assessor.isLeadAssessor);
+
       const nameDisplay = document.getElementById('assessorNameDisplay');
       const orgDisplay = document.getElementById('assessorOrgDisplay');
+      const manageStaffBtn = document.getElementById('manageStaffBtn');
+      const doctorFilterSelect = document.getElementById('doctorFilterSelect');
+
       if (nameDisplay) nameDisplay.textContent = res.assessor.name;
-      if (orgDisplay) orgDisplay.textContent = res.assessor.organization || 'Medical Assessor';
+      if (orgDisplay) {
+        orgDisplay.innerHTML = `${res.assessor.organization || 'Clinical Practice'} &bull; <span class="badge ${isClinicAdmin ? 'badge-admin-role' : 'badge-specialty'}">${isClinicAdmin ? 'Clinic Admin' : (res.assessor.specialty || 'Staff Doctor')}</span>`;
+      }
+
+      if (manageStaffBtn) manageStaffBtn.style.display = isClinicAdmin ? 'inline-flex' : 'none';
+      if (doctorFilterSelect) doctorFilterSelect.style.display = isClinicAdmin ? 'inline-block' : 'none';
 
       if (loginSection) loginSection.style.display = 'none';
       if (dashboardSection) dashboardSection.style.display = 'block';
       if (headerControls) headerControls.style.display = 'flex';
 
       initAutoLockTimer();
+      if (isClinicAdmin) {
+        fetchDoctorsList();
+      }
       fetchAssessorQueue();
     } catch (err) {
       clearAssessorToken();
@@ -193,6 +208,228 @@
       if (headerControls) headerControls.style.display = 'none';
     }
   }
+
+  // --- Clinician Staff Management ---
+  async function fetchDoctorsList() {
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/doctors`);
+      state.doctors = res.data || [];
+      updateDoctorDropdowns();
+      const badge = document.getElementById('doctorCountBadge');
+      if (badge) badge.textContent = state.doctors.length;
+      renderDoctorsTable();
+    } catch (err) {
+      console.warn('Doctors list load notice:', err.message);
+    }
+  }
+
+  function updateDoctorDropdowns() {
+    const filterSelect = document.getElementById('doctorFilterSelect');
+    const assignSelect = document.getElementById('modalDoctorAssignSelect');
+
+    if (filterSelect) {
+      const curFilter = filterSelect.value;
+      let filterOpts = '<option value="all">All Clinicians</option><option value="unassigned">Unassigned Only</option>';
+      state.doctors.forEach(doc => {
+        if (doc.active) {
+          filterOpts += `<option value="${doc._id}">${doc.fullName} (${doc.specialty || 'General'})</option>`;
+        }
+      });
+      filterSelect.innerHTML = filterOpts;
+      if (curFilter) filterSelect.value = curFilter;
+    }
+
+    if (assignSelect) {
+      const curAssign = assignSelect.value;
+      let assignOpts = '<option value="">-- Unassigned (Practice Queue) --</option>';
+      state.doctors.forEach(doc => {
+        if (doc.active) {
+          assignOpts += `<option value="${doc._id}">${doc.fullName} (${doc.specialty || 'General'})${doc.role === 'clinic_admin' ? ' [Lead]' : ''}</option>`;
+        }
+      });
+      assignSelect.innerHTML = assignOpts;
+      if (curAssign) assignSelect.value = curAssign;
+    }
+  }
+
+  window.openManageDoctorsModal = () => {
+    switchDoctorModalTab('roster');
+    fetchDoctorsList();
+    openModal('manageDoctorsModal');
+  };
+
+  window.switchDoctorModalTab = (tab) => {
+    const rosterTab = document.getElementById('doctorRosterTab');
+    const addTab = document.getElementById('addDoctorTab');
+    const tabRosterBtn = document.getElementById('tabRosterBtn');
+    const tabAddDoctorBtn = document.getElementById('tabAddDoctorBtn');
+
+    if (tab === 'add') {
+      if (rosterTab) rosterTab.style.display = 'none';
+      if (addTab) addTab.style.display = 'block';
+      if (tabRosterBtn) {
+        tabRosterBtn.className = 'btn btn-sm btn-outline';
+      }
+      if (tabAddDoctorBtn) {
+        tabAddDoctorBtn.className = 'btn btn-sm btn-primary';
+      }
+    } else {
+      if (rosterTab) rosterTab.style.display = 'block';
+      if (addTab) addTab.style.display = 'none';
+      if (tabRosterBtn) {
+        tabRosterBtn.className = 'btn btn-sm btn-primary';
+      }
+      if (tabAddDoctorBtn) {
+        tabAddDoctorBtn.className = 'btn btn-sm btn-outline';
+      }
+    }
+  };
+
+  function renderDoctorsTable() {
+    const tbody = document.getElementById('doctorsTableBody');
+    if (!tbody) return;
+
+    if (!state.doctors || state.doctors.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 28px; color: var(--text-muted);">
+            No clinicians registered in this practice yet. Click <strong>➕ Add New Doctor</strong> to onboard staff.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = state.doctors.map(doc => {
+      const roleBadge = doc.role === 'clinic_admin'
+        ? '<span class="badge badge-admin-role">Clinic Admin</span>'
+        : '<span class="badge badge-specialty">Attending</span>';
+
+      const statusBadge = doc.active
+        ? '<span class="badge badge-completed">Active</span>'
+        : '<span class="badge badge-cancelled">Deactivated</span>';
+
+      const isCurrent = state.assessor?.doctorId && String(state.assessor.doctorId) === String(doc._id);
+
+      return `
+        <tr>
+          <td style="font-weight: 700; color: var(--text-1);">${doc.fullName}${isCurrent ? ' (You)' : ''}</td>
+          <td style="color: var(--text-2); font-size: 0.82rem;">${doc.specialty || 'General Practitioner'}</td>
+          <td>${roleBadge}</td>
+          <td><span style="font-weight: 700; color: var(--accent);">${doc.activeCaseCount || 0}</span> active cases</td>
+          <td style="font-size: 0.8rem; color: var(--text-2);">${doc.email}<br/><span style="color: var(--text-muted);">${doc.phone || 'No phone'}</span></td>
+          <td>${statusBadge}</td>
+          <td>
+            <button type="button" class="btn btn-outline btn-sm" onclick="toggleDoctorStatus('${doc._id}')" style="font-size: 0.72rem; padding: 3px 8px;" ${isCurrent ? 'disabled' : ''}>
+              ${doc.active ? 'Deactivate' : 'Activate'}
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  window.handleCreateDoctorSubmit = async (event) => {
+    event.preventDefault();
+    const btn = document.getElementById('createDoctorSubmitBtn');
+    const fullName = document.getElementById('newDocFullName').value.trim();
+    const email = document.getElementById('newDocEmail').value.trim();
+    const password = document.getElementById('newDocPassword').value;
+    const specialty = document.getElementById('newDocSpecialty').value.trim();
+    const phone = document.getElementById('newDocPhone').value.trim();
+    const role = document.getElementById('newDocRole').value;
+
+    btn.disabled = true;
+    btn.textContent = 'Creating Clinician Account...';
+
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/doctors`, {
+        method: 'POST',
+        body: JSON.stringify({ fullName, email, password, specialty, phone, role }),
+      });
+
+      showToast(`Clinician ${res.data.fullName} registered successfully!`);
+      document.getElementById('addDoctorForm').reset();
+      await fetchDoctorsList();
+      switchDoctorModalTab('roster');
+    } catch (err) {
+      alert('Error creating clinician account: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '➕ Create Clinician Account';
+    }
+  };
+
+  window.toggleDoctorStatus = async (doctorId) => {
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/doctors/${doctorId}/toggle-status`, {
+        method: 'PATCH',
+      });
+      showToast(res.message);
+      await fetchDoctorsList();
+      fetchAssessorQueue();
+    } catch (err) {
+      alert('Error toggling clinician status: ' + err.message);
+    }
+  };
+
+  window.submitModalAssignDoctor = async () => {
+    if (!state.selectedCase) return;
+    const id = state.selectedCase._id;
+    const doctorId = document.getElementById('modalDoctorAssignSelect')?.value || null;
+    const btn = document.getElementById('modalAssignDoctorBtn');
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Delegating...'; }
+
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/referrals/${id}/assign-doctor`, {
+        method: 'PATCH',
+        body: JSON.stringify({ doctorId }),
+      });
+
+      state.selectedCase = res.data;
+      const item = state.queue.find(r => r._id === id);
+      if (item) {
+        item.assignedDoctorId = res.data.assignedDoctorId;
+        item.delegatedAt = res.data.delegatedAt;
+        item.delegatedBy = res.data.delegatedBy;
+      }
+
+      showToast(res.message);
+
+      // Update badge in modal
+      const badgeEl = document.getElementById('modalTriageDelegatedBadge');
+      if (badgeEl) {
+        if (res.data.assignedDoctorId) {
+          const docName = res.data.assignedDoctorId.fullName || 'Assigned Clinician';
+          badgeEl.textContent = `Assigned: ${docName}`;
+          badgeEl.style.background = '#DCFCE7';
+          badgeEl.style.color = '#15803D';
+        } else {
+          badgeEl.textContent = 'Unassigned';
+          badgeEl.style.background = '#FEF3C7';
+          badgeEl.style.color = '#92400E';
+        }
+      }
+
+      const metaEl = document.getElementById('modalDelegationMeta');
+      if (metaEl) {
+        if (res.data.delegatedAt) {
+          metaEl.style.display = 'block';
+          metaEl.textContent = `Delegated on ${new Date(res.data.delegatedAt).toLocaleString()}`;
+        } else {
+          metaEl.style.display = 'none';
+        }
+      }
+
+      processFilteredQueue();
+      fetchDoctorsList();
+    } catch (err) {
+      alert('Error delegating referral: ' + err.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '✓ Delegate Case'; }
+    }
+  };
 
   window.handleAssessorLogin = async (event) => {
     event.preventDefault();
@@ -349,6 +586,7 @@
 
   window.applyQueueFilter = () => {
     state.filters.company = document.getElementById('companyFilterSelect')?.value || 'all';
+    state.filters.doctor = document.getElementById('doctorFilterSelect')?.value || 'all';
     state.filters.status = document.getElementById('statusFilterSelect')?.value || 'all';
     state.filters.settlement = document.getElementById('settlementFilterSelect')?.value || 'all';
 
@@ -399,6 +637,18 @@
       });
     }
 
+    // Doctor / Clinician filter
+    if (state.filters.doctor && state.filters.doctor !== 'all') {
+      if (state.filters.doctor === 'unassigned') {
+        result = result.filter((r) => !r.assignedDoctorId);
+      } else {
+        result = result.filter((r) => {
+          const dId = r.assignedDoctorId?._id || r.assignedDoctorId;
+          return String(dId) === String(state.filters.doctor);
+        });
+      }
+    }
+
     // Status filter
     if (state.filters.status !== 'all') {
       result = result.filter((r) => (r.status || 'pending') === state.filters.status);
@@ -431,7 +681,8 @@
         const pContact = (r.clinicalDetails?.patientContact || '').toLowerCase();
         const dept = (r.departmentName || '').toLowerCase();
         const comp = (r.tenantId?.company_name || '').toLowerCase();
-        return ref.includes(q) || pName.includes(q) || pContact.includes(q) || dept.includes(q) || comp.includes(q);
+        const docName = (r.assignedDoctorId?.fullName || '').toLowerCase();
+        return ref.includes(q) || pName.includes(q) || pContact.includes(q) || dept.includes(q) || comp.includes(q) || docName.includes(q);
       });
     }
 
@@ -497,9 +748,11 @@
 
     tableBody.innerHTML = '';
     if (pageItems.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:36px; color:var(--text-muted);">No clinical referrals found matching current filters.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:36px; color:var(--text-muted);">No clinical referrals found matching current filters.</td></tr>';
       return;
     }
+
+    const isClinicAdmin = (state.assessor?.role === 'clinic_admin' || state.assessor?.isLeadAssessor);
 
     pageItems.forEach((r) => {
       const tr = document.createElement('tr');
@@ -524,6 +777,30 @@
       }
 
       const staleBadge = r.isStale ? '<span class="badge badge-stale" title="Pending >48hrs">⏱️ 48h+</span>' : '';
+
+      // Clinician Column
+      let clinicianHtml = '';
+      if (r.assignedDoctorId) {
+        const docName = r.assignedDoctorId.fullName || 'Attending Clinician';
+        const docSpec = r.assignedDoctorId.specialty ? `<div style="font-size:0.7rem; color:var(--text-muted);">${r.assignedDoctorId.specialty}</div>` : '';
+        clinicianHtml = `
+          <div>
+            <span class="badge badge-clinician">🩺 ${docName}</span>
+            ${docSpec}
+          </div>
+        `;
+      } else {
+        if (isClinicAdmin && r.status !== 'completed') {
+          clinicianHtml = `
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span class="badge badge-unassigned">○ Unassigned</span>
+              <button class="btn btn-outline btn-sm" onclick="openCaseDetail('${r._id}')" style="padding:2px 6px; font-size:0.7rem;" title="Triage & Delegate">Assign</button>
+            </div>
+          `;
+        } else {
+          clinicianHtml = '<span class="badge badge-unassigned">○ Unassigned</span>';
+        }
+      }
 
       // Appointment date badge
       let appointmentStr = '<span style="color:var(--text-muted); font-size:0.78rem;">Not set</span>';
@@ -567,6 +844,7 @@
         <td style="font-weight:700; color:var(--text-1);">${patientName}</td>
         <td>${contactHtml}</td>
         <td style="color:var(--text-2);">${deptName}</td>
+        <td>${clinicianHtml}</td>
         <td>${appointmentStr}</td>
         <td style="color:var(--text-muted); font-size:0.8rem;">${dateStr}</td>
         <td>
@@ -630,6 +908,7 @@
     const intakeNotes = item.clinicalDetails?.intakeNotes || 'None provided';
     const assessorNotes = item.clinicalDetails?.assessorNotes || 'None recorded yet';
     const isCompleted = item.status === 'completed';
+    const isClinicAdmin = (state.assessor?.role === 'clinic_admin' || state.assessor?.isLeadAssessor);
 
     // Direct phone/email action links
     const isEmail = pContact.includes('@');
@@ -641,6 +920,10 @@
       const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${item.referenceCode}]`);
       contactAction = `<a href="mailto:${pContact}?subject=${mailtoSubj}" style="color:#0284c7; font-weight:700; text-decoration:none;">✉️ Email ${pContact}</a>`;
     }
+
+    const assignedDocText = item.assignedDoctorId
+      ? `Dr. ${item.assignedDoctorId.fullName || item.assignedDoctorId}${item.assignedDoctorId.specialty ? ` (${item.assignedDoctorId.specialty})` : ''}`
+      : 'Unassigned';
 
     body.innerHTML = `
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; background:#F8FAFC; padding:14px; border-radius:8px; border:1px solid var(--border);">
@@ -667,6 +950,43 @@
         </div>
       ` : ''}
     `;
+
+    // Populate triage & delegation section
+    const triageSec = document.getElementById('modalTriageSection');
+    if (triageSec) {
+      if (isClinicAdmin && !isCompleted) {
+        triageSec.style.display = 'block';
+        updateDoctorDropdowns();
+        const assignSelect = document.getElementById('modalDoctorAssignSelect');
+        if (assignSelect) {
+          assignSelect.value = item.assignedDoctorId?._id || item.assignedDoctorId || '';
+        }
+        const badgeEl = document.getElementById('modalTriageDelegatedBadge');
+        if (badgeEl) {
+          if (item.assignedDoctorId) {
+            const docName = item.assignedDoctorId.fullName || 'Attending Clinician';
+            badgeEl.textContent = `Assigned: ${docName}`;
+            badgeEl.style.background = '#DCFCE7';
+            badgeEl.style.color = '#15803D';
+          } else {
+            badgeEl.textContent = 'Unassigned';
+            badgeEl.style.background = '#FEF3C7';
+            badgeEl.style.color = '#92400E';
+          }
+        }
+        const metaEl = document.getElementById('modalDelegationMeta');
+        if (metaEl) {
+          if (item.delegatedAt) {
+            metaEl.style.display = 'block';
+            metaEl.textContent = `Delegated on ${new Date(item.delegatedAt).toLocaleString()}`;
+          } else {
+            metaEl.style.display = 'none';
+          }
+        }
+      } else {
+        triageSec.style.display = 'none';
+      }
+    }
 
     // Populate scheduling section
     const schedSection = document.getElementById('schedulingSection');
@@ -1187,6 +1507,7 @@
         'Client Organization',
         'Department',
         'Patient Name',
+        'Assigned Clinician',
         'Submission Date',
         'Scheduled Date',
         'Completed Date',
@@ -1201,6 +1522,7 @@
         r.tenantId?.company_name || 'Organization',
         r.departmentName || 'General',
         r.clinicalDetails?.patientName || '',
+        r.assignedDoctorId ? (r.assignedDoctorId.fullName || 'Clinician') : 'Unassigned',
         r.createdAt ? new Date(r.createdAt).toISOString().split('T')[0] : '',
         r.scheduledAt ? new Date(r.scheduledAt).toISOString().split('T')[0] : '',
         r.clinicalDetails?.completedAt ? new Date(r.clinicalDetails.completedAt).toISOString().split('T')[0] : '',

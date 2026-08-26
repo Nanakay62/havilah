@@ -532,6 +532,41 @@
       cursor: default;
     }
 
+    .badge-clinician {
+      background: rgba(13, 148, 136, 0.1) !important;
+      color: #0F766E !important;
+      border: 1px solid rgba(13, 148, 136, 0.3) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 1px 3px rgba(13, 148, 136, 0.08) !important;
+    }
+
+    .badge-unassigned {
+      background: rgba(245, 158, 11, 0.08) !important;
+      color: #B45309 !important;
+      border: 1px dashed rgba(245, 158, 11, 0.4) !important;
+      font-size: 0.72rem;
+      padding: 3px 8px;
+    }
+
+    .badge-specialty {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #F1F5F9;
+      color: #475569;
+      border: 1px solid #E2E8F0;
+    }
+
+    .badge-admin-role {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #FEF3C7;
+      color: #92400E;
+      border: 1px solid #FDE68A;
+    }
+
     /* Modals */
     .modal-backdrop {
       position: fixed;
@@ -653,6 +688,10 @@
           <span id="autoLockTimer" class="tabular-nums" style="font-weight: 700;">15:00</span>
         </div>
 
+        <button class="btn btn-outline btn-sm" id="manageStaffBtn" onclick="openManageDoctorsModal()" style="display: none;">
+          👥 Clinical Staff
+        </button>
+
         <button class="btn btn-outline btn-sm" onclick="openExportModal()">
           📑 Export Statement
         </button>
@@ -771,6 +810,11 @@
             <option value="all">All Client Companies</option>
           </select>
 
+          <select class="form-select" id="doctorFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 160px; display: none;">
+            <option value="all">All Clinicians</option>
+            <option value="unassigned">Unassigned Only</option>
+          </select>
+
           <select class="form-select" id="statusFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 130px;">
             <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
@@ -810,6 +854,7 @@
                 <th onclick="sortTable('patientName')" style="cursor:pointer;">Patient Name ⇕</th>
                 <th>Direct Contact</th>
                 <th>Department</th>
+                <th>Assigned Clinician</th>
                 <th>Appointment</th>
                 <th onclick="sortTable('createdAt')" style="cursor:pointer;">Submitted ⇕</th>
                 <th>Status</th>
@@ -820,7 +865,7 @@
             </thead>
             <tbody id="assessorQueueTableBody">
               <tr>
-                <td colspan="11" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                <td colspan="12" style="text-align: center; padding: 32px; color: var(--text-muted);">
                   Loading assigned clinical cases...
                 </td>
               </tr>
@@ -862,6 +907,31 @@
         <!-- Filled dynamically -->
       </div>
       
+      <!-- Clinical Triage & Doctor Delegation Panel (For Clinic Admins) -->
+      <div id="modalTriageSection" style="margin-top: 16px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--radius-sm); padding: 14px; display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="font-weight: 700; color: #166534; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+            <span>🩺</span>
+            <span>Clinical Lead Triage &amp; Clinician Delegation</span>
+          </div>
+          <span id="modalTriageDelegatedBadge" style="font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: #DCFCE7; color: #15803D;">Unassigned</span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 220px;">
+            <label class="form-label" style="font-size: 0.75rem; color: #166534; margin-bottom: 4px;">Attending Staff Clinician</label>
+            <select id="modalDoctorAssignSelect" class="form-select" style="padding: 6px 10px; font-size: 0.85rem; border-color: #86EFAC;">
+              <option value="">-- Unassigned (General Practice Queue) --</option>
+            </select>
+          </div>
+          <div style="padding-top: 18px;">
+            <button type="button" class="btn btn-primary btn-sm" id="modalAssignDoctorBtn" onclick="submitModalAssignDoctor()" style="padding: 7px 14px; background: #16A34A; border-color: #16A34A;">
+              ✓ Delegate Case
+            </button>
+          </div>
+        </div>
+        <div id="modalDelegationMeta" style="font-size: 0.75rem; color: #15803D; margin-top: 6px; display: none;"></div>
+      </div>
+
       <!-- Direct Scheduling Form Container -->
       <div id="schedulingSection" style="margin-top: 16px; background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px;">
         <div style="font-weight: 700; color: var(--text-1); font-size: 0.88rem; margin-bottom: 8px;">📅 Direct Appointment Scheduling</div>
@@ -1142,6 +1212,105 @@
           <button type="submit" class="btn btn-primary" id="saveSettingsBtn">Save Settings</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Manage Clinical Staff Roster & Onboard Doctors -->
+  <div class="modal-backdrop" id="manageDoctorsModal">
+    <div class="modal" style="max-width: 780px;">
+      <div class="modal-header">
+        <div>
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--accent); text-transform: uppercase;">CLINICAL TEAM MANAGEMENT</div>
+          <div class="modal-title">Manage Practice Doctors &amp; Clinicians</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('manageDoctorsModal')">&times;</button>
+      </div>
+
+      <!-- Tabs Header -->
+      <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 16px; padding-bottom: 8px;">
+        <button type="button" class="btn btn-sm btn-primary" id="tabRosterBtn" onclick="switchDoctorModalTab('roster')">
+          👥 Active Clinicians (<span id="doctorCountBadge">0</span>)
+        </button>
+        <button type="button" class="btn btn-sm btn-outline" id="tabAddDoctorBtn" onclick="switchDoctorModalTab('add')">
+          ➕ Add New Doctor
+        </button>
+      </div>
+
+      <!-- Tab 1: Clinician Roster -->
+      <div id="doctorRosterTab">
+        <div class="table-container" style="max-height: 380px; overflow-y: auto;">
+          <table style="width: 100%;">
+            <thead>
+              <tr>
+                <th>Clinician Name</th>
+                <th>Specialty</th>
+                <th>Role</th>
+                <th>Active Cases</th>
+                <th>Contact</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="doctorsTableBody">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">
+                  Loading clinical staff...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 2: Add New Doctor Form -->
+      <div id="addDoctorTab" style="display: none;">
+        <form id="addDoctorForm" onsubmit="handleCreateDoctorSubmit(event)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="newDocFullName">Full Name (with Title) *</label>
+              <input type="text" id="newDocFullName" class="form-input" placeholder="e.g. Dr. Kwame Mensah" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="newDocEmail">Login Email *</label>
+              <input type="email" id="newDocEmail" class="form-input" placeholder="e.g. dr.mensah@fzsafety.com" required />
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="newDocPassword">Initial Password *</label>
+              <input type="password" id="newDocPassword" class="form-input" placeholder="Min. 6 characters" minlength="6" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="newDocSpecialty">Clinical Specialty *</label>
+              <input type="text" id="newDocSpecialty" class="form-input" placeholder="e.g. Occupational Health Specialist" required />
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="newDocPhone">Contact Phone</label>
+              <input type="text" id="newDocPhone" class="form-input" placeholder="+233 24 000 0000" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="newDocRole">Practice Role</label>
+              <select id="newDocRole" class="form-select">
+                <option value="doctor">Staff Doctor (Attending Clinician)</option>
+                <option value="clinic_admin">Clinic Admin (Triage &amp; Staff Lead)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top: 18px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn btn-ghost" onclick="switchDoctorModalTab('roster')">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="createDoctorSubmitBtn">➕ Create Clinician Account</button>
+          </div>
+        </form>
+      </div>
+
+      <div style="margin-top: 20px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 12px;">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('manageDoctorsModal')">Close</button>
+      </div>
     </div>
   </div>
 

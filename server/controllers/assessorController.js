@@ -4,14 +4,15 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Assessor = require('../models/Assessor');
+const Doctor = require('../models/Doctor');
 const Referral = require('../models/Referral');
-const { requireAssessorAuth } = require('../middleware/assessorAuth');
+const { requireAssessorAuth, requireClinicAdmin } = require('../middleware/assessorAuth');
 
 const router = express.Router();
 
 /**
  * @route   POST /api/v1/assessor/login
- * @desc    Assessor Portal Login (Separate structurally distinct JWT)
+ * @desc    Clinical Portal Login (Supports Lead Assessor / Clinic Admin and Staff Doctors)
  * @access  Public
  */
 router.post('/login', async (req, res, next) => {
@@ -27,54 +28,120 @@ router.post('/login', async (req, res, next) => {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+
+    // 1. Try Lead Assessor (Practice Account)
     const assessor = await Assessor.findOne({ email: cleanEmail });
+    if (assessor) {
+      if (!assessor.active) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNT_DEACTIVATED',
+          message: 'Your assessor practice account is inactive. Please contact support.',
+        });
+      }
 
-    if (!assessor) {
-      return res.status(401).json({
-        success: false,
-        error: 'INVALID_CREDENTIALS',
-        message: 'Invalid email or password.',
+      const isMatch = await bcrypt.compare(password, assessor.passwordHash);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          error: 'INVALID_CREDENTIALS',
+          message: 'Invalid email or password.',
+        });
+      }
+
+      // Issue JWT with clinic_admin / lead assessor payload
+      const token = jwt.sign(
+        {
+          assessorId: assessor._id.toString(),
+          email: assessor.email,
+          name: assessor.name,
+          role: 'clinic_admin',
+          isLeadAssessor: true,
+        },
+        process.env.JWT_SECRET || 'fallback_secret_for_dev',
+        { expiresIn: '7d' }
+      );
+
+      return res.json({
+        success: true,
+        token,
+        assessor: {
+          id: assessor._id,
+          name: assessor.name,
+          email: assessor.email,
+          organization: assessor.organization,
+          role: 'clinic_admin',
+          specialty: 'Lead Medical Assessor',
+          isLeadAssessor: true,
+        },
       });
     }
 
-    if (!assessor.active) {
-      return res.status(403).json({
-        success: false,
-        error: 'ACCOUNT_DEACTIVATED',
-        message: 'Your assessor account is inactive. Please contact support.',
+    // 2. Try Staff Doctor Account
+    const doctor = await Doctor.findOne({ email: cleanEmail });
+    if (doctor) {
+      if (!doctor.active) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNT_DEACTIVATED',
+          message: 'Your clinician account is inactive. Please contact your clinic administrator.',
+        });
+      }
+
+      const isMatch = await bcrypt.compare(password, doctor.passwordHash);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          error: 'INVALID_CREDENTIALS',
+          message: 'Invalid email or password.',
+        });
+      }
+
+      const practice = await Assessor.findById(doctor.practiceId);
+      if (!practice || !practice.active) {
+        return res.status(403).json({
+          success: false,
+          error: 'PRACTICE_INACTIVE',
+          message: 'Your associated clinic practice account is inactive.',
+        });
+      }
+
+      const token = jwt.sign(
+        {
+          assessorId: practice._id.toString(),
+          doctorId: doctor._id.toString(),
+          email: doctor.email,
+          name: doctor.fullName,
+          role: doctor.role || 'doctor',
+          specialty: doctor.specialty,
+          isLeadAssessor: false,
+        },
+        process.env.JWT_SECRET || 'fallback_secret_for_dev',
+        { expiresIn: '7d' }
+      );
+
+      return res.json({
+        success: true,
+        token,
+        assessor: {
+          id: practice._id,
+          doctorId: doctor._id,
+          name: doctor.fullName,
+          email: doctor.email,
+          organization: practice.organization,
+          role: doctor.role || 'doctor',
+          specialty: doctor.specialty,
+          phone: doctor.phone,
+          isLeadAssessor: false,
+        },
       });
     }
 
-    const isMatch = await bcrypt.compare(password, assessor.passwordHash);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        error: 'INVALID_CREDENTIALS',
-        message: 'Invalid email or password.',
-      });
-    }
-
-    // Issue JWT with assessor-specific payload (structurally distinct from employee/tenant tokens)
-    const token = jwt.sign(
-      {
-        assessorId: assessor._id.toString(),
-        email: assessor.email,
-        name: assessor.name,
-        role: 'assessor',
-      },
-      process.env.JWT_SECRET || 'fallback_secret_for_dev',
-      { expiresIn: '7d' }
-    );
-
-    res.json({
-      success: true,
-      token,
-      assessor: {
-        id: assessor._id,
-        name: assessor.name,
-        email: assessor.email,
-        organization: assessor.organization,
-      },
+    // 3. No matching account found
+    return res.status(401).json({
+      success: false,
+      error: 'INVALID_CREDENTIALS',
+      message: 'Invalid email or password.',
     });
   } catch (err) {
     next(err);
@@ -83,7 +150,7 @@ router.post('/login', async (req, res, next) => {
 
 /**
  * @route   GET /api/v1/assessor/me
- * @desc    Get logged in assessor profile summary
+ * @desc    Get logged in assessor/doctor profile summary and privileges
  * @access  Assessor Authenticated
  */
 router.get('/me', requireAssessorAuth, async (req, res) => {
@@ -91,10 +158,14 @@ router.get('/me', requireAssessorAuth, async (req, res) => {
     success: true,
     assessor: {
       id: req.assessor._id,
-      name: req.assessor.name,
-      email: req.assessor.email,
+      doctorId: req.doctor ? req.doctor._id : null,
+      name: req.doctor ? req.doctor.fullName : req.assessor.name,
+      email: req.doctor ? req.doctor.email : req.assessor.email,
+      role: req.assessorUser?.role || (req.doctor ? req.doctor.role : 'clinic_admin'),
+      specialty: req.doctor ? req.doctor.specialty : 'Lead Medical Assessor',
+      isLeadAssessor: !req.doctor,
       organization: req.assessor.organization,
-      phone: req.assessor.phone,
+      phone: req.doctor?.phone || req.assessor.phone,
       notificationEmail: req.assessor.notificationEmail,
       address: req.assessor.address,
       billingSettings: req.assessor.billingSettings || {
@@ -188,13 +259,247 @@ router.put('/profile', requireAssessorAuth, async (req, res, next) => {
 });
 
 /**
+ * @route   GET /api/v1/assessor/doctors
+ * @desc    Get all staff clinicians in this practice with active caseloads
+ * @access  Assessor Authenticated (Clinic Admin / Staff)
+ */
+router.get('/doctors', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const doctors = await Doctor.find({ practiceId: req.assessor._id })
+      .select('-passwordHash')
+      .sort({ role: 1, createdAt: -1 })
+      .lean();
+
+    // Compute active case counts for each doctor
+    const doctorIds = doctors.map(d => d._id);
+    const activeCases = await Referral.aggregate([
+      {
+        $match: {
+          assignedDoctorId: { $in: doctorIds },
+          status: { $in: ['pending', 'scheduled'] },
+        },
+      },
+      {
+        $group: {
+          _id: '$assignedDoctorId',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const countMap = new Map(activeCases.map(c => [c._id.toString(), c.count]));
+
+    const data = doctors.map(d => ({
+      ...d,
+      activeCaseCount: countMap.get(d._id.toString()) || 0,
+    }));
+
+    res.json({
+      success: true,
+      count: data.length,
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   POST /api/v1/assessor/doctors
+ * @desc    Create a new staff clinician under the current practice
+ * @access  Clinic Admin Only
+ */
+router.post('/doctors', requireAssessorAuth, requireClinicAdmin, async (req, res, next) => {
+  try {
+    const { fullName, email, password, specialty, phone, role } = req.body;
+
+    if (!fullName || !email || !password || typeof fullName !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'Full name, valid email, and password are required.',
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'Password must be at least 6 characters.',
+      });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check uniqueness across Doctor and Assessor
+    const [existingDoc, existingAssessor] = await Promise.all([
+      Doctor.findOne({ email: cleanEmail }),
+      Assessor.findOne({ email: cleanEmail }),
+    ]);
+
+    if (existingDoc || existingAssessor) {
+      return res.status(409).json({
+        success: false,
+        error: 'EMAIL_EXISTS',
+        message: 'A clinical user with this email address already exists.',
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const doctor = await Doctor.create({
+      practiceId: req.assessor._id,
+      fullName: fullName.trim(),
+      email: cleanEmail,
+      passwordHash,
+      phone: phone ? String(phone).trim() : '',
+      specialty: specialty ? String(specialty).trim() : 'Occupational Health Specialist',
+      role: role === 'clinic_admin' ? 'clinic_admin' : 'doctor',
+      active: true,
+    });
+
+    const doctorData = doctor.toObject();
+    delete doctorData.passwordHash;
+
+    console.log(`[Assessor] New clinician created: ${doctor.fullName} (${doctor.email}) under practice ${req.assessor.organization || req.assessor.name}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Clinician staff account created successfully.',
+      data: doctorData,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   PATCH /api/v1/assessor/doctors/:id/toggle-status
+ * @desc    Toggle active status of a staff clinician
+ * @access  Clinic Admin Only
+ */
+router.patch('/doctors/:id/toggle-status', requireAssessorAuth, requireClinicAdmin, async (req, res, next) => {
+  try {
+    const doctor = await Doctor.findOne({ _id: req.params.id, practiceId: req.assessor._id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        error: 'DOCTOR_NOT_FOUND',
+        message: 'Clinician not found in this practice.',
+      });
+    }
+
+    doctor.active = !doctor.active;
+    await doctor.save();
+
+    res.json({
+      success: true,
+      message: `Clinician account is now ${doctor.active ? 'active' : 'deactivated'}.`,
+      data: {
+        id: doctor._id,
+        active: doctor.active,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   PATCH /api/v1/assessor/referrals/:id/assign-doctor
+ * @desc    Triage & delegate referral to a staff clinician (or unassign)
+ * @access  Clinic Admin Only
+ */
+router.patch('/referrals/:id/assign-doctor', requireAssessorAuth, requireClinicAdmin, async (req, res, next) => {
+  try {
+    const referralId = req.params.id;
+    const { doctorId } = req.body;
+
+    const referral = await Referral.findById(referralId);
+    if (!referral) {
+      return res.status(404).json({
+        success: false,
+        error: 'REFERRAL_NOT_FOUND',
+        message: 'Referral case not found.',
+      });
+    }
+
+    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: 'FORBIDDEN',
+        message: 'Unauthorized access to this case.',
+      });
+    }
+
+    if (doctorId) {
+      const doctor = await Doctor.findOne({
+        _id: doctorId,
+        practiceId: req.assessor._id,
+        active: true,
+      });
+
+      if (!doctor) {
+        return res.status(400).json({
+          success: false,
+          error: 'INVALID_DOCTOR',
+          message: 'Specified clinician does not exist, is inactive, or does not belong to this practice.',
+        });
+      }
+
+      referral.assignedDoctorId = doctor._id;
+      referral.delegatedAt = new Date();
+      referral.delegatedBy = req.assessorUser?._id || req.assessor._id;
+    } else {
+      referral.assignedDoctorId = null;
+      referral.delegatedAt = null;
+      referral.delegatedBy = null;
+    }
+
+    await referral.save();
+    await referral.populate('assignedDoctorId', 'fullName email specialty role active');
+    await referral.populate('tenantId', 'company_name company_id slug domain');
+
+    console.log(`[Assessor] Referral ${referral.referenceCode} delegation updated to doctor: ${referral.assignedDoctorId ? referral.assignedDoctorId.fullName : 'Unassigned'}`);
+
+    res.json({
+      success: true,
+      message: referral.assignedDoctorId
+        ? `Referral successfully delegated to ${referral.assignedDoctorId.fullName}.`
+        : 'Referral unassigned and returned to general triage queue.',
+      data: referral,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * @route   GET /api/v1/assessor/queue
- * @desc    Get clinical referral queue with search, date range, settlement, and pagination
+ * @desc    Get clinical referral queue with triage filtering, search, date range, settlement, and pagination
  * @access  Assessor Authenticated
  */
 router.get('/queue', requireAssessorAuth, async (req, res, next) => {
   try {
     const query = { assignedAssessorId: req.assessor._id };
+
+    // Role-based triage visibility:
+    const isClinicAdmin = !req.doctor || req.assessorUser?.role === 'clinic_admin' || req.doctor?.role === 'clinic_admin';
+
+    if (!isClinicAdmin && req.doctor) {
+      // Individual clinician: restricted to assigned referrals
+      query.assignedDoctorId = req.doctor._id;
+    } else {
+      // Clinic Admin: check doctorId filter
+      if (req.query.doctorId) {
+        if (req.query.doctorId === 'unassigned') {
+          query.assignedDoctorId = null;
+        } else if (req.query.doctorId !== 'all') {
+          query.assignedDoctorId = req.query.doctorId;
+        }
+      }
+    }
 
     if (req.query.tenantId && req.query.tenantId !== 'all') {
       query.tenantId = req.query.tenantId;
@@ -237,6 +542,7 @@ router.get('/queue', requireAssessorAuth, async (req, res, next) => {
 
     let queryExec = Referral.find(query)
       .populate('tenantId', 'company_name company_id slug domain')
+      .populate('assignedDoctorId', 'fullName email specialty role active')
       .sort({ createdAt: -1 });
 
     const page = parseInt(req.query.page, 10) || 1;
@@ -352,9 +658,16 @@ router.post('/referrals/:id/message', requireAssessorAuth, async (req, res, next
       return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this case.' });
     }
 
+    let senderName = 'Medical Assessor';
+    if (req.doctor) {
+      senderName = `${req.doctor.fullName}${req.doctor.specialty ? ` (${req.doctor.specialty})` : ''}`;
+    } else if (req.assessor?.name) {
+      senderName = `${req.assessor.name} (Lead Clinician)`;
+    }
+
     const newMsg = {
       sender: 'assessor',
-      senderName: req.assessor.name || 'Medical Assessor',
+      senderName,
       message: message.trim(),
       timestamp: new Date(),
     };

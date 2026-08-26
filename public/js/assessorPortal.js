@@ -160,6 +160,15 @@
     return data;
   }
 
+  function isUserClinicAdmin(assessorObj) {
+    if (!assessorObj) return false;
+    if (assessorObj.role === 'clinic_admin' || assessorObj.isLeadAssessor === true) return true;
+    if (assessorObj.role === 'doctor') return false;
+    if (assessorObj.doctorId) return false;
+    // Fallback: If logged in as practice assessor account (e.g. Dr. Edith Clarke), default to clinic_admin = true
+    return true;
+  }
+
   async function checkAuth() {
     const token = getAssessorToken();
     const loginSection = document.getElementById('assessorLoginSection');
@@ -177,7 +186,8 @@
       const res = await assessorApiFetch(`${API_BASE}/me`);
       state.assessor = res.assessor;
 
-      const isClinicAdmin = (res.assessor.role === 'clinic_admin' || res.assessor.isLeadAssessor);
+      const isClinicAdmin = isUserClinicAdmin(res.assessor);
+      state.assessor.isClinicAdmin = isClinicAdmin;
 
       const nameDisplay = document.getElementById('assessorNameDisplay');
       const orgDisplay = document.getElementById('assessorOrgDisplay');
@@ -752,7 +762,7 @@
       return;
     }
 
-    const isClinicAdmin = (state.assessor?.role === 'clinic_admin' || state.assessor?.isLeadAssessor);
+    const isClinicAdmin = isUserClinicAdmin(state.assessor);
 
     pageItems.forEach((r) => {
       const tr = document.createElement('tr');
@@ -908,7 +918,7 @@
     const intakeNotes = item.clinicalDetails?.intakeNotes || 'None provided';
     const assessorNotes = item.clinicalDetails?.assessorNotes || 'None recorded yet';
     const isCompleted = item.status === 'completed';
-    const isClinicAdmin = (state.assessor?.role === 'clinic_admin' || state.assessor?.isLeadAssessor);
+    const isClinicAdmin = isUserClinicAdmin(state.assessor);
 
     // Direct phone/email action links
     const isEmail = pContact.includes('@');

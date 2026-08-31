@@ -95,7 +95,8 @@ app.use((req, res, next) => {
 // Static Files & Guarded Views
 app.use(express.static(path.join(__dirname, '../public'), { etag: false, lastModified: false }));
 
-// Explicit fallback route for register.html and clinical-portal
+// Explicit fallback route for register.html, clinical-portal, and favicon
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/register.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'register.html'));
 });
@@ -134,9 +135,9 @@ app.post('/api/v1/demo-request', sensitiveRateLimiter(5), async (req, res, next)
   }
 });
 
-// Root Redirect
+// Root Landing Page
 app.get('/', (req, res) => {
-  res.redirect('/login.html');
+  res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
 
 // GET /api/v1/clinical-provider - Active Tenant Clinical Provider Endpoint

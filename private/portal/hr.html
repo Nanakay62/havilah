@@ -565,6 +565,7 @@
   .bg-[#E56B6F] { background-color: #E56B6F; }
   .bg-[#B53540] { background-color: #B53540; }
   .text-white { color: white; }</style>
+<link rel="stylesheet" href="/css/tour.css">
 </head>
 <body>
 
@@ -3986,5 +3987,44 @@ document.addEventListener('DOMContentLoaded', App.init);
   </div>
 </div>
 
+<script src="/js/tour.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      HavilahTour.init({
+        tourId: 'hr-analytics-portal',
+        welcomeTitle: 'HR Analytics Portal',
+        welcomeDesc: 'Welcome to your organization\'s wellbeing command center. Let us show you the key features.',
+        autoStart: true,
+        steps: [
+          {
+            target: '.brand',
+            title: 'Havilah HR Portal',
+            description: 'This is your HR analytics command center. All data shown here is aggregated — individual employee scores are never exposed.',
+            placement: 'bottom'
+          },
+          {
+            target: 'nav, .nav, [role="navigation"]',
+            title: 'Portal Navigation',
+            description: 'Navigate between the Analytics Dashboard, Employee Management, Assessment Cycles, and other administrative sections.',
+            placement: 'bottom'
+          },
+          {
+            target: '[aria-label="Main content"], main, #main, .main-content',
+            title: 'Analytics Dashboard',
+            description: 'Your main analytics workspace with KPIs, risk distributions, department breakdowns, and trend analyses. All data respects the N≥5 privacy threshold.',
+            placement: 'bottom'
+          },
+          {
+            target: '.kpi, .kpis, [class*="kpi"], [class*="stat"]',
+            title: 'Key Performance Indicators',
+            description: 'Track participation rates, average wellbeing scores, at-risk percentages, and response rates at a glance.',
+            placement: 'bottom'
+          }
+        ]
+      });
+    }, 800);
+  });
+</script>
 </body>
 </html>

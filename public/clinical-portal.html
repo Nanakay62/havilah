@@ -668,6 +668,7 @@
       opacity: 1;
     }
   </style>
+<link rel="stylesheet" href="/css/tour.css">
 </head>
 <body>
 
@@ -1334,5 +1335,50 @@
   </div>
 
   <script src="/js/assessorPortal.js"></script>
+<script src="/js/tour.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      HavilahTour.init({
+        tourId: 'clinical-portal',
+        welcomeTitle: 'Medical Assessor Portal',
+        welcomeDesc: 'Welcome to the clinical services portal. Let us walk you through the key features for managing employee assessments.',
+        autoStart: true,
+        steps: [
+          {
+            target: '#assessorLoginSection',
+            title: 'Assessor Login',
+            description: 'Sign in with your clinical practitioner credentials. All sessions are HIPAA-compliant with automatic 15-minute inactivity locks.',
+            placement: 'bottom'
+          },
+          {
+            target: '#securityTimerBadge',
+            title: 'Security Timer',
+            description: 'Your session automatically locks after 15 minutes of inactivity. This badge shows the countdown to protect patient confidentiality.',
+            placement: 'bottom'
+          },
+          {
+            target: '#assessorDashboardSection',
+            title: 'Assessor Dashboard',
+            description: 'Your main workspace showing assigned cases, pending reviews, completed assessments, and billing summary across all your client organizations.',
+            placement: 'bottom'
+          },
+          {
+            target: '#searchInput',
+            title: 'Search & Filter',
+            description: 'Search by reference code, patient name, phone, or department. Use the dropdown filters to narrow by company, status, settlement, or date range.',
+            placement: 'bottom'
+          },
+          {
+            target: '#assessorQueueTableBody',
+            title: 'Case Queue',
+            description: 'Your assessment case queue with patient details, status tracking, appointment scheduling, and priority indicators. Click any row to open the full case detail.',
+            placement: 'top'
+          }
+        ]
+      });
+    }, 800);
+  });
+</script>
 </body>
 </html>

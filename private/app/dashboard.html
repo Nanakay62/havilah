@@ -886,6 +886,7 @@
 }
 
 </style>
+  <link rel="stylesheet" href="/css/tour.css">
   <script src="/js/data.js?v=1784217446485"></script>
 </head>
 <body>
@@ -5416,6 +5417,70 @@ window.submitDailyPulse = async function() {
     if (btn) { btn.disabled = false; btn.textContent = 'Submit Daily Pulse'; }
   }
 };
+</script>
+<script src="/js/tour.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Wait a moment for the dashboard to initialize
+    setTimeout(function() {
+      HavilahTour.init({
+        tourId: 'employee-dashboard',
+        welcomeTitle: 'Your Wellness Dashboard',
+        welcomeDesc: 'Let us show you around your personal wellbeing check-in space. Everything here is private and confidential.',
+        autoStart: true,
+        steps: [
+          {
+            target: '#empGreeting',
+            title: 'Personal Greeting',
+            description: 'Your dashboard greets you by name. This is your private wellness space — only you can see your individual results.',
+            placement: 'bottom'
+          },
+          {
+            target: '#wellbeing-hero-card',
+            title: 'Wellbeing Score',
+            description: 'Your overall wellbeing composite score is shown here with a progress ring. This aggregates all your check-in dimensions into a single health indicator.',
+            placement: 'bottom'
+          },
+          {
+            target: '#wellbeingRadarChart',
+            title: '5-Dimension Radar',
+            description: 'This radar chart shows your scores across five dimensions: Mood, Calm, Stress, Energy, and Work-Fit. It helps you identify areas that need attention.',
+            placement: 'bottom'
+          },
+          {
+            target: '#surveysGrid',
+            title: 'Assessment Surveys',
+            description: 'Complete validated clinical instruments like PHQ-9, GAD-7, PSS-10, and FAS-10. Each takes 3-7 minutes and is scored to clinical standards.',
+            placement: 'top'
+          },
+          {
+            target: '#employeeTrendChart',
+            title: 'Personal Trends',
+            description: 'Track how your wellbeing scores change over weeks and months. Spot patterns and see the impact of self-care practices.',
+            placement: 'top'
+          },
+          {
+            target: '#recommendedList',
+            title: 'Curated Resources',
+            description: 'Based on your check-in results, we surface personalized self-care resources, breathing exercises, and articles to support your wellbeing journey.',
+            placement: 'top'
+          },
+          {
+            target: '#searchBtn',
+            title: 'Quick Search',
+            description: 'Press Ctrl+K or click here to quickly search through surveys, resources, and platform features.',
+            placement: 'bottom'
+          },
+          {
+            target: '#profileBtn',
+            title: 'Profile & Settings',
+            description: 'Access your profile, view check-in stats, set reminder preferences, and manage privacy and data export options.',
+            placement: 'bottom'
+          }
+        ]
+      });
+    }, 800);
+  });
 </script>
 </body>
 </html>

@@ -8,7 +8,7 @@ const User = require('../models/User');
 const Invitation = require('../models/Invitation');
 const Tenant = require('../models/Tenant');
 const Department = require('../models/Department');
-const { hashField } = require('../utils/crypto');
+const { encryptField, hashField } = require('../utils/crypto');
 const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
 
 // POST /api/v1/auth/login - Rate limited (max 5 attempts per window)
@@ -240,17 +240,26 @@ const handleRegistration = async (req, res, next) => {
     const email_hash = hashField(email.trim().toLowerCase());
     const existing = await User.findOne({ email_hash });
     if (existing) {
-      return res.status(400).json({ success: false, error: 'User already registered with this email' });
+      return res.status(400).json({
+        success: false,
+        error: 'EMAIL_ALREADY_EXISTS',
+        message: 'An account with this email address already exists. Please log in or use a different email.'
+      });
     }
+
+    // Encrypt email using AES-256-GCM
+    const { iv, encrypted, authTag } = encryptField(email.trim().toLowerCase());
+    const email_encrypted = JSON.stringify({ iv, encrypted, authTag });
 
     // Create User & update seat usage
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({
-      email_encrypted: `enc_${Buffer.from(email).toString('base64')}`,
+      email_encrypted,
       email_hash,
       passwordHash,
       full_name: name,
       role: 'employee',
+      status: 'active',
       company_id: targetCompanyId,
       department_id: targetDepartmentId
     });

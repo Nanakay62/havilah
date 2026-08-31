@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="js/auth.js"></script>
+  <link rel="stylesheet" href="/css/tour.css">
 </head>
 <body class="bg-slate-900 text-slate-100 flex items-center justify-center min-h-screen font-['Inter',sans-serif]">
   <div class="bg-slate-800 p-8 rounded-lg shadow-md w-full max-w-md">
@@ -87,6 +88,43 @@
         btn.disabled = false;
         btn.innerHTML = '<span>Sign In</span>';
       }
+    });
+  </script>
+  <script src="/js/tour.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      HavilahTour.init({
+        tourId: 'login-page',
+        welcomeTitle: 'Havilah Login',
+        welcomeDesc: 'Here\'s how to securely access your wellbeing platform.',
+        autoStart: true,
+        steps: [
+          {
+            target: '#loginForm',
+            title: 'Secure Sign-In',
+            description: 'Enter your corporate email and password to access your personalized dashboard. All connections are encrypted end-to-end.',
+            placement: 'top'
+          },
+          {
+            target: '#email',
+            title: 'Corporate Email',
+            description: 'Use the email address provided by your organization during onboarding. This links you to your company\'s wellness workspace.',
+            placement: 'bottom'
+          },
+          {
+            target: '#password',
+            title: 'Secure Password',
+            description: 'Your password is hashed and never stored in plain text. Use the eye icon to toggle visibility.',
+            placement: 'bottom'
+          },
+          {
+            target: '#submitBtn',
+            title: 'Sign In',
+            description: 'Click to authenticate. You\'ll be routed to your Employee Dashboard or HR Analytics Portal based on your role.',
+            placement: 'top'
+          }
+        ]
+      });
     });
   </script>
 </body>

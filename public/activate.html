@@ -6,6 +6,7 @@
   <title>Havilah - Activate Account</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="js/auth.js"></script>
+<link rel="stylesheet" href="/css/tour.css">
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-950 text-white min-h-screen flex items-center justify-center p-4">
   <div class="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden">
@@ -15,6 +16,14 @@
       <div class="h-1 flex-1 bg-cyan-500 rounded-full transition-all duration-300" id="prog-1"></div>
       <div class="h-1 flex-1 bg-white/10 rounded-full transition-all duration-300" id="prog-2"></div>
       <div class="h-1 flex-1 bg-white/10 rounded-full transition-all duration-300" id="prog-3"></div>
+    </div>
+
+    <!-- Error Banner -->
+    <div id="error-banner" class="hidden mb-5 p-3.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-sm flex items-start gap-2.5">
+      <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <div id="error-banner-text" class="flex-1 leading-snug"></div>
     </div>
 
     <!-- STEP 1 & 2: Verification -->
@@ -100,6 +109,27 @@
     let validatedEmail = '';
     let validatedCode = '';
 
+    function showError(msg) {
+      const banner = document.getElementById('error-banner');
+      const text = document.getElementById('error-banner-text');
+      if (banner && text) {
+        text.innerHTML = msg;
+        banner.classList.remove('hidden');
+      } else {
+        alert(msg);
+      }
+    }
+
+    function hideError() {
+      const banner = document.getElementById('error-banner');
+      if (banner) banner.classList.add('hidden');
+    }
+
+    // Clear error banner when typing
+    ['verify-email', 'verify-code', 'setup-name', 'setup-password', 'setup-confirm'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', hideError);
+    });
+
     // Auto-parse code from URL query params (1-click Magic Link)
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -114,6 +144,7 @@
 
     verifyForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      hideError();
       const email = document.getElementById('verify-email').value.trim();
       const code = document.getElementById('verify-code').value.trim().toUpperCase();
 
@@ -126,7 +157,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, code })
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         
         if (res.ok && data.success) {
           // Success: Transition to Step 3
@@ -159,7 +190,8 @@
           }, 500);
 
         } else {
-          showError(data.error || 'Invalid activation code.');
+          const errMsg = data.message || data.error || (res.status === 429 ? 'Too many attempts. Please try again in a few minutes.' : 'Invalid activation code.');
+          showError(errMsg);
         }
       } catch (err) {
         showError('Network error. Please try again.');
@@ -171,6 +203,7 @@
 
     setupForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      hideError();
       const name = document.getElementById('setup-name').value.trim();
       const pwd = document.getElementById('setup-password').value;
       const conf = document.getElementById('setup-confirm').value;
@@ -191,11 +224,17 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: validatedEmail, code: validatedCode, fullName: name, password: pwd })
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (res.ok && data.success) {
           window.location.href = '/login.html?activated=true';
         } else {
-          showError(data.error || 'Activation failed.');
+          if (data.error === 'EMAIL_ALREADY_EXISTS' || (data.error && data.error.includes('already registered')) || (data.message && data.message.includes('already exists'))) {
+            showError('An account with this email address already exists. <a href="/login.html" class="underline font-semibold text-cyan-300 hover:text-cyan-200">Log in here</a>');
+          } else if (res.status === 429) {
+            showError(data.message || 'Too many attempts. Please try again in a few minutes.');
+          } else {
+            showError(data.message || data.error || 'Activation failed. Please try again.');
+          }
         }
       } catch (err) {
         showError('Network error during activation.');
@@ -205,5 +244,42 @@
       }
     });
   </script>
+<script src="/js/tour.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    HavilahTour.init({
+      tourId: 'activate-page',
+      welcomeTitle: 'Account Activation',
+      welcomeDesc: 'Welcome! Follow these simple steps to activate your corporate account.',
+      autoStart: true,
+      steps: [
+        {
+          target: '#progress-bar',
+          title: 'Activation Progress',
+          description: 'Tracks your onboarding steps: validation of your corporate credentials and setting up your secure password.',
+          placement: 'bottom'
+        },
+        {
+          target: '#verify-email',
+          title: 'Corporate Email',
+          description: 'Provide your assigned work email address registered with your company.',
+          placement: 'bottom'
+        },
+        {
+          target: '#verify-code',
+          title: 'Activation Code',
+          description: 'Enter the unique activation code (HR-XXXX-XXXX) provided in your HR invitation letter or email.',
+          placement: 'bottom'
+        },
+        {
+          target: '#btn-verify',
+          title: 'Validate & Proceed',
+          description: 'Click to verify your organization credentials and advance to secure password setup.',
+          placement: 'top'
+        }
+      ]
+    });
+  });
+</script>
 </body>
 </html>

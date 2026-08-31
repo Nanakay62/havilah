@@ -33,6 +33,8 @@ function sensitiveRateLimiter(maxAttempts = 5) {
     }
 
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+    const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || process.env.NODE_ENV !== 'production';
+    const effectiveLimit = isLocalhost ? Math.max(maxAttempts * 6, 30) : maxAttempts;
     const key = `${ip}:${req.baseUrl}${req.path}`;
     const now = Date.now();
 
@@ -44,7 +46,7 @@ function sensitiveRateLimiter(maxAttempts = 5) {
     }
 
     record.count += 1;
-    if (record.count > maxAttempts) {
+    if (record.count > effectiveLimit) {
       return res.status(429).json({
         success: false,
         error: 'TOO_MANY_REQUESTS',

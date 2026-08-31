@@ -444,6 +444,7 @@
   .pricing-feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 0.875rem; color: var(--text-2); line-height: 1.4; }
   .pricing-feature-item svg { width: 18px; height: 18px; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
 </style>
+  <link rel="stylesheet" href="/css/tour.css">
 </head>
 <body>
 
@@ -1146,6 +1147,79 @@
     }
   }
   window.toggleMobileMenu = toggleMobileMenu;
+</script>
+<script src="/js/tour.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    HavilahTour.init({
+      tourId: 'landing-page',
+      welcomeTitle: 'Welcome to Havilah!',
+      welcomeDesc: 'Take a quick tour to see how our workplace wellbeing platform helps your organization thrive.',
+      autoStart: true,
+      steps: [
+        {
+          target: '.brand',
+          title: 'Havilah Platform',
+          description: 'This is your home base. Click the Havilah logo anytime to return to the platform overview.',
+          placement: 'bottom'
+        },
+        {
+          target: '.nav',
+          title: 'Navigation',
+          description: 'Switch between the Platform Overview and Pricing sections. Simple, focused navigation.',
+          placement: 'bottom'
+        },
+        {
+          target: '.header-right',
+          title: 'Quick Actions',
+          description: 'Book a demo, start your free Pro trial, or log in to your existing account from here.',
+          placement: 'bottom'
+        },
+        {
+          target: '.hero-content',
+          title: 'Platform Overview',
+          description: 'Havilah is a clinical-grade psychosocial risk and wellbeing platform, ISO 45003 compliant. Employees check in confidentially, HR gets aggregated insights.',
+          placement: 'right'
+        },
+        {
+          target: '.device-frame',
+          title: 'Live Dashboard Preview',
+          description: 'This is a preview of the HR analytics dashboard — showing KPIs, risk distribution charts, and a 5-dimension radar view of organizational wellbeing.',
+          placement: 'left'
+        },
+        {
+          target: '.trust-strip',
+          title: 'Trust & Compliance',
+          description: 'Havilah is HIPAA compliant, SOC 2 Type II audited, GDPR-ready, and certified under ISO 27001 and ISO 45003 standards.',
+          placement: 'bottom'
+        },
+        {
+          target: '.features',
+          title: 'Platform Capabilities',
+          description: 'Six core capabilities: validated clinical instruments (PHQ-9, GAD-7, etc.), multi-tenant architecture, privacy-first design, predictive heatmaps, pulse cadencing, and care pathway routing.',
+          placement: 'top'
+        },
+        {
+          target: '.experiences',
+          title: 'Two Experiences, One Platform',
+          description: 'Employees get a private, judgment-free space to check in. HR leaders get a dense analytics workspace with heatmaps, radar profiles, and severity distributions.',
+          placement: 'top'
+        },
+        {
+          target: '.stats-band',
+          title: 'Proven Impact',
+          description: '38% reduction in burnout, 4.2x faster risk identification, 91% survey response rate, and $2.7M average annual turnover cost avoided per 1,000 employees.',
+          placement: 'top'
+        },
+        {
+          target: '#pricing',
+          title: 'Transparent Pricing',
+          description: 'Three clear tiers: Free (up to 10 employees), Starter (up to 100), and Pro (unlimited) with a 30-day full-access trial. No credit card required.',
+          placement: 'top'
+        }
+      ]
+    });
+  });
 </script>
 </body>
 </html>

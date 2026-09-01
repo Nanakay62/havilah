@@ -496,10 +496,16 @@
     let totalBilled = 0;
     let settledAmount = 0;
     let pendingDisbursement = 0;
+    let activeTotal = 0;
 
     state.queue.forEach((r) => {
       const st = r.status || 'pending';
       const amount = r.billing?.amount || 0;
+
+      if (st === 'archived') {
+        return; // Exclude archived from active KPI metrics
+      }
+      activeTotal++;
 
       if (st === 'completed') {
         completed++;
@@ -519,7 +525,7 @@
 
     const curr = state.assessor?.billingSettings?.defaultCurrency || 'GHS';
 
-    if (document.getElementById('kpiTotalAssigned')) document.getElementById('kpiTotalAssigned').textContent = state.queue.length;
+    if (document.getElementById('kpiTotalAssigned')) document.getElementById('kpiTotalAssigned').textContent = activeTotal;
     if (document.getElementById('kpiPending')) document.getElementById('kpiPending').textContent = pending;
     if (document.getElementById('kpiScheduledCount')) document.getElementById('kpiScheduledCount').textContent = scheduled;
     if (document.getElementById('kpiCompleted')) document.getElementById('kpiCompleted').textContent = completed;
@@ -660,7 +666,10 @@
     }
 
     // Status filter
-    if (state.filters.status !== 'all') {
+    if (state.filters.status === 'all') {
+      // Default: hide archived cases from active triage queue
+      result = result.filter((r) => (r.status || 'pending') !== 'archived');
+    } else if (state.filters.status !== 'all_including_archived') {
       result = result.filter((r) => (r.status || 'pending') === state.filters.status);
     }
 
@@ -782,6 +791,8 @@
         statusBadge = '<span class="badge badge-scheduled">📅 Scheduled</span>';
       } else if (st === 'cancelled') {
         statusBadge = '<span class="badge badge-cancelled">✕ Cancelled</span>';
+      } else if (st === 'archived') {
+        statusBadge = '<span class="badge" style="background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1;">📦 Archived</span>';
       } else {
         statusBadge = '<span class="badge badge-pending">⏳ Pending</span>';
       }
@@ -800,7 +811,7 @@
           </div>
         `;
       } else {
-        if (isClinicAdmin && r.status !== 'completed') {
+        if (isClinicAdmin && r.status !== 'completed' && r.status !== 'archived') {
           clinicianHtml = `
             <div style="display:flex; align-items:center; gap:4px;">
               <span class="badge badge-unassigned">○ Unassigned</span>
@@ -866,9 +877,15 @@
         <td>${amountStr}</td>
         <td>${settlementPill}</td>
         <td>
-          <div style="display:flex; gap:6px;">
+          <div style="display:flex; gap:4px; align-items:center;">
             <button class="btn btn-ghost btn-sm" onclick="openCaseDetail('${r._id}')">View</button>
-            ${!isCompleted ? `<button class="btn btn-primary btn-sm" onclick="openCompleteModal('${r._id}')">Complete</button>` : ''}
+            ${!isCompleted && st !== 'archived' ? `<button class="btn btn-primary btn-sm" onclick="openCompleteModal('${r._id}')">Complete</button>` : ''}
+            <button class="btn btn-ghost btn-sm" onclick="quickArchiveCase('${r._id}', ${st === 'archived'})" title="${st === 'archived' ? 'Restore Case' : 'Archive Case'}" style="padding:4px 6px; font-size:0.82rem;">
+              ${st === 'archived' ? '📤' : '📦'}
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="quickDeleteCase('${r._id}', '${r.referenceCode}')" title="Delete Case" style="padding:4px 6px; font-size:0.82rem; color:#DC2626;">
+              🗑️
+            </button>
           </div>
         </td>
       `;
@@ -1028,8 +1045,65 @@
       completeBtn.style.display = isCompleted ? 'none' : 'inline-flex';
     }
 
+    const archiveBtn = document.getElementById('modalArchiveCaseBtn');
+    if (archiveBtn) {
+      const isArchived = item.status === 'archived';
+      archiveBtn.textContent = isArchived ? '📤 Restore from Archive' : '📦 Archive Case';
+      archiveBtn.style.color = isArchived ? '#0D9488' : 'var(--text-1)';
+    }
+
     openModal('caseDetailModal');
     startAssessorLiveSync();
+  };
+
+  window.handleToggleArchiveCurrentCase = async () => {
+    if (!state.selectedCase) return;
+    const isArchived = state.selectedCase.status === 'archived';
+    await window.quickArchiveCase(state.selectedCase._id, isArchived);
+    closeModal('caseDetailModal');
+  };
+
+  window.handleDeleteCurrentCase = async () => {
+    if (!state.selectedCase) return;
+    const ref = state.selectedCase.referenceCode;
+    const id = state.selectedCase._id;
+    await window.quickDeleteCase(id, ref);
+    closeModal('caseDetailModal');
+  };
+
+  window.quickArchiveCase = async (referralId, isCurrentlyArchived) => {
+    const actionText = isCurrentlyArchived ? 'restore this referral case to the active queue' : 'archive this referral case (hide from active queue)';
+    if (!confirm(`Are you sure you want to ${actionText}?`)) {
+      return;
+    }
+
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/referrals/${referralId}/archive`, {
+        method: 'PATCH',
+        body: JSON.stringify({ archive: !isCurrentlyArchived }),
+      });
+
+      showToast(res.message || 'Case archive status updated.');
+      await window.fetchAssessorQueue();
+    } catch (err) {
+      alert('Error updating archive status: ' + err.message);
+    }
+  };
+
+  window.quickDeleteCase = async (referralId, referenceCode) => {
+    const confirmPrompt = confirm(`⚠️ Are you sure you want to permanently delete referral ${referenceCode}?\n\nThis will remove it from the system and cannot be undone.`);
+    if (!confirmPrompt) return;
+
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/referrals/${referralId}`, {
+        method: 'DELETE',
+      });
+
+      showToast(res.message || `Referral ${referenceCode} deleted.`);
+      await window.fetchAssessorQueue();
+    } catch (err) {
+      alert('Error deleting referral: ' + err.message);
+    }
   };
 
   // --- Clinical Attachment Functions for Assessor ---

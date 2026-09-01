@@ -816,12 +816,14 @@
             <option value="unassigned">Unassigned Only</option>
           </select>
 
-          <select class="form-select" id="statusFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 130px;">
-            <option value="all">All Statuses</option>
+          <select class="form-select" id="statusFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 140px;">
+            <option value="all">Active Cases (Default)</option>
             <option value="pending">Pending</option>
             <option value="scheduled">Scheduled</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
+            <option value="archived">📦 Archived</option>
+            <option value="all_including_archived">All (Including Archived)</option>
           </select>
 
           <select class="form-select" id="settlementFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 150px;">
@@ -1012,9 +1014,17 @@
         </div>
       </div>
 
-      <div style="margin-top: 22px; display: flex; justify-content: flex-end; gap: 10px;">
-        <button class="btn btn-ghost" onclick="closeModal('caseDetailModal')">Close</button>
-        <button class="btn btn-primary" id="modalCompleteCaseBtn" onclick="openCompleteFromDetail()">Complete &amp; Bill</button>
+      <div style="margin-top: 22px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 14px;">
+        <button type="button" class="btn btn-outline btn-sm" id="modalDeleteCaseBtn" onclick="handleDeleteCurrentCase()" style="color: #DC2626; border-color: #FCA5A5;">
+          🗑️ Delete Case
+        </button>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-outline" id="modalArchiveCaseBtn" onclick="handleToggleArchiveCurrentCase()">
+            📦 Archive Case
+          </button>
+          <button type="button" class="btn btn-ghost" onclick="closeModal('caseDetailModal')">Close</button>
+          <button type="button" class="btn btn-primary" id="modalCompleteCaseBtn" onclick="openCompleteFromDetail()">Complete &amp; Bill</button>
+        </div>
       </div>
     </div>
   </div>

@@ -102,11 +102,18 @@ router.post(
       }
 
       if (!tenant.activeAssessorId) {
-        return res.status(409).json({
-          success: false,
-          error: 'NO_ACTIVE_ASSESSOR',
-          message: 'No medical assessor is currently assigned to this company.',
-        });
+        const defaultAssessor = await Assessor.findOne({ email: 'dr.clarke@fzsafety.com', active: true }) ||
+                                await Assessor.findOne({ active: true, email: { $not: /@clinic\.com$|\.test@/ } });
+        if (defaultAssessor) {
+          tenant.activeAssessorId = defaultAssessor._id;
+          await tenant.save();
+        } else {
+          return res.status(409).json({
+            success: false,
+            error: 'NO_ACTIVE_ASSESSOR',
+            message: 'No medical assessor is currently assigned to this company.',
+          });
+        }
       }
 
       // Generate collision-resistant reference code
@@ -174,7 +181,10 @@ router.post(
       setImmediate(async () => {
         try {
           const assessor = await Assessor.findById(tenant.activeAssessorId).lean();
-          const targetEmail = assessor?.email || process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com';
+          let targetEmail = assessor?.notificationEmail || assessor?.email;
+          if (!targetEmail || targetEmail.includes('@clinic.com') || targetEmail.includes('.test@')) {
+            targetEmail = process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com';
+          }
 
           const result = await sendClinicalDispatch({
             referenceCode,

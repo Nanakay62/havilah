@@ -505,8 +505,11 @@ router.get('/queue', requireAssessorAuth, async (req, res, next) => {
       query.tenantId = req.query.tenantId;
     }
 
-    if (req.query.status && req.query.status !== 'all') {
+    if (req.query.status && req.query.status !== 'all' && req.query.status !== 'all_including_archived') {
       query.status = req.query.status;
+    } else if (req.query.status !== 'all_including_archived' && req.query.status !== 'archived') {
+      // By default, hide archived cases from regular triage queue
+      query.status = { $ne: 'archived' };
     }
 
     if (req.query.settlementStatus && req.query.settlementStatus !== 'all') {
@@ -901,6 +904,74 @@ router.patch('/referrals/:id/complete', requireAssessorAuth, async (req, res, ne
       success: true,
       message: 'Referral completed and billed successfully.',
       data: referral,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   PATCH /api/v1/assessor/referrals/:id/archive
+ * @desc    Toggle archive status for a referral case (hide/unhide from active queue)
+ * @access  Assessor Authenticated
+ */
+router.patch('/referrals/:id/archive', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const referralId = req.params.id;
+    const referral = await Referral.findById(referralId);
+    if (!referral) {
+      return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Referral not found.' });
+    }
+
+    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+      return res.status(403).json({ success: false, error: 'UNAUTHORIZED_ACCESS', message: 'Unauthorized to modify this referral.' });
+    }
+
+    const shouldArchive = req.body.archive !== undefined ? Boolean(req.body.archive) : referral.status !== 'archived';
+    if (shouldArchive) {
+      referral.previousStatus = referral.status !== 'archived' ? referral.status : 'pending';
+      referral.status = 'archived';
+    } else {
+      referral.status = referral.previousStatus || 'pending';
+    }
+
+    await referral.save();
+    console.log(`[Assessor] Referral ${referral.referenceCode} archive status toggled: ${referral.status}`);
+
+    res.json({
+      success: true,
+      message: shouldArchive ? 'Referral archived and hidden from active queue.' : 'Referral restored to active queue.',
+      data: referral,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   DELETE /api/v1/assessor/referrals/:id
+ * @desc    Permanently delete / clear a referral case (for testing or clinical cleanup)
+ * @access  Assessor Authenticated
+ */
+router.delete('/referrals/:id', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const referralId = req.params.id;
+    const referral = await Referral.findById(referralId);
+    if (!referral) {
+      return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Referral not found.' });
+    }
+
+    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+      return res.status(403).json({ success: false, error: 'UNAUTHORIZED_ACCESS', message: 'Unauthorized to delete this referral.' });
+    }
+
+    const refCode = referral.referenceCode;
+    await Referral.findByIdAndDelete(referralId);
+    console.log(`[Assessor] Referral ${refCode} permanently deleted by assessor ${req.assessor.email}`);
+
+    res.json({
+      success: true,
+      message: `Referral ${refCode} has been permanently deleted.`,
     });
   } catch (err) {
     next(err);

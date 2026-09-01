@@ -25,6 +25,15 @@
   let isActive = false;
   let elements = {};
 
+  function markTourSeen(tourId) {
+    const id = tourId || currentConfig?.tourId;
+    if (id) {
+      try {
+        localStorage.setItem(STORAGE_PREFIX + id + '_seen', 'true');
+      } catch(e) {}
+    }
+  }
+
   // ──── DOM Builders ──────────────────────────────
   function createOverlay() {
     // Remove any existing tour elements
@@ -175,6 +184,7 @@
 
     // Event listeners
     backdrop.querySelector('#tourWelcomeStart').addEventListener('click', function() {
+      markTourSeen();
       backdrop.classList.remove('visible');
       setTimeout(() => {
         backdrop.remove();
@@ -183,6 +193,7 @@
     });
 
     backdrop.querySelector('#tourWelcomeSkip').addEventListener('click', function() {
+      markTourSeen();
       backdrop.classList.remove('visible');
       setTimeout(() => backdrop.remove(), 300);
     });
@@ -190,6 +201,7 @@
     // Click outside to dismiss
     backdrop.addEventListener('click', function(e) {
       if (e.target === backdrop) {
+        markTourSeen();
         backdrop.classList.remove('visible');
         setTimeout(() => backdrop.remove(), 300);
       }
@@ -200,6 +212,7 @@
   function startTour() {
     if (!currentConfig || !currentConfig.steps.length) return;
 
+    markTourSeen();
     currentStep = 0;
     isActive = true;
 
@@ -227,11 +240,7 @@
     }
 
     // Mark tour as seen
-    if (currentConfig) {
-      try {
-        localStorage.setItem(STORAGE_PREFIX + currentConfig.tourId + '_seen', 'true');
-      } catch(e) {}
-    }
+    markTourSeen();
 
     // Show FAB again
     if (elements.fab) elements.fab.style.display = '';
@@ -479,12 +488,15 @@
       // Create the FAB button
       createFAB();
 
-      // Auto-start for first-time visitors
+      // Auto-start for first-time visitors only
       const autoStart = config.autoStart !== false;
       if (autoStart) {
         try {
-          const seen = localStorage.getItem(STORAGE_PREFIX + config.tourId + '_seen');
+          const seenKey = STORAGE_PREFIX + config.tourId + '_seen';
+          const seen = localStorage.getItem(seenKey);
           if (!seen) {
+            // Immediately mark as seen so refreshing or reloading will NEVER re-trigger the auto-popup
+            localStorage.setItem(seenKey, 'true');
             // Delay to let page settle
             setTimeout(() => showWelcome(), 1200);
           }

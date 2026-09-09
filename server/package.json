@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "@getbrevo/brevo": "^6.0.3",
@@ -26,11 +27,17 @@
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
     "rate-limit-redis": "^6.0.1",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0"
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "private": true,
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "supertest": "^7.2.2",
+    "vitest": "^5.0.0"
+  }
 }

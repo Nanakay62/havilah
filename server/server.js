@@ -157,6 +157,14 @@ app.get('/health', (req, res) => {
   });
 });
 
+// OpenAPI 3.0 Interactive Documentation
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'Wellframe API Documentation',
+  customCss: '.swagger-ui .topbar { display: none }',
+}));
+
 // Explicit fallback route for register.html, clinical-portal, and favicon
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/register.html', (req, res) => {
@@ -309,7 +317,9 @@ async function startServer() {
   }
 }
 
-// Start it up
-startServer();
+// Start it up only when run directly
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = app;

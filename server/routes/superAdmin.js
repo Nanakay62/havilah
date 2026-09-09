@@ -2,10 +2,12 @@
 
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const Invitation = require('../models/Invitation');
+const PersonalWellnessLog = require('../models/PersonalWellnessLog');
 const { encryptField, hashField, decryptField } = require('../utils/crypto');
 const { validateSession, superAdminGuard } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
@@ -29,9 +31,7 @@ router.get('/stats', async (req, res, next) => {
     // Calculate total completed responses safely
     let totalResponses = 0;
     try {
-      if (mongoose.connection && mongoose.connection.db) {
-        totalResponses = await mongoose.connection.db.collection('assessments').countDocuments();
-      }
+      totalResponses = await PersonalWellnessLog.countDocuments();
     } catch (e) {}
 
     // Calculate engagement rate
@@ -40,7 +40,7 @@ router.get('/stats', async (req, res, next) => {
       engagementRate = Math.min(100, ((totalResponses / totalUsers) * 100)).toFixed(1);
     }
 
-    // Aggregate cross-tenant benchmarks dynamically from assessments collection
+    // Aggregate cross-tenant benchmarks dynamically from PersonalWellnessLog
     let benchmarks = {
       phq9: null,
       gad7: null,
@@ -50,16 +50,15 @@ router.get('/stats', async (req, res, next) => {
     };
 
     try {
-      if (mongoose.connection && mongoose.connection.db) {
-        const avgResults = await mongoose.connection.db.collection('assessments').aggregate([
-          {
-            $group: {
-              _id: '$instrument_code',
-              avgScore: { $avg: '$total_score' },
-              count: { $sum: 1 }
-            }
+      const avgResults = await PersonalWellnessLog.aggregate([
+        {
+          $group: {
+            _id: '$survey_type',
+            avgScore: { $avg: { $ifNull: ['$clinical_score', '$composite_score'] } },
+            count: { $sum: 1 }
           }
-        ]).toArray();
+        }
+      ]);
 
         const helperTier = (code, avg) => {
           const upper = (code || '').toUpperCase();
@@ -83,7 +82,6 @@ router.get('/stats', async (req, res, next) => {
             if (code.includes('COPSOQ')) benchmarks.copsoq3 = { score, tier };
           }
         });
-      }
     } catch (benchErr) {
       console.warn('[SuperAdmin Stats] Benchmark aggregation error:', benchErr.message);
     }

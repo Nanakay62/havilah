@@ -450,4 +450,31 @@ router.get('/dashboard-data', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/v1/wellness/export
+ * GDPR Art. 20 - Right to data portability.
+ * Exports all personal wellbeing check-ins as downloadable JSON.
+ */
+router.get('/export', validateSession, requireConsent, async (req, res, next) => {
+  try {
+    const { user_id } = req.sessionData;
+    const logs = await PersonalWellnessLog.find({ user_id })
+      .sort({ submitted_at: -1 })
+      .lean();
+
+    res.setHeader('Content-Disposition', 'attachment; filename="my-wellbeing-data.json"');
+    res.setHeader('Content-Type', 'application/json');
+
+    return res.json({
+      success: true,
+      exported_at: new Date().toISOString(),
+      user_id,
+      record_count: logs.length,
+      records: logs,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

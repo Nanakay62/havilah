@@ -25,7 +25,7 @@ function requireViewRole(...allowedRoles) {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_for_dev');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
       // If no roles specified, just being logged in is enough
       if (allowedRoles.length === 0) {

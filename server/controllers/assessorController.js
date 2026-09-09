@@ -58,7 +58,7 @@ router.post('/login', async (req, res, next) => {
           role: 'clinic_admin',
           isLeadAssessor: true,
         },
-        process.env.JWT_SECRET || 'fallback_secret_for_dev',
+        process.env.JWT_SECRET,
         { expiresIn: '7d' }
       );
 
@@ -116,7 +116,7 @@ router.post('/login', async (req, res, next) => {
           specialty: doctor.specialty,
           isLeadAssessor: false,
         },
-        process.env.JWT_SECRET || 'fallback_secret_for_dev',
+        process.env.JWT_SECRET,
         { expiresIn: '7d' }
       );
 

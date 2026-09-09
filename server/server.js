@@ -49,9 +49,42 @@ const PORT = process.env.PORT || 3000;
 
 // Security Headers (Principle 4)
 app.use(helmet({
-  contentSecurityPolicy: false, // Disabled for local testing/prototype
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://cdn.jsdelivr.net",
+        "https://cdn.tailwindcss.com",
+        "https://cdnjs.cloudflare.com",
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://cdn.tailwindcss.com",
+        "https://fonts.googleapis.com",
+        "https://cdnjs.cloudflare.com",
+      ],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: [
+        "'self'",
+        process.env.CLIENT_ORIGIN || '',
+        "https://havilah-api.onrender.com",
+      ].filter(Boolean),
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+    },
+  },
   frameguard: { action: 'deny' },
   noSniff: true,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   permittedCrossDomainPolicies: { permittedPolicies: 'none' }
 }));
@@ -142,15 +175,27 @@ app.get('/', (req, res) => {
 
 // GET /api/v1/clinical-provider - Active Tenant Clinical Provider Endpoint
 app.get('/api/v1/clinical-provider', (req, res) => {
+  const partnerName = process.env.DEFAULT_CLINICAL_PARTNER_NAME || 'FZ Safety and Health';
+  const hotline = process.env.DEFAULT_CLINICAL_HOTLINE || '+233 24 362 9870';
+  const intakeEmail = process.env.CLINICAL_INTAKE_EMAIL || process.env.DEFAULT_CLINICAL_PARTNER_EMAIL;
+
+  if (!partnerName || !intakeEmail) {
+    return res.status(501).json({
+      success: false,
+      error: 'CLINICAL_PROVIDER_NOT_CONFIGURED',
+      message: 'Clinical provider configuration is not set. Contact system administrator.',
+    });
+  }
+
   res.json({
     success: true,
-    active_provider: process.env.DEFAULT_CLINICAL_PARTNER_NAME || 'FZ Safety and Health',
-    provider_name: process.env.DEFAULT_CLINICAL_PARTNER_NAME || 'FZ Safety and Health',
-    eap_hotline: process.env.DEFAULT_CLINICAL_HOTLINE || '+233 24 362 9870',
-    crisis_hotline: '+233 24 362 9870',
-    occupational_health_contact: process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'nanakwamedickson62@gmail.com',
-    clinical_intake_email: process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com',
-    whistleblower_email: process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || 'nanakwamedickson62@gmail.com',
+    active_provider: partnerName,
+    provider_name: partnerName,
+    eap_hotline: hotline,
+    crisis_hotline: hotline,
+    occupational_health_contact: intakeEmail,
+    clinical_intake_email: intakeEmail,
+    whistleblower_email: process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || intakeEmail,
     allow_custom_eap_overrides: true
   });
 });
@@ -192,6 +237,14 @@ app.use((err, req, res, next) => {
 // Startup wrapper
 async function startServer() {
   try {
+    // Validate critical environment variables at startup
+    const REQUIRED_ENV = ['MONGODB_URI', 'JWT_SECRET', 'ENCRYPTION_KEY', 'SUPER_ADMIN_KEY'];
+    const missing = REQUIRED_ENV.filter(key => !process.env[key]);
+    if (missing.length > 0) {
+      console.error(`[server] FATAL: Missing required environment variables: ${missing.join(', ')}`);
+      process.exit(1);
+    }
+
     // 1. Connect to Database
     await connectDB();
 

@@ -48,7 +48,7 @@ async function validateSession(req, res, next) {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_for_dev');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
       /** @type {{ user_id: string, company_id: string, department_id: string, role: string, status: string }} */
       req.sessionData = {
@@ -194,7 +194,14 @@ function requireSuperAdmin(req, res, next) {
 
   // Option 2: Super Admin API Key header
   const adminKey = req.headers['x-admin-key'];
-  const expectedKey = process.env.SUPER_ADMIN_KEY || 'super-admin-key-secret-wellframe-2026';
+  const expectedKey = process.env.SUPER_ADMIN_KEY;
+  if (!expectedKey) {
+    return res.status(503).json({
+      success: false,
+      error: 'MISCONFIGURED',
+      message: 'Super admin key not configured',
+    });
+  }
 
   if (adminKey && adminKey === expectedKey) {
     return next();

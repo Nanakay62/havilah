@@ -121,7 +121,7 @@ async function registerTenant(req, res, next) {
       isSystemSuperAdmin: false,
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET || 'fallback_secret_for_dev', {
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '24h',
     });
 

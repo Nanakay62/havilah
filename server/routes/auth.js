@@ -72,7 +72,7 @@ router.post('/login', sensitiveRateLimiter(5), async (req, res, next) => {
       isSystemSuperAdmin: user.isSystemSuperAdmin || false
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET || 'fallback_secret_for_dev', {
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '24h',
     });
 
@@ -282,7 +282,7 @@ const handleRegistration = async (req, res, next) => {
       isSystemSuperAdmin: false
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET || 'fallback_secret_for_dev', {
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '24h',
     });
 

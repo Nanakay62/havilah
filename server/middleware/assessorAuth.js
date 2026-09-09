@@ -30,7 +30,7 @@ async function requireAssessorAuth(req, res, next) {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_for_dev');
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (jwtErr) {
       return res.status(401).json({
         success: false,

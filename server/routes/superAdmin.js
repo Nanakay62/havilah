@@ -409,7 +409,7 @@ router.post('/impersonate', async (req, res, next) => {
       event_payload: { company_name: tenant.company_name, company_id, impersonated_by: superAdminId }
     }).catch(e => {});
 
-    const secret = process.env.JWT_SECRET || 'fallback_secret_for_dev';
+    const secret = process.env.JWT_SECRET;
     
     // Explicit 15-minute expiration & impersonatedBy tracking
     const token = jwt.sign({

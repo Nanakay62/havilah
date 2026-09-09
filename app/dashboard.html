@@ -886,6 +886,7 @@
 }
 
 </style>
+  <link rel="stylesheet" href="/css/tour.css">
   <script src="/js/data.js?v=1784217446485"></script>
 </head>
 <body>
@@ -902,7 +903,15 @@
       Havilah
     </button>
     
-    <nav class="nav" role="navigation" aria-label="Primary"><button class="nav-item active">My Wellness</button></nav>
+    <nav class="nav" role="navigation" aria-label="Primary">
+      <button class="nav-item active" id="navBtnWellness" onclick="App.navigate('employee')">My Wellness</button>
+      <button class="nav-item" id="navBtnLearn" onclick="App.navigate('learn')">
+        <span style="display: inline-flex; align-items: center; gap: 6px;">
+          <span>🧠</span>
+          <span>Mental Health Library</span>
+        </span>
+      </button>
+    </nav>
     
     <div class="header-right" style="display: flex; align-items: center; gap: 10px;">
       <button class="cosmic-pill emerald" style="cursor: pointer; font-size: 0.8rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;" onclick="App.openHelp()" title="Confidential Help & Active Clinical Partner Support">
@@ -1095,7 +1104,104 @@
   </div>
 </section>
 
+<!-- ============ MENTAL HEALTH LIBRARY / LEARN HUB VIEW ============ -->
+<section class="view" id="view-learn" style="display:none; padding: 24px 0 80px;" aria-label="Mental Health & Wellbeing Library">
+  <div class="container" style="max-width: 1180px; margin: 0 auto; padding: 0 20px;">
+    
+    <!-- Hero Header -->
+    <div style="background: linear-gradient(135deg, rgba(0, 183, 195, 0.08) 0%, rgba(112, 0, 255, 0.05) 100%), #ffffff; border: 1px solid var(--border-strong); border-radius: 20px; padding: 32px 36px; margin-bottom: 24px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden;">
+      <div style="max-width: 720px; position: relative; z-index: 2;">
+        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(0, 183, 195, 0.12); color: var(--accent-deep); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 12px; border-radius: 9999px; margin-bottom: 12px;">
+          <span>🧠</span>
+          <span>Apple Health-Inspired Psychoeducation Hub</span>
+        </div>
+        <h1 style="font-size: 1.85rem; font-weight: 800; color: var(--text-1); letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 10px;">
+          Mental Wellbeing &amp; Health Library
+        </h1>
+        <p style="font-size: 0.95rem; color: var(--text-2); line-height: 1.55; margin-bottom: 20px;">
+          Clinically validated somatic tools, nervous system resets, and evidence-based psychoeducation aligned with ISO 45003 standards.
+        </p>
 
+        <!-- Search input -->
+        <div style="display: flex; gap: 10px; max-width: 480px;">
+          <div style="position: relative; flex: 1;">
+            <svg style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-3);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="learnSearchInput" placeholder="Search breathing, anxiety, sleep, burnout..." oninput="App.searchLearnArticles(this.value)" style="width: 100%; padding: 10px 14px 10px 42px; border-radius: 12px; border: 1px solid var(--border-strong); background: #ffffff; font-size: 0.875rem; color: var(--text-1); outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Crisis Hotline Quick Bar (Always Prominent) -->
+    <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 14px; padding: 14px 20px; margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef3c7; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">🆘</div>
+        <div>
+          <div style="font-weight: 700; font-size: 0.875rem; color: #92400e;">Immediate Confidential Crisis Assistance</div>
+          <div style="font-size: 0.775rem; color: #b45309;">If you or a colleague are experiencing severe distress or thoughts of self-harm, free 24/7 support is accessible now.</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="App.openLearnArticle('urgent-crisis-resources')" style="background: #d97706; color: #ffffff; border: none; padding: 7px 16px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+          <span>📞</span>
+          <span>View Crisis Hotlines</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Personalized For You Section -->
+    <div id="learnRecommendedSection" style="margin-bottom: 36px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-1); margin: 0;">Recommended For You</h2>
+          <span id="learnTailoredBadge" style="display: none; background: rgba(0, 183, 195, 0.1); color: var(--accent-deep); font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;">Tailored to your check-ins</span>
+        </div>
+      </div>
+      <div id="learnRecommendedGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;">
+        <!-- Injected recommended cards -->
+      </div>
+    </div>
+
+    <!-- Category Filter Bar -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-1); margin: 0;">Browse by Topic</h2>
+      </div>
+      <div id="learnCategoryPills" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none;">
+        <!-- Injected category pill buttons -->
+      </div>
+    </div>
+
+    <!-- All Articles Grid -->
+    <div id="learnAllArticlesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+      <!-- Dynamically injected cards -->
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ ARTICLE READER MODAL ============ -->
+<div id="articleReaderModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,0.65); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:16px;" onclick="if(event.target===this)App.closeArticleReader()">
+  <div style="background:#ffffff; width:100%; max-width:760px; max-height:88vh; border-radius:20px; box-shadow:0 25px 60px -15px rgba(15,23,42,0.25); display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--border-strong);">
+    <!-- Modal Header -->
+    <div style="padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: #ffffff;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span id="articleReaderCategoryBadge" style="background: rgba(0,183,195,0.12); color: var(--accent-deep); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; padding: 4px 10px; border-radius: 6px;">Category</span>
+        <span id="articleReaderReadTime" style="font-size: 0.8rem; color: var(--text-3);">3 min read</span>
+      </div>
+      <button onclick="App.closeArticleReader()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-2); cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: 6px;">&times;</button>
+    </div>
+    <!-- Modal Body -->
+    <div id="articleReaderContent" style="padding: 28px 32px; overflow-y: auto; font-size: 0.95rem; color: #1e293b; line-height: 1.7;">
+      <!-- Injected full article HTML -->
+    </div>
+    <!-- Modal Footer -->
+    <div style="padding: 16px 28px; border-top: 1px solid var(--border); background: var(--bg-base); display: flex; align-items: center; justify-content: space-between;">
+      <div id="articleReaderSourceCitation" style="font-size: 0.775rem; color: var(--text-3);"></div>
+      <button onclick="App.closeArticleReader()" style="background: var(--accent); color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">Done Reading</button>
+    </div>
+  </div>
+</div>
 
 </main>
 
@@ -2926,7 +3032,229 @@ const App = (() => {
   function navigate(view) {
     state.currentView = view;
     document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
-    document.getElementById('view-' + view).style.display = 'block';
+    const target = document.getElementById('view-' + view);
+    if (target) target.style.display = 'block';
+
+    const navWellness = document.getElementById('navBtnWellness');
+    const navLearn = document.getElementById('navBtnLearn');
+    if (navWellness && navLearn) {
+      if (view === 'learn') {
+        navWellness.classList.remove('active');
+        navLearn.classList.add('active');
+        loadLearnHub();
+      } else {
+        navWellness.classList.add('active');
+        navLearn.classList.remove('active');
+      }
+    }
+  }
+
+  let learnHubState = {
+    articles: [],
+    recommended: [],
+    categories: [],
+    currentCategory: 'all',
+    searchQuery: '',
+    loaded: false,
+  };
+
+  async function loadLearnHub() {
+    try {
+      const token = localStorage.getItem('token') || '';
+      const headers = { 'Authorization': 'Bearer ' + token };
+
+      const [catRes, recRes, artRes] = await Promise.all([
+        fetch('/api/v1/learn/categories', { headers }).then(r => r.json()).catch(() => ({})),
+        fetch('/api/v1/learn/recommended', { headers }).then(r => r.json()).catch(() => ({})),
+        fetch('/api/v1/learn/articles?limit=30', { headers }).then(r => r.json()).catch(() => ({}))
+      ]);
+
+      if (catRes.success) {
+        learnHubState.categories = catRes.categories || [];
+        renderLearnCategories();
+      }
+
+      if (recRes.success) {
+        learnHubState.recommended = recRes.articles || [];
+        renderLearnRecommended(recRes);
+      }
+
+      if (artRes.success) {
+        learnHubState.articles = artRes.articles || [];
+        renderLearnArticles();
+      }
+      learnHubState.loaded = true;
+    } catch (err) {
+      console.warn('[LearnHub] Load error:', err);
+    }
+  }
+
+  function renderLearnCategories() {
+    const container = document.getElementById('learnCategoryPills');
+    if (!container) return;
+
+    let html = `
+      <button onclick="App.filterLearnCategory('all')" class="category-pill" style="padding: 7px 16px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border-strong); background: ${learnHubState.currentCategory === 'all' ? 'var(--accent)' : '#ffffff'}; color: ${learnHubState.currentCategory === 'all' ? '#ffffff' : 'var(--text-1)'}; white-space: nowrap; transition: all 0.2s ease;">
+        All Topics (${learnHubState.articles.length || 7})
+      </button>
+    `;
+
+    learnHubState.categories.forEach(cat => {
+      const isSel = learnHubState.currentCategory === cat.key;
+      html += `
+        <button onclick="App.filterLearnCategory('${cat.key}')" class="category-pill" style="padding: 7px 16px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border-strong); background: ${isSel ? 'var(--accent)' : '#ffffff'}; color: ${isSel ? '#ffffff' : 'var(--text-1)'}; white-space: nowrap; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px;">
+          <span>${cat.emoji}</span>
+          <span>${cat.label}</span>
+          <span style="opacity: 0.7; font-size: 0.75rem;">(${cat.article_count})</span>
+        </button>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  function renderLearnRecommended(recData) {
+    const grid = document.getElementById('learnRecommendedGrid');
+    const badge = document.getElementById('learnTailoredBadge');
+    if (!grid) return;
+
+    if (recData && recData.has_tailored_recommendations) {
+      if (badge) badge.style.display = 'inline-block';
+    }
+
+    if (!learnHubState.recommended || learnHubState.recommended.length === 0) {
+      grid.innerHTML = '<div style="color: var(--text-3); font-size: 0.875rem;">No recommendations yet. Complete a check-in to get tailored resources.</div>';
+      return;
+    }
+
+    grid.innerHTML = learnHubState.recommended.slice(0, 3).map(art => `
+      <div onclick="App.openLearnArticle('${art.slug}')" style="background: #ffffff; border: 1px solid var(--border-strong); border-radius: 16px; padding: 20px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span style="font-size: 1.75rem;">${art.thumbnail_emoji || '🧠'}</span>
+            <span style="background: rgba(0, 183, 195, 0.1); color: var(--accent-deep); font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; text-transform: uppercase;">${art.category}</span>
+          </div>
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-1); margin-bottom: 8px; line-height: 1.4;">${art.title}</h3>
+          <p style="font-size: 0.825rem; color: var(--text-2); line-height: 1.5; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${art.summary}</p>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--text-3); border-top: 1px solid var(--border); padding-top: 12px;">
+          <span>⏱️ ${art.read_time_minutes || 3} min read</span>
+          <span style="color: var(--accent); font-weight: 600;">Read Guide &rarr;</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderLearnArticles() {
+    const grid = document.getElementById('learnAllArticlesGrid');
+    if (!grid) return;
+
+    let filtered = learnHubState.articles;
+    if (learnHubState.currentCategory !== 'all') {
+      filtered = filtered.filter(a => a.category === learnHubState.currentCategory);
+    }
+    if (learnHubState.searchQuery) {
+      const q = learnHubState.searchQuery.toLowerCase();
+      filtered = filtered.filter(a =>
+        a.title.toLowerCase().includes(q) ||
+        a.summary.toLowerCase().includes(q) ||
+        (a.tags && a.tags.some(t => t.toLowerCase().includes(q)))
+      );
+    }
+
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-3);">No mental health guides found matching your selection.</div>';
+      return;
+    }
+
+    grid.innerHTML = filtered.map(art => `
+      <div onclick="App.openLearnArticle('${art.slug}')" style="background: #ffffff; border: 1px solid var(--border-strong); border-radius: 16px; padding: 22px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span style="font-size: 1.75rem;">${art.thumbnail_emoji || '🧠'}</span>
+            <span style="background: var(--bg-base); color: var(--text-2); font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase;">${art.category}</span>
+          </div>
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-1); margin-bottom: 8px; line-height: 1.4;">${art.title}</h3>
+          <p style="font-size: 0.85rem; color: var(--text-2); line-height: 1.5; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${art.summary}</p>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--text-3); border-top: 1px solid var(--border); padding-top: 12px;">
+          <span>⏱️ ${art.read_time_minutes || 3} min read</span>
+          <span style="color: var(--accent); font-weight: 600;">Read Guide &rarr;</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function filterLearnCategory(category) {
+    learnHubState.currentCategory = category;
+    renderLearnCategories();
+    renderLearnArticles();
+  }
+
+  function searchLearnArticles(query) {
+    learnHubState.searchQuery = (query || '').trim();
+    renderLearnArticles();
+  }
+
+  async function openLearnArticle(slug) {
+    try {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch('/api/v1/learn/articles/' + slug, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      if (!data.success || !data.article) {
+        alert('Could not load the requested article.');
+        return;
+      }
+
+      const art = data.article;
+      document.getElementById('articleReaderCategoryBadge').innerText = art.category;
+      document.getElementById('articleReaderReadTime').innerText = (art.read_time_minutes || 3) + ' min read';
+      
+      const citationEl = document.getElementById('articleReaderSourceCitation');
+      if (art.source_name && art.source_url) {
+        citationEl.innerHTML = 'Source: <a href="' + art.source_url + '" target="_blank" rel="noopener" style="color: var(--accent); text-decoration: underline;">' + art.source_name + '</a>';
+      } else if (art.source_name) {
+        citationEl.innerText = 'Source: ' + art.source_name;
+      } else {
+        citationEl.innerText = 'Havilah Occupational Health Clinical Library';
+      }
+
+      let htmlContent = (art.content_markdown || '')
+        .replace(/^### (.*$)/gim, '<h3 style="color: var(--text-1); font-size: 1.15rem; font-weight: 700; margin: 20px 0 10px;">$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2 style="color: var(--text-1); font-size: 1.35rem; font-weight: 800; margin: 24px 0 12px;">$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1 style="color: var(--text-1); font-size: 1.6rem; font-weight: 800; margin: 24px 0 14px;">$1</h1>')
+        .replace(/^\> (.*$)/gim, '<blockquote style="border-left: 4px solid var(--accent); background: rgba(0,183,195,0.06); padding: 12px 18px; border-radius: 4px; margin: 16px 0; color: var(--text-1); font-style: italic;">$1</blockquote>')
+        .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\*(.*)\*/gim, '<em>$1</em>')
+        .replace(/\`([^\`]+)\`/gim, '<code style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; font-family: monospace;">$1</code>')
+        .replace(/\n\n/gim, '</p><p style="margin-bottom: 14px; line-height: 1.7;">')
+        .replace(/\* (.*$)/gim, '<li style="margin-bottom: 6px; margin-left: 20px;">$1</li>');
+
+      document.getElementById('articleReaderContent').innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <span style="font-size: 2.5rem;">${art.thumbnail_emoji || '🧠'}</span>
+          <h1 style="font-size: 1.65rem; font-weight: 800; color: var(--text-1); line-height: 1.25; margin: 0;">${art.title}</h1>
+        </div>
+        <p style="font-size: 1.05rem; color: var(--text-2); font-weight: 500; line-height: 1.5; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+          ${art.summary}
+        </p>
+        <div style="font-size: 0.95rem; color: #1e293b; line-height: 1.75;">
+          ${htmlContent}
+        </div>
+      `;
+
+      const modal = document.getElementById('articleReaderModal');
+      if (modal) modal.style.display = 'flex';
+    } catch (e) {
+      console.error('[LearnHub] Failed to fetch article:', e);
+    }
+  }
+
+  function closeArticleReader() {
+    const modal = document.getElementById('articleReaderModal');
+    if (modal) modal.style.display = 'none';
   }
 
   function handleNewCheckinClick() {
@@ -4841,6 +5169,11 @@ const App = (() => {
     markBrainDumpItem,
     executeCommand,
     downloadConfidentialReport: (opts) => (window.generateAssessmentReportPdf ? window.generateAssessmentReportPdf(opts) : null),
+    openLearnArticle,
+    filterLearnCategory,
+    searchLearnArticles,
+    closeArticleReader,
+    loadLearnHub,
     state
   };
 })();
@@ -5416,6 +5749,70 @@ window.submitDailyPulse = async function() {
     if (btn) { btn.disabled = false; btn.textContent = 'Submit Daily Pulse'; }
   }
 };
+</script>
+<script src="/js/tour.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Wait a moment for the dashboard to initialize
+    setTimeout(function() {
+      HavilahTour.init({
+        tourId: 'employee-dashboard',
+        welcomeTitle: 'Your Wellness Dashboard',
+        welcomeDesc: 'Let us show you around your personal wellbeing check-in space. Everything here is private and confidential.',
+        autoStart: true,
+        steps: [
+          {
+            target: '#empGreeting',
+            title: 'Personal Greeting',
+            description: 'Your dashboard greets you by name. This is your private wellness space — only you can see your individual results.',
+            placement: 'bottom'
+          },
+          {
+            target: '#wellbeing-hero-card',
+            title: 'Wellbeing Score',
+            description: 'Your overall wellbeing composite score is shown here with a progress ring. This aggregates all your check-in dimensions into a single health indicator.',
+            placement: 'bottom'
+          },
+          {
+            target: '#wellbeingRadarChart',
+            title: '5-Dimension Radar',
+            description: 'This radar chart shows your scores across five dimensions: Mood, Calm, Stress, Energy, and Work-Fit. It helps you identify areas that need attention.',
+            placement: 'bottom'
+          },
+          {
+            target: '#surveysGrid',
+            title: 'Assessment Surveys',
+            description: 'Complete validated clinical instruments like PHQ-9, GAD-7, PSS-10, and FAS-10. Each takes 3-7 minutes and is scored to clinical standards.',
+            placement: 'top'
+          },
+          {
+            target: '#employeeTrendChart',
+            title: 'Personal Trends',
+            description: 'Track how your wellbeing scores change over weeks and months. Spot patterns and see the impact of self-care practices.',
+            placement: 'top'
+          },
+          {
+            target: '#recommendedList',
+            title: 'Curated Resources',
+            description: 'Based on your check-in results, we surface personalized self-care resources, breathing exercises, and articles to support your wellbeing journey.',
+            placement: 'top'
+          },
+          {
+            target: '#searchBtn',
+            title: 'Quick Search',
+            description: 'Press Ctrl+K or click here to quickly search through surveys, resources, and platform features.',
+            placement: 'bottom'
+          },
+          {
+            target: '#profileBtn',
+            title: 'Profile & Settings',
+            description: 'Access your profile, view check-in stats, set reminder preferences, and manage privacy and data export options.',
+            placement: 'bottom'
+          }
+        ]
+      });
+    }, 800);
+  });
 </script>
 </body>
 </html>

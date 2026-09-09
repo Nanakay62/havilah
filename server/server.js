@@ -43,6 +43,7 @@ const whistleblowerRouter = require('./routes/whistleblowerRoutes');
 const reportController = require('./controllers/reportController');
 const assessmentRouter = require('./routes/assessment');
 const alertsRouter = require('./routes/alerts');
+const learnRouter = require('./routes/learn');
 const logger = require('./utils/logger');
 const pinoHttp = require('pino-http');
 
@@ -245,6 +246,7 @@ app.use('/api/v1/vault', whistleblowerRouter);
 app.use('/api/v1/whistleblower', reportController);
 app.use('/api/v1/assessments', assessmentRouter.router || assessmentRouter);
 app.use('/api/v1/alerts', alertsRouter);
+app.use('/api/v1/learn', learnRouter);
 
 // Global Error Handler - Sanitized Error Messages (Principle 11)
 app.use((err, req, res, next) => {

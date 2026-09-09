@@ -128,6 +128,109 @@ router.get('/analytics', async (req, res, next) => {
   }
 });
 
+// GET /api/v1/hr/trends - Longitudinal Trend Analysis (N-threshold = 5 per month bucket)
+router.get('/trends', async (req, res, next) => {
+  try {
+    const { company_id } = req.sessionData;
+    const { survey_type, department, department_id } = req.query;
+    const months = Math.max(1, Math.min(parseInt(req.query.months, 10) || 6, 24));
+
+    const PersonalWellnessLog = require('../models/PersonalWellnessLog');
+    const Department = require('../models/Department');
+
+    // Date range: back N months
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - months);
+    startDate.setDate(1);
+    startDate.setHours(0, 0, 0, 0);
+
+    const matchQuery = {
+      company_id,
+      submitted_at: { $gte: startDate }
+    };
+
+    if (survey_type && survey_type !== 'all') {
+      matchQuery.survey_type = { $regex: new RegExp(`^${survey_type}`, 'i') };
+    }
+
+    const targetDept = department || department_id;
+    if (targetDept && targetDept !== 'all') {
+      const depts = await Department.find({ company_id, is_active: true }).lean();
+      const deptMatch = depts.find(d => d.name.toLowerCase() === targetDept.toLowerCase() || d.department_id === targetDept);
+      if (deptMatch) {
+        matchQuery.department_id = deptMatch.department_id;
+      }
+    }
+
+    const monthlyAgg = await PersonalWellnessLog.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m', date: '$submitted_at' }
+          },
+          response_count: { $sum: 1 },
+          avg_composite_score: { $avg: '$composite_score' },
+          avg_overall_index: { $avg: '$overallIndex' },
+          avg_clinical_score: { $avg: '$clinical_score' },
+          avg_mood: { $avg: '$dimension_scores.mood' },
+          avg_calm: { $avg: '$dimension_scores.calm' },
+          avg_stress: { $avg: '$dimension_scores.stress' },
+          avg_energy: { $avg: '$dimension_scores.energy' },
+          avg_work_fit: { $avg: '$dimension_scores.work_fit' }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    const N_THRESHOLD = 5;
+    const trends = monthlyAgg.map(bucket => {
+      const meetsThreshold = bucket.response_count >= N_THRESHOLD;
+      const primaryScore = bucket.avg_composite_score ?? bucket.avg_overall_index;
+
+      if (!meetsThreshold) {
+        return {
+          month: bucket._id,
+          response_count: bucket.response_count,
+          meets_n_threshold: false,
+          avg_score: null,
+          avg_clinical_score: null,
+          dimensions: null,
+          message: 'Privacy threshold not met (N < 5 responses). Metrics suppressed.'
+        };
+      }
+
+      return {
+        month: bucket._id,
+        response_count: bucket.response_count,
+        meets_n_threshold: true,
+        avg_score: primaryScore != null ? Math.round(primaryScore * 10) / 10 : null,
+        avg_clinical_score: bucket.avg_clinical_score != null ? Math.round(bucket.avg_clinical_score * 10) / 10 : null,
+        dimensions: {
+          mood: bucket.avg_mood != null ? Math.round(bucket.avg_mood * 10) / 10 : null,
+          calm: bucket.avg_calm != null ? Math.round(bucket.avg_calm * 10) / 10 : null,
+          stress: bucket.avg_stress != null ? Math.round(bucket.avg_stress * 10) / 10 : null,
+          energy: bucket.avg_energy != null ? Math.round(bucket.avg_energy * 10) / 10 : null,
+          work_fit: bucket.avg_work_fit != null ? Math.round(bucket.avg_work_fit * 10) / 10 : null
+        }
+      };
+    });
+
+    res.json({
+      success: true,
+      company_id,
+      survey_type: survey_type || 'all',
+      months_requested: months,
+      start_date: startDate.toISOString(),
+      n_threshold: N_THRESHOLD,
+      data_points: trends.length,
+      trends
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/v1/hr/departments
 router.get('/departments', async (req, res, next) => {
   try {

@@ -44,6 +44,7 @@ const reportController = require('./controllers/reportController');
 const assessmentRouter = require('./routes/assessment');
 const alertsRouter = require('./routes/alerts');
 const learnRouter = require('./routes/learn');
+const billingRouter = require('./routes/billing');
 const logger = require('./utils/logger');
 const pinoHttp = require('pino-http');
 
@@ -118,7 +119,14 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    if (req.originalUrl && req.originalUrl.startsWith('/api/v1/billing/webhook')) {
+      req.rawBody = buf;
+    }
+  }
+}));
 app.use(cookieParser());
 
 // OWASP Input Sanitization (Principle 5)
@@ -255,6 +263,7 @@ app.use('/api/v1/whistleblower', reportController);
 app.use('/api/v1/assessments', assessmentRouter.router || assessmentRouter);
 app.use('/api/v1/alerts', alertsRouter);
 app.use('/api/v1/learn', learnRouter);
+app.use('/api/v1/billing', billingRouter);
 
 // Global Error Handler - Sanitized Error Messages (Principle 11)
 app.use((err, req, res, next) => {

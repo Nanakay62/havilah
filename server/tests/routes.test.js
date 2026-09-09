@@ -35,4 +35,22 @@ describe('HTTP Routes & Middleware Integration', () => {
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
   });
+
+  it('GET /api/v1/hr/trends rejects unauthenticated requests with 401', async () => {
+    const res = await request(app).get('/api/v1/hr/trends');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /api/v1/billing/status rejects unauthenticated requests with 401', async () => {
+    const res = await request(app).get('/api/v1/billing/status');
+    expect(res.status).toBe(401);
+  });
+
+  it('POST /api/v1/billing/webhook accepts incoming webhook payloads', async () => {
+    const res = await request(app)
+      .post('/api/v1/billing/webhook')
+      .send({ type: 'test.ping', data: { object: {} } });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ received: true });
+  });
 });

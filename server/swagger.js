@@ -194,6 +194,57 @@ const options = {
           },
         },
       },
+      '/hr/trends': {
+        get: {
+          summary: 'Longitudinal Workplace Mental Health Trends',
+          description: 'Aggregates multi-month psychosocial score trajectories bucketed by month. Enforces N >= 5 response suppression per bucket.',
+          security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+          tags: ['HR & Compliance'],
+          parameters: [
+            { name: 'survey_type', in: 'query', schema: { type: 'string' }, description: 'Survey type filter (phq9, gad7, copsoq3, all)' },
+            { name: 'months', in: 'query', schema: { type: 'integer', default: 6 }, description: 'Number of past months to aggregate (1-24)' },
+            { name: 'department', in: 'query', schema: { type: 'string' }, description: 'Department filter' },
+          ],
+          responses: {
+            200: { description: 'Monthly trend trajectories with privacy threshold status' },
+          },
+        },
+      },
+      '/billing/status': {
+        get: {
+          summary: 'Tenant Subscription & Billing Status',
+          description: 'Returns active plan tier (Starter, Pro, Enterprise), seat utilization, trial days remaining, and feature entitlements.',
+          security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+          tags: ['Billing & Subscriptions'],
+          responses: {
+            200: { description: 'Current subscription and available upgrade tiers' },
+          },
+        },
+      },
+      '/billing/create-checkout-session': {
+        post: {
+          summary: 'Create Stripe Checkout Session',
+          description: 'Generates a Stripe hosted checkout URL for plan upgrade or seat expansion.',
+          security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+          tags: ['Billing & Subscriptions'],
+          responses: {
+            200: { description: 'Checkout session created with redirect URL' },
+            503: { description: 'Stripe payments not configured in current environment' },
+          },
+        },
+      },
+      '/billing/portal': {
+        get: {
+          summary: 'Access Stripe Customer Portal',
+          description: 'Creates a Stripe billing portal link for subscription self-service and invoice management.',
+          security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+          tags: ['Billing & Subscriptions'],
+          responses: {
+            200: { description: 'Portal session redirect URL' },
+            400: { description: 'No active Stripe customer found' },
+          },
+        },
+      },
       '/learn/categories': {
         get: {
           summary: 'List Psychoeducation Categories',

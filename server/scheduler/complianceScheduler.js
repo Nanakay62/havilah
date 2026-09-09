@@ -4,7 +4,9 @@ const cron = require('node-cron');
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
-const { computeAuditHash } = require('../utils/crypto');
+const PendingNotification = require('../models/PendingNotification');
+const { computeAuditHash, decryptField } = require('../utils/crypto');
+const { sendMail } = require('../utils/emailService');
 
 /**
  * ISO 45003 Primary and Secondary Controls
@@ -105,11 +107,34 @@ class WorkingHoursScheduler {
 
     const groups = [];
     
-    // In a real system, we would save these to a 'pending_notifications' collection.
-    // For this blueprint, we simulate the grouping and audit log.
+    // Save notifications to PendingNotification collection and group by timezone
     for (const [timezone, userIds] of Object.entries(tzGroups)) {
       const dispatch_at = this.getNextDispatchTime(timezone);
       groups.push({ timezone, user_count: userIds.length, dispatch_at });
+
+      // Create pending notifications for users in this timezone
+      const tzUsers = users.filter(u => userIds.includes(u.user_id));
+      for (const u of tzUsers) {
+        try {
+          let enc = u.email_encrypted;
+          if (typeof enc === 'string') {
+            enc = JSON.parse(enc);
+          }
+          if (enc && enc.encrypted && enc.iv && enc.authTag) {
+            await PendingNotification.create({
+              company_id: tenantId,
+              user_id: u.user_id,
+              user_email_encrypted: enc.encrypted,
+              user_email_iv: enc.iv,
+              user_email_tag: enc.authTag,
+              survey_type: surveyType,
+              dispatch_at,
+            });
+          }
+        } catch (e) {
+          console.warn('[Scheduler] Could not queue notification for user:', u.user_id, e.message);
+        }
+      }
     }
 
     // Log the audit event
@@ -132,10 +157,68 @@ class WorkingHoursScheduler {
   }
 
   async processPendingNotifications() {
-    // In a real system, this queries the database for notifications where dispatch_at <= now
-    // and processes them.
-    console.log(`[Scheduler] Checking pending notifications at ${new Date().toISOString()}`);
-    return [];
+    const now = new Date();
+    try {
+      const pending = await PendingNotification.find({
+        dispatch_at: { $lte: now },
+        dispatched: false,
+        retry_count: { $lt: 3 },
+      }).limit(50);
+
+      if (pending.length === 0) return [];
+      console.log(`[Scheduler] Processing ${pending.length} pending survey notifications at ${now.toISOString()}`);
+
+      const names = {
+        phq9: 'Mood Check-In (PHQ-9)',
+        gad7: 'Anxiety Check-In (GAD-7)',
+        pss10: 'Stress Check-In (PSS-10)',
+        fas10: 'Fatigue Check-In (FAS-10)',
+        copsoq3: 'Workplace Wellbeing Survey (COPSOQ III)'
+      };
+
+      for (const notif of pending) {
+        try {
+          const email = decryptField({
+            iv: notif.user_email_iv,
+            encrypted: notif.user_email_encrypted,
+            authTag: notif.user_email_tag,
+          });
+
+          const label = names[notif.survey_type] || notif.survey_type.toUpperCase();
+          const origin = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
+
+          await sendMail({
+            to: email,
+            subject: `📋 Your ${label} is Available`,
+            html: `
+              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <h2 style="color: #0d9488; margin-top: 0;">Your Wellbeing Check-In is Ready</h2>
+                <p style="color: #334155; line-height: 1.6;">Hello,</p>
+                <p style="color: #334155; line-height: 1.6;">A new <strong>${label}</strong> assessment is now available for your organization.</p>
+                <p style="color: #334155; line-height: 1.6;">Your responses are <strong>strictly anonymous</strong> (N≥5 privacy threshold) and help identify psychosocial workplace hazards to improve organizational health.</p>
+                <div style="text-align: center; margin: 28px 0;">
+                  <a href="${origin}/app/dashboard.html" style="background-color: #0d9488; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;">Complete Assessment</a>
+                </div>
+                <p style="color: #64748b; font-size: 12px;">This is an automated compliance notification from Havilah Health.</p>
+              </div>
+            `,
+          });
+
+          notif.dispatched = true;
+          notif.dispatched_at = new Date();
+          await notif.save();
+        } catch (dispatchErr) {
+          console.error(`[Scheduler] Failed to dispatch notification ${notif.notification_id}:`, dispatchErr.message);
+          notif.retry_count += 1;
+          await notif.save();
+        }
+      }
+
+      return pending;
+    } catch (err) {
+      console.error('[Scheduler] Error processing pending notifications:', err.message);
+      return [];
+    }
   }
 }
 

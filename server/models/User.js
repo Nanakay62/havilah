@@ -111,16 +111,25 @@ const UserSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    refresh_token_hash: {
+      type: String,
+      default: null,
+    },
+    refresh_token_expires_at: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
     toJSON: {
       virtuals: true,
       transform(_doc, ret) {
-        // Never leak encrypted email or hash or password in JSON responses
+        // Never leak encrypted email, hash, refresh tokens, or password in JSON responses
         delete ret.email_encrypted;
         delete ret.email_hash;
         delete ret.passwordHash;
+        delete ret.refresh_token_hash;
         delete ret.__v;
         return ret;
       },

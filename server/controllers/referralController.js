@@ -152,6 +152,7 @@ router.post(
       // Save referral with assignedAssessorId stamped from tenant active assessor
       const referral = await Referral.create({
         referenceCode,
+        company_id: tenant.company_id,
         tenantId: tenant._id,
         assignedAssessorId: tenant.activeAssessorId,
         departmentName,

@@ -52,14 +52,33 @@ router.get('/analytics', async (req, res, next) => {
     }
 
     const targetDept = department || department_id;
-    let query = { company_id };
+    let matchQuery = { company_id };
     if (targetDept && targetDept !== 'all') {
       const deptMatch = depts.find(d => d.name.toLowerCase() === targetDept.toLowerCase() || d.department_id === targetDept);
-      if (deptMatch) query.department_id = deptMatch.department_id;
+      if (deptMatch) matchQuery.department_id = deptMatch.department_id;
     }
 
-    const logs = await PersonalWellnessLog.find(query).lean();
-    const deptResponseCount = logs.length;
+    const [aggResult] = await PersonalWellnessLog.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: null,
+          total_responses: { $sum: 1 },
+          avgMood: { $avg: { $ifNull: ['$dimension_scores.mood', 70] } },
+          avgCalm: { $avg: { $ifNull: ['$dimension_scores.calm', 70] } },
+          avgStress: { $avg: { $ifNull: ['$dimension_scores.stress', 40] } },
+          avgEnergy: { $avg: { $ifNull: ['$dimension_scores.energy', 70] } },
+          avgWorkFit: { $avg: { $ifNull: ['$dimension_scores.work_fit', 70] } },
+          moodList: { $push: { $ifNull: ['$dimension_scores.mood', 70] } },
+          calmList: { $push: { $ifNull: ['$dimension_scores.calm', 70] } },
+          stressList: { $push: { $ifNull: ['$dimension_scores.stress', 40] } },
+          energyList: { $push: { $ifNull: ['$dimension_scores.energy', 70] } },
+          workFitList: { $push: { $ifNull: ['$dimension_scores.work_fit', 70] } },
+        }
+      }
+    ]);
+
+    const deptResponseCount = aggResult ? aggResult.total_responses : 0;
 
     if (deptResponseCount < 5) {
       return res.json({
@@ -77,15 +96,6 @@ router.get('/analytics', async (req, res, next) => {
       });
     }
 
-    // Real aggregated scores computation
-    const moodScores = logs.map(l => l.dimensions ? (l.dimensions.mood || 70) : 70);
-    const calmScores = logs.map(l => l.dimensions ? (l.dimensions.calm || 70) : 70);
-    const stressScores = logs.map(l => l.dimensions ? (l.dimensions.stress || 40) : 40);
-    const energyScores = logs.map(l => l.dimensions ? (l.dimensions.energy || 70) : 70);
-    const workFitScores = logs.map(l => l.dimensions ? (l.dimensions.workFit || 70) : 70);
-
-    const avg = arr => Math.round(arr.reduce((a, b) => a + b, 0) / (arr.length || 1));
-
     return res.json({
       success: true,
       status: 'OK',
@@ -99,18 +109,18 @@ router.get('/analytics', async (req, res, next) => {
       raw_employee_objects_exposed: false,
       departments: deptNames,
       aggregated_scores: {
-        mood: moodScores,
-        calm: calmScores,
-        stress: stressScores,
-        energy: energyScores,
-        work_fit: workFitScores
+        mood: (aggResult?.moodList || []).slice(0, 100),
+        calm: (aggResult?.calmList || []).slice(0, 100),
+        stress: (aggResult?.stressList || []).slice(0, 100),
+        energy: (aggResult?.energyList || []).slice(0, 100),
+        work_fit: (aggResult?.workFitList || []).slice(0, 100)
       },
       averages: {
-        mood: avg(moodScores),
-        calm: avg(calmScores),
-        stress: avg(stressScores),
-        energy: avg(energyScores),
-        work_fit: avg(workFitScores)
+        mood: Math.round(aggResult?.avgMood || 70),
+        calm: Math.round(aggResult?.avgCalm || 70),
+        stress: Math.round(aggResult?.avgStress || 40),
+        energy: Math.round(aggResult?.avgEnergy || 70),
+        work_fit: Math.round(aggResult?.avgWorkFit || 70)
       }
     });
   } catch (err) {

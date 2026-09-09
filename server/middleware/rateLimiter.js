@@ -1,118 +1,108 @@
 'use strict';
 
 /**
- * @fileoverview Custom in-memory rate limiter middleware for Wellframe SaaS Platform.
- * Supports sensitive endpoint rate limiting (e.g. login/register max 5 attempts/15min)
- * and general API rate limiting while excluding internal telemetry/health pings and static assets.
+ * @fileoverview Distributed & resilient rate limiter middleware for Wellframe / Havilah SaaS.
+ * Uses Redis when REDIS_URL is provided, with seamless in-memory fallback for standalone or local environments.
  */
 
-const windowMs = 15 * 60 * 1000; // 15 minutes
-const sensitiveStore = new Map();
-const generalStore = new Map();
+const rateLimit = require('express-rate-limit');
+const { RedisStore } = require('rate-limit-redis');
+const Redis = require('ioredis');
 
-// Periodic cleanup of expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, record] of sensitiveStore.entries()) {
-    if (now > record.resetTime) sensitiveStore.delete(key);
+let redisClient = null;
+let redisStore = null;
+
+if (process.env.REDIS_URL) {
+  try {
+    redisClient = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 2,
+      lazyConnect: true,
+      enableOfflineQueue: false,
+    });
+    redisClient.on('error', (err) => {
+      console.warn('[RateLimiter] Redis connection issue, in-memory fallback active:', err.message);
+    });
+    redisClient.connect().catch((err) => {
+      console.warn('[RateLimiter] Redis connect note:', err.message);
+    });
+    redisStore = new RedisStore({
+      sendCommand: (...args) => redisClient.call(...args),
+    });
+  } catch (err) {
+    console.warn('[RateLimiter] Failed to initialize Redis store, using in-memory store:', err.message);
   }
-  for (const [key, record] of generalStore.entries()) {
-    if (now > record.resetTime) generalStore.delete(key);
-  }
-}, 5 * 60 * 1000);
+}
 
 /**
  * Sensitive endpoints rate limiter (e.g. auth routes, demo requests)
  * Limit: max 5 requests per window (15 mins) per IP.
  */
 function sensitiveRateLimiter(maxAttempts = 5) {
-  return (req, res, next) => {
-    // Skip health/telemetry checks
-    if (req.path.includes('/telemetry') || req.path.includes('/health')) {
-      return next();
-    }
-
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-    const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || process.env.NODE_ENV !== 'production';
-    const effectiveLimit = isLocalhost ? Math.max(maxAttempts * 6, 30) : maxAttempts;
-    const key = `${ip}:${req.baseUrl}${req.path}`;
-    const now = Date.now();
-
-    let record = sensitiveStore.get(key);
-    if (!record || now > record.resetTime) {
-      record = { count: 1, resetTime: now + windowMs };
-      sensitiveStore.set(key, record);
-      return next();
-    }
-
-    record.count += 1;
-    if (record.count > effectiveLimit) {
-      return res.status(429).json({
+  const windowMs = 15 * 60 * 1000;
+  return rateLimit({
+    windowMs,
+    max: (req) => {
+      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+      const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || process.env.NODE_ENV !== 'production';
+      return isLocalhost ? Math.max(maxAttempts * 6, 30) : maxAttempts;
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+      const p = req.path || '';
+      return p.includes('/telemetry') || p.includes('/health');
+    },
+    store: redisStore || undefined,
+    handler: (req, res) => {
+      res.status(429).json({
         success: false,
         error: 'TOO_MANY_REQUESTS',
         message: 'Too many failed or repeated attempts. Please try again in 15 minutes.',
-        retryAfterSeconds: Math.ceil((record.resetTime - now) / 1000)
       });
-    }
-
-    next();
-  };
+    },
+  });
 }
 
 /**
  * General API rate limiter across all /api/v1/ routes.
  * Limit: max 3000 requests per 15 minutes per IP.
- * Excludes health pings, telemetry, live sync polling, and real-time dialogue endpoints.
  */
 function apiRateLimiter(maxRequests = 3000) {
-  return (req, res, next) => {
-    // Exclude telemetry, health endpoints, and real-time live-sync / messaging polling
-    const p = req.path || '';
-    if (
-      p.includes('/telemetry') ||
-      p.includes('/health') ||
-      p.includes('/status') ||
-      p.includes('/queue') ||
-      p.includes('/message') ||
-      p.includes('/reply') ||
-      p.includes('/track') ||
-      p.includes('/live')
-    ) {
-      return next();
-    }
-
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-    
-    // Generous developer limit for localhost / loopback testing
-    if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
-      return next();
-    }
-
-    const key = `${ip}:general`;
-    const now = Date.now();
-
-    let record = generalStore.get(key);
-    if (!record || now > record.resetTime) {
-      record = { count: 1, resetTime: now + windowMs };
-      generalStore.set(key, record);
-      return next();
-    }
-
-    record.count += 1;
-    if (record.count > maxRequests) {
-      return res.status(429).json({
+  const windowMs = 15 * 60 * 1000;
+  return rateLimit({
+    windowMs,
+    max: maxRequests,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+      const p = req.path || '';
+      if (
+        p.includes('/telemetry') ||
+        p.includes('/health') ||
+        p.includes('/status') ||
+        p.includes('/queue') ||
+        p.includes('/message') ||
+        p.includes('/reply') ||
+        p.includes('/track') ||
+        p.includes('/live')
+      ) {
+        return true;
+      }
+      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+      return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    },
+    store: redisStore || undefined,
+    handler: (req, res) => {
+      res.status(429).json({
         success: false,
         error: 'TOO_MANY_REQUESTS',
         message: 'API rate limit exceeded. Please slow down your requests.',
-        retryAfterSeconds: Math.ceil((record.resetTime - now) / 1000)
       });
-    }
-
-    next();
-  };
+    },
+  });
 }
 
 module.exports = {
   sensitiveRateLimiter,
-  apiRateLimiter
+  apiRateLimiter,
 };

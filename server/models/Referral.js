@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 
 const ReferralSchema = new mongoose.Schema({
   referenceCode: { type: String, required: true, unique: true, index: true },
+  company_id: { type: String, index: true },
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
   assignedAssessorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Assessor', required: true, index: true },
   assignedDoctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', default: null, index: true },
@@ -52,6 +53,7 @@ const ReferralSchema = new mongoose.Schema({
   reassignedAt: { type: Date },
 }, { timestamps: true });
 
+ReferralSchema.index({ company_id: 1, status: 1 });
 ReferralSchema.index({ tenantId: 1, status: 1 });
 ReferralSchema.index({ assignedAssessorId: 1, status: 1 });
 ReferralSchema.index({ assignedDoctorId: 1, status: 1 });

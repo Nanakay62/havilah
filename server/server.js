@@ -43,9 +43,22 @@ const whistleblowerRouter = require('./routes/whistleblowerRoutes');
 const reportController = require('./controllers/reportController');
 const assessmentRouter = require('./routes/assessment');
 const alertsRouter = require('./routes/alerts');
+const logger = require('./utils/logger');
+const pinoHttp = require('pino-http');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Structured Request Logging (Principle 12)
+app.use(pinoHttp({
+  logger,
+  autoLogging: {
+    ignore: (req) => {
+      const p = req.url || '';
+      return p.includes('/health') || p.includes('/favicon.ico') || p.startsWith('/css/') || p.startsWith('/js/');
+    }
+  }
+}));
 
 // Security Headers (Principle 4)
 app.use(helmet({
@@ -127,6 +140,21 @@ app.use((req, res, next) => {
 
 // Static Files & Guarded Views
 app.use(express.static(path.join(__dirname, '../public'), { etag: false, lastModified: false }));
+
+// Health check - excluded from rate limiting and auth
+app.get('/health', (req, res) => {
+  const mongoose = require('mongoose');
+  const dbStatus = mongoose.connection.readyState;
+  const dbStateMap = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+  
+  res.status(dbStatus === 1 ? 200 : 503).json({
+    status: dbStatus === 1 ? 'ok' : 'degraded',
+    timestamp: new Date().toISOString(),
+    version: require('./package.json').version,
+    db: dbStateMap[dbStatus] || 'unknown',
+    uptime: Math.floor(process.uptime()),
+  });
+});
 
 // Explicit fallback route for register.html, clinical-portal, and favicon
 app.get('/favicon.ico', (req, res) => res.status(204).end());

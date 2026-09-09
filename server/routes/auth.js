@@ -76,11 +76,25 @@ router.post('/login', sensitiveRateLimiter(5), async (req, res, next) => {
       expiresIn: '24h',
     });
 
+    // Issue 7-day Refresh Token
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+    const refreshToken = jwt.sign({ userId: user.user_id }, refreshSecret, { expiresIn: '7d' });
+    user.refresh_token_hash = hashField(refreshToken);
+    user.refresh_token_expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 24 * 60 * 60 * 1000,
+      path: '/'
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/'
     });
 
@@ -90,6 +104,7 @@ router.post('/login', sensitiveRateLimiter(5), async (req, res, next) => {
     return res.json({
       success: true,
       token,
+      refreshToken,
       user: {
         user_id: user.user_id,
         role: user.role,
@@ -387,5 +402,101 @@ router.post('/activate', sensitiveRateLimiter(5), handleRegistration);
 
 // POST /api/v1/auth/register - Rate limited (max 5 attempts)
 router.post('/register', sensitiveRateLimiter(5), handleRegistration);
+
+// POST /api/v1/auth/refresh - Rotate access token using valid refresh token
+router.post('/refresh', sensitiveRateLimiter(20), async (req, res, next) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+    if (!refreshToken) {
+      return res.status(401).json({ success: false, error: 'REFRESH_TOKEN_MISSING', message: 'No refresh token provided' });
+    }
+
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+    const decoded = jwt.verify(refreshToken, refreshSecret);
+    const tokenHash = hashField(refreshToken);
+
+    const user = await User.findOne({
+      user_id: decoded.userId,
+      refresh_token_hash: tokenHash,
+      refresh_token_expires_at: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'REFRESH_TOKEN_INVALID', message: 'Refresh token is expired or has been revoked' });
+    }
+
+    const payload = {
+      userId: user.user_id,
+      companyId: user.company_id,
+      departmentId: user.department_id,
+      role: user.role,
+      isSystemSuperAdmin: user.isSystemSuperAdmin || false
+    };
+
+    const newToken = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '24h'
+    });
+
+    res.cookie('token', newToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+      path: '/'
+    });
+
+    res.json({ success: true, token: newToken });
+  } catch (err) {
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, error: 'REFRESH_TOKEN_INVALID', message: 'Invalid or expired refresh token' });
+    }
+    next(err);
+  }
+});
+
+// POST /api/v1/auth/erase-account - GDPR Art. 17 Right to Erasure
+router.post('/erase-account', sensitiveRateLimiter(3), validateSession, async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ success: false, error: 'PASSWORD_REQUIRED', message: 'Password required to confirm account erasure.' });
+    }
+
+    const user = await User.findOne({ user_id: req.sessionData.user_id });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'USER_NOT_FOUND', message: 'User record not found.' });
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ success: false, error: 'INVALID_CREDENTIALS', message: 'Incorrect password provided for erasure confirmation.' });
+    }
+
+    // 1. Decrement tenant used seats count if bound to a tenant
+    if (user.company_id) {
+      await Tenant.updateOne({ company_id: user.company_id }, { $inc: { used_seats: -1 } });
+    }
+
+    // 2. Permanently delete personal wellness logs identified with this user_id
+    const PersonalWellnessLog = require('../models/PersonalWellnessLog');
+    await PersonalWellnessLog.deleteMany({ user_id: user.user_id });
+
+    // 3. Note: AnonHazardLog documents are deliberately preserved because they have NO user_id or IP linkage (Zero-PII)
+
+    // 4. Delete the User account record completely
+    await User.deleteOne({ user_id: user.user_id });
+
+    // 5. Clear all session and refresh cookies
+    res.clearCookie('token', { path: '/' });
+    res.clearCookie('refreshToken', { path: '/' });
+
+    return res.json({
+      success: true,
+      message: 'Your account and all personal wellbeing logs have been permanently erased under GDPR Article 17.'
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = router;

@@ -22,6 +22,11 @@ const PersonalWellnessLogSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    department_id: {
+      type: String,
+      default: 'unassigned',
+      index: true,
+    },
     dimension_scores: {
       mood: { type: Number, min: 0, max: 100, default: null },
       calm: { type: Number, min: 0, max: 100, default: null },
@@ -71,5 +76,6 @@ const PersonalWellnessLogSchema = new mongoose.Schema(
 );
 
 PersonalWellnessLogSchema.index({ user_id: 1, submitted_at: -1 });
+PersonalWellnessLogSchema.index({ company_id: 1, department_id: 1, submitted_at: -1 });
 
 module.exports = mongoose.model('PersonalWellnessLog', PersonalWellnessLogSchema);

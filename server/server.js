@@ -330,8 +330,12 @@ async function startServer() {
         k => !process.env[k] || process.env[k].includes('replace_with') || process.env[k].includes('placeholder')
       );
       if (missingStripe.length > 0) {
-        console.error(`[server] FATAL: Missing or placeholder Stripe configuration in production: ${missingStripe.join(', ')}`);
-        process.exit(1);
+        if (process.env.REQUIRE_STRIPE === 'true') {
+          console.error(`[server] FATAL: Missing or placeholder Stripe configuration in production: ${missingStripe.join(', ')}`);
+          process.exit(1);
+        } else {
+          console.warn(`[server] WARN: Stripe configuration missing or placeholder (${missingStripe.join(', ')}). Online billing will be disabled until configured.`);
+        }
       }
     }
 

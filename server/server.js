@@ -325,16 +325,13 @@ async function startServer() {
     }
 
     if (process.env.NODE_ENV === 'production') {
-      const STRIPE_REQUIRED = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PRICE_STARTER', 'STRIPE_PRICE_PRO', 'STRIPE_PRICE_ENTERPRISE'];
-      const missingStripe = STRIPE_REQUIRED.filter(
-        k => !process.env[k] || process.env[k].includes('replace_with') || process.env[k].includes('placeholder')
-      );
-      if (missingStripe.length > 0) {
-        if (process.env.REQUIRE_STRIPE === 'true') {
-          console.error(`[server] FATAL: Missing or placeholder Stripe configuration in production: ${missingStripe.join(', ')}`);
+      const paystackKey = process.env.PAYSTACK_SECRET_KEY;
+      if (!paystackKey || paystackKey.includes('replace_with') || paystackKey.includes('placeholder')) {
+        if (process.env.REQUIRE_PAYSTACK === 'true') {
+          console.error('[server] FATAL: Missing or placeholder PAYSTACK_SECRET_KEY in production.');
           process.exit(1);
         } else {
-          console.warn(`[server] WARN: Stripe configuration missing or placeholder (${missingStripe.join(', ')}). Online billing will be disabled until configured.`);
+          console.warn('[server] WARN: PAYSTACK_SECRET_KEY is missing or placeholder. Online billing (GHS, MoMo, Cards) will be disabled until configured.');
         }
       }
     }

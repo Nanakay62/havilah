@@ -221,27 +221,53 @@ const options = {
           },
         },
       },
-      '/billing/create-checkout-session': {
+      '/billing/initialize': {
         post: {
-          summary: 'Create Stripe Checkout Session',
-          description: 'Generates a Stripe hosted checkout URL for plan upgrade or seat expansion.',
+          summary: 'Initialize Paystack Checkout (GHS / MoMo / Cards)',
+          description: 'Generates a Paystack hosted checkout URL for plan upgrade or subscription via Mobile Money (MTN, Telecel, AT) or Card.',
           security: [{ bearerAuth: [] }, { cookieAuth: [] }],
           tags: ['Billing & Subscriptions'],
           responses: {
-            200: { description: 'Checkout session created with redirect URL' },
-            503: { description: 'Stripe payments not configured in current environment' },
+            200: { description: 'Paystack authorization URL and reference returned' },
+            503: { description: 'Paystack payments not configured in current environment' },
+          },
+        },
+      },
+      '/billing/cancel': {
+        post: {
+          summary: 'Cancel Subscription Auto-Renewal',
+          description: 'Stops automated renewals with Paystack. Paid access remains active until the end of the billing cycle (currentPeriodEnd).',
+          security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+          tags: ['Billing & Subscriptions'],
+          responses: {
+            200: { description: 'Subscription auto-renewal canceled; accessUntil returned' },
           },
         },
       },
       '/billing/portal': {
         get: {
-          summary: 'Access Stripe Customer Portal',
-          description: 'Creates a Stripe billing portal link for subscription self-service and invoice management.',
+          summary: 'Access Paystack Subscription Portal',
+          description: 'Creates a Paystack self-service link for subscription management.',
           security: [{ bearerAuth: [] }, { cookieAuth: [] }],
           tags: ['Billing & Subscriptions'],
           responses: {
-            200: { description: 'Portal session redirect URL' },
-            400: { description: 'No active Stripe customer found' },
+            200: { description: 'Management link URL returned' },
+            503: { description: 'No active subscription or portal unavailable' },
+          },
+        },
+      },
+      '/billing/admin/refund/{tenantId}': {
+        post: {
+          summary: 'Issue Discretionary Admin Refund',
+          description: 'Admin-only endpoint to issue a full or partial refund against a transaction reference.',
+          security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+          tags: ['Billing & Subscriptions'],
+          parameters: [
+            { name: 'tenantId', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          responses: {
+            200: { description: 'Refund requested with Paystack successfully' },
+            403: { description: 'Super Admin credentials required' },
           },
         },
       },

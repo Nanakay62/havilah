@@ -173,17 +173,28 @@ const SubscriptionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['trialing', 'active', 'past_due', 'canceled'],
+      enum: ['trialing', 'active', 'past_due', 'canceled', 'incomplete'],
       default: 'trialing',
+    },
+    currency: {
+      type: String,
+      default: 'GHS',
     },
     trialEndsAt: {
       type: Date,
       default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
-    currentPeriodEnd: { type: Date },
+    currentPeriodEnd: { type: Date, default: null },
+    cancelAtPeriodEnd: { type: Boolean, default: false },
     customerId: { type: String, default: null },
     subscriptionCode: { type: String, default: null },
+    paystackCustomerCode: { type: String, default: null },
+    paystackAuthorizationCode: { type: String, default: null },
+    paystackPlanCode: { type: String, default: null },
+    paystackSubscriptionCode: { type: String, default: null },
+    paystackEmailToken: { type: String, default: null },
     maxEmployees: { type: Number, default: 100 },
+    transactionReferences: [{ type: String }],
   },
   { _id: false }
 );

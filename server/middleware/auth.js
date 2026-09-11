@@ -30,20 +30,19 @@ const jwt = require('jsonwebtoken');
 async function validateSession(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        success: false,
-        error: 'AUTHENTICATION_REQUIRED',
-        message: 'Missing or malformed Authorization header. Expected: Bearer <token>',
-      });
+    let token = null;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7).trim();
+    } else if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
     }
 
-    const token = authHeader.slice(7).trim();
     if (!token) {
       return res.status(401).json({
         success: false,
         error: 'AUTHENTICATION_REQUIRED',
-        message: 'Bearer token is empty',
+        message: 'Missing or malformed Authorization header or session cookie.',
       });
     }
 

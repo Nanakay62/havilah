@@ -8,6 +8,7 @@ const { validateSession, requireRole } = require('../middleware/auth');
 const { enforceTenantScope } = require('../middleware/tenantIsolation');
 const { sendWhistleblowerAlert } = require('../utils/emailService');
 const { encryptField, decryptField } = require('../utils/crypto');
+const logger = require('../utils/logger');
 
 /**
  * Coarsen timestamp to nearest hour (strip minutes/seconds/ms)
@@ -65,7 +66,7 @@ router.post('/submit', validateSession, async (req, res, next) => {
       submitted_at,
     });
 
-    console.log('[Vault] Anonymous report submitted and persisted:', report.report_id);
+    logger.info({ report_id: report.report_id, company_id }, '[Vault] Anonymous report submitted and persisted');
 
     // 2. Respond immediately to the client to eliminate proxy timeouts
     res.status(201).json({
@@ -75,8 +76,8 @@ router.post('/submit', validateSession, async (req, res, next) => {
     });
 
     // 3. Dispatch anonymized alert to designated whistleblower email asynchronously in background
-    const whistleblowerTargetEmail = process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || 'nanakwamedickson62@gmail.com';
-    if (sendWhistleblowerAlert) {
+    const whistleblowerTargetEmail = process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || process.env.DEFAULT_NOTIFICATION_RECIPIENT || process.env.ADMIN_EMAIL;
+    if (sendWhistleblowerAlert && whistleblowerTargetEmail) {
       setImmediate(async () => {
         try {
           await sendWhistleblowerAlert({
@@ -87,13 +88,13 @@ router.post('/submit', validateSession, async (req, res, next) => {
             companyName: tenant?.company_name || 'Confidential',
             to: whistleblowerTargetEmail,
           });
-          console.log('[Vault] Alert email successfully dispatched in background for report:', report.report_id);
+          logger.info({ report_id: report.report_id }, '[Vault] Alert email successfully dispatched in background');
         } catch (dispatchErr) {
-          console.warn('[Vault] Alert email background dispatch error:', dispatchErr.message);
+          logger.warn({ err: dispatchErr.message, report_id: report.report_id }, '[Vault] Alert email background dispatch error');
         }
       });
     } else {
-      console.warn('[Vault] Alert email dispatch skipped: sendWhistleblowerAlert not available');
+      logger.warn('[Vault] Alert email dispatch skipped: sendWhistleblowerAlert not available or target email not configured');
     }
   } catch (err) {
     next(err);
@@ -113,9 +114,18 @@ router.get(
   async (req, res, next) => {
     try {
       const company_id = req.tenantScope.company_id;
-      const reports = await WhistleblowerReport.find({ company_id })
-        .sort({ submitted_at: -1 })
-        .lean();
+      const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 25));
+      const skip = (page - 1) * limit;
+
+      const [reports, total] = await Promise.all([
+        WhistleblowerReport.find({ company_id })
+          .sort({ submitted_at: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        WhistleblowerReport.countDocuments({ company_id }),
+      ]);
 
       // Decrypt descriptions for HR view
       const decryptedReports = reports.map(report => {
@@ -127,7 +137,7 @@ router.get(
             authTag: report.description_tag
           });
         } catch (e) {
-          console.warn('[Vault] Failed to decrypt report:', report.report_id);
+          logger.warn({ report_id: report.report_id }, '[Vault] Failed to decrypt report');
         }
         return {
           report_id: report.report_id,
@@ -139,7 +149,16 @@ router.get(
         };
       });
 
-      res.json({ success: true, reports: decryptedReports });
+      res.json({
+        success: true,
+        reports: decryptedReports,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit) || 1,
+        },
+      });
     } catch (err) {
       next(err);
     }

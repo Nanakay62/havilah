@@ -59,7 +59,7 @@ router.post('/login', async (req, res, next) => {
           isLeadAssessor: true,
         },
         process.env.JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: '8h' }
       );
 
       return res.json({
@@ -117,7 +117,7 @@ router.post('/login', async (req, res, next) => {
           isLeadAssessor: false,
         },
         process.env.JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: '8h' }
       );
 
       return res.json({

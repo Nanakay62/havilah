@@ -184,7 +184,7 @@ router.post(
           const assessor = await Assessor.findById(tenant.activeAssessorId).lean();
           let targetEmail = assessor?.notificationEmail || assessor?.email;
           if (!targetEmail || targetEmail.includes('@clinic.com') || targetEmail.includes('.test@')) {
-            targetEmail = process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com';
+            targetEmail = process.env.CLINICAL_INTAKE_EMAIL || process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'clinical@havilah.app';
           }
 
           const result = await sendClinicalDispatch({

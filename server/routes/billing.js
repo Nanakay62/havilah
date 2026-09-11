@@ -3,8 +3,10 @@
 const express = require('express');
 const router = express.Router();
 const Tenant = require('../models/Tenant');
+const AuditLog = require('../models/AuditLog');
 const { validateSession, requireRole } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const { withTransaction } = require('../utils/dbTransaction');
 
 // Stripe initialization (gracefully null if key not set)
 let stripe = null;
@@ -82,13 +84,22 @@ function getStripeClient() {
 router.post('/webhook', async (req, res) => {
   const stripeClient = getStripeClient();
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (process.env.NODE_ENV === 'production' && (!stripeClient || !endpointSecret || endpointSecret.includes('replace_with'))) {
+    logger.error('Stripe webhook received in production but STRIPE_WEBHOOK_SECRET is not configured.');
+    return res.status(503).json({ error: 'Webhook service misconfigured' });
+  }
+
   let event = req.body;
 
   if (stripeClient && endpointSecret && !endpointSecret.includes('replace_with')) {
     const sig = req.headers['stripe-signature'];
+    if (!sig) {
+      return res.status(400).send('Webhook Error: Missing stripe-signature header');
+    }
     try {
       // req.rawBody is captured by express.json({ verify: ... }) in server.js
-      const payload = req.rawBody || JSON.stringify(req.body);
+      const payload = req.rawBody || Buffer.from(JSON.stringify(req.body));
       event = stripeClient.webhooks.constructEvent(payload, sig, endpointSecret);
     } catch (err) {
       logger.warn({ err: err.message }, 'Stripe webhook signature verification failed');
@@ -105,22 +116,41 @@ router.post('/webhook', async (req, res) => {
         const tierConfig = TIERS[tierKey] || TIERS.pro;
 
         if (companyId) {
-          await Tenant.findOneAndUpdate(
-            { company_id: companyId },
-            {
-              $set: {
-                'subscription.tier': tierKey,
-                'subscription.status': 'active',
-                'subscription.customerId': session.customer,
-                'subscription.subscriptionCode': session.subscription,
-                'subscription.maxEmployees': tierConfig.seats,
-                billing_tier: tierKey === 'pro' ? 'professional' : tierKey,
-                max_allowed_seats: tierConfig.seats,
-                lifecycle_state: 'active'
-              }
-            }
-          );
-          logger.info({ companyId, tier: tierKey }, 'Tenant subscription activated via Stripe checkout');
+          await withTransaction(async (dbSession) => {
+            await Tenant.findOneAndUpdate(
+              { company_id: companyId },
+              {
+                $set: {
+                  'subscription.tier': tierKey,
+                  'subscription.status': 'active',
+                  'subscription.customerId': session.customer,
+                  'subscription.subscriptionCode': session.subscription,
+                  'subscription.maxEmployees': tierConfig.seats,
+                  billing_tier: tierKey,
+                  max_allowed_seats: tierConfig.seats,
+                  lifecycle_state: 'active'
+                }
+              },
+              { session: dbSession || undefined }
+            );
+
+            await AuditLog.append(
+              {
+                company_id: companyId,
+                actor_user_id: 'SYSTEM_STRIPE_WEBHOOK',
+                actor_role: 'system',
+                event_type: 'tenant_state_changed',
+                event_payload: {
+                  previous_state: 'pending_payment',
+                  new_state: 'active',
+                  billing_tier: tierKey,
+                  stripe_session_id: session.id,
+                },
+              },
+              { session: dbSession || undefined }
+            );
+          });
+          logger.info({ companyId, tier: tierKey }, 'Tenant subscription activated via Stripe checkout (ACID transaction committed)');
         }
         break;
       }

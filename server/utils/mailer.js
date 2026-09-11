@@ -14,7 +14,7 @@ function getBrevoClient() {
 }
 
 const DEFAULT_SENDER = {
-  email: process.env.BREVO_SENDER_EMAIL || 'nanakwamedickson62@gmail.com',
+  email: process.env.BREVO_SENDER_EMAIL || 'support@havilah.app',
   name: process.env.BREVO_SENDER_NAME || 'Havilah Health',
 };
 

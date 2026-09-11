@@ -1,6 +1,5 @@
 'use strict';
 
-import { describe, it, expect } from 'vitest';
 const correlationEngine = require('../services/correlationEngine');
 
 describe('Statistical Pearson Correlation Engine', () => {

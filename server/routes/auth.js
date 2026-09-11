@@ -8,21 +8,15 @@ const User = require('../models/User');
 const Invitation = require('../models/Invitation');
 const Tenant = require('../models/Tenant');
 const Department = require('../models/Department');
-const { encryptField, hashField } = require('../utils/crypto');
+const { encryptField, hashField, validatePasswordStrength } = require('../utils/crypto');
 const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
+const { validate } = require('../middleware/validate');
+const { LoginSchema, RegisterSchema } = require('../schemas/auth.schema');
 
 // POST /api/v1/auth/login - Rate limited (max 5 attempts per window)
-router.post('/login', sensitiveRateLimiter(5), async (req, res, next) => {
+router.post('/login', sensitiveRateLimiter(5), validate(LoginSchema), async (req, res, next) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
-      return res.status(400).json({
-        success: false,
-        error: 'MISSING_CREDENTIALS',
-        message: 'Email and password are required',
-      });
-    }
 
     const normalised = email.trim().toLowerCase();
     const emailHash = hashField(normalised);
@@ -192,6 +186,15 @@ const handleRegistration = async (req, res, next) => {
 
     if (!email || !password || !name || typeof email !== 'string' || typeof password !== 'string') {
       return res.status(400).json({ success: false, error: 'Email, full name, and password are required' });
+    }
+
+    const passwordCheck = validatePasswordStrength(password);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        error: 'WEAK_PASSWORD',
+        message: passwordCheck.error,
+      });
     }
 
     let targetCompanyId = null;
@@ -370,7 +373,7 @@ router.get('/me', validateSession, async (req, res, next) => {
         const parsed = typeof user.email_encrypted === 'string' ? JSON.parse(user.email_encrypted) : user.email_encrypted;
         if (parsed && parsed.iv && parsed.encrypted && parsed.authTag) {
           const { decryptField } = require('../utils/crypto');
-          userEmail = decryptField(parsed.iv, parsed.encrypted, parsed.authTag);
+          userEmail = decryptField({ iv: parsed.iv, encrypted: parsed.encrypted, authTag: parsed.authTag });
         }
       } catch (e) {}
     }

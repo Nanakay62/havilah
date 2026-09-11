@@ -225,10 +225,10 @@ const TenantSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: {
-        values: ['trial', 'starter', 'professional', 'enterprise'],
-        message: 'billing_tier must be one of: trial, starter, professional, enterprise',
+        values: ['free', 'trial', 'starter', 'pro', 'professional', 'enterprise'],
+        message: 'billing_tier must be one of: free, trial, starter, pro, professional, enterprise',
       },
-      default: 'trial',
+      default: 'free',
     },
     subscription: {
       type: SubscriptionSchema,

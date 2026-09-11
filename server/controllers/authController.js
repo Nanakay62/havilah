@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const Assessor = require('../models/Assessor');
-const { encryptField, hashField } = require('../utils/crypto');
+const { encryptField, hashField, validatePasswordStrength } = require('../utils/crypto');
 
 /**
  * Controller handling self-serve tenant registration with 30-day Pro reverse trial.
@@ -30,8 +30,13 @@ async function registerTenant(req, res, next) {
     if (!cleanEmail || !cleanEmail.includes('@')) {
       return res.status(400).json({ success: false, error: 'A valid work email is required.' });
     }
-    if (!cleanPassword || cleanPassword.length < 6) {
-      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long.' });
+    const passwordCheck = validatePasswordStrength(cleanPassword);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        error: 'WEAK_PASSWORD',
+        message: passwordCheck.error,
+      });
     }
 
     // 2. Check if email is already in use

@@ -8,7 +8,7 @@ const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const Invitation = require('../models/Invitation');
 const PersonalWellnessLog = require('../models/PersonalWellnessLog');
-const { encryptField, hashField, decryptField } = require('../utils/crypto');
+const { encryptField, hashField, decryptField, validatePasswordStrength } = require('../utils/crypto');
 const { validateSession, superAdminGuard } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
@@ -636,6 +636,19 @@ router.post('/tenants/:id/reset-hr', async (req, res, next) => {
     const tenant = await Tenant.findOne({ company_id: req.params.id });
     if (!tenant) return res.status(404).json({ success: false, error: 'Tenant not found' });
 
+    let newPassword;
+    if (custom_password && String(custom_password).trim()) {
+      const clean = String(custom_password).trim();
+      const pwCheck = validatePasswordStrength(clean);
+      if (!pwCheck.valid) {
+        return res.status(400).json({ success: false, error: 'WEAK_PASSWORD', message: pwCheck.error });
+      }
+      newPassword = clean;
+    } else {
+      const randomSuffix = require('crypto').randomBytes(4).toString('hex');
+      newPassword = `${tenant.slug.substring(0, 4).toUpperCase()}_${randomSuffix}!Aa1`;
+    }
+
     let hrUser = await User.findOne({ company_id: req.params.id, role: 'hr_admin' });
     
     // If no HR user exists yet, create one!
@@ -644,10 +657,6 @@ router.post('/tenants/:id/reset-hr', async (req, res, next) => {
       const emailHash = hashField(defaultEmail);
       const { iv, encrypted, authTag } = encryptField(defaultEmail);
       const email_encrypted = JSON.stringify({ iv, encrypted, authTag });
-      
-      const newPassword = (custom_password && custom_password.trim()) 
-        ? custom_password.trim() 
-        : `${tenant.slug.substring(0, 4).toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}!`;
       const passwordHash = await bcrypt.hash(newPassword, 10);
 
       hrUser = await User.create({
@@ -670,9 +679,6 @@ router.post('/tenants/:id/reset-hr', async (req, res, next) => {
     }
 
     // Otherwise update existing HR Admin password
-    const newPassword = (custom_password && custom_password.trim()) 
-      ? custom_password.trim() 
-      : `${tenant.slug.substring(0, 4).toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}!`;
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
     hrUser.passwordHash = passwordHash;
@@ -683,7 +689,9 @@ router.post('/tenants/:id/reset-hr', async (req, res, next) => {
     try {
       if (hrUser.email_encrypted) {
         const parsed = typeof hrUser.email_encrypted === 'string' ? JSON.parse(hrUser.email_encrypted) : hrUser.email_encrypted;
-        emailDisplay = decryptField(parsed.iv, parsed.encrypted, parsed.authTag);
+        if (parsed && parsed.iv && parsed.encrypted && parsed.authTag) {
+          emailDisplay = decryptField({ iv: parsed.iv, encrypted: parsed.encrypted, authTag: parsed.authTag });
+        }
       }
     } catch (e) {}
 

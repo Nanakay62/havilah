@@ -1,6 +1,5 @@
 'use strict';
 
-import { describe, it, expect } from 'vitest';
 const { scoreCOPSOQ3, COPSOQ3_ITEMS } = require('../utils/copsoq3Scoring');
 
 describe('COPSOQ-III Official Scoring Implementation', () => {

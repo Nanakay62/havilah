@@ -1,5 +1,6 @@
 'use strict';
 
+const jwt = require('jsonwebtoken');
 const Tenant = require('../models/Tenant');
 
 /**
@@ -131,7 +132,40 @@ function validateTenantAccess(extractCompanyId) {
  * @param {import('express').NextFunction} next
  */
 async function checkTenantStatus(req, res, next) {
-  const company_id = req.sessionData?.company_id;
+  let company_id = req.sessionData?.company_id;
+
+  // If sessionData has not yet been populated by an upstream router middleware,
+  // inspect the Bearer authorization header or token cookie
+  if (!company_id) {
+    const authHeader = req.headers.authorization;
+    let token = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7).trim();
+    } else if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded && decoded.companyId) {
+          company_id = decoded.companyId;
+          if (!req.sessionData) {
+            req.sessionData = {
+              user_id: decoded.userId,
+              company_id: decoded.companyId,
+              department_id: decoded.departmentId,
+              role: decoded.role,
+              status: 'active',
+              isSystemSuperAdmin: !!decoded.isSystemSuperAdmin,
+            };
+          }
+        }
+      } catch (e) {
+        // Token invalid or expired; defer to downstream auth handlers
+      }
+    }
+  }
+
   if (!company_id) return next();
 
   // Super admins bypass tenant status checks

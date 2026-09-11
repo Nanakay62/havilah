@@ -146,11 +146,16 @@ AuditLogSchema.pre('validate', async function preValidateAuditHash() {
   // Retrieve the most recent audit entry for this company to chain the hash
   if (!this.sha256_hash) {
     const AuditLogModel = mongoose.model('AuditLog');
-    const lastEntry = await AuditLogModel
+    const query = AuditLogModel
       .findOne({ company_id: this.company_id })
       .sort({ created_at: -1 })
-      .select('sha256_hash')
-      .lean();
+      .select('sha256_hash');
+
+    if (this.$session()) {
+      query.session(this.$session());
+    }
+
+    const lastEntry = await query.lean();
 
     this.previous_hash = lastEntry ? lastEntry.sha256_hash : 'GENESIS';
     this.sha256_hash = computeAuditHash(this.previous_hash, this.event_payload);
@@ -168,15 +173,19 @@ AuditLogSchema.pre('validate', async function preValidateAuditHash() {
  * @param {string} params.actor_role
  * @param {string} params.event_type
  * @param {object} params.event_payload
+ * @param {object} [options] - Optional Mongoose save options, e.g. { session }
  * @returns {Promise<mongoose.Document>}
  */
-AuditLogSchema.statics.append = async function append({
-  company_id,
-  actor_user_id,
-  actor_role,
-  event_type,
-  event_payload,
-}) {
+AuditLogSchema.statics.append = async function append(
+  {
+    company_id,
+    actor_user_id,
+    actor_role,
+    event_type,
+    event_payload,
+  },
+  options = {}
+) {
   const entry = new this({
     company_id,
     actor_user_id,
@@ -185,7 +194,7 @@ AuditLogSchema.statics.append = async function append({
     event_payload,
   });
 
-  return entry.save();
+  return entry.save(options);
 };
 
 /**

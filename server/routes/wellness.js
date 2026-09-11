@@ -148,6 +148,7 @@ router.post('/daily-pulse', async (req, res, next) => {
     await PersonalWellnessLog.create({
       user_id: userId,
       company_id: companyId,
+      department_id: req.sessionData.department_id || user.department_id || 'unassigned',
       survey_type: 'daily_pulse',
       composite_score: overallBalance,
       overallIndex: overallBalance,
@@ -308,6 +309,7 @@ router.post('/submit-checkin', async (req, res, next) => {
       await PersonalWellnessLog.create({
         user_id: userId,
         company_id: companyId,
+        department_id: req.sessionData.department_id || user.department_id || 'unassigned',
         survey_type,
         composite_score: normalized,
         overallIndex: normalized,

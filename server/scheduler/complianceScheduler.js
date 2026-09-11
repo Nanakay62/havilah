@@ -7,6 +7,8 @@ const AuditLog = require('../models/AuditLog');
 const PendingNotification = require('../models/PendingNotification');
 const { computeAuditHash, decryptField } = require('../utils/crypto');
 const { sendMail } = require('../utils/emailService');
+const { DateTime } = require('luxon');
+const logger = require('../utils/logger');
 
 /**
  * ISO 45003 Primary and Secondary Controls
@@ -41,48 +43,47 @@ class WorkingHoursScheduler {
 
   isWithinWorkingHours(timezone) {
     try {
-      const now = new Date();
-      // Format options to get local parts in the specific timezone
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone,
-        hour: 'numeric',
-        hourCycle: 'h23',
-        weekday: 'short'
-      });
-      
-      const parts = formatter.formatToParts(now);
-      let hour = 0;
-      let weekday = '';
-      
-      for (const part of parts) {
-        if (part.type === 'hour') hour = parseInt(part.value, 10);
-        if (part.type === 'weekday') weekday = part.value;
-      }
-
-      if (this.config.excludeWeekends && (weekday === 'Sat' || weekday === 'Sun')) {
+      const now = DateTime.now().setZone(timezone || 'UTC');
+      if (!now.isValid) return false;
+      const isWeekend = now.weekday >= 6; // 6=Saturday, 7=Sunday
+      if (this.config.excludeWeekends && isWeekend) {
         return false;
       }
-
-      return hour >= this.config.workStart && hour < this.config.workEnd;
-    } catch (err) {
-      // Fallback if timezone is invalid
+      return now.hour >= this.config.workStart && now.hour < this.config.workEnd;
+    } catch {
       return false;
     }
   }
 
   getNextDispatchTime(timezone) {
-    const now = new Date();
-    // Simplified logic for calculating next dispatch window.
-    // In a real production system, this would use a robust timezone math library like luxon or date-fns-tz.
-    // We return 'now' if we are currently in the window, otherwise we schedule for later.
-    if (this.isWithinWorkingHours(timezone)) {
-      return now;
+    try {
+      const now = DateTime.now().setZone(timezone || 'UTC');
+      if (!now.isValid) return new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      const isWeekend = now.weekday >= 6;
+      const inWorkHours = now.hour >= this.config.workStart && now.hour < this.config.workEnd;
+
+      if ((!this.config.excludeWeekends || !isWeekend) && inWorkHours) {
+        return now.toJSDate();
+      }
+
+      // Calculate next working-hours window start
+      let next = now.set({ hour: this.config.workStart, minute: 0, second: 0, millisecond: 0 });
+      if (next <= now) {
+        next = next.plus({ days: 1 });
+      }
+
+      // Advance through weekends if excluded
+      if (this.config.excludeWeekends) {
+        while (next.weekday >= 6) {
+          next = next.plus({ days: 1 });
+        }
+      }
+
+      return next.toJSDate();
+    } catch (err) {
+      return new Date(Date.now() + 24 * 60 * 60 * 1000);
     }
-    
-    // For this implementation, we just set it to +24h if not in working hours
-    // This is a simplification of the complex calendar math required.
-    const next = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    return next;
   }
 
   async scheduleSurveyPulse(tenantId, surveyType, targetDate) {
@@ -132,7 +133,7 @@ class WorkingHoursScheduler {
             });
           }
         } catch (e) {
-          console.warn('[Scheduler] Could not queue notification for user:', u.user_id, e.message);
+          logger.warn({ user_id: u.user_id, err: e.message }, '[Scheduler] Could not queue notification for user');
         }
       }
     }
@@ -166,7 +167,7 @@ class WorkingHoursScheduler {
       }).limit(50);
 
       if (pending.length === 0) return [];
-      console.log(`[Scheduler] Processing ${pending.length} pending survey notifications at ${now.toISOString()}`);
+      logger.info({ count: pending.length }, '[Scheduler] Processing pending survey notifications');
 
       const names = {
         phq9: 'Mood Check-In (PHQ-9)',
@@ -216,7 +217,7 @@ class WorkingHoursScheduler {
 
       return pending;
     } catch (err) {
-      console.error('[Scheduler] Error processing pending notifications:', err.message);
+      logger.error({ err: err.message }, '[Scheduler] Error processing pending notifications');
       return [];
     }
   }
@@ -260,21 +261,45 @@ async function logControlActivation(tenantId, actorUserId, controlType, controlI
 
 const schedulerInstance = new WorkingHoursScheduler();
 
+let redisLockClient = null;
+if (process.env.REDIS_URL) {
+  try {
+    const Redis = require('ioredis');
+    redisLockClient = new Redis(process.env.REDIS_URL, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
+    });
+    redisLockClient.connect().catch(() => { redisLockClient = null; });
+  } catch {
+    redisLockClient = null;
+  }
+}
+
 function initScheduler() {
-  console.log('[Scheduler] Initializing ISO 45003 compliance scheduler...');
+  logger.info('[Scheduler] Initializing ISO 45003 compliance scheduler...');
   
   // Run every minute
   cron.schedule('* * * * *', async () => {
     try {
+      if (redisLockClient && redisLockClient.status === 'ready') {
+        const lockKey = `scheduler:lock:processPendingNotifications:${Math.floor(Date.now() / 60000)}`;
+        const acquired = await redisLockClient.set(lockKey, '1', 'EX', 55, 'NX');
+        if (!acquired) {
+          // Another instance is already processing this window
+          return;
+        }
+      }
       await schedulerInstance.processPendingNotifications();
     } catch (err) {
-      console.error('[Scheduler] Error processing notifications:', err);
+      logger.error({ err: err.message }, '[Scheduler] Error processing notifications');
     }
   });
 }
 
 module.exports = {
   WorkingHoursScheduler,
+  schedulerInstance,
   ISO_45003_CONTROLS,
   logControlActivation,
   initScheduler

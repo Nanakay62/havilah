@@ -8,5 +8,6 @@ build/
 coverage/
 .DS_Store
 scratch/
-server/scripts/
+server/scripts/*
+!server/scripts/buildAssets.js
 dev-tools/

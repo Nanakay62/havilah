@@ -3030,9 +3030,12 @@ const App = (() => {
   function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
   function navigate(view) {
+    if (!view || view === 'landing') {
+      view = 'employee';
+    }
     state.currentView = view;
     document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
-    const target = document.getElementById('view-' + view);
+    const target = document.getElementById('view-' + view) || document.getElementById('view-employee');
     if (target) target.style.display = 'block';
 
     const navWellness = document.getElementById('navBtnWellness');

@@ -2,9 +2,9 @@
 
 const { sendEmail } = require('./mailer');
 
-const CLINICAL_EMAIL = process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'nanakwamedickson62@gmail.com';
-const CLINICAL_HOTLINE = process.env.DEFAULT_CLINICAL_HOTLINE || '0551022714';
-const NOTIFICATION_RECIPIENT = process.env.DEFAULT_NOTIFICATION_RECIPIENT || 'nanakwamedickson62@gmail.com';
+const CLINICAL_EMAIL = process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || null;
+const CLINICAL_HOTLINE = process.env.DEFAULT_CLINICAL_HOTLINE || null;
+const NOTIFICATION_RECIPIENT = process.env.DEFAULT_NOTIFICATION_RECIPIENT || null;
 
 /**
  * Sends email using Brevo Transactional Email REST API.
@@ -28,7 +28,7 @@ async function sendMail({ to, subject, html, from }) {
  * @param {string} [opts.to] - Assessor email recipient
  */
 async function sendClinicalDispatch({ referenceCode, companyName, to }) {
-  const recipient = to || process.env.CLINICAL_INTAKE_EMAIL || 'nanakwamedickson62@gmail.com';
+  const recipient = to || process.env.CLINICAL_INTAKE_EMAIL || process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'clinical@havilah.app';
   const resolvedCompany = companyName || 'Client Organization';
   const timestamp = new Date().toUTCString();
 
@@ -149,7 +149,7 @@ async function sendInterventionAlert({ surveyType, severityBand, department, to 
  * @param {string} [opts.to] - Override recipient
  */
 async function sendWhistleblowerAlert({ reportId, companyName, to }) {
-  const recipient = to || process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || 'nanakwamedickson62@gmail.com';
+  const recipient = to || process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || process.env.DEFAULT_NOTIFICATION_RECIPIENT || 'compliance@havilah.app';
   const timestamp = new Date().toUTCString();
 
   const html = `

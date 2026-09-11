@@ -39,6 +39,14 @@ jobs:
           node -c routes/learn.js
           node -c utils/crypto.js
           node -c utils/copsoq3Scoring.js
+          node -c controllers/authController.js
+          node -c controllers/hazardController.js
+          node -c routes/auth.js
+          node -c routes/billing.js
+          node -c routes/sso.js
+          node -c services/notificationService.js
+          node -c utils/totp.js
+          node -c middleware/validate.js
 
       - name: Secret Leak Prevention Check
         run: |
@@ -53,3 +61,4 @@ jobs:
         run: |
           cd server
           npm test
+

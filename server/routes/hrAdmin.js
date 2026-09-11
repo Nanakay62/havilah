@@ -846,4 +846,45 @@ router.patch('/reports/:id', async (req, res, next) => {
   }
 });
 
+// GET /api/v1/hr/benchmarks - Cross-Tenant Sector/Platform Anonymized Benchmarks (FIX-25)
+router.get('/benchmarks', async (req, res, next) => {
+  try {
+    const Tenant = require('../models/Tenant');
+    const PersonalWellnessLog = require('../models/PersonalWellnessLog');
+
+    const totalActiveTenants = await Tenant.countDocuments({ lifecycle_state: 'active' });
+
+    const benchmarkResults = await PersonalWellnessLog.aggregate([
+      {
+        $group: {
+          _id: '$survey_type',
+          avgScore: { $avg: { $ifNull: ['$clinical_score', '$composite_score'] } },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const benchmarks = {};
+    for (const b of benchmarkResults) {
+      if (b._id) {
+        benchmarks[b._id] = {
+          average_score: Math.round(b.avgScore * 10) / 10,
+          sample_size: b.count,
+          industry_confidence: b.count >= 30 ? 'High' : b.count >= 10 ? 'Moderate' : 'Preliminary',
+        };
+      }
+    }
+
+    res.json({
+      success: true,
+      data_available: totalActiveTenants >= 1,
+      total_active_organizations: totalActiveTenants,
+      benchmarks,
+      compliance_standard: 'ISO 45003 Psychosocial Risk Benchmarks',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

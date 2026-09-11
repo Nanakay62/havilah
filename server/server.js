@@ -45,15 +45,29 @@ const assessmentRouter = require('./routes/assessment');
 const alertsRouter = require('./routes/alerts');
 const learnRouter = require('./routes/learn');
 const billingRouter = require('./routes/billing');
+const ssoRouter = require('./routes/sso');
 const logger = require('./utils/logger');
 const pinoHttp = require('pino-http');
+const { cspNonceMiddleware } = require('./middleware/cspNonce');
+
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
+
+// X-Request-ID propagation for distributed tracing (FIX-18)
+app.use((req, res, next) => {
+  const requestId = req.headers['x-request-id'] || uuidv4();
+  req.id = requestId;
+  res.setHeader('X-Request-ID', requestId);
+  next();
+});
 
 // Structured Request Logging (Principle 12)
 app.use(pinoHttp({
   logger,
+  genReqId: (req) => req.id || req.headers['x-request-id'] || uuidv4(),
   autoLogging: {
     ignore: (req) => {
       const p = req.url || '';
@@ -62,6 +76,9 @@ app.use(pinoHttp({
   }
 }));
 
+// Cryptographic Nonce Generation & HTML Nonce Injection
+app.use(cspNonceMiddleware);
+
 // Security Headers (Principle 4)
 app.use(helmet({
   contentSecurityPolicy: {
@@ -69,11 +86,12 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",
-        "'unsafe-inline'",
+        (req, res) => `'nonce-${res.locals.cspNonce}'`,
         "https://cdn.jsdelivr.net",
         "https://cdn.tailwindcss.com",
         "https://cdnjs.cloudflare.com",
       ],
+      scriptSrcAttr: ["'none'"],
       styleSrc: [
         "'self'",
         "'unsafe-inline'",
@@ -81,6 +99,7 @@ app.use(helmet({
         "https://fonts.googleapis.com",
         "https://cdnjs.cloudflare.com",
       ],
+      styleSrcAttr: ["'unsafe-inline'"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: [
@@ -88,7 +107,7 @@ app.use(helmet({
         process.env.CLIENT_ORIGIN || '',
         "https://havilah-api.onrender.com",
       ].filter(Boolean),
-      frameSrc: ["'none'"],
+      frameSrc: ["'self'"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
     },
@@ -183,7 +202,18 @@ app.get('/clinical-portal', (req, res) => {
 });
 
 app.use('/portal', requireViewRole('hr_admin', 'tenant_admin'), express.static(path.join(__dirname, '../private/portal'), { etag: false, lastModified: false }));
-app.use('/app', requireViewRole('employee'), express.static(path.join(__dirname, '../private/app'), { etag: false, lastModified: false }));
+app.use('/app', requireViewRole('employee', 'hr_admin', 'tenant_admin'), express.static(path.join(__dirname, '../private/app'), { etag: false, lastModified: false }));
+
+// Clean URL Aliases matching Netlify & Cloudflare _redirects
+app.get('/dashboard', requireViewRole('employee', 'hr_admin', 'tenant_admin'), (req, res) => {
+  res.sendFile(path.join(__dirname, '../private/app/dashboard.html'));
+});
+app.get('/hr', requireViewRole('hr_admin', 'tenant_admin'), (req, res) => {
+  res.sendFile(path.join(__dirname, '../private/portal/hr.html'));
+});
+app.get('/superadmin', requireViewRole('super_admin'), (req, res) => {
+  res.sendFile(path.join(__dirname, '../private/app/superadmin.html'));
+});
 
 // Demo Lead Endpoint with Sensitive Rate Limiter (Principle 3 & 9)
 app.post('/api/v1/demo-request', sensitiveRateLimiter(5), async (req, res, next) => {
@@ -220,15 +250,15 @@ app.get('/', (req, res) => {
 
 // GET /api/v1/clinical-provider - Active Tenant Clinical Provider Endpoint
 app.get('/api/v1/clinical-provider', (req, res) => {
-  const partnerName = process.env.DEFAULT_CLINICAL_PARTNER_NAME || 'FZ Safety and Health';
-  const hotline = process.env.DEFAULT_CLINICAL_HOTLINE || '+233 24 362 9870';
+  const partnerName = process.env.DEFAULT_CLINICAL_PARTNER_NAME;
+  const hotline = process.env.DEFAULT_CLINICAL_HOTLINE;
   const intakeEmail = process.env.CLINICAL_INTAKE_EMAIL || process.env.DEFAULT_CLINICAL_PARTNER_EMAIL;
 
-  if (!partnerName || !intakeEmail) {
+  if (!partnerName || !intakeEmail || !hotline) {
     return res.status(501).json({
       success: false,
       error: 'CLINICAL_PROVIDER_NOT_CONFIGURED',
-      message: 'Clinical provider configuration is not set. Contact system administrator.',
+      message: 'Clinical provider configuration is not fully configured. Contact system administrator.',
     });
   }
 
@@ -264,11 +294,13 @@ app.use('/api/v1/assessments', assessmentRouter.router || assessmentRouter);
 app.use('/api/v1/alerts', alertsRouter);
 app.use('/api/v1/learn', learnRouter);
 app.use('/api/v1/billing', billingRouter);
+app.use('/api/v1/sso', ssoRouter);
 
 // Global Error Handler - Sanitized Error Messages (Principle 11)
 app.use((err, req, res, next) => {
-  console.error('[Global Error Audit Log]', err);
-  const statusCode = err.status || err.statusCode || 500;
+  logger.error({ err, reqId: req.id }, '[Global Error Audit Log]');
+  const isValidation = err.name === 'ZodError' || Array.isArray(err.issues) || Array.isArray(err.errors);
+  const statusCode = err.status || err.statusCode || (isValidation ? 400 : 500);
   
   // Return generic user-friendly message without internal schema or stack details
   res.status(statusCode).json({
@@ -290,6 +322,17 @@ async function startServer() {
     if (missing.length > 0) {
       console.error(`[server] FATAL: Missing required environment variables: ${missing.join(', ')}`);
       process.exit(1);
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      const STRIPE_REQUIRED = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PRICE_STARTER', 'STRIPE_PRICE_PRO', 'STRIPE_PRICE_ENTERPRISE'];
+      const missingStripe = STRIPE_REQUIRED.filter(
+        k => !process.env[k] || process.env[k].includes('replace_with') || process.env[k].includes('placeholder')
+      );
+      if (missingStripe.length > 0) {
+        console.error(`[server] FATAL: Missing or placeholder Stripe configuration in production: ${missingStripe.join(', ')}`);
+        process.exit(1);
+      }
     }
 
     // 1. Connect to Database

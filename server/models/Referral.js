@@ -37,7 +37,10 @@ const ReferralSchema = new mongoose.Schema({
     completedAt: { type: Date },
     attachments: [{
       fileName: { type: String, required: true },
-      fileData: { type: String, required: true }, // Base64 / data URI
+      fileKey: { type: String }, // S3 / Cloud Storage Object Key
+      fileUrl: { type: String }, // CDN or presigned URL
+      fileBucket: { type: String },
+      fileData: { type: String }, // Base64 fallback for legacy data
       fileType: { type: String },
       fileSize: { type: Number },
       uploadedAt: { type: Date, default: Date.now },

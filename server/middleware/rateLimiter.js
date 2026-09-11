@@ -42,8 +42,8 @@ function sensitiveRateLimiter(maxAttempts = 5) {
   return rateLimit({
     windowMs,
     max: (req) => {
-      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-      const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || process.env.NODE_ENV !== 'production';
+      const ip = req.ip || req.socket?.remoteAddress || '127.0.0.1';
+      const isLocalhost = (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') && process.env.NODE_ENV !== 'production';
       return isLocalhost ? Math.max(maxAttempts * 6, 30) : maxAttempts;
     },
     standardHeaders: true,
@@ -88,8 +88,8 @@ function apiRateLimiter(maxRequests = 3000) {
       ) {
         return true;
       }
-      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
-      return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+      const ip = req.ip || req.socket?.remoteAddress || '127.0.0.1';
+      return (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') && process.env.NODE_ENV !== 'production';
     },
     store: redisStore || undefined,
     handler: (req, res) => {

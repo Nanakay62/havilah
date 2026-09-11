@@ -10,7 +10,7 @@ const { enforceTenantScope } = require('../middleware/tenantIsolation');
 const { buildNSizeAggregation } = require('../aggregations/nSizePrivacy');
 const { coarsenTimestamp } = require('../utils/crypto');
 const { scoreCOPSOQ3 } = require('../utils/copsoq3Scoring');
-const { generateInsights } = require('../services/correlationEngine');
+const { generateInsights, computeEmpiricalCorrelations } = require('../services/correlationEngine');
 
 const router = express.Router();
 
@@ -463,12 +463,60 @@ router.get(
         }
       }
 
+      // 1. Generate benchmark rule-based ISO 45003 insights
       const insights = generateInsights(aggregateMetrics);
+
+      // 2. Compute empirical Pearson correlations if paired responses exist (N >= 5)
+      let empiricalCorrelations = [];
+      try {
+        const PersonalWellnessLog = require('../models/PersonalWellnessLog');
+        const matchQuery = { company_id: req.tenantScope.company_id };
+        if (department_id && department_id !== 'all') {
+          matchQuery.department_id = department_id;
+        }
+
+        const logs = await PersonalWellnessLog.find(matchQuery)
+          .select('dimension_scores clinical_score composite_score survey_type submitted_at')
+          .sort({ submitted_at: -1 })
+          .limit(250)
+          .lean();
+
+        if (logs.length >= 5) {
+          const pairedData = {};
+          const dims = ['mood', 'calm', 'stress', 'energy', 'work_fit'];
+
+          dims.forEach(dim => {
+            const copsoqScores = [];
+            const clinicalScores = [];
+            logs.forEach(l => {
+              if (l.dimension_scores && l.dimension_scores[dim] != null) {
+                const outcome = l.clinical_score != null ? l.clinical_score : (l.composite_score != null ? l.composite_score : 50);
+                copsoqScores.push(l.dimension_scores[dim]);
+                clinicalScores.push(outcome);
+              }
+            });
+
+            if (copsoqScores.length >= 5) {
+              pairedData[dim] = {
+                copsoqScores,
+                clinicalScores,
+                surveyType: 'wellness_survey'
+              };
+            }
+          });
+
+          empiricalCorrelations = computeEmpiricalCorrelations(pairedData);
+        }
+      } catch (corrErr) {
+        console.warn('[HazardController Insights] Empirical correlation computation warning:', corrErr.message);
+      }
 
       return res.status(200).json({
         success: true,
         data: insights,
-        privacy_notice: 'Insights are generated exclusively from n-size compliant aggregated data (N>=5) protecting individual privacy.'
+        empirical_correlations: empiricalCorrelations,
+        has_empirical_data: empiricalCorrelations.length > 0,
+        privacy_notice: 'Insights and correlations are generated exclusively from n-size compliant aggregated data (N>=5) protecting individual privacy.'
       });
     } catch (err) {
       next(err);
@@ -478,3 +526,8 @@ router.get(
 
 module.exports = router;
 module.exports.submitLog = submitLog;
+module.exports.scorePHQ9 = scorePHQ9;
+module.exports.scoreGAD7 = scoreGAD7;
+module.exports.scorePSS10 = scorePSS10;
+module.exports.scoreFAS10 = scoreFAS10;
+

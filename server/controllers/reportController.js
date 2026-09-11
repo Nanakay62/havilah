@@ -47,9 +47,8 @@ async function resolveTenantId(req) {
     if (tByCompanyId) return tByCompanyId;
   }
 
-  // Fallback: Default first tenant if present
-  const firstTenant = await Tenant.findOne().select('_id company_name company_id slug').lean();
-  return firstTenant;
+  // No tenant could be resolved from input or session
+  return null;
 }
 
 /**
@@ -80,10 +79,10 @@ router.post('/submit', async (req, res, next) => {
     // Resolve tenant without logging employee identity
     const tenant = await resolveTenantId(req);
     if (!tenant) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
-        error: 'TENANT_NOT_FOUND',
-        message: 'Unable to route report: Client organization not found.',
+        error: 'TENANT_REQUIRED',
+        message: 'A valid organization identifier, tenant ID, or invite code is required to route this report.',
       });
     }
 
@@ -128,7 +127,7 @@ router.post('/submit', async (req, res, next) => {
     });
 
     // Dispatch background email alert
-    const recipientEmail = process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || 'nanakwamedickson62@gmail.com';
+    const recipientEmail = process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || process.env.DEFAULT_NOTIFICATION_RECIPIENT || 'compliance@havilah.app';
     if (sendWhistleblowerAlert) {
       setImmediate(async () => {
         try {

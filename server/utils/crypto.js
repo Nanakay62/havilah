@@ -28,9 +28,9 @@ const AUTH_TAG_LENGTH = 16;
  * @throws {Error} If ENCRYPTION_KEY is missing or malformed.
  */
 function getEncryptionKey() {
-  const raw = process.env.ENCRYPTION_KEY || 'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90';
-  if (!raw || raw.length !== 64) {
-    return Buffer.from('a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90', 'hex');
+  const raw = process.env.ENCRYPTION_KEY;
+  if (!raw || typeof raw !== 'string' || raw.length !== 64 || !/^[0-9a-fA-F]{64}$/.test(raw)) {
+    throw new Error('FATAL: ENCRYPTION_KEY must be configured as a 64-character hex string (32 bytes).');
   }
   return Buffer.from(raw, 'hex');
 }
@@ -42,7 +42,11 @@ function getEncryptionKey() {
  * @returns {string}
  */
 function getHmacSecret() {
-  return process.env.HMAC_SECRET || process.env.ENCRYPTION_KEY || '';
+  const secret = process.env.HMAC_SECRET || process.env.ENCRYPTION_KEY;
+  if (!secret) {
+    throw new Error('FATAL: HMAC_SECRET or ENCRYPTION_KEY must be configured.');
+  }
+  return secret;
 }
 
 /* ─────────────────────────────────────────────
@@ -202,7 +206,48 @@ function coarsenTimestamp(date) {
   return d;
 }
 
+/* ─────────────────────────────────────────────
+ *  Password strength validation
+ * ───────────────────────────────────────────── */
+
+/**
+ * Validates that a password satisfies the security policy:
+ * - Minimum 12 characters, maximum 128 characters
+ * - At least one uppercase letter
+ * - At least one lowercase letter
+ * - At least one number
+ * - At least one special character
+ *
+ * @param {string} password
+ * @returns {{ valid: boolean, error?: string }}
+ */
+function validatePasswordStrength(password) {
+  if (typeof password !== 'string' || password.length === 0) {
+    return { valid: false, error: 'Password is required.' };
+  }
+  if (password.length < 12) {
+    return { valid: false, error: 'Password must be at least 12 characters long.' };
+  }
+  if (password.length > 128) {
+    return { valid: false, error: 'Password must not exceed 128 characters.' };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { valid: false, error: 'Password must contain at least one uppercase letter.' };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { valid: false, error: 'Password must contain at least one lowercase letter.' };
+  }
+  if (!/\d/.test(password)) {
+    return { valid: false, error: 'Password must contain at least one number.' };
+  }
+  if (!/[^a-zA-Z\d]/.test(password)) {
+    return { valid: false, error: 'Password must contain at least one special character.' };
+  }
+  return { valid: true };
+}
+
 module.exports = {
+  getEncryptionKey,
   encryptField,
   decryptField,
   hashField,
@@ -210,4 +255,6 @@ module.exports = {
   validateConsentToken,
   computeAuditHash,
   coarsenTimestamp,
+  validatePasswordStrength,
 };
+

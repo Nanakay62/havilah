@@ -229,6 +229,15 @@ async function handleToggleAssessment(req, res, next) {
         deadline: deadline ? new Date(deadline) : new Date(Date.now() + 14 * 86400000)
       });
       await cycle.save();
+
+      // Queue survey pulse notifications in compliance scheduler
+      try {
+        const { schedulerInstance, WorkingHoursScheduler } = require('../scheduler/complianceScheduler');
+        const scheduler = schedulerInstance || new WorkingHoursScheduler();
+        await scheduler.scheduleSurveyPulse(tenantId, normType, cycle.deadline);
+      } catch (schedErr) {
+        console.warn('[Assessment] Non-fatal notification scheduling warning:', schedErr.message);
+      }
     } else {
       await AssessmentCycle.updateMany(
         { company_id: tenantId, survey_type: normType, status: 'unlocked' },

@@ -1,9 +1,13 @@
 'use strict';
 
-import { describe, it, expect } from 'vitest';
 const crypto = require('../utils/crypto');
 
 describe('Cryptography Utilities (AES-256-GCM & SHA-256)', () => {
+  beforeAll(() => {
+    process.env.ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    process.env.HMAC_SECRET = process.env.HMAC_SECRET || 'test_hmac_secret_key_for_testing_purposes_123';
+  });
+
   it('encrypts and decrypts text correctly using AES-256-GCM', () => {
     const secret = 'employee.sensitive.record@havilah.io';
     const encrypted = crypto.encryptField(secret);
@@ -56,4 +60,60 @@ describe('Cryptography Utilities (AES-256-GCM & SHA-256)', () => {
     const hash2 = crypto.computeAuditHash(prevHash, tamperedPayload);
     expect(hash1).not.toBe(hash2);
   });
+
+  it('strictly throws when ENCRYPTION_KEY is missing, malformed, or wrong length', () => {
+    const originalKey = process.env.ENCRYPTION_KEY;
+    try {
+      delete process.env.ENCRYPTION_KEY;
+      expect(() => crypto.getEncryptionKey()).toThrow(/ENCRYPTION_KEY must be configured/);
+
+      process.env.ENCRYPTION_KEY = 'short_key';
+      expect(() => crypto.getEncryptionKey()).toThrow(/ENCRYPTION_KEY must be configured/);
+
+      process.env.ENCRYPTION_KEY = 'z'.repeat(64); // invalid hex characters
+      expect(() => crypto.getEncryptionKey()).toThrow(/ENCRYPTION_KEY must be configured/);
+    } finally {
+      process.env.ENCRYPTION_KEY = originalKey;
+    }
+  });
+
+  it('successfully returns 32-byte buffer when ENCRYPTION_KEY is valid 64-hex string', () => {
+    const validKey = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    const originalKey = process.env.ENCRYPTION_KEY;
+    try {
+      process.env.ENCRYPTION_KEY = validKey;
+      const buf = crypto.getEncryptionKey();
+      expect(buf).toBeInstanceOf(Buffer);
+      expect(buf.length).toBe(32);
+    } finally {
+      process.env.ENCRYPTION_KEY = originalKey;
+    }
+  });
+
+  it('validates password strength against security criteria', () => {
+    // Too short
+    expect(crypto.validatePasswordStrength('Short1!').valid).toBe(false);
+    expect(crypto.validatePasswordStrength('Short1!').error).toMatch(/at least 12 characters/);
+
+    // Missing uppercase
+    expect(crypto.validatePasswordStrength('alllowercase123!').valid).toBe(false);
+    expect(crypto.validatePasswordStrength('alllowercase123!').error).toMatch(/uppercase/);
+
+    // Missing lowercase
+    expect(crypto.validatePasswordStrength('ALLLUPPERCASE123!').valid).toBe(false);
+    expect(crypto.validatePasswordStrength('ALLLUPPERCASE123!').error).toMatch(/lowercase/);
+
+    // Missing digit
+    expect(crypto.validatePasswordStrength('NoNumbersHere!@#').valid).toBe(false);
+    expect(crypto.validatePasswordStrength('NoNumbersHere!@#').error).toMatch(/number/);
+
+    // Missing special character
+    expect(crypto.validatePasswordStrength('NoSpecialChars123').valid).toBe(false);
+    expect(crypto.validatePasswordStrength('NoSpecialChars123').error).toMatch(/special character/);
+
+    // Valid strong password
+    expect(crypto.validatePasswordStrength('StrongP@ssw0rd!2026').valid).toBe(true);
+    expect(crypto.validatePasswordStrength('StrongP@ssw0rd!2026').error).toBeUndefined();
+  });
 });
+

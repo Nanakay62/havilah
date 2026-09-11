@@ -101,10 +101,13 @@ function stripIdentity(req, res, next) {
   delete req.sessionData;
 
   // ── Step 5: Log confirmation ───────────────────────────────────────
-  console.log(
-    '[anonymizer] Identity stripped - company_id=%s, department_id=%s - all PII fields purged',
-    req.anonymizedContext.company_id,
-    req.anonymizedContext.department_id
+  const logger = require('../utils/logger');
+  logger.info(
+    {
+      company_id: req.anonymizedContext.company_id,
+      department_id: req.anonymizedContext.department_id,
+    },
+    '[anonymizer] Identity stripped - all PII fields purged'
   );
 
   next();

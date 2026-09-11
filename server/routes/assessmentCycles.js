@@ -102,6 +102,17 @@ router.post('/unlock', async (req, res, next) => {
       console.warn('[AssessmentCycles] Non-fatal audit log warning on unlock:', auditErr.message);
     }
 
+    // Queue survey pulse notifications in scheduler
+    try {
+      const { schedulerInstance, WorkingHoursScheduler } = require('../scheduler/complianceScheduler');
+      const scheduler = schedulerInstance || new WorkingHoursScheduler();
+      if (company_id) {
+        await scheduler.scheduleSurveyPulse(company_id, survey_type, cycle.deadline || new Date(Date.now() + 14 * 86400000));
+      }
+    } catch (schedErr) {
+      console.warn('[AssessmentCycles] Non-fatal notification scheduling warning:', schedErr.message);
+    }
+
     return res.status(200).json({ success: true, cycle });
   } catch (err) {
     next(err);

@@ -81,6 +81,28 @@ const SSOConfigSchema = new mongoose.Schema(
         message: 'metadata_url must be a valid URL',
       },
     },
+    idp_login_url: {
+      type: String,
+      trim: true,
+      default: '',
+      validate: {
+        validator(v) {
+          if (!v) return true;
+          try {
+            new URL(v);
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        message: 'idp_login_url must be a valid URL',
+      },
+    },
+    idp_certificate: {
+      type: String,
+      trim: true,
+      default: '',
+    },
   },
   { _id: false }
 );
@@ -236,10 +258,17 @@ const TenantSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: {
-        values: ['free', 'trial', 'starter', 'pro', 'professional', 'enterprise'],
-        message: 'billing_tier must be one of: free, trial, starter, pro, professional, enterprise',
+        values: ['free', 'starter', 'pro', 'enterprise'],
+        message: 'billing_tier must be one of: free, starter, pro, enterprise',
       },
       default: 'free',
+      set: function normalizeBillingTier(v) {
+        if (!v) return v;
+        const lower = String(v).toLowerCase().trim();
+        if (lower === 'trial') return 'free';
+        if (lower === 'professional') return 'pro';
+        return lower;
+      },
     },
     subscription: {
       type: SubscriptionSchema,
@@ -362,4 +391,4 @@ TenantSchema.pre('save', function preSaveTenantValidation(next) {
   next();
 });
 
-module.exports = mongoose.model('Tenant', TenantSchema);
+module.exports = mongoose.models.Tenant || mongoose.model('Tenant', TenantSchema);

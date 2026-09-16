@@ -64,6 +64,10 @@ const UserSchema = new mongoose.Schema(
       },
       default: 'employee',
     },
+    isSystemSuperAdmin: {
+      type: Boolean,
+      default: false,
+    },
     supportConfiguration: {
       eapPhoneNumber: { type: String, default: null },
       eapCustomLabel: { type: String, default: 'Talk to our company EAP Counselor' },

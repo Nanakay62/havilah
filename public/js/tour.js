@@ -50,10 +50,10 @@
     spotlight.id = 'tourSpotlight';
     spotlight.style.display = 'none';
 
-    // Click on overlay (outside spotlight) → skip
+    // Click on overlay (outside spotlight) → end tour to release pointer-events
     overlay.addEventListener('click', function(e) {
       if (e.target === overlay) {
-        // Don't close, just ignore
+        endTour();
       }
     });
 
@@ -233,7 +233,10 @@
     isActive = false;
     currentStep = 0;
 
-    if (elements.overlay) elements.overlay.classList.remove('active');
+    if (elements.overlay) {
+      elements.overlay.classList.remove('active');
+      elements.overlay.style.pointerEvents = 'none';
+    }
     if (elements.spotlight) elements.spotlight.style.display = 'none';
     if (elements.tooltip) {
       elements.tooltip.classList.remove('visible');
@@ -247,8 +250,7 @@
 
     document.removeEventListener('keydown', handleKeyboard);
 
-    // Cleanup after animation
-    setTimeout(cleanup, 400);
+    cleanup();
   }
 
   function cleanup() {
@@ -488,8 +490,8 @@
       // Create the FAB button
       createFAB();
 
-      // Auto-start for first-time visitors only
-      const autoStart = config.autoStart !== false;
+      // Auto-start for first-time visitors only if explicitly enabled
+      const autoStart = config.autoStart === true;
       if (autoStart) {
         try {
           const seenKey = STORAGE_PREFIX + config.tourId + '_seen';

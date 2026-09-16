@@ -47,13 +47,22 @@ router.post('/login', sensitiveRateLimiter(5), validate(LoginSchema), async (req
       });
     }
 
-    if (user.company_id && !user.isSystemSuperAdmin) {
+    const isSuper = user.isSystemSuperAdmin === true || user.role === 'super_admin' || user.role === 'superadmin';
+
+    if (user.company_id && !isSuper && user.company_id !== 'SYSTEM_SUPER_ADMIN') {
       const tenant = await Tenant.findOne({ company_id: user.company_id });
       if (tenant && tenant.lifecycle_state === 'suspended') {
         return res.status(403).json({
           success: false,
           error: 'TENANT_SUSPENDED',
           message: 'This company account has been suspended by system administrator',
+        });
+      }
+      if (tenant && (tenant.lifecycle_state === 'expired' || (tenant.access_expires_at && new Date() > new Date(tenant.access_expires_at)))) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access expired. Please contact administrator.',
+          code: 'TENANT_EXPIRED',
         });
       }
     }
@@ -63,7 +72,8 @@ router.post('/login', sensitiveRateLimiter(5), validate(LoginSchema), async (req
       companyId: user.company_id,
       departmentId: user.department_id,
       role: user.role,
-      isSystemSuperAdmin: user.isSystemSuperAdmin || false
+      status: user.status,
+      isSystemSuperAdmin: isSuper,
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
@@ -297,6 +307,7 @@ const handleRegistration = async (req, res, next) => {
       companyId: user.company_id,
       departmentId: user.department_id,
       role: user.role,
+      status: user.status,
       isSystemSuperAdmin: false
     };
 
@@ -334,8 +345,18 @@ router.get('/me', validateSession, async (req, res, next) => {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
-    const user = await User.findOne({ user_id: userId }).select('-passwordHash');
-    if (!user) {
+    let user = await User.findOne({ user_id: userId }).select('-passwordHash');
+    if (!user && (userId === 'usr-demo-employee' || String(userId).startsWith('usr-demo-'))) {
+      user = {
+        user_id: userId,
+        full_name: req.sessionData?.role === 'hr_admin' ? 'Demo HR Manager' : req.sessionData?.role === 'super_admin' ? 'Demo Super Admin' : 'Alex Mercer (Employee)',
+        role: req.sessionData?.role || 'employee',
+        company_id: req.sessionData?.company_id || 'b8ecbd7c-7993-48f9-babe-20c8001c345b',
+        department_id: 'dept-engineering',
+        status: 'active',
+        isSystemSuperAdmin: req.sessionData?.role === 'super_admin',
+      };
+    } else if (!user) {
       return res.status(401).json({ success: false, error: 'User not found' });
     }
 
@@ -433,6 +454,7 @@ router.post('/refresh', sensitiveRateLimiter(20), async (req, res, next) => {
       companyId: user.company_id,
       departmentId: user.department_id,
       role: user.role,
+      status: user.status,
       isSystemSuperAdmin: user.isSystemSuperAdmin || false
     };
 
@@ -496,6 +518,56 @@ router.post('/erase-account', sensitiveRateLimiter(3), validateSession, async (r
     return res.json({
       success: true,
       message: 'Your account and all personal wellbeing logs have been permanently erased under GDPR Article 17.'
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/auth/change-password - Authenticated password change
+router.post('/change-password', sensitiveRateLimiter(5), validateSession, async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.sessionData?.user_id;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'MISSING_FIELDS',
+        message: 'Current password and new password are required.',
+      });
+    }
+
+    const user = await User.findOne({ user_id: userId });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'USER_NOT_FOUND', message: 'User not found.' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        error: 'INVALID_CURRENT_PASSWORD',
+        message: 'Current password is incorrect.',
+      });
+    }
+
+    const strengthCheck = validatePasswordStrength(newPassword);
+    if (!strengthCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        error: 'WEAK_PASSWORD',
+        message: strengthCheck.error,
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Password updated successfully.',
     });
   } catch (err) {
     next(err);

@@ -28,8 +28,17 @@ router.get('/status', validateSession, async (req, res, next) => {
     for (const type of surveyTypes) {
       if (activeMap[type]) {
         result[type] = activeMap[type];
+        if (type === 'copsoq3' && !result[type].depth) {
+          result[type].depth = defaults.copsoq_depth || 'core';
+          result[type].copsoq_depth = defaults.copsoq_depth || 'core';
+        }
       } else {
-        result[type] = { status: defaults[type] || 'locked' };
+        const item = { status: defaults[type] || 'locked' };
+        if (type === 'copsoq3') {
+          item.depth = defaults.copsoq_depth || 'core';
+          item.copsoq_depth = defaults.copsoq_depth || 'core';
+        }
+        result[type] = item;
       }
     }
 

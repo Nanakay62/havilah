@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="/js/auth.js"></script>
+<script src="/js/superadmin.js"></script>
+<link rel="stylesheet" href="/css/styles.css">
 <style>
   :root {
     --accent: #0D9488;
@@ -1419,7 +1421,6 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
 
 <div id="customToastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 
-<script src="/js/superadmin.js"></script>
 <script>
   const App = (function() {
     function getAuthToken() {
@@ -1553,7 +1554,7 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
       if (!confirmed) return;
 
       try {
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         const res = await fetch('/api/v1/superadmin/purge-data', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -1617,6 +1618,7 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
       saveDisclosurePolicy
     };
   })();
+  window.App = App;
 </script>
 
 <!-- Glassmorphic Privacy & Anonymity Modal -->
@@ -1660,10 +1662,10 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
     <div style="margin-bottom:20px;">
       <p style="font-size:13px;color:#9ca3af;margin:0 0 10px;">Quick Select</p>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
-        <button onclick="setExtendDays(15)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+15d</button>
-        <button onclick="setExtendDays(30)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+30d</button>
-        <button onclick="setExtendDays(60)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+60d</button>
-        <button onclick="setExtendDays(90)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+90d</button>
+        <button onclick="setExtendDays(15, event)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+15d</button>
+        <button onclick="setExtendDays(30, event)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+30d</button>
+        <button onclick="setExtendDays(60, event)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+60d</button>
+        <button onclick="setExtendDays(90, event)" class="extend-quick-btn" style="padding:12px 8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:#a78bfa;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">+90d</button>
       </div>
     </div>
     <div style="margin-bottom:24px;">

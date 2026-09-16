@@ -55,7 +55,7 @@ async function validateSession(req, res, next) {
         company_id: decoded.companyId,
         department_id: decoded.departmentId,
         role: decoded.role,
-        status: 'active', // Token assumes active since we removed session status logic
+        status: decoded.status || 'active',
       };
 
       // Handle the isSystemSuperAdmin flag securely

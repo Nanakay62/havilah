@@ -87,10 +87,12 @@ AssessmentCycleSchema.statics.getActiveForEmployee = async function (companyId, 
     statusMap[cycle.survey_type] = {
       status: cycle.status,
       deadline: cycle.deadline,
-      cycle_id: cycle.cycle_id
+      cycle_id: cycle.cycle_id,
+      depth: cycle.copsoq_depth || 'core',
+      copsoq_depth: cycle.copsoq_depth || 'core'
     };
   }
   return statusMap;
 };
 
-module.exports = mongoose.model('AssessmentCycle', AssessmentCycleSchema);
+module.exports = mongoose.models.AssessmentCycle || mongoose.model('AssessmentCycle', AssessmentCycleSchema);

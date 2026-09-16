@@ -1,4 +1,19 @@
-let token = localStorage.getItem('havilah_token') || localStorage.getItem('token') || localStorage.getItem('session_token');
+function getAuthToken() {
+  let t = localStorage.getItem('havilah_token') || localStorage.getItem('token') || localStorage.getItem('session_token');
+  if (t) return t;
+  const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
+  if (match && match[1]) {
+    try {
+      localStorage.setItem('havilah_token', match[1]);
+      localStorage.setItem('token', match[1]);
+      localStorage.setItem('session_token', match[1]);
+    } catch(e) {}
+    return match[1];
+  }
+  return null;
+}
+
+let token = getAuthToken();
 if (!token) {
   window.location.href = '/login.html';
 }
@@ -14,6 +29,7 @@ function logout() {
     localStorage.removeItem('wf_user');
     localStorage.removeItem('wf_user_name');
     localStorage.removeItem('wf_user_email');
+    document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.location.href = '/login.html';
   }
 }
@@ -42,9 +58,16 @@ function switchTab(tabId) {
 
 async function fetchStats() {
   try {
+    token = getAuthToken();
+    if (!token) return;
     const res = await fetch('/api/v1/superadmin/stats', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+    const contentType = res.headers.get('content-type') || '';
+    if (!res.ok || !contentType.includes('application/json')) {
+      console.warn('Superadmin stats endpoint returned non-JSON:', res.status);
+      return;
+    }
     const data = await res.json();
     if (data.success) {
       // 1. Top KPI Cards
@@ -92,9 +115,16 @@ async function fetchStats() {
 
 async function fetchTenants() {
   try {
+    token = getAuthToken();
+    if (!token) return;
     const res = await fetch('/api/v1/superadmin/tenants', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+    const contentType = res.headers.get('content-type') || '';
+    if (!res.ok || !contentType.includes('application/json')) {
+      console.warn('Superadmin tenants endpoint returned non-JSON:', res.status);
+      return;
+    }
     const data = await res.json();
     if (data.success) {
       const tbody = document.querySelector('#tenantsTable tbody');
@@ -991,8 +1021,14 @@ function openProvisionSuccessModal(data) {
   const hrEmailEl = document.getElementById('succHrEmail');
   if (hrEmailEl) hrEmailEl.textContent = hr ? hr.email : 'None';
 
-  const hrPwdEl = document.getElementById('succHrPassword');
-  if (hrPwdEl) hrPwdEl.textContent = hr ? (hr.plain_password || '********') : 'None';
+  const hrPwdEl = document.getElementById('succHrPassInput') || document.getElementById('succHrPassword');
+  if (hrPwdEl) {
+    if (hrPwdEl.tagName === 'INPUT') {
+      hrPwdEl.value = hr ? (hr.plain_password || '********') : '';
+    } else {
+      hrPwdEl.textContent = hr ? (hr.plain_password || '********') : 'None';
+    }
+  }
 
   const loginLink = document.getElementById('succLoginUrlLink');
   if (loginLink) {
@@ -1069,17 +1105,31 @@ function togglePasswordVisibility(inputId, btnEl) {
 }
 
 function copyToClipboard(text, successMsg = 'Copied to clipboard!') {
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Copied', successMsg, 'success');
+    }).catch(() => {
+      fallbackCopy(text, successMsg);
+    });
   } else {
+    fallbackCopy(text, successMsg);
+  }
+}
+
+function fallbackCopy(text, successMsg) {
+  try {
     const ta = document.createElement('textarea');
     ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
+    showToast('Copied', successMsg, 'success');
+  } catch (e) {
+    showToast('Copy Notice', 'Please manually select and copy the text.', 'info');
   }
-  showToast('Copied', successMsg, 'success');
 }
 
 // Init
@@ -1110,16 +1160,20 @@ function closeExtendModal() {
   extendSelectedDays = null;
 }
 
-function setExtendDays(days) {
+function setExtendDays(days, ev) {
   extendSelectedDays = days;
-  document.getElementById('extendCustomDays').value = days;
+  const inputEl = document.getElementById('extendCustomDays');
+  if (inputEl) inputEl.value = days;
   // Highlight selected button
   document.querySelectorAll('.extend-quick-btn').forEach(b => {
     b.style.background = 'rgba(99,102,241,0.1)';
     b.style.borderColor = 'rgba(99,102,241,0.2)';
   });
-  event.target.style.background = 'rgba(99,102,241,0.25)';
-  event.target.style.borderColor = 'rgba(99,102,241,0.5)';
+  const target = (ev && ev.target) || (typeof event !== 'undefined' && event ? event.target : null);
+  if (target) {
+    target.style.background = 'rgba(99,102,241,0.25)';
+    target.style.borderColor = 'rgba(99,102,241,0.5)';
+  }
 }
 
 async function submitExtendAccess() {

@@ -132,6 +132,13 @@ function validateTenantAccess(extractCompanyId) {
  * @param {import('express').NextFunction} next
  */
 async function checkTenantStatus(req, res, next) {
+  // Auth endpoints (login, register, verify-invite, activate) must never be blocked by stale session tenant status
+  const path = req.path || '';
+  const url = req.originalUrl || req.url || '';
+  if (path.startsWith('/auth') || url.includes('/api/v1/auth') || req.baseUrl.endsWith('/auth')) {
+    return next();
+  }
+
   let company_id = req.sessionData?.company_id;
 
   // If sessionData has not yet been populated by an upstream router middleware,
@@ -156,7 +163,7 @@ async function checkTenantStatus(req, res, next) {
               department_id: decoded.departmentId,
               role: decoded.role,
               status: 'active',
-              isSystemSuperAdmin: !!decoded.isSystemSuperAdmin,
+              isSystemSuperAdmin: !!decoded.isSystemSuperAdmin || decoded.role === 'super_admin' || decoded.role === 'superadmin',
             };
           }
         }
@@ -168,8 +175,13 @@ async function checkTenantStatus(req, res, next) {
 
   if (!company_id) return next();
 
-  // Super admins bypass tenant status checks
-  if (req.sessionData?.isSystemSuperAdmin || req.sessionData?.role === 'super_admin') {
+  // Super admins bypass tenant status checks unconditionally
+  if (
+    req.sessionData?.isSystemSuperAdmin ||
+    req.sessionData?.role === 'super_admin' ||
+    req.sessionData?.role === 'superadmin' ||
+    company_id === 'SYSTEM_SUPER_ADMIN'
+  ) {
     return next();
   }
 
@@ -209,6 +221,8 @@ async function checkTenantStatus(req, res, next) {
     // Check if access has expired
     if (tenant.access_expires_at && new Date() > new Date(tenant.access_expires_at)) {
       await Tenant.updateOne({ company_id }, { lifecycle_state: 'expired' });
+      res.clearCookie('token');
+      res.clearCookie('refreshToken');
       return res.status(403).json({
         success: false,
         error: 'Access expired. Please contact administrator.',
@@ -219,6 +233,8 @@ async function checkTenantStatus(req, res, next) {
 
     // Check for expired lifecycle state
     if (tenant.lifecycle_state === 'expired') {
+      res.clearCookie('token');
+      res.clearCookie('refreshToken');
       return res.status(403).json({
         success: false,
         error: 'Access expired. Please contact administrator.',

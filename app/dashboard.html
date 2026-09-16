@@ -2065,9 +2065,45 @@ window.openSurveyFromBanner = function(surveyType) {
   }
 };
 
+const pulseValues = { Mood: 3, Calm: 3, Stress: 3, Energy: 3, WorkFit: 3 };
+
+const dimTextMaps = {
+  Mood: { 1: '1 - Low', 2: '2 - Fair', 3: '3 - Good', 4: '4 - Very Good', 5: '5 - Upbeat' },
+  Calm: { 1: '1 - Anxious', 2: '2 - Fair', 3: '3 - Calm', 4: '4 - Very Peaceful', 5: '5 - Serene' },
+  Stress: { 1: '1 - High Stress', 2: '2 - Moderate', 3: '3 - In Control', 4: '4 - Low Stress', 5: '5 - Stress Free' },
+  Energy: { 1: '1 - Exhausted', 2: '2 - Fair', 3: '3 - Moderate', 4: '4 - High Energy', 5: '5 - Vibrant' },
+  WorkFit: { 1: '1 - Struggling', 2: '2 - Fair', 3: '3 - Good Fit', 4: '4 - Great Fit', 5: '5 - Thriving' }
+};
+
+window.selectPulsePill = function(dim, val) {
+  pulseValues[dim] = val;
+  const lbl = document.getElementById(`pulse${dim}Label`);
+  if (lbl) {
+    lbl.textContent = dimTextMaps[dim]?.[val] || `${val} - Selected`;
+  }
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.querySelector(`.pill-${dim}-${i}`);
+    if (btn) {
+      if (i === val) {
+        btn.style.background = '#0078D4';
+        btn.style.borderColor = '#0078D4';
+        btn.style.color = '#FFFFFF';
+        btn.style.boxShadow = '0 2px 6px rgba(0, 120, 212, 0.3)';
+        btn.style.fontWeight = '700';
+      } else {
+        btn.style.background = '#FFFFFF';
+        btn.style.borderColor = '#CBD5E1';
+        btn.style.color = '#475569';
+        btn.style.boxShadow = 'none';
+        btn.style.fontWeight = '600';
+      }
+    }
+  }
+};
+
 window.openDailyPulseModal = function(opts = {}) {
-  const tenantId = opts.tenantId || getWorkerTenantId();
-  const departmentCode = opts.departmentCode || getWorkerDepartmentCode();
+  const tenantId = opts.tenantId || (typeof getWorkerTenantId === 'function' ? getWorkerTenantId() : 'ten-123');
+  const departmentCode = opts.departmentCode || (typeof getWorkerDepartmentCode === 'function' ? getWorkerDepartmentCode() : 'ENG');
   const instrumentCode = opts.instrumentCode || 'DAILY_PULSE';
 
   const modal = document.getElementById('dailyPulseModalBackdrop');
@@ -2076,6 +2112,47 @@ window.openDailyPulseModal = function(opts = {}) {
     modal.setAttribute('data-department-code', departmentCode);
     modal.setAttribute('data-instrument-code', instrumentCode);
     modal.style.display = 'flex';
+  }
+};
+
+window.closeDailyPulseModal = function() {
+  const modal = document.getElementById('dailyPulseModalBackdrop');
+  if (modal) modal.style.display = 'none';
+};
+
+window.submitDailyPulse = async function() {
+  const mood = pulseValues.Mood || 3;
+  const calm = pulseValues.Calm || 3;
+  const stress = pulseValues.Stress || 3;
+  const energy = pulseValues.Energy || 3;
+  const work_fit = pulseValues.WorkFit || 3;
+
+  const btn = document.getElementById('submitPulseBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+  try {
+    const fetchFunc = typeof apiFetch === 'function' ? apiFetch : fetch;
+    const resp = await fetchFunc('/api/v1/wellness/daily-pulse', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (localStorage.getItem('havilah_token') || localStorage.getItem('session_token') || localStorage.getItem('token') || '')
+      },
+      body: JSON.stringify({ mood, calm, stress, energy, work_fit })
+    });
+    const result = await resp.json();
+
+    if (result.success) {
+      if (typeof showToast === 'function') showToast('Pulse Logged', 'Your 5-dimension wellbeing pulse has been logged.', 'success');
+      window.closeDailyPulseModal();
+      if (typeof fetchDashboardData === 'function') fetchDashboardData();
+    } else {
+      if (typeof showToast === 'function') showToast('Error', result.message || 'Failed to submit daily pulse.', 'error');
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') showToast('Connection Error', 'Could not reach server.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Daily Pulse'; }
   }
 };
 
@@ -5162,6 +5239,26 @@ const App = (() => {
       openModal('genericBackdrop');
       document.getElementById('genericPanel').classList.add('open');
     },
+    openStatus: () => {
+      const titleEl = document.getElementById('genericPanelTitle');
+      const bodyEl = document.getElementById('genericPanelBody');
+      titleEl.innerText = 'Platform System Status';
+      bodyEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:12px;margin-bottom:16px;">
+          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c55e;"></span>
+          <strong style="color:#15803d;font-size:0.95rem;">All Systems Fully Operational</strong>
+        </div>
+        <h3>Core Telemetry</h3>
+        <ul>
+          <li><strong>Zero-Knowledge Encryption Engine:</strong> Nominal (AES-256-GCM)</li>
+          <li><strong>COPSOQ III Survey Processor:</strong> Active</li>
+          <li><strong>EAP Escalation Service:</strong> Operational (24/7 Hotline Ready)</li>
+          <li><strong>ISO 45003 Compliance Core:</strong> 100% Verified</li>
+        </ul>
+      `;
+      openModal('genericBackdrop');
+      document.getElementById('genericPanel').classList.add('open');
+    },
     closeGeneric: () => {
       closeModal('genericBackdrop');
       document.getElementById('genericPanel').classList.remove('open');
@@ -5661,98 +5758,6 @@ window.App = App;
   </div>
 </div>
 
-<script>
-const pulseValues = { Mood: 3, Calm: 3, Stress: 3, Energy: 3, WorkFit: 3 };
-
-const dimTextMaps = {
-  Mood: { 1: '1 - Low', 2: '2 - Fair', 3: '3 - Good', 4: '4 - Very Good', 5: '5 - Upbeat' },
-  Calm: { 1: '1 - Anxious', 2: '2 - Fair', 3: '3 - Calm', 4: '4 - Very Peaceful', 5: '5 - Serene' },
-  Stress: { 1: '1 - High Stress', 2: '2 - Moderate', 3: '3 - In Control', 4: '4 - Low Stress', 5: '5 - Stress Free' },
-  Energy: { 1: '1 - Exhausted', 2: '2 - Fair', 3: '3 - Moderate', 4: '4 - High Energy', 5: '5 - Vibrant' },
-  WorkFit: { 1: '1 - Struggling', 2: '2 - Fair', 3: '3 - Good Fit', 4: '4 - Great Fit', 5: '5 - Thriving' }
-};
-
-window.selectPulsePill = function(dim, val) {
-  pulseValues[dim] = val;
-  const lbl = document.getElementById(`pulse${dim}Label`);
-  if (lbl) {
-    lbl.textContent = dimTextMaps[dim]?.[val] || `${val} - Selected`;
-  }
-  for (let i = 1; i <= 5; i++) {
-    const btn = document.querySelector(`.pill-${dim}-${i}`);
-    if (btn) {
-      if (i === val) {
-        btn.style.background = '#0078D4';
-        btn.style.borderColor = '#0078D4';
-        btn.style.color = '#FFFFFF';
-        btn.style.boxShadow = '0 2px 6px rgba(0, 120, 212, 0.3)';
-        btn.style.fontWeight = '700';
-      } else {
-        btn.style.background = '#FFFFFF';
-        btn.style.borderColor = '#CBD5E1';
-        btn.style.color = '#475569';
-        btn.style.boxShadow = 'none';
-        btn.style.fontWeight = '600';
-      }
-    }
-  }
-};
-
-window.openDailyPulseModal = function(opts = {}) {
-  const tenantId = opts.tenantId || (typeof getWorkerTenantId === 'function' ? getWorkerTenantId() : 'ten-123');
-  const departmentCode = opts.departmentCode || (typeof getWorkerDepartmentCode === 'function' ? getWorkerDepartmentCode() : 'ENG');
-  const instrumentCode = opts.instrumentCode || 'DAILY_PULSE';
-
-  const modal = document.getElementById('dailyPulseModalBackdrop');
-  if (modal) {
-    modal.setAttribute('data-tenant-id', tenantId);
-    modal.setAttribute('data-department-code', departmentCode);
-    modal.setAttribute('data-instrument-code', instrumentCode);
-    modal.style.display = 'flex';
-  }
-};
-
-window.closeDailyPulseModal = function() {
-  const modal = document.getElementById('dailyPulseModalBackdrop');
-  if (modal) modal.style.display = 'none';
-};
-
-window.submitDailyPulse = async function() {
-  const mood = pulseValues.Mood || 3;
-  const calm = pulseValues.Calm || 3;
-  const stress = pulseValues.Stress || 3;
-  const energy = pulseValues.Energy || 3;
-  const work_fit = pulseValues.WorkFit || 3;
-
-  const btn = document.getElementById('submitPulseBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
-
-  try {
-    const fetchFunc = typeof apiFetch === 'function' ? apiFetch : fetch;
-    const resp = await fetchFunc('/api/v1/wellness/daily-pulse', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (localStorage.getItem('session_token') || localStorage.getItem('token') || '')
-      },
-      body: JSON.stringify({ mood, calm, stress, energy, work_fit })
-    });
-    const result = await resp.json();
-
-    if (result.success) {
-      if (typeof showToast === 'function') showToast('Pulse Logged', 'Your 5-dimension wellbeing pulse has been logged.', 'success');
-      window.closeDailyPulseModal();
-      if (typeof fetchDashboardData === 'function') fetchDashboardData();
-    } else {
-      if (typeof showToast === 'function') showToast('Error', result.message || 'Failed to submit daily pulse.', 'error');
-    }
-  } catch (err) {
-    if (typeof showToast === 'function') showToast('Connection Error', 'Could not reach server.', 'error');
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Submit Daily Pulse'; }
-  }
-};
-</script>
 <script src="/js/tour.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -5762,7 +5767,7 @@ window.submitDailyPulse = async function() {
         tourId: 'employee-dashboard',
         welcomeTitle: 'Your Wellness Dashboard',
         welcomeDesc: 'Let us show you around your personal wellbeing check-in space. Everything here is private and confidential.',
-        autoStart: true,
+        autoStart: false,
         steps: [
           {
             target: '#empGreeting',

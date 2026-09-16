@@ -27,6 +27,7 @@ async function createSuperAdmin() {
             company_id: 'SYSTEM_SUPER_ADMIN', // Bypassed by role
             full_name: 'Super Admin',
             role: 'super_admin',
+            isSystemSuperAdmin: true,
             status: 'active',
             email_encrypted,
             email_hash,
@@ -35,10 +36,13 @@ async function createSuperAdmin() {
         await user.save();
         console.log(`Created new Super Admin user!`);
     } else {
+        const salt = await bcrypt.genSalt(10);
+        user.passwordHash = await bcrypt.hash(plainPassword, salt);
         user.role = 'super_admin';
+        user.isSystemSuperAdmin = true;
         user.status = 'active';
         await user.save();
-        console.log(`Updated existing user to Super Admin!`);
+        console.log(`Updated existing user to Super Admin with isSystemSuperAdmin=true!`);
     }
 
     console.log(`Email: ${adminEmail}`);

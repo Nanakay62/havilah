@@ -91,7 +91,7 @@ app.use(helmet({
         "https://cdn.tailwindcss.com",
         "https://cdnjs.cloudflare.com",
       ],
-      scriptSrcAttr: ["'none'"],
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: [
         "'self'",
         "'unsafe-inline'",
@@ -146,6 +146,7 @@ app.use(express.json({
     }
   }
 }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(cookieParser());
 
 // OWASP Input Sanitization (Principle 5)
@@ -203,6 +204,115 @@ app.get('/clinical-portal', (req, res) => {
 
 app.use('/portal', requireViewRole('hr_admin', 'tenant_admin'), express.static(path.join(__dirname, '../private/portal'), { etag: false, lastModified: false }));
 app.use('/app', requireViewRole('employee', 'hr_admin', 'tenant_admin'), express.static(path.join(__dirname, '../private/app'), { etag: false, lastModified: false }));
+
+// Instant Demo & Presentation Launchers (Zero Login Required on Localhost)
+app.get(['/demo', '/demo/employee', '/preview'], (req, res) => {
+  const jwt = require('jsonwebtoken');
+  const demoPayload = {
+    userId: 'usr-demo-employee',
+    companyId: 'b8ecbd7c-7993-48f9-babe-20c8001c345b',
+    departmentId: 'dept-engineering',
+    role: 'employee',
+    status: 'active',
+    isSystemSuperAdmin: false,
+  };
+  const token = jwt.sign(demoPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
+  res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 86400000, path: '/' });
+  res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Launching Employee Dashboard Demo...</title>
+  <style>
+    body { background: #0f172a; color: #f8fafc; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .spinner { width: 40px; height: 40px; border: 4px solid rgba(0, 183, 195, 0.2); border-top-color: #00B7C3; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="spinner"></div>
+  <h2 style="margin:0 0 8px;">Launching Employee Dashboard...</h2>
+  <p style="color:#94a3b8;margin:0;">Setting up presentation session</p>
+  <script>
+    const token = '${token}';
+    const user = {
+      id: 'usr-demo-employee',
+      user_id: 'usr-demo-employee',
+      full_name: 'Alex Mercer (Employee Demo)',
+      email: 'alex.mercer@fzsafety.com',
+      role: 'employee',
+      company_id: 'b8ecbd7c-7993-48f9-babe-20c8001c345b',
+      tenant_id: 'b8ecbd7c-7993-48f9-babe-20c8001c345b',
+      department_name: 'Operations & Engineering'
+    };
+    try {
+      localStorage.setItem('havilah_token', token);
+      localStorage.setItem('token', token);
+      localStorage.setItem('session_token', token);
+      localStorage.setItem('havilah_user', JSON.stringify(user));
+      localStorage.setItem('wf_user', JSON.stringify(user));
+      localStorage.setItem('wf_user_name', user.full_name);
+      localStorage.setItem('wf_user_email', user.email);
+      localStorage.setItem('wf_consent', 'true');
+      document.cookie = 'token=' + token + '; path=/; max-age=86400; SameSite=Lax';
+    } catch(e) {}
+    window.location.replace('/app/dashboard.html');
+  </script>
+</body>
+</html>`);
+});
+
+app.get('/demo/hr', (req, res) => {
+  const jwt = require('jsonwebtoken');
+  const demoPayload = {
+    userId: 'usr-demo-hr',
+    companyId: 'b8ecbd7c-7993-48f9-babe-20c8001c345b',
+    departmentId: 'dept-hr',
+    role: 'hr_admin',
+    status: 'active',
+    isSystemSuperAdmin: false,
+  };
+  const token = jwt.sign(demoPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
+  res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 86400000, path: '/' });
+  res.send(`<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;">
+  <script>
+    const token = '${token}';
+    const user = { id: 'usr-demo-hr', user_id: 'usr-demo-hr', full_name: 'Dr. Clarke (HR Director)', role: 'hr_admin', company_id: 'b8ecbd7c-7993-48f9-babe-20c8001c345b' };
+    localStorage.setItem('havilah_token', token);
+    localStorage.setItem('token', token);
+    localStorage.setItem('havilah_user', JSON.stringify(user));
+    localStorage.setItem('wf_user', JSON.stringify(user));
+    document.cookie = 'token=' + token + '; path=/; max-age=86400; SameSite=Lax';
+    window.location.replace('/portal/hr.html');
+  </script>
+  </body></html>`);
+});
+
+app.get('/demo/superadmin', (req, res) => {
+  const jwt = require('jsonwebtoken');
+  const demoPayload = {
+    userId: 'ba4040b3-d7d5-4c23-8a53-5d440ec3c834',
+    companyId: 'SYSTEM_SUPER_ADMIN',
+    departmentId: 'unassigned',
+    role: 'super_admin',
+    status: 'active',
+    isSystemSuperAdmin: true,
+  };
+  const token = jwt.sign(demoPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
+  res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 86400000, path: '/' });
+  res.send(`<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;">
+  <script>
+    const token = '${token}';
+    const user = { id: 'ba4040b3-d7d5-4c23-8a53-5d440ec3c834', user_id: 'ba4040b3-d7d5-4c23-8a53-5d440ec3c834', full_name: 'Super Admin', role: 'super_admin', isSystemSuperAdmin: true };
+    localStorage.setItem('havilah_token', token);
+    localStorage.setItem('token', token);
+    localStorage.setItem('havilah_user', JSON.stringify(user));
+    localStorage.setItem('wf_user', JSON.stringify(user));
+    document.cookie = 'token=' + token + '; path=/; max-age=86400; SameSite=Lax';
+    window.location.replace('/app/superadmin.html');
+  </script>
+  </body></html>`);
+});
 
 // Clean URL Aliases matching Netlify & Cloudflare _redirects
 app.get('/dashboard', requireViewRole('employee', 'hr_admin', 'tenant_admin'), (req, res) => {
@@ -322,6 +432,12 @@ async function startServer() {
     if (missing.length > 0) {
       console.error(`[server] FATAL: Missing required environment variables: ${missing.join(', ')}`);
       process.exit(1);
+    }
+
+    if (!process.env.JWT_REFRESH_SECRET) {
+      console.warn('[server] WARN: JWT_REFRESH_SECRET is not set; falling back to JWT_SECRET. In production, configure a separate secret for refresh tokens.');
+    } else if (process.env.JWT_REFRESH_SECRET === process.env.JWT_SECRET) {
+      console.warn('[server] WARN: JWT_REFRESH_SECRET is identical to JWT_SECRET. For optimal security, configure distinct cryptographic secrets.');
     }
 
     if (process.env.NODE_ENV === 'production') {

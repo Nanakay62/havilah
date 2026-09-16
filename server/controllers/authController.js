@@ -83,7 +83,7 @@ async function registerTenant(req, res, next) {
       company_id: companyId,
       company_name: orgName,
       slug,
-      billing_tier: 'trial',
+      billing_tier: 'pro',
       subscription: {
         tier: 'pro',
         status: 'trialing',
@@ -123,6 +123,7 @@ async function registerTenant(req, res, next) {
       companyId: newTenant.company_id,
       departmentId: 'unassigned',
       role: hrUser.role,
+      status: hrUser.status,
       isSystemSuperAdmin: false,
     };
 

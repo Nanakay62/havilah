@@ -40,8 +40,7 @@ async function updateTenantSubscription(req, res, next) {
 
     if (tier && ['free', 'starter', 'pro', 'enterprise'].includes(tier.toLowerCase())) {
       tenant.subscription.tier = tier.toLowerCase();
-      // Sync legacy billing_tier field
-      tenant.billing_tier = tier.toLowerCase() === 'free' ? 'trial' : tier.toLowerCase() === 'pro' ? 'professional' : tier.toLowerCase();
+      tenant.billing_tier = tier.toLowerCase();
     }
 
     if (status && ['trialing', 'active', 'past_due', 'canceled'].includes(status.toLowerCase())) {
@@ -209,6 +208,7 @@ async function manualProvisionTenant(req, res, next) {
 
     const seatLimit = parseInt(maxEmployees || max_allowed_seats) || 50;
     const subscriptionTier = (tier || billing_tier || 'pro').toLowerCase();
+    const cleanTier = subscriptionTier === 'professional' ? 'pro' : subscriptionTier === 'trial' ? 'free' : subscriptionTier;
 
     const newTenant = await Tenant.create({
       company_id: uuidv4(),
@@ -216,9 +216,9 @@ async function manualProvisionTenant(req, res, next) {
       slug: cleanSlug,
       domain: domainClean,
       max_allowed_seats: seatLimit,
-      billing_tier: subscriptionTier === 'pro' ? 'professional' : subscriptionTier === 'free' ? 'trial' : subscriptionTier,
+      billing_tier: cleanTier,
       subscription: {
-        tier: subscriptionTier === 'professional' ? 'pro' : subscriptionTier,
+        tier: cleanTier,
         status: 'active',
         maxEmployees: seatLimit,
         trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),

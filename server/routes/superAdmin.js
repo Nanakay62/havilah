@@ -124,8 +124,8 @@ router.get('/global-defaults', async (req, res, next) => {
       locks: {
         phq9: policy.phq9 !== 'unlocked',
         gad7: policy.gad7 !== 'unlocked',
-        pss10: policy.pss10 === 'locked',
-        fas10: policy.fas10 === 'locked',
+        pss10: policy.pss10 !== 'unlocked',
+        fas10: policy.fas10 !== 'unlocked',
         copsoq: policy.copsoq3 !== 'unlocked'
       },
       copsoqDepth: policy.copsoq_depth || 'core'
@@ -249,7 +249,7 @@ router.post('/tenants', async (req, res, next) => {
       slug: cleanSlug, 
       domain: domainClean, 
       max_allowed_seats: max_allowed_seats || 50,
-      billing_tier: billing_tier || 'trial',
+      billing_tier: billing_tier || 'pro',
       lifecycle_state: 'active',
       settings: {
         entitlements: entitlements || { copsoq3: true, pss10: true, phq9: true, gad7: true, fas10: true }

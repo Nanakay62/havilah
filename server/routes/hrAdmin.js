@@ -887,4 +887,84 @@ router.get('/benchmarks', async (req, res, next) => {
   }
 });
 
+// GET /api/v1/hr/audit/verify-chain - Cryptographic audit hash-chain integrity verification
+router.get('/audit/verify-chain', async (req, res, next) => {
+  try {
+    const { company_id } = req.sessionData;
+    const AuditLog = require('../models/AuditLog');
+    const result = await AuditLog.verifyChain(company_id);
+    return res.json({
+      success: true,
+      company_id,
+      ...result,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/v1/hr/settings/copsoq-depth - Get tenant COPSOQ resolution depth
+router.get('/settings/copsoq-depth', async (req, res, next) => {
+  try {
+    const { company_id } = req.sessionData;
+    const Tenant = require('../models/Tenant');
+    const tenant = await Tenant.findOne({ company_id }).lean();
+    const currentDepth = tenant?.settings?.default_lock_policy?.copsoq_depth || 'core';
+    return res.json({
+      success: true,
+      copsoq_depth: currentDepth,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/v1/hr/settings/copsoq-depth - HR sets company default COPSOQ resolution depth
+router.patch('/settings/copsoq-depth', async (req, res, next) => {
+  try {
+    const { company_id, user_id, role } = req.sessionData;
+    const { copsoq_depth } = req.body;
+
+    if (!copsoq_depth || !['core', 'middle', 'long'].includes(copsoq_depth)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid depth. Must be one of: core, middle, long',
+      });
+    }
+
+    const Tenant = require('../models/Tenant');
+    const tenant = await Tenant.findOne({ company_id });
+    if (!tenant) {
+      return res.status(404).json({ success: false, error: 'Tenant not found' });
+    }
+
+    if (!tenant.settings) tenant.settings = {};
+    if (!tenant.settings.default_lock_policy) tenant.settings.default_lock_policy = {};
+    tenant.settings.default_lock_policy.copsoq_depth = copsoq_depth;
+    await tenant.save();
+
+    // Audit log
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.append({
+        company_id,
+        actor_user_id: user_id || 'HR_ADMIN',
+        actor_role: role || 'hr_admin',
+        event_type: 'TENANT_COPSOQ_DEPTH_UPDATED',
+        event_payload: { copsoq_depth },
+      });
+    } catch (auditErr) {
+      console.warn('[AuditLog Warning]', auditErr.message);
+    }
+
+    return res.json({
+      success: true,
+      message: `Default COPSOQ resolution depth updated to ${copsoq_depth}.`,
+      copsoq_depth,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

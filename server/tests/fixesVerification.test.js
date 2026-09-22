@@ -8,7 +8,7 @@ import Tenant from '../models/Tenant';
 import jwt from 'jsonwebtoken';
 
 describe('Havilah Fixes Verification Test Suite', () => {
-  const JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-key-wellframe-2026-secure-32b';
+  const JWT_SECRET = process.env.JWT_SECRET || 'wellframe-test-jwt-secret-2026';
 
   const createMockQuery = (data) => ({
     select: () => createMockQuery(data),

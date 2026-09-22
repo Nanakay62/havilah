@@ -78,7 +78,7 @@ describe('Multi-Tenant Isolation & Privacy Safeguards', () => {
 
   it('validateSession accepts valid JWT passed via Cookie (req.cookies.token)', async () => {
     const jwt = require('jsonwebtoken');
-    const secret = process.env.JWT_SECRET || 'test_jwt_secret_configured_for_test';
+    const secret = process.env.JWT_SECRET || 'wellframe-test-jwt-secret-2026';
     process.env.JWT_SECRET = secret;
 
     const token = jwt.sign(

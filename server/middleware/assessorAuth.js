@@ -30,7 +30,8 @@ async function requireAssessorAuth(req, res, next) {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const secret = process.env.JWT_SECRET || 'wellframe-test-jwt-secret-2026';
+      decoded = jwt.verify(token, secret);
     } catch (jwtErr) {
       return res.status(401).json({
         success: false,

@@ -58,7 +58,13 @@ jobs:
           fi
 
       - name: Run Test Suite
-        run: |
-          cd server
-          npm test
+        working-directory: server
+        env:
+          JWT_SECRET: wellframe-test-jwt-secret-2026
+          JWT_REFRESH_SECRET: wellframe-test-jwt-refresh-secret-2026
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          SUPER_ADMIN_KEY: test-super-admin-key-2026
+          HMAC_SECRET: test-hmac-secret-2026
+          NODE_ENV: test
+        run: npm test
 

@@ -123,6 +123,15 @@ const UserSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    password_reset_token_hash: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    password_reset_expires_at: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
@@ -134,6 +143,7 @@ const UserSchema = new mongoose.Schema(
         delete ret.email_hash;
         delete ret.passwordHash;
         delete ret.refresh_token_hash;
+        delete ret.password_reset_token_hash;
         delete ret.__v;
         return ret;
       },

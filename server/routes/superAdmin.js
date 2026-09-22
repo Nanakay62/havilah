@@ -14,8 +14,13 @@ const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const superAdminController = require('../controllers/superAdminController');
 
-// Apply guards to ALL superadmin endpoints
-router.use(validateSession, superAdminGuard);
+// Apply guards to ALL superadmin endpoints (supports JWT session or X-Admin-Key header)
+router.use((req, res, next) => {
+  if (req.headers['x-admin-key']) {
+    return superAdminGuard(req, res, next);
+  }
+  return validateSession(req, res, () => superAdminGuard(req, res, next));
+});
 
 // 1. Get Platform Macro Metrics
 router.get('/stats', async (req, res, next) => {

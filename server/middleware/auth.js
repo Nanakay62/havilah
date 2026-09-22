@@ -47,7 +47,14 @@ async function validateSession(req, res, next) {
     }
 
     try {
-      const secret = process.env.JWT_SECRET || 'wellframe-test-jwt-secret-2026';
+      const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'wellframe-test-jwt-secret-2026');
+      if (!secret) {
+        return res.status(500).json({
+          success: false,
+          error: 'SERVER_MISCONFIGURED',
+          message: 'Authentication secret is not configured',
+        });
+      }
       const decoded = jwt.verify(token, secret);
       
       /** @type {{ user_id: string, company_id: string, department_id: string, role: string, status: string }} */
@@ -203,8 +210,15 @@ function requireSuperAdmin(req, res, next) {
     });
   }
 
-  if (adminKey && adminKey === expectedKey) {
-    return next();
+  if (adminKey && expectedKey) {
+    try {
+      const crypto = require('crypto');
+      const a = Buffer.from(String(adminKey));
+      const b = Buffer.from(String(expectedKey));
+      if (a.length === b.length && crypto.timingSafeEqual(a, b)) {
+        return next();
+      }
+    } catch (e) {}
   }
 
   return res.status(403).json({

@@ -103,7 +103,8 @@
      */
     getSignalingUrl() {
       if (this.signalWsUrl) {
-        return `${this.signalWsUrl}?ref=${encodeURIComponent(this.referenceCode)}&role=${this.role}&token=${encodeURIComponent(this.token)}`;
+        const separator = this.signalWsUrl.includes('?') ? '&' : '?';
+        return `${this.signalWsUrl}${separator}ref=${encodeURIComponent(this.referenceCode)}&role=${this.role}&token=${encodeURIComponent(this.token)}`;
       }
 
       const isHttps = window.location.protocol === 'https:';
@@ -114,8 +115,8 @@
         return `${wsProtocol}//${hostname}:3001?ref=${encodeURIComponent(this.referenceCode)}&role=${this.role}&token=${encodeURIComponent(this.token)}`;
       }
 
-      // Production Render host
-      return `wss://havilah-api.onrender.com:3001?ref=${encodeURIComponent(this.referenceCode)}&role=${this.role}&token=${encodeURIComponent(this.token)}`;
+      // Production single-port Render host via HTTP server upgrade handler on standard port 443
+      return `wss://havilah-api.onrender.com/api/v1/calls/ws?ref=${encodeURIComponent(this.referenceCode)}&role=${this.role}&token=${encodeURIComponent(this.token)}`;
     }
 
     /**

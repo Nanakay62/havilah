@@ -574,4 +574,128 @@ router.post('/change-password', sensitiveRateLimiter(5), validateSession, async 
   }
 });
 
+// POST /api/v1/auth/forgot-password - Rate limited (max 5 attempts per window)
+router.post('/forgot-password', sensitiveRateLimiter(5), async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'EMAIL_REQUIRED', message: 'A valid email address is required.' });
+    }
+
+    const normalised = email.trim().toLowerCase();
+    const emailHash = hashField(normalised);
+
+    const user = await User.findOne({ email_hash: emailHash });
+
+    // Always respond with success to prevent user enumeration attacks
+    if (!user || user.status === 'deactivated') {
+      return res.json({
+        success: true,
+        message: 'If an active account exists for that email, a password reset link has been dispatched.'
+      });
+    }
+
+    // Generate secure 32-byte reset token
+    const crypto = require('crypto');
+    const rawResetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = hashField(rawResetToken);
+
+    // Token expires in 1 hour
+    user.password_reset_token_hash = resetTokenHash;
+    user.password_reset_expires_at = new Date(Date.now() + 60 * 60 * 1000);
+    await user.save();
+
+    // Construct reset link
+    const appBaseUrl = (process.env.APP_BASE_URL || process.env.CLIENT_ORIGIN || 'https://havilah.dic20016.workers.dev').replace(/\/$/, '');
+    const resetUrl = `${appBaseUrl}/reset-password.html?token=${rawResetToken}&email=${encodeURIComponent(normalised)}`;
+
+    // Dispatch email asynchronously
+    const { sendMail } = require('../utils/emailService');
+    const html = `
+      <div style="background-color: #0f172a; padding: 32px 12px; font-family: sans-serif;">
+        <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; color: #1e293b; border-radius: 12px; overflow: hidden; padding: 28px 32px;">
+          <h2 style="color: #0f172a; margin-top: 0;">Password Reset Request</h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #475569;">
+            We received a request to reset your password for your Havilah account. Click the button below to choose a new password. This link is valid for 60 minutes.
+          </p>
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${resetUrl}" style="background: #00B7C3; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; display: inline-block;">
+              Reset Password
+            </a>
+          </div>
+          <p style="font-size: 12px; color: #94a3b8; line-height: 1.5;">
+            If you did not request this, please disregard this email. Your password will remain unchanged.
+          </p>
+        </div>
+      </div>
+    `;
+
+    try {
+      await sendMail({
+        to: normalised,
+        subject: 'Havilah - Password Reset Request',
+        html
+      });
+    } catch (e) {
+      console.warn('[auth] Could not dispatch password reset email:', e.message);
+    }
+
+    return res.json({
+      success: true,
+      message: 'If an active account exists for that email, a password reset link has been dispatched.',
+      ...(process.env.NODE_ENV !== 'production' ? { resetToken: rawResetToken } : {})
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/auth/reset-password - Rate limited (max 5 attempts per window)
+router.post('/reset-password', sensitiveRateLimiter(5), async (req, res, next) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ success: false, error: 'MISSING_FIELDS', message: 'Reset token and new password are required.' });
+    }
+
+    const tokenHash = hashField(String(token).trim());
+    const user = await User.findOne({
+      password_reset_token_hash: tokenHash,
+      password_reset_expires_at: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_OR_EXPIRED_TOKEN',
+        message: 'The password reset token is invalid or has expired. Please request a new one.'
+      });
+    }
+
+    const strengthCheck = validatePasswordStrength(newPassword);
+    if (!strengthCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        error: 'WEAK_PASSWORD',
+        message: strengthCheck.error,
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+    user.password_reset_token_hash = null;
+    user.password_reset_expires_at = null;
+    user.refresh_token_hash = null;
+    user.refresh_token_expires_at = null;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Your password has been reset successfully. You can now log in with your new credentials.'
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

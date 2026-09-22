@@ -107,6 +107,7 @@ app.use(helmet({
       connectSrc: [
         "'self'",
         process.env.CLIENT_ORIGIN || '',
+        "https://havilah.dic20016.workers.dev",
         "https://havilah-api.onrender.com",
         "wss://havilah-api.onrender.com",
         "wss://havilah-api.onrender.com:3001",
@@ -131,17 +132,14 @@ app.use(helmet({
 }));
 
 // Strictly locked CORS Configuration (Principle 10)
+const allowedOrigins = [
+  'https://havilah.dic20016.workers.dev',
+  ...(process.env.CLIENT_ORIGIN ? [process.env.CLIENT_ORIGIN] : []),
+  ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5000', 'http://127.0.0.1:5000'] : [])
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5000',
-    'http://127.0.0.1:5000',
-    /\.vercel\.app$/,
-    /\.netlify\.app$/,
-    /\.pages\.dev$/,
-    /\.workers\.dev$/,
-    ...(process.env.CLIENT_ORIGIN ? [process.env.CLIENT_ORIGIN] : [])
-  ],
+  origin: allowedOrigins,
   credentials: true
 }));
 
@@ -212,20 +210,21 @@ app.get('/clinical-portal', (req, res) => {
 app.use('/portal', requireViewRole('hr_admin', 'tenant_admin'), express.static(path.join(__dirname, '../private/portal'), { etag: false, lastModified: false }));
 app.use('/app', requireViewRole('employee', 'hr_admin', 'tenant_admin'), express.static(path.join(__dirname, '../private/app'), { etag: false, lastModified: false }));
 
-// Instant Demo & Presentation Launchers (Zero Login Required on Localhost)
-app.get(['/demo', '/demo/employee', '/preview'], (req, res) => {
-  const jwt = require('jsonwebtoken');
-  const demoPayload = {
-    userId: 'usr-demo-employee',
-    companyId: 'b8ecbd7c-7993-48f9-babe-20c8001c345b',
-    departmentId: 'dept-engineering',
-    role: 'employee',
-    status: 'active',
-    isSystemSuperAdmin: false,
-  };
-  const token = jwt.sign(demoPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
-  res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 86400000, path: '/' });
-  res.send(`<!DOCTYPE html>
+// Instant Demo & Presentation Launchers (Strictly Disabled in Production unless ENABLE_DEMO_ROUTES=true)
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_ROUTES === 'true') {
+  app.get(['/demo', '/demo/employee', '/preview'], (req, res) => {
+    const jwt = require('jsonwebtoken');
+    const demoPayload = {
+      userId: 'usr-demo-employee',
+      companyId: 'b8ecbd7c-7993-48f9-babe-20c8001c345b',
+      departmentId: 'dept-engineering',
+      role: 'employee',
+      status: 'active',
+      isSystemSuperAdmin: false,
+    };
+    const token = jwt.sign(demoPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
+    res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 86400000, path: '/' });
+    res.send(`<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -267,59 +266,60 @@ app.get(['/demo', '/demo/employee', '/preview'], (req, res) => {
   </script>
 </body>
 </html>`);
-});
+  });
 
-app.get('/demo/hr', (req, res) => {
-  const jwt = require('jsonwebtoken');
-  const demoPayload = {
-    userId: 'usr-demo-hr',
-    companyId: 'b8ecbd7c-7993-48f9-babe-20c8001c345b',
-    departmentId: 'dept-hr',
-    role: 'hr_admin',
-    status: 'active',
-    isSystemSuperAdmin: false,
-  };
-  const token = jwt.sign(demoPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
-  res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 86400000, path: '/' });
-  res.send(`<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;">
-  <script>
-    const token = '${token}';
-    const user = { id: 'usr-demo-hr', user_id: 'usr-demo-hr', full_name: 'Dr. Clarke (HR Director)', role: 'hr_admin', company_id: 'b8ecbd7c-7993-48f9-babe-20c8001c345b' };
-    localStorage.setItem('havilah_token', token);
-    localStorage.setItem('token', token);
-    localStorage.setItem('havilah_user', JSON.stringify(user));
-    localStorage.setItem('wf_user', JSON.stringify(user));
-    document.cookie = 'token=' + token + '; path=/; max-age=86400; SameSite=Lax';
-    window.location.replace('/portal/hr.html');
-  </script>
-  </body></html>`);
-});
+  app.get('/demo/hr', (req, res) => {
+    const jwt = require('jsonwebtoken');
+    const demoPayload = {
+      userId: 'usr-demo-hr',
+      companyId: 'b8ecbd7c-7993-48f9-babe-20c8001c345b',
+      departmentId: 'dept-hr',
+      role: 'hr_admin',
+      status: 'active',
+      isSystemSuperAdmin: false,
+    };
+    const token = jwt.sign(demoPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
+    res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 86400000, path: '/' });
+    res.send(`<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;">
+    <script>
+      const token = '${token}';
+      const user = { id: 'usr-demo-hr', user_id: 'usr-demo-hr', full_name: 'Dr. Clarke (HR Director)', role: 'hr_admin', company_id: 'b8ecbd7c-7993-48f9-babe-20c8001c345b' };
+      localStorage.setItem('havilah_token', token);
+      localStorage.setItem('token', token);
+      localStorage.setItem('havilah_user', JSON.stringify(user));
+      localStorage.setItem('wf_user', JSON.stringify(user));
+      document.cookie = 'token=' + token + '; path=/; max-age=86400; SameSite=Lax';
+      window.location.replace('/portal/hr.html');
+    </script>
+    </body></html>`);
+  });
 
-app.get('/demo/superadmin', (req, res) => {
-  const jwt = require('jsonwebtoken');
-  const demoPayload = {
-    userId: 'ba4040b3-d7d5-4c23-8a53-5d440ec3c834',
-    companyId: 'SYSTEM_SUPER_ADMIN',
-    departmentId: 'unassigned',
-    role: 'super_admin',
-    status: 'active',
-    isSystemSuperAdmin: true,
-  };
-  const token = jwt.sign(demoPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
-  res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 86400000, path: '/' });
-  res.send(`<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;">
-  <script>
-    const token = '${token}';
-    const user = { id: 'ba4040b3-d7d5-4c23-8a53-5d440ec3c834', user_id: 'ba4040b3-d7d5-4c23-8a53-5d440ec3c834', full_name: 'Super Admin', role: 'super_admin', isSystemSuperAdmin: true };
-    localStorage.setItem('havilah_token', token);
-    localStorage.setItem('token', token);
-    localStorage.setItem('havilah_user', JSON.stringify(user));
-    localStorage.setItem('wf_user', JSON.stringify(user));
-    document.cookie = 'token=' + token + '; path=/; max-age=86400; SameSite=Lax';
-    window.location.replace('/app/superadmin.html');
-  </script>
-  </body></html>`);
-});
+  app.get('/demo/superadmin', (req, res) => {
+    const jwt = require('jsonwebtoken');
+    const demoPayload = {
+      userId: 'ba4040b3-d7d5-4c23-8a53-5d440ec3c834',
+      companyId: 'SYSTEM_SUPER_ADMIN',
+      departmentId: 'unassigned',
+      role: 'super_admin',
+      status: 'active',
+      isSystemSuperAdmin: true,
+    };
+    const token = jwt.sign(demoPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
+    res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 86400000, path: '/' });
+    res.send(`<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;">
+    <script>
+      const token = '${token}';
+      const user = { id: 'ba4040b3-d7d5-4c23-8a53-5d440ec3c834', user_id: 'ba4040b3-d7d5-4c23-8a53-5d440ec3c834', full_name: 'Super Admin', role: 'super_admin', isSystemSuperAdmin: true };
+      localStorage.setItem('havilah_token', token);
+      localStorage.setItem('token', token);
+      localStorage.setItem('havilah_user', JSON.stringify(user));
+      localStorage.setItem('wf_user', JSON.stringify(user));
+      document.cookie = 'token=' + token + '; path=/; max-age=86400; SameSite=Lax';
+      window.location.replace('/app/superadmin.html');
+    </script>
+    </body></html>`);
+  });
+}
 
 // Clean URL Aliases matching Netlify & Cloudflare _redirects
 app.get('/dashboard', requireViewRole('employee', 'hr_admin', 'tenant_admin'), (req, res) => {

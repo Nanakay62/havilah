@@ -5,6 +5,7 @@ const { sendEmail } = require('./mailer');
 const CLINICAL_EMAIL = process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || null;
 const CLINICAL_HOTLINE = process.env.DEFAULT_CLINICAL_HOTLINE || null;
 const NOTIFICATION_RECIPIENT = process.env.DEFAULT_NOTIFICATION_RECIPIENT || null;
+const APP_BASE_URL = (process.env.APP_BASE_URL || process.env.CLIENT_ORIGIN || 'https://havilah.dic20016.workers.dev').replace(/\/$/, '');
 
 /**
  * Sends email using Brevo Transactional Email REST API.
@@ -63,7 +64,7 @@ async function sendClinicalDispatch({ referenceCode, companyName, to }) {
           </p>
 
           <div style="text-align: center; margin: 28px 0 16px;">
-            <a href="http://localhost:3000/clinical-portal.html" style="background: linear-gradient(135deg, #0d9488, #0f766e); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: 700; font-size: 13.5px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(13,148,136,0.3);">
+            <a href="${APP_BASE_URL}/clinical-portal.html" style="background: linear-gradient(135deg, #0d9488, #0f766e); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: 700; font-size: 13.5px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(13,148,136,0.3);">
               🩺 Access Clinical Hub &amp; Review Queue
             </a>
           </div>
@@ -183,7 +184,7 @@ async function sendWhistleblowerAlert({ reportId, companyName, to }) {
           </p>
 
           <div style="text-align: center; margin: 28px 0 16px;">
-            <a href="http://localhost:3000/login.html" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: 700; font-size: 13.5px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(99,102,241,0.3);">
+            <a href="${APP_BASE_URL}/login.html" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: 700; font-size: 13.5px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(99,102,241,0.3);">
               🔐 Authenticate &amp; Access Dashboard
             </a>
           </div>

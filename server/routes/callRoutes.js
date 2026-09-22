@@ -33,11 +33,15 @@ router.get('/ice-config', async (req, res) => {
       }
     ];
 
+    const defaultSignalUrl = (process.env.NODE_ENV === 'production' || process.env.RENDER)
+      ? 'wss://havilah-api.onrender.com/api/v1/calls/ws'
+      : null;
+
     res.json({
       success: true,
       iceServers,
       signalPort: parseInt(process.env.CALL_SIGNAL_PORT, 10) || 3001,
-      signalUrl: process.env.CALL_SIGNAL_URL || null,
+      signalUrl: process.env.CALL_SIGNAL_URL || defaultSignalUrl,
     });
   } catch (err) {
     logger.warn({ err: err.message }, '[CallRoutes] Error fetching ICE config');

@@ -206,9 +206,55 @@ async function manualProvisionTenant(req, res, next) {
       domainClean = domainClean.split('@').pop();
     }
 
+    // Guard against duplicate slug
+    const existingSlug = await Tenant.findOne({ slug: cleanSlug });
+    if (existingSlug) {
+      return res.status(409).json({
+        success: false,
+        error: 'DUPLICATE_SLUG',
+        message: `An organization with slug '${cleanSlug}' already exists (${existingSlug.company_name}). To extend or reactivate access, use Extend Access rather than provisioning a duplicate tenant.`
+      });
+    }
+
+    // Guard against duplicate domain
+    if (domainClean) {
+      const existingDomain = await Tenant.findOne({ domain: domainClean });
+      if (existingDomain) {
+        return res.status(409).json({
+          success: false,
+          error: 'DUPLICATE_DOMAIN',
+          message: `An organization with domain '${domainClean}' already exists (${existingDomain.company_name}). To extend or reactivate access, use Extend Access rather than provisioning a duplicate tenant.`
+        });
+      }
+    }
+
+    // Pre-validate HR Admin email so we never orphan an existing user's data
+    let emailToUse = '';
+    if (create_hr_admin !== false) {
+      if (hr_admin_email && hr_admin_email.trim()) {
+        emailToUse = hr_admin_email.trim().toLowerCase();
+      } else if (domainClean) {
+        emailToUse = `hr@${domainClean}`;
+      } else {
+        emailToUse = `hr@${cleanSlug}.com`;
+      }
+
+      const emailHash = hashField(emailToUse);
+      const existingUser = await User.findOne({ email_hash: emailHash });
+      if (existingUser) {
+        const associatedTenant = await Tenant.findOne({ company_id: existingUser.company_id }).lean();
+        return res.status(409).json({
+          success: false,
+          error: 'USER_ALREADY_EXISTS',
+          message: `User with email '${emailToUse}' is already registered to tenant '${associatedTenant?.company_name || existingUser.company_id}'. Provisioning a new tenant for this email would orphan their existing survey responses, departments, and history. Use Extend Access on the existing tenant instead.`
+        });
+      }
+    }
+
     const seatLimit = parseInt(maxEmployees || max_allowed_seats) || 50;
     const subscriptionTier = (tier || billing_tier || 'pro').toLowerCase();
     const cleanTier = subscriptionTier === 'professional' ? 'pro' : subscriptionTier === 'trial' ? 'free' : subscriptionTier;
+    const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     const newTenant = await Tenant.create({
       company_id: uuidv4(),
@@ -221,9 +267,10 @@ async function manualProvisionTenant(req, res, next) {
         tier: cleanTier,
         status: 'active',
         maxEmployees: seatLimit,
-        trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        trialEndsAt: trialEnds,
       },
       lifecycle_state: 'active',
+      access_expires_at: trialEnds,
       activeAssessorId: activeAssessorId && mongoose.Types.ObjectId.isValid(activeAssessorId) ? activeAssessorId : null,
       settings: {
         entitlements: entitlements || { copsoq3: true, pss10: true, phq9: true, gad7: true, fas10: true },
@@ -234,15 +281,6 @@ async function manualProvisionTenant(req, res, next) {
 
     // Provision HR Admin User if requested
     if (create_hr_admin !== false) {
-      let emailToUse = '';
-      if (hr_admin_email && hr_admin_email.trim()) {
-        emailToUse = hr_admin_email.trim().toLowerCase();
-      } else if (domainClean) {
-        emailToUse = `hr@${domainClean}`;
-      } else {
-        emailToUse = `hr@${cleanSlug}.com`;
-      }
-
       const passwordToUse = (hr_admin_password && hr_admin_password.trim())
         ? hr_admin_password.trim()
         : `${cleanSlug.substring(0, 4).toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}!`;

@@ -10,4 +10,5 @@ coverage/
 scratch/
 server/scripts/*
 !server/scripts/buildAssets.js
+!server/scripts/relinkTenantData.js
 dev-tools/

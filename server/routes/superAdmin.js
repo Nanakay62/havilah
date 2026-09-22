@@ -243,6 +243,52 @@ router.post('/tenants', async (req, res, next) => {
       domainClean = domainClean.split('@').pop();
     }
 
+    // Guard against duplicate slug
+    const existingSlug = await Tenant.findOne({ slug: cleanSlug });
+    if (existingSlug) {
+      return res.status(409).json({
+        success: false,
+        error: 'DUPLICATE_SLUG',
+        message: `An organization with slug '${cleanSlug}' already exists (${existingSlug.company_name}). To extend or reactivate access, use Extend Access rather than provisioning a duplicate tenant.`
+      });
+    }
+
+    // Guard against duplicate domain
+    if (domainClean) {
+      const existingDomain = await Tenant.findOne({ domain: domainClean });
+      if (existingDomain) {
+        return res.status(409).json({
+          success: false,
+          error: 'DUPLICATE_DOMAIN',
+          message: `An organization with domain '${domainClean}' already exists (${existingDomain.company_name}). To extend or reactivate access, use Extend Access rather than provisioning a duplicate tenant.`
+        });
+      }
+    }
+
+    // Pre-validate HR Admin email so we never orphan an existing user's data
+    let emailToUse = '';
+    if (create_hr_admin !== false) {
+      if (hr_admin_email && hr_admin_email.trim()) {
+        emailToUse = hr_admin_email.trim().toLowerCase();
+      } else if (domainClean) {
+        emailToUse = `hr@${domainClean}`;
+      } else {
+        emailToUse = `hr@${cleanSlug}.com`;
+      }
+
+      const emailHash = hashField(emailToUse);
+      const existingUser = await User.findOne({ email_hash: emailHash });
+      if (existingUser) {
+        const associatedTenant = await Tenant.findOne({ company_id: existingUser.company_id }).lean();
+        return res.status(409).json({
+          success: false,
+          error: 'USER_ALREADY_EXISTS',
+          message: `User with email '${emailToUse}' is already registered to tenant '${associatedTenant?.company_name || existingUser.company_id}'. Provisioning a new tenant for this email would orphan their existing survey responses, departments, and history. Use Extend Access on the existing tenant instead.`
+        });
+      }
+    }
+
+    const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const newTenant = await Tenant.create({ 
       company_id: uuidv4(),
       company_name: trimmedName, 
@@ -250,7 +296,14 @@ router.post('/tenants', async (req, res, next) => {
       domain: domainClean, 
       max_allowed_seats: max_allowed_seats || 50,
       billing_tier: billing_tier || 'pro',
+      subscription: {
+        tier: billing_tier || 'pro',
+        status: 'trialing',
+        trialEndsAt: trialEnds,
+        maxEmployees: max_allowed_seats || 50,
+      },
       lifecycle_state: 'active',
+      access_expires_at: trialEnds,
       settings: {
         entitlements: entitlements || { copsoq3: true, pss10: true, phq9: true, gad7: true, fas10: true }
       }
@@ -260,15 +313,6 @@ router.post('/tenants', async (req, res, next) => {
 
     // Provision HR Admin User if requested or email provided
     if (create_hr_admin !== false) {
-      let emailToUse = '';
-      if (hr_admin_email && hr_admin_email.trim()) {
-        emailToUse = hr_admin_email.trim().toLowerCase();
-      } else if (domainClean) {
-        emailToUse = `hr@${domainClean}`;
-      } else {
-        emailToUse = `hr@${cleanSlug}.com`;
-      }
-
       // Generate a clean password if not supplied
       const passwordToUse = (hr_admin_password && hr_admin_password.trim())
         ? hr_admin_password.trim()
@@ -591,10 +635,19 @@ router.post('/tenants/:id/extend-access', async (req, res, next) => {
     // Calculate new expiration from now (not from previous expiry)
     const newExpiry = new Date(Date.now() + daysToAdd * 24 * 60 * 60 * 1000);
     
-    const updateFields = { access_expires_at: newExpiry };
+    const updateFields = { 
+      access_expires_at: newExpiry,
+      'subscription.trialEndsAt': newExpiry
+    };
     
-    // If tenant was expired, reactivate
-    if (tenant.lifecycle_state === 'expired') {
+    // Ensure subscription tier and status remain healthy
+    if (!tenant.subscription || tenant.subscription.status === 'canceled' || tenant.subscription.status === 'trialing') {
+      updateFields['subscription.status'] = 'trialing';
+      updateFields['subscription.tier'] = tenant.subscription?.tier || tenant.billing_tier || 'pro';
+    }
+    
+    // If tenant was expired or suspended, reactivate
+    if (tenant.lifecycle_state === 'expired' || tenant.lifecycle_state === 'suspended') {
       updateFields.lifecycle_state = 'active';
       updateFields.locked_at = null;
     }
@@ -604,6 +657,19 @@ router.post('/tenants/:id/extend-access', async (req, res, next) => {
       updateFields,
       { new: true }
     );
+
+    // Also extend any active assessment cycles whose deadline passed during the outage
+    const AssessmentCycle = require('../models/AssessmentCycle');
+    await AssessmentCycle.updateMany(
+      { 
+        company_id: req.params.id, 
+        status: 'unlocked', 
+        deadline: { $lt: new Date() } 
+      },
+      { 
+        $set: { deadline: newExpiry } 
+      }
+    ).catch(e => {});
 
     // Audit log
     const AuditLog = require('../models/AuditLog');
@@ -624,6 +690,18 @@ router.post('/tenants/:id/extend-access', async (req, res, next) => {
       tenant: updated,
       access_expires_at: newExpiry.toISOString()
     });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 10b. Re-link Orphaned Tenant Data
+router.post('/tenants/relink-data', async (req, res, next) => {
+  try {
+    const { sourceCompanyId, targetCompanyId, dryRun = false } = req.body;
+    const { relinkTenantData } = require('../scripts/relinkTenantData');
+    const result = await relinkTenantData(sourceCompanyId, targetCompanyId, { dryRun });
+    res.json(result);
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }

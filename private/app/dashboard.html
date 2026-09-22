@@ -13,6 +13,7 @@
 <script src="/js/auth.js"></script>
 <script src="/js/router.js"></script>
 <script src="/js/assessmentReportPdf.js"></script>
+<script src="/js/havilahCall.js"></script>
 <style>
 @keyframes bannerSlideIn {
   from { opacity: 0; transform: translateY(-10px); }
@@ -2709,8 +2710,17 @@ window.openConsultTrackModal = function(prefilledCode) {
 
 window.closeConsultTrackModal = function() {
   stopConsultTrackLiveSync();
+  if (window.HavilahCall && window.HavilahCall.activeCallState !== 'idle') {
+    window.HavilahCall.hangup();
+  }
   const modal = document.getElementById('consultTrackModalBackdrop');
   if (modal) modal.style.display = 'none';
+};
+
+window.startEmployeeCall = function() {
+  if (!window.activeTrackedConsultation || !window.HavilahCall) return;
+  const name = window.activeTrackedConsultation.patientName || 'Employee';
+  window.HavilahCall.startCall(name);
 };
 
 window.lookupConsultationReport = async function(codeOverride) {
@@ -2743,6 +2753,26 @@ window.lookupConsultationReport = async function(codeOverride) {
       localStorage.setItem('havilah_last_consult_ref', code);
       renderConsultationTrackView(result.data);
       startConsultTrackLiveSync();
+
+      // Initialize WebRTC Call Client for Employee
+      if (window.HavilahCall) {
+        const shieldCheck = document.getElementById('empIpShieldToggle');
+        if (shieldCheck) shieldCheck.checked = window.HavilahCall.ipShield;
+
+        window.HavilahCall.init({
+          role: 'employee',
+          referenceCode: code,
+          token: localStorage.getItem('token') || localStorage.getItem('havilah_token') || '',
+          onPeerPresence: (isOnline) => {
+            const pill = document.getElementById('empPeerPresencePill');
+            if (pill) {
+              pill.textContent = isOnline ? '🟢 Doctor Online' : '⚪ Doctor Offline';
+              pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+              pill.style.color = isOnline ? '#15803d' : '#475569';
+            }
+          }
+        });
+      }
     } else {
       const errMsg = result.message || 'No consultation request found matching this reference code.';
       document.getElementById('consultTrackAuthSection').style.display = 'block';
@@ -2811,19 +2841,22 @@ function renderConsultationTrackView(data) {
       ' at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  if (data.meetingLink) {
+  if (data.meetingLink || data.status === 'scheduled' || data.status === 'pending') {
     if (telehealthBanner) telehealthBanner.style.display = 'flex';
-    if (joinBtn) joinBtn.href = data.meetingLink;
+    if (joinBtn) {
+      if (data.meetingLink) {
+        joinBtn.style.display = 'inline-flex';
+        joinBtn.href = data.meetingLink;
+      } else {
+        joinBtn.style.display = 'none';
+      }
+    }
     if (schedTimeText) {
-      schedTimeText.textContent = formattedSched ? `Appointment confirmed for ${formattedSched}. Click to join your telehealth room.` : 'Your video consultation link is active.';
+      schedTimeText.textContent = formattedSched
+        ? `Appointment confirmed for ${formattedSched}. You can initiate or receive encrypted calls here.`
+        : 'Encrypted consultation room active. You can speak directly with your doctor.';
     }
     if (schedInfoCard) schedInfoCard.style.display = 'none';
-  } else if (data.scheduledAt) {
-    if (telehealthBanner) telehealthBanner.style.display = 'none';
-    if (schedInfoCard) schedInfoCard.style.display = 'flex';
-    if (schedInfoText) {
-      schedInfoText.textContent = `Confirmed Appointment: ${formattedSched}` + (data.appointmentNotes ? ` (${data.appointmentNotes})` : '');
-    }
   } else {
     if (telehealthBanner) telehealthBanner.style.display = 'none';
     if (schedInfoCard) schedInfoCard.style.display = 'none';
@@ -5588,17 +5621,28 @@ window.App = App;
       <div id="consultTelehealthBanner" style="display:none;background:linear-gradient(135deg, #042f2e, #115e59);color:#ffffff;border-radius:18px;padding:16px 20px;margin-bottom:16px;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;box-shadow:0 6px 20px rgba(13,148,136,0.25);">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;">
-            📹
+            📞
           </div>
           <div>
-            <div style="font-weight:800;font-size:14.5px;">Telehealth Video Consultation Ready</div>
-            <div style="font-size:12px;color:#ccfbf1;" id="consultScheduleTimeText">Your practitioner has scheduled your appointment.</div>
+            <div style="font-weight:800;font-size:14.5px;display:flex;align-items:center;gap:8px;">
+              <span>Consultation Call Ready</span>
+              <span id="empPeerPresencePill" style="font-size:11px;background:#e2e8f0;color:#475569;padding:2px 8px;border-radius:99px;font-weight:600;">Connecting...</span>
+            </div>
+            <div style="font-size:12px;color:#ccfbf1;" id="consultScheduleTimeText">Your practitioner is available for consultation.</div>
           </div>
         </div>
-        <a id="consultJoinMeetingBtn" href="#" target="_blank" rel="noopener noreferrer" style="background:#ffffff;color:#0f766e;text-decoration:none;font-weight:800;font-size:13.5px;padding:10px 20px;border-radius:10px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:all 0.2s;">
-          <span>Join Video Call</span>
-          <span>&rarr;</span>
-        </a>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button type="button" id="consultInAppCallBtn" onclick="startEmployeeCall()" style="background:#10b981;color:#ffffff;border:none;font-weight:800;font-size:13.5px;padding:10px 18px;border-radius:10px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(16,185,129,0.3);cursor:pointer;transition:all 0.2s;">
+            <span>📞 Call Doctor</span>
+          </button>
+          <a id="consultJoinMeetingBtn" href="#" target="_blank" rel="noopener noreferrer" style="display:none;background:rgba(255,255,255,0.15);color:#ffffff;text-decoration:none;font-weight:700;font-size:12.5px;padding:10px 14px;border-radius:10px;align-items:center;gap:6px;border:1px solid rgba(255,255,255,0.3);">
+            <span>External Video Link &rarr;</span>
+          </a>
+          <label style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#ccfbf1;cursor:pointer;" title="Routes voice traffic through TURN relays to hide your IP">
+            <input type="checkbox" id="empIpShieldToggle" onchange="if(window.HavilahCall) window.HavilahCall.setIpShield(this.checked)">
+            <span>🛡️ IP Shield</span>
+          </label>
+        </div>
       </div>
 
       <!-- Appointment Date Callout (When scheduled without meeting link) -->

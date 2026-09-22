@@ -46,6 +46,8 @@ const alertsRouter = require('./routes/alerts');
 const learnRouter = require('./routes/learn');
 const billingRouter = require('./routes/billing');
 const ssoRouter = require('./routes/sso');
+const callRoutes = require('./routes/callRoutes');
+const { initCallSignaling } = require('./services/callSignaling');
 const logger = require('./utils/logger');
 const pinoHttp = require('pino-http');
 const { cspNonceMiddleware } = require('./middleware/cspNonce');
@@ -106,6 +108,11 @@ app.use(helmet({
         "'self'",
         process.env.CLIENT_ORIGIN || '',
         "https://havilah-api.onrender.com",
+        "wss://havilah-api.onrender.com",
+        "wss://havilah-api.onrender.com:3001",
+        "ws://localhost:3001",
+        "ws://127.0.0.1:3001",
+        "https://*.metered.ca",
       ].filter(Boolean),
       frameSrc: ["'self'"],
       objectSrc: ["'none'"],
@@ -405,6 +412,7 @@ app.use('/api/v1/alerts', alertsRouter);
 app.use('/api/v1/learn', learnRouter);
 app.use('/api/v1/billing', billingRouter);
 app.use('/api/v1/sso', ssoRouter);
+app.use('/api/v1/calls', callRoutes);
 
 // Global Error Handler - Sanitized Error Messages (Principle 11)
 app.use((err, req, res, next) => {
@@ -463,6 +471,9 @@ async function startServer() {
       console.log(`[server] Wellframe SaaS Platform running on port ${PORT}`);
       console.log(`[server] Environment: ${process.env.NODE_ENV || 'development'}`);
     });
+
+    // 4. Initialize WebRTC Call Signaling (Doctor - Employee Consultations)
+    initCallSignaling(server);
 
     // Graceful shutdown logic
     const gracefulShutdown = () => {

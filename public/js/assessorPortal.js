@@ -1052,8 +1052,59 @@
       archiveBtn.style.color = isArchived ? '#0D9488' : 'var(--text-1)';
     }
 
+    // Initialize WebRTC Call Client for the case
+    if (window.HavilahCall && item.referenceCode) {
+      const shieldCheckbox = document.getElementById('assessorIpShieldToggle');
+      if (shieldCheckbox) {
+        shieldCheckbox.checked = window.HavilahCall.ipShield;
+      }
+      const presencePill = document.getElementById('assessorPeerPresencePill');
+      if (presencePill) {
+        presencePill.textContent = 'Connecting...';
+        presencePill.style.background = '#e2e8f0';
+        presencePill.style.color = '#475569';
+      }
+
+      window.HavilahCall.init({
+        role: 'doctor',
+        referenceCode: item.referenceCode,
+        token: getAssessorToken(),
+        onPeerPresence: (isOnline) => {
+          const pill = document.getElementById('assessorPeerPresencePill');
+          if (pill) {
+            pill.textContent = isOnline ? '🟢 Patient Online' : '⚪ Patient Offline';
+            pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+            pill.style.color = isOnline ? '#15803d' : '#475569';
+          }
+        },
+        onCallEnded: (durationSeconds) => {
+          if (durationSeconds > 0) {
+            const badge = document.getElementById('assessorCallDurationBadge');
+            const text = document.getElementById('assessorCallDurationText');
+            if (badge && text) {
+              const mins = Math.floor(durationSeconds / 60);
+              const secs = durationSeconds % 60;
+              text.textContent = `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
+              badge.style.display = 'inline-flex';
+            }
+            const notesInput = document.getElementById('scheduleNotesInput');
+            if (notesInput && !notesInput.value.includes('Call completed')) {
+              const prev = notesInput.value ? `${notesInput.value} | ` : '';
+              notesInput.value = `${prev}Call completed (${Math.floor(durationSeconds / 60)}m ${durationSeconds % 60}s)`;
+            }
+          }
+        }
+      });
+    }
+
     openModal('caseDetailModal');
     startAssessorLiveSync();
+  };
+
+  window.startAssessorCall = () => {
+    if (!state.selectedCase || !window.HavilahCall) return;
+    const docName = (state.profile?.name || state.profile?.fullName) ? `Dr. ${state.profile.name || state.profile.fullName}` : 'Medical Assessor';
+    window.HavilahCall.startCall(docName);
   };
 
   window.handleToggleArchiveCurrentCase = async () => {
@@ -1902,6 +1953,9 @@
   window.closeModal = (id) => {
     if (id === 'caseDetailModal') {
       stopAssessorLiveSync();
+      if (window.HavilahCall && window.HavilahCall.activeCallState !== 'idle') {
+        window.HavilahCall.hangup();
+      }
     }
     const modal = document.getElementById(id);
     if (modal) modal.classList.remove('show');

@@ -48,13 +48,10 @@
      * Initializes the client with consultation metadata and opens signaling WebSocket.
      */
     async init(options = {}) {
-      const prevRole = this.role;
-      const prevRef = this.referenceCode;
+      const targetRole = options.role || this.role;
+      const targetRef = (options.referenceCode || this.referenceCode || '').toUpperCase().trim();
 
-      this.role = options.role || this.role;
-      this.referenceCode = (options.referenceCode || this.referenceCode || '').toUpperCase().trim();
-      this.token = options.token || this.token || localStorage.getItem('token') || localStorage.getItem('havilah_token') || '';
-
+      // Update callbacks immediately
       this.onIncomingCall = options.onIncomingCall || this.onIncomingCall;
       this.onCallConnected = options.onCallConnected || this.onCallConnected;
       this.onCallEnded = options.onCallEnded || this.onCallEnded;
@@ -69,19 +66,37 @@
 
       this.ensureAudioElement();
 
-      // If already connected with the same role and referenceCode, keep socket alive and skip reconnect
-      if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
-        if (prevRole === this.role && prevRef === this.referenceCode) {
+      // If already connected or connecting for the same role and ref, reuse!
+      if (this.role === targetRole && this.referenceCode === targetRef) {
+        if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
           console.log(`[HavilahCall] Existing signaling session active for ${this.role} on ${this.referenceCode}; reusing connection.`);
+          // If we already know the peer presence, re-fire callback for new listener
+          if (this.lastPeerOnline !== undefined && typeof this.onPeerPresence === 'function') {
+            this.onPeerPresence(this.lastPeerOnline, this.role === 'doctor' ? 'employee' : 'doctor');
+          }
+          return;
+        }
+        if (this._connectingPromise) {
+          console.log(`[HavilahCall] Connection already in-flight for ${this.role} on ${this.referenceCode}; awaiting.`);
+          await this._connectingPromise;
           return;
         }
       }
 
-      // Pre-fetch ICE configuration
-      await this.fetchIceConfig();
+      this.role = targetRole;
+      this.referenceCode = targetRef;
+      this.token = options.token || this.token || localStorage.getItem('token') || localStorage.getItem('havilah_token') || '';
 
-      // Connect signaling socket
-      this.connectSignaling();
+      this._connectingPromise = (async () => {
+        try {
+          await this.fetchIceConfig();
+          this.connectSignaling();
+        } finally {
+          this._connectingPromise = null;
+        }
+      })();
+
+      await this._connectingPromise;
     }
 
     /**
@@ -660,6 +675,9 @@
           this.activeCallState = 'ringing';
           this.showIncomingCallOverlay(msg.callerName || 'Consultation Peer', msg.fromRole);
           this.sendSignal({ action: 'ringing' });
+          if (typeof this.onIncomingCall === 'function') {
+            try { this.onIncomingCall(msg); } catch (e) {}
+          }
           break;
         }
 
@@ -704,6 +722,19 @@
 
         case 'peer_online': {
           console.log(`[HavilahCall] Peer (${msg.role}) is now online`);
+          this.lastPeerOnline = true;
+          const aPill = document.getElementById('assessorPeerPresencePill');
+          if (aPill) {
+            aPill.textContent = '🟢 Patient Online';
+            aPill.style.background = '#dcfce7';
+            aPill.style.color = '#15803d';
+          }
+          const ePill = document.getElementById('empPeerPresencePill');
+          if (ePill) {
+            ePill.textContent = '🟢 Doctor Online';
+            ePill.style.background = '#dcfce7';
+            ePill.style.color = '#15803d';
+          }
           if (typeof this.onPeerPresence === 'function') {
             this.onPeerPresence(true, msg.role);
           }
@@ -712,6 +743,19 @@
 
         case 'peer_offline': {
           console.log(`[HavilahCall] Peer (${msg.role}) is offline`);
+          this.lastPeerOnline = false;
+          const aPill = document.getElementById('assessorPeerPresencePill');
+          if (aPill) {
+            aPill.textContent = '⚪ Patient Offline';
+            aPill.style.background = '#e2e8f0';
+            aPill.style.color = '#475569';
+          }
+          const ePill = document.getElementById('empPeerPresencePill');
+          if (ePill) {
+            ePill.textContent = '⚪ Doctor Offline';
+            ePill.style.background = '#e2e8f0';
+            ePill.style.color = '#475569';
+          }
           if (typeof this.onPeerPresence === 'function') {
             this.onPeerPresence(false, msg.role);
           }

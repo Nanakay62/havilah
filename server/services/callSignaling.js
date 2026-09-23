@@ -179,11 +179,14 @@ class CallSignalingHub {
       }
       const room = this.rooms.get(referenceCode);
 
-      // If an existing socket for this role was connected, close it cleanly
-      if (room[role] && room[role] !== ws && room[role].readyState === WebSocket.OPEN) {
-        try {
-          room[role].close(1000, 'Replaced by newer session');
-        } catch (e) {}
+      // If an existing socket for this role was connected, mark it replaced before closing
+      if (room[role] && room[role] !== ws) {
+        room[role].isReplaced = true;
+        if (room[role].readyState === WebSocket.OPEN) {
+          try {
+            room[role].close(1000, 'Replaced by newer session');
+          } catch (e) {}
+        }
       }
       room[role] = ws;
 
@@ -212,20 +215,30 @@ class CallSignalingHub {
       });
 
       ws.on('close', () => {
-        logger.info({ referenceCode, role }, `[CallSignaling] ${role.toUpperCase()} disconnected from room ${referenceCode}`);
+        logger.info({ referenceCode, role }, `[CallSignaling] ${role.toUpperCase()} socket closed for room ${referenceCode}`);
+
+        // If this socket was superseded by a newer session, ignore close event completely
+        if (ws.isReplaced) {
+          return;
+        }
+
         const currentRoom = this.rooms.get(referenceCode);
         if (currentRoom) {
-          const remainingPeer = role === 'doctor' ? currentRoom.employee : currentRoom.doctor;
-          if (remainingPeer && remainingPeer.readyState === WebSocket.OPEN) {
-            remainingPeer.send(JSON.stringify({ event: 'call_ended', reason: `${role === 'doctor' ? 'Doctor' : 'Patient'} disconnected` }));
-            remainingPeer.send(JSON.stringify({ event: 'peer_offline', role }));
-          }
-          currentRoom[role] = null;
-          currentRoom.callState = 'idle';
+          // Strictly verify this socket is still the active socket for this role
+          if (currentRoom[role] === ws) {
+            currentRoom[role] = null;
+            currentRoom.callState = 'idle';
 
-          // Clean up room if both are disconnected
-          if (!currentRoom.doctor && !currentRoom.employee) {
-            this.rooms.delete(referenceCode);
+            const remainingPeer = role === 'doctor' ? currentRoom.employee : currentRoom.doctor;
+            if (remainingPeer && remainingPeer.readyState === WebSocket.OPEN) {
+              remainingPeer.send(JSON.stringify({ event: 'call_ended', reason: `${role === 'doctor' ? 'Doctor' : 'Patient'} disconnected` }));
+              remainingPeer.send(JSON.stringify({ event: 'peer_offline', role }));
+            }
+
+            // Only clean up if both are truly gone
+            if (!currentRoom.doctor && !currentRoom.employee) {
+              this.rooms.delete(referenceCode);
+            }
           }
         }
       });
@@ -241,8 +254,16 @@ class CallSignalingHub {
    */
   async handleSignalMessage(senderWs, msg) {
     const { referenceCode, role } = senderWs;
+    if (!referenceCode || !role) return;
+
+    // Self-heal: ensure room exists and sender is bound
+    if (!this.rooms.has(referenceCode)) {
+      this.rooms.set(referenceCode, { doctor: null, employee: null, callState: 'idle' });
+    }
     const room = this.rooms.get(referenceCode);
-    if (!room) return;
+    if (room[role] !== senderWs) {
+      room[role] = senderWs;
+    }
 
     const peer = role === 'doctor' ? room.employee : room.doctor;
     const peerRole = role === 'doctor' ? 'employee' : 'doctor';

@@ -13,7 +13,7 @@
 <script src="/js/auth.js"></script>
 <script src="/js/router.js"></script>
 <script src="/js/assessmentReportPdf.js"></script>
-<script src="/js/havilahCall.js"></script>
+<script src="/js/havilahCall.js" defer></script>
 <style>
 @keyframes bannerSlideIn {
   from { opacity: 0; transform: translateY(-10px); }
@@ -2692,17 +2692,15 @@ window.openConsultTrackModal = function(prefilledCode) {
   const errEl = document.getElementById('consultTrackAuthErrorMsg');
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
 
-  if (prefilledCode) {
-    if (inputEl) inputEl.value = prefilledCode;
-    window.lookupConsultationReport(prefilledCode);
+  if (savedRef) {
+    if (inputEl) inputEl.value = savedRef;
+    window.lookupConsultationReport(savedRef);
   } else {
     document.getElementById('consultTrackAuthSection').style.display = 'block';
     document.getElementById('consultTrackDetailsSection').style.display = 'none';
     if (inputEl) {
-      inputEl.value = savedRef;
       setTimeout(() => {
         inputEl.focus();
-        if (savedRef) inputEl.select();
       }, 100);
     }
   }
@@ -2718,7 +2716,35 @@ window.closeConsultTrackModal = function() {
 };
 
 window.startEmployeeCall = function() {
-  if (!window.activeTrackedConsultation || !window.HavilahCall) return;
+  if (!window.HavilahCall) {
+    if (typeof window.showToast === 'function') {
+      window.showToast('Call System Initializing', 'The secure voice consultation system is connecting. Please try again in a moment.', 'info');
+    } else {
+      alert('The secure voice consultation system is connecting. Please try again in a moment.');
+    }
+    return;
+  }
+  if (!window.activeTrackedConsultation) {
+    const savedRef = localStorage.getItem('havilah_last_consult_ref');
+    if (savedRef) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('Connecting Case', 'Loading consultation case ' + savedRef + '...', 'info');
+      }
+      window.lookupConsultationReport(savedRef).then(() => {
+        if (window.activeTrackedConsultation) {
+          const name = window.activeTrackedConsultation.patientName || 'Employee';
+          window.HavilahCall.startCall(name);
+        }
+      });
+      return;
+    }
+    if (typeof window.showToast === 'function') {
+      window.showToast('Reference Code Required', 'Please enter your Reference Code before starting a call.', 'warning');
+    } else {
+      alert('Please enter your Reference Code before starting a call.');
+    }
+    return;
+  }
   const name = window.activeTrackedConsultation.patientName || 'Employee';
   window.HavilahCall.startCall(name);
 };
@@ -4273,6 +4299,15 @@ const App = (() => {
           'Authorization': 'Bearer ' + localStorage.getItem('token')
         }
       });
+      if (!res.ok) {
+        console.warn('[Dashboard] /api/v1/wellness/dashboard-data returned', res.status);
+        return;
+      }
+      const cType = res.headers.get('content-type') || '';
+      if (!cType.includes('application/json')) {
+        console.warn('[Dashboard] /api/v1/wellness/dashboard-data returned non-JSON content');
+        return;
+      }
       const data = await res.json();
       
       if (data.success && data.baseline_profile) {
@@ -4352,6 +4387,24 @@ const App = (() => {
     if (activeEmail) {
       document.querySelectorAll('.dropdown-header-email').forEach(el => {
         el.textContent = activeEmail;
+      });
+    }
+
+    // Auto-initialize WebRTC Call signaling if a saved consultation exists
+    const savedRef = localStorage.getItem('havilah_last_consult_ref');
+    if (savedRef && window.HavilahCall) {
+      window.HavilahCall.init({
+        role: 'employee',
+        referenceCode: savedRef,
+        token: localStorage.getItem('token') || localStorage.getItem('havilah_token') || '',
+        onPeerPresence: (isOnline) => {
+          const pill = document.getElementById('empPeerPresencePill');
+          if (pill) {
+            pill.textContent = isOnline ? '🟢 Doctor Online' : '⚪ Doctor Offline';
+            pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+            pill.style.color = isOnline ? '#15803d' : '#475569';
+          }
+        }
       });
     }
 

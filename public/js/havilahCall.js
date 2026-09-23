@@ -34,14 +34,23 @@
       this.onStatusChange = null;
       this.onPeerPresence = null;
 
-      // Ensure remote audio playback tag exists
-      this.ensureAudioElement();
+      // Ensure remote audio playback tag exists when DOM is ready
+      if (typeof document !== 'undefined') {
+        if (document.body) {
+          this.ensureAudioElement();
+        } else if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', () => this.ensureAudioElement(), { once: true });
+        }
+      }
     }
 
     /**
      * Initializes the client with consultation metadata and opens signaling WebSocket.
      */
     async init(options = {}) {
+      const prevRole = this.role;
+      const prevRef = this.referenceCode;
+
       this.role = options.role || this.role;
       this.referenceCode = (options.referenceCode || this.referenceCode || '').toUpperCase().trim();
       this.token = options.token || this.token || localStorage.getItem('token') || localStorage.getItem('havilah_token') || '';
@@ -60,6 +69,14 @@
 
       this.ensureAudioElement();
 
+      // If already connected with the same role and referenceCode, keep socket alive and skip reconnect
+      if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+        if (prevRole === this.role && prevRef === this.referenceCode) {
+          console.log(`[HavilahCall] Existing signaling session active for ${this.role} on ${this.referenceCode}; reusing connection.`);
+          return;
+        }
+      }
+
       // Pre-fetch ICE configuration
       await this.fetchIceConfig();
 
@@ -71,8 +88,15 @@
      * Guarantees hidden <audio> element exists in DOM for remote voice playback
      */
     ensureAudioElement() {
+      if (typeof document === 'undefined') return;
       let audio = document.getElementById('havilah-remote-audio');
       if (!audio) {
+        if (!document.body) {
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.ensureAudioElement(), { once: true });
+          }
+          return;
+        }
         audio = document.createElement('audio');
         audio.id = 'havilah-remote-audio';
         audio.autoplay = true;
@@ -266,6 +290,7 @@
 
         // Remote audio stream playback
         this.pc.ontrack = (event) => {
+          this.ensureAudioElement();
           if (this.remoteAudio && event.streams && event.streams[0]) {
             this.remoteAudio.srcObject = event.streams[0];
             this.remoteAudio.play().catch(e => console.warn('[HavilahCall] Auto-play audio prevented:', e));
@@ -372,6 +397,7 @@
         });
 
         this.pc.ontrack = (event) => {
+          this.ensureAudioElement();
           if (this.remoteAudio && event.streams && event.streams[0]) {
             this.remoteAudio.srcObject = event.streams[0];
             this.remoteAudio.play().catch(e => console.warn('[HavilahCall] Auto-play audio prevented:', e));
@@ -977,7 +1003,24 @@
     @keyframes hBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
     @keyframes hWave { 0%, 100% { transform: scaleY(0.4); } 50% { transform: scaleY(1); } }
   `;
-  document.head.appendChild(style);
+  
+  function injectCallStyles() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('havilah-call-styles')) return;
+    style.id = 'havilah-call-styles';
+    const target = document.head || document.documentElement || document.body;
+    if (target) {
+      target.appendChild(style);
+    }
+  }
+
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', injectCallStyles, { once: true });
+    } else {
+      injectCallStyles();
+    }
+  }
 
   // Expose singleton to window
   window.HavilahCall = new HavilahCallClient();

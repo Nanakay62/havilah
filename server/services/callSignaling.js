@@ -189,11 +189,13 @@ class CallSignalingHub {
 
       logger.info({ referenceCode, role }, `[CallSignaling] ${role.toUpperCase()} joined call room ${referenceCode}`);
 
-      // Notify peer that other party is online
+      // Notify peer and client of presence state
       const peer = role === 'doctor' ? room.employee : room.doctor;
       if (peer && peer.readyState === WebSocket.OPEN) {
         peer.send(JSON.stringify({ event: 'peer_online', role }));
         ws.send(JSON.stringify({ event: 'peer_online', role: role === 'doctor' ? 'employee' : 'doctor' }));
+      } else {
+        ws.send(JSON.stringify({ event: 'peer_offline', role: role === 'doctor' ? 'employee' : 'doctor' }));
       }
 
       ws.on('pong', () => {

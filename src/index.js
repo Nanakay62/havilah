@@ -95,6 +95,12 @@ export default {
       targetPath = '/activate.html';
     } else if (path === '/') {
       targetPath = '/index.html';
+    } else if (path.startsWith('/js/')) {
+      targetPath = '/public' + path;
+    } else if (path.startsWith('/css/')) {
+      targetPath = '/public' + path;
+    } else if (path.startsWith('/assets/')) {
+      targetPath = '/public' + path;
     }
 
     // Delegate to Cloudflare Static Assets

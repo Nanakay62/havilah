@@ -1143,6 +1143,7 @@
       }
       const presencePill = document.getElementById('assessorPeerPresencePill');
       if (presencePill) {
+        presencePill.dataset.ref = item.referenceCode;
         const isOnline = window.HavilahCall.isPeerOnline(item.referenceCode);
         presencePill.textContent = isOnline ? '🟢 Patient Online' : '⚪ Patient Offline';
         presencePill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';

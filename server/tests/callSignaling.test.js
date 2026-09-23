@@ -1,6 +1,7 @@
 'use strict';
 
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 const app = require('../server');
 const { callSignalingHub } = require('../services/callSignaling');
 
@@ -161,5 +162,125 @@ describe('WebRTC Call Routes & Signaling Integration', () => {
     expect(callMsg.callerName).toBe('Patient Alex');
 
     callSignalingHub.rooms.delete(ref);
+  });
+
+  it('routes bidirectional calls with explicit referenceCode correctly', () => {
+    const refCode = 'REF-BIDI9999';
+    const doctorWs = {
+      referenceCodes: [refCode, 'REF-OTHER111'],
+      referenceCode: refCode,
+      role: 'doctor',
+      readyState: 1,
+      send: vi.fn(),
+      close: vi.fn(),
+    };
+    const employeeWs = {
+      referenceCode: refCode,
+      role: 'employee',
+      readyState: 1,
+      send: vi.fn(),
+      close: vi.fn(),
+    };
+
+    callSignalingHub.rooms.set(refCode, { doctor: doctorWs, employee: employeeWs, callState: 'idle' });
+
+    // 1. Employee initiates call to Doctor
+    callSignalingHub.handleSignalMessage(employeeWs, {
+      action: 'offer',
+      referenceCode: refCode,
+      callerName: 'Employee Jane',
+      offer: { type: 'offer', sdp: 'offer_sdp' }
+    });
+
+    expect(doctorWs.send).toHaveBeenCalled();
+    const offerReceived = JSON.parse(doctorWs.send.mock.calls[0][0]);
+    expect(offerReceived.event).toBe('incoming_call');
+    expect(offerReceived.referenceCode).toBe(refCode);
+    expect(offerReceived.fromRole).toBe('employee');
+
+    // 2. Doctor sends ringing signal
+    callSignalingHub.handleSignalMessage(doctorWs, {
+      action: 'ringing',
+      referenceCode: refCode
+    });
+
+    expect(employeeWs.send).toHaveBeenCalled();
+    const ringingReceived = JSON.parse(employeeWs.send.mock.calls[0][0]);
+    expect(ringingReceived.event).toBe('call_ringing');
+
+    // 3. Doctor answers call
+    callSignalingHub.handleSignalMessage(doctorWs, {
+      action: 'answer',
+      referenceCode: refCode,
+      answer: { type: 'answer', sdp: 'answer_sdp' }
+    });
+
+    const answerReceived = JSON.parse(employeeWs.send.mock.calls[1][0]);
+    expect(answerReceived.event).toBe('call_answered');
+    expect(answerReceived.referenceCode).toBe(refCode);
+
+    // 4. ICE candidate exchange
+    callSignalingHub.handleSignalMessage(employeeWs, {
+      action: 'candidate',
+      referenceCode: refCode,
+      candidate: { candidate: 'cand1' }
+    });
+    const doctorCandidate = JSON.parse(doctorWs.send.mock.calls[1][0]);
+    expect(doctorCandidate.event).toBe('candidate');
+    expect(doctorCandidate.referenceCode).toBe(refCode);
+
+    callSignalingHub.rooms.delete(refCode);
+  });
+
+  it('GET /api/v1/referrals/my-active requires authentication', async () => {
+    const res = await request(app).get('/api/v1/referrals/my-active');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /api/v1/referrals/my-active resolves active case for authenticated user', async () => {
+    const Tenant = require('../models/Tenant');
+    const Referral = require('../models/Referral');
+    const origTenantFindOne = Tenant.findOne;
+    const origReferralFindOne = Referral.findOne;
+
+    Tenant.findOne = () => ({
+      select: () => ({
+        lean: () => Promise.resolve({ locked_at: null, lifecycle_state: 'active' })
+      })
+    });
+
+    Referral.findOne = () => ({
+      sort: () => ({
+        select: () => ({
+          lean: () => Promise.resolve({
+            referenceCode: 'REF-ACT1234',
+            status: 'scheduled',
+            clinicalDetails: { patientName: 'Jane Doe' },
+            scheduledAt: new Date(),
+            createdAt: new Date()
+          })
+        })
+      })
+    });
+
+    try {
+      const testSecret = process.env.JWT_SECRET || 'wellframe-test-jwt-secret-2026';
+      const testToken = jwt.sign(
+        { userId: '00000000-0000-4000-8000-000000000001', companyId: 'test-company-corp', role: 'employee', status: 'active' },
+        testSecret,
+        { expiresIn: '1h' }
+      );
+
+      const res = await request(app)
+        .get('/api/v1/referrals/my-active?email=test%40example.com')
+        .set('Authorization', `Bearer ${testToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.referenceCode).toBe('REF-ACT1234');
+    } finally {
+      Tenant.findOne = origTenantFindOne;
+      Referral.findOne = origReferralFindOne;
+    }
   });
 });

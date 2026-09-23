@@ -259,7 +259,11 @@
       this.pendingCandidates = [];
       for (const cand of queued) {
         try {
-          await this.pc.addIceCandidate(new RTCIceCandidate(cand));
+          if (!cand || !cand.candidate) {
+            await this.pc.addIceCandidate(null);
+          } else {
+            await this.pc.addIceCandidate(cand);
+          }
           console.log('[HavilahCall] Added buffered ICE candidate successfully');
         } catch (e) {
           console.warn('[HavilahCall] Drain candidate error:', e.message);
@@ -332,6 +336,38 @@
 
       this.activeCallRef = (targetRef || this.referenceCode || '').split(',')[0].trim().toUpperCase();
 
+      // Ensure audio element is created and unlocked inside the user gesture
+      this.ensureAudioElement();
+      if (this.remoteAudio) {
+        this.remoteAudio.play().catch(() => {});
+      }
+
+      // Ensure signaling connection is established before starting call negotiation
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+          console.log('[HavilahCall] Awaiting in-flight signaling connection...');
+          let count = 0;
+          while (this.ws && this.ws.readyState === WebSocket.CONNECTING && count < 25) {
+            await new Promise(r => setTimeout(r, 100));
+            count++;
+          }
+        }
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+          console.warn('[HavilahCall] Signaling disconnected; reconnecting before call...');
+          this.connectSignaling();
+          let count = 0;
+          while (this.ws && this.ws.readyState !== WebSocket.OPEN && count < 25) {
+            await new Promise(r => setTimeout(r, 100));
+            count++;
+          }
+        }
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+          alert('Secure call server is connecting. Please check your internet connection and try again in a few seconds.');
+          this.endCallUI('Signaling not ready');
+          return;
+        }
+      }
+
       try {
         this.updateStatus('Requesting microphone access...');
 
@@ -384,6 +420,10 @@
         this.pendingCandidates = [];
 
         const handleConnected = () => {
+          if (this._watchdogTimer) {
+            clearTimeout(this._watchdogTimer);
+            this._watchdogTimer = null;
+          }
           if (this.activeCallState === 'connected') return;
           this.activeCallState = 'connected';
           this.startCallTimer();
@@ -415,6 +455,20 @@
             this.endCallUI('Relay connection failed');
           }
         };
+
+        // Watchdog to prevent permanent stalls on subsequent calls
+        if (this._watchdogTimer) clearTimeout(this._watchdogTimer);
+        this._watchdogTimer = setTimeout(() => {
+          if (this.activeCallState === 'calling' || this.activeCallState === 'connecting') {
+            console.warn('[HavilahCall] Connection watchdog timeout (20s):', {
+              pcState: this.pc?.connectionState,
+              iceState: this.pc?.iceConnectionState
+            });
+            if (this.pc && this.pc.connectionState !== 'connected' && typeof this.pc.restartIce === 'function') {
+              try { this.pc.restartIce(); } catch (e) {}
+            }
+          }
+        }, 20000);
 
         // 3. Create SDP Offer
         const offer = await this.pc.createOffer({
@@ -464,6 +518,12 @@
       }
 
       try {
+        // Ensure audio element is created and primed inside the user click gesture
+        this.ensureAudioElement();
+        if (this.remoteAudio) {
+          this.remoteAudio.play().catch(() => {});
+        }
+
         this.updateStatus('Connecting...');
         this.activeCallState = 'connecting';
 
@@ -506,6 +566,10 @@
         };
 
         const handleAnswerConnected = () => {
+          if (this._watchdogTimer) {
+            clearTimeout(this._watchdogTimer);
+            this._watchdogTimer = null;
+          }
           if (this.activeCallState === 'connected') return;
           this.activeCallState = 'connected';
           this.startCallTimer();
@@ -535,6 +599,21 @@
             this.endCallUI('Relay connection failed');
           }
         };
+
+        // Callee watchdog timer
+        if (this._watchdogTimer) clearTimeout(this._watchdogTimer);
+        this._watchdogTimer = setTimeout(() => {
+          if (this.activeCallState === 'connecting') {
+            console.warn('[HavilahCall] Callee connection watchdog timeout (20s):', {
+              connectionState: this.pc?.connectionState,
+              iceState: this.pc?.iceConnectionState
+            });
+            if (this.pc && this.pc.connectionState !== 'connected') {
+              this.updateStatus('Re-verifying audio connection...');
+              this.drainPendingCandidates();
+            }
+          }
+        }, 20000);
 
         // 3. Set remote description (caller offer) and drain buffered candidates
         await this.pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
@@ -590,6 +669,11 @@
     endCallUI(reason = 'Call ended') {
       const finalDuration = this.activeDurationSeconds;
 
+      if (this._watchdogTimer) {
+        clearTimeout(this._watchdogTimer);
+        this._watchdogTimer = null;
+      }
+
       this.stopCallTimer();
       this.hideIncomingCallOverlay();
       this.hideCallOverlay();
@@ -607,6 +691,7 @@
         this.pc.ontrack = null;
         this.pc.onicecandidate = null;
         this.pc.onconnectionstatechange = null;
+        this.pc.oniceconnectionstatechange = null;
         try { this.pc.close(); } catch (e) {}
         this.pc = null;
       }
@@ -785,10 +870,14 @@
         }
 
         case 'call_answered': {
+          console.log('[HavilahCall] Received call_answered for ref:', msg.referenceCode);
           this.updateStatus('Answering...');
           if (this.pc && msg.answer) {
             this.pc.setRemoteDescription(new RTCSessionDescription(msg.answer))
-              .then(() => this.drainPendingCandidates())
+              .then(() => {
+                console.log('[HavilahCall] Remote answer applied; draining buffered candidates.');
+                return this.drainPendingCandidates();
+              })
               .catch(err => console.error('[HavilahCall] setRemoteDescription error on answer:', err));
           }
           break;
@@ -797,7 +886,8 @@
         case 'candidate': {
           if (msg.candidate) {
             if (this.pc && this.pc.remoteDescription && this.pc.remoteDescription.type) {
-              this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate))
+              const candPayload = (!msg.candidate.candidate) ? null : msg.candidate;
+              this.pc.addIceCandidate(candPayload)
                 .catch(err => console.warn('[HavilahCall] addIceCandidate error:', err));
             } else {
               console.log('[HavilahCall] Buffering incoming ICE candidate (remoteDescription not ready)');
@@ -872,9 +962,12 @@
 
       const aPill = document.getElementById('assessorPeerPresencePill');
       if (aPill) {
-        aPill.textContent = isOnline ? '🟢 Patient Online' : '⚪ Patient Offline';
-        aPill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
-        aPill.style.color = isOnline ? '#15803d' : '#475569';
+        const curRef = aPill.dataset.ref;
+        if (!curRef || !refCode || curRef === refCode) {
+          aPill.textContent = isOnline ? '🟢 Patient Online' : '⚪ Patient Offline';
+          aPill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+          aPill.style.color = isOnline ? '#15803d' : '#475569';
+        }
       }
 
       const ePill = document.getElementById('empPeerPresencePill');

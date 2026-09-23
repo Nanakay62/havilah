@@ -13,7 +13,7 @@
 <script src="/js/auth.js"></script>
 <script src="/js/router.js"></script>
 <script src="/js/assessmentReportPdf.js"></script>
-<script src="/js/havilahCall.js" defer></script>
+<script src="/js/havilahCall.js?v=2.2.0" defer></script>
 <style>
 @keyframes bannerSlideIn {
   from { opacity: 0; transform: translateY(-10px); }
@@ -2725,18 +2725,16 @@ window.startEmployeeCall = function() {
     }
     return;
   }
+  const savedRef = (window.activeTrackedConsultation?.referenceCode || localStorage.getItem('havilah_last_consult_ref') || '').trim().toUpperCase();
+  const name = window.activeTrackedConsultation?.patientName || localStorage.getItem('wf_user_name') || 'Employee';
+
   if (!window.activeTrackedConsultation) {
-    const savedRef = localStorage.getItem('havilah_last_consult_ref');
     if (savedRef) {
       if (typeof window.showToast === 'function') {
-        window.showToast('Connecting Case', 'Loading consultation case ' + savedRef + '...', 'info');
+        window.showToast('Connecting Case', 'Initiating consultation call for ' + savedRef + '...', 'info');
       }
-      window.lookupConsultationReport(savedRef).then(() => {
-        if (window.activeTrackedConsultation) {
-          const name = window.activeTrackedConsultation.patientName || 'Employee';
-          window.HavilahCall.startCall(name);
-        }
-      });
+      window.HavilahCall.startCall(name, savedRef);
+      window.lookupConsultationReport(savedRef).catch(() => {});
       return;
     }
     if (typeof window.showToast === 'function') {
@@ -2746,8 +2744,7 @@ window.startEmployeeCall = function() {
     }
     return;
   }
-  const name = window.activeTrackedConsultation.patientName || 'Employee';
-  window.HavilahCall.startCall(name);
+  window.HavilahCall.startCall(name, savedRef);
 };
 
 window.lookupConsultationReport = async function(codeOverride) {
@@ -4397,8 +4394,13 @@ const App = (() => {
         let savedRef = localStorage.getItem('havilah_last_consult_ref');
         if (!savedRef) {
           const token = localStorage.getItem('token') || localStorage.getItem('havilah_token') || '';
-          const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-          const res = await fetch('/api/v1/referrals/my-active', { headers });
+          const activeEmail = (localStorage.getItem('wf_user_email') || '').trim();
+          const queryParam = activeEmail ? `?email=${encodeURIComponent(activeEmail)}` : '';
+          const headers = {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            ...(activeEmail ? { 'X-User-Email': activeEmail } : {})
+          };
+          const res = await fetch(`/api/v1/referrals/my-active${queryParam}`, { headers });
           const data = await res.json().catch(() => null);
           if (data && data.success && data.data && data.data.referenceCode) {
             savedRef = data.data.referenceCode;

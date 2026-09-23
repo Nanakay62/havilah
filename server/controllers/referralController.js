@@ -7,6 +7,8 @@ const Tenant = require('../models/Tenant');
 const Department = require('../models/Department');
 const Referral = require('../models/Referral');
 const Assessor = require('../models/Assessor');
+const User = require('../models/User');
+const { decryptField } = require('../utils/crypto');
 const { validateSession, requireRole } = require('../middleware/auth');
 const { enforceTenantScope } = require('../middleware/tenantIsolation');
 const { sendClinicalDispatch } = require('../utils/emailService');
@@ -288,38 +290,51 @@ router.get(
  */
 router.get('/my-active', validateSession, enforceTenantScope, async (req, res, next) => {
   try {
-    const companyId = req.tenantScope?.company_id;
-    const userEmail = req.user?.email || req.session?.email;
+    const companyId = req.tenantScope?.company_id || req.sessionData?.company_id;
+    let userEmail = (req.query.email || req.headers['x-user-email'] || req.user?.email || req.session?.email || '').trim();
 
-    const orClauses = [];
-    if (userEmail && typeof userEmail === 'string') {
+    if (!userEmail && req.sessionData?.user_id) {
+      try {
+        const user = await User.findOne({ user_id: req.sessionData.user_id }).lean();
+        if (user && user.email_encrypted) {
+          const parsed = typeof user.email_encrypted === 'string' ? JSON.parse(user.email_encrypted) : user.email_encrypted;
+          userEmail = decryptField(parsed);
+        }
+      } catch (e) {
+        // Fall back to tenant query
+      }
+    }
+
+    let referral = null;
+
+    // 1. If userEmail is known, look for referral with matching patient contact
+    if (userEmail) {
       const escapedEmail = userEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-      orClauses.push({ 'clinicalDetails.patientContact': new RegExp(escapedEmail, 'i') });
-    }
-    if (companyId) {
-      orClauses.push({
-        $or: [
-          { tenantId: companyId },
-          ...(mongoose.isValidObjectId(companyId) ? [{ tenantId: new mongoose.Types.ObjectId(companyId) }] : [])
-        ]
-      });
+      referral = await Referral.findOne({
+        'clinicalDetails.patientContact': new RegExp(escapedEmail, 'i'),
+        status: { $in: ['pending', 'scheduled', 'in_review'] }
+      })
+        .sort({ createdAt: -1 })
+        .select('referenceCode status scheduledAt appointmentNotes preferredTime createdAt clinicalDetails.meetingLink clinicalDetails.patientName')
+        .lean();
     }
 
-    if (orClauses.length === 0) {
-      return res.json({ success: true, data: null });
+    // 2. Fallback to active referral matching tenant scope
+    if (!referral && companyId) {
+      const tenantOrClauses = [
+        { company_id: companyId }
+      ];
+      if (mongoose.isValidObjectId(companyId)) {
+        tenantOrClauses.push({ tenantId: new mongoose.Types.ObjectId(companyId) });
+      }
+      referral = await Referral.findOne({
+        $or: tenantOrClauses,
+        status: { $in: ['pending', 'scheduled', 'in_review'] }
+      })
+        .sort({ createdAt: -1 })
+        .select('referenceCode status scheduledAt appointmentNotes preferredTime createdAt clinicalDetails.meetingLink clinicalDetails.patientName')
+        .lean();
     }
-
-    const query = {
-      $and: [
-        { $or: orClauses },
-        { status: { $in: ['pending', 'scheduled', 'in_review'] } }
-      ]
-    };
-
-    const referral = await Referral.findOne(query)
-      .sort({ createdAt: -1 })
-      .select('referenceCode status scheduledAt appointmentNotes preferredTime createdAt clinicalDetails.meetingLink clinicalDetails.patientName')
-      .lean();
 
     if (!referral) {
       return res.json({ success: true, data: null });

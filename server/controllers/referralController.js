@@ -282,6 +282,66 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/referrals/my-active
+ * @desc    Employee active consultation / referral lookup
+ * @access  Authenticated (Employee / Tenant User)
+ */
+router.get('/my-active', validateSession, enforceTenantScope, async (req, res, next) => {
+  try {
+    const companyId = req.tenantScope?.company_id;
+    const userEmail = req.user?.email || req.session?.email;
+
+    const orClauses = [];
+    if (userEmail && typeof userEmail === 'string') {
+      const escapedEmail = userEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+      orClauses.push({ 'clinicalDetails.patientContact': new RegExp(escapedEmail, 'i') });
+    }
+    if (companyId) {
+      orClauses.push({
+        $or: [
+          { tenantId: companyId },
+          ...(mongoose.isValidObjectId(companyId) ? [{ tenantId: new mongoose.Types.ObjectId(companyId) }] : [])
+        ]
+      });
+    }
+
+    if (orClauses.length === 0) {
+      return res.json({ success: true, data: null });
+    }
+
+    const query = {
+      $and: [
+        { $or: orClauses },
+        { status: { $in: ['pending', 'scheduled', 'in_review'] } }
+      ]
+    };
+
+    const referral = await Referral.findOne(query)
+      .sort({ createdAt: -1 })
+      .select('referenceCode status scheduledAt appointmentNotes preferredTime createdAt clinicalDetails.meetingLink clinicalDetails.patientName')
+      .lean();
+
+    if (!referral) {
+      return res.json({ success: true, data: null });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        referenceCode: referral.referenceCode,
+        status: referral.status,
+        patientName: referral.clinicalDetails?.patientName || 'Employee',
+        scheduledAt: referral.scheduledAt || null,
+        meetingLink: referral.clinicalDetails?.meetingLink || '',
+        createdAt: referral.createdAt
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * @route   GET /api/v1/referrals/status/:referenceCode
  * @desc    Employee status lookup & two-way clinical messaging thread
  * @access  Public / Employee (Zero-Knowledge, authenticated by Reference Code)

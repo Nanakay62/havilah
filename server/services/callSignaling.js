@@ -94,27 +94,42 @@ class CallSignalingHub {
     try {
       const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
       const rawRef = url.searchParams.get('ref') || '';
-      const referenceCode = rawRef.trim().toUpperCase();
       const role = (url.searchParams.get('role') || '').trim().toLowerCase();
       const token = url.searchParams.get('token') || '';
 
-      if (!referenceCode || !['doctor', 'employee'].includes(role)) {
+      if (!rawRef || !['doctor', 'employee'].includes(role)) {
         socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
         socket.destroy();
         return;
       }
 
-      // Authorize connection against database referral record
-      const isAuthorized = await this.verifyRoomAccess(referenceCode, role, token);
-      if (!isAuthorized) {
+      const referenceCodes = rawRef.split(',').map(r => r.trim().toUpperCase()).filter(Boolean);
+      if (referenceCodes.length === 0) {
+        socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
+      // Authorize connection against database referral records
+      const authorizedCodes = [];
+      for (const rc of referenceCodes) {
+        const isAuthorized = await this.verifyRoomAccess(rc, role, token);
+        if (isAuthorized) {
+          authorizedCodes.push(rc);
+        }
+      }
+
+      if (authorizedCodes.length === 0) {
         socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
         socket.destroy();
         return;
       }
 
       this.wss.handleUpgrade(req, socket, head, (ws) => {
-        ws.referenceCode = referenceCode;
+        ws.referenceCodes = authorizedCodes;
+        ws.referenceCode = authorizedCodes[0];
         ws.role = role;
+        ws.token = token;
         ws.isAlive = true;
         this.wss.emit('connection', ws, req);
       });
@@ -172,34 +187,37 @@ class CallSignalingHub {
    */
   attachHandlers(wss) {
     wss.on('connection', (ws) => {
-      const { referenceCode, role } = ws;
+      const { role } = ws;
+      const refList = ws.referenceCodes || (ws.referenceCode ? [ws.referenceCode] : []);
 
-      if (!this.rooms.has(referenceCode)) {
-        this.rooms.set(referenceCode, { doctor: null, employee: null, callState: 'idle' });
-      }
-      const room = this.rooms.get(referenceCode);
-
-      // If an existing socket for this role was connected, mark it replaced before closing
-      if (room[role] && room[role] !== ws) {
-        room[role].isReplaced = true;
-        if (room[role].readyState === WebSocket.OPEN) {
-          try {
-            room[role].close(1000, 'Replaced by newer session');
-          } catch (e) {}
+      refList.forEach((rc) => {
+        if (!this.rooms.has(rc)) {
+          this.rooms.set(rc, { doctor: null, employee: null, callState: 'idle' });
         }
-      }
-      room[role] = ws;
+        const room = this.rooms.get(rc);
 
-      logger.info({ referenceCode, role }, `[CallSignaling] ${role.toUpperCase()} joined call room ${referenceCode}`);
+        // If an existing socket for this role was connected, mark it replaced before closing
+        if (room[role] && room[role] !== ws) {
+          room[role].isReplaced = true;
+          if (room[role].readyState === WebSocket.OPEN) {
+            try {
+              room[role].close(1000, 'Replaced by newer session');
+            } catch (e) {}
+          }
+        }
+        room[role] = ws;
 
-      // Notify peer and client of presence state
-      const peer = role === 'doctor' ? room.employee : room.doctor;
-      if (peer && peer.readyState === WebSocket.OPEN) {
-        peer.send(JSON.stringify({ event: 'peer_online', role }));
-        ws.send(JSON.stringify({ event: 'peer_online', role: role === 'doctor' ? 'employee' : 'doctor' }));
-      } else {
-        ws.send(JSON.stringify({ event: 'peer_offline', role: role === 'doctor' ? 'employee' : 'doctor' }));
-      }
+        logger.info({ referenceCode: rc, role }, `[CallSignaling] ${role.toUpperCase()} joined call room ${rc}`);
+
+        // Notify peer and client of presence state for rc
+        const peer = role === 'doctor' ? room.employee : room.doctor;
+        if (peer && peer.readyState === WebSocket.OPEN) {
+          peer.send(JSON.stringify({ event: 'peer_online', role, referenceCode: rc }));
+          ws.send(JSON.stringify({ event: 'peer_online', role: role === 'doctor' ? 'employee' : 'doctor', referenceCode: rc }));
+        } else {
+          ws.send(JSON.stringify({ event: 'peer_offline', role: role === 'doctor' ? 'employee' : 'doctor', referenceCode: rc }));
+        }
+      });
 
       ws.on('pong', () => {
         ws.isAlive = true;
@@ -215,36 +233,35 @@ class CallSignalingHub {
       });
 
       ws.on('close', () => {
-        logger.info({ referenceCode, role }, `[CallSignaling] ${role.toUpperCase()} socket closed for room ${referenceCode}`);
+        logger.info({ referenceCodes: refList, role }, `[CallSignaling] ${role.toUpperCase()} socket closed`);
 
         // If this socket was superseded by a newer session, ignore close event completely
         if (ws.isReplaced) {
           return;
         }
 
-        const currentRoom = this.rooms.get(referenceCode);
-        if (currentRoom) {
-          // Strictly verify this socket is still the active socket for this role
-          if (currentRoom[role] === ws) {
+        refList.forEach((rc) => {
+          const currentRoom = this.rooms.get(rc);
+          if (currentRoom && currentRoom[role] === ws) {
             currentRoom[role] = null;
             currentRoom.callState = 'idle';
 
             const remainingPeer = role === 'doctor' ? currentRoom.employee : currentRoom.doctor;
             if (remainingPeer && remainingPeer.readyState === WebSocket.OPEN) {
-              remainingPeer.send(JSON.stringify({ event: 'call_ended', reason: `${role === 'doctor' ? 'Doctor' : 'Patient'} disconnected` }));
-              remainingPeer.send(JSON.stringify({ event: 'peer_offline', role }));
+              remainingPeer.send(JSON.stringify({ event: 'call_ended', referenceCode: rc, reason: `${role === 'doctor' ? 'Doctor' : 'Patient'} disconnected` }));
+              remainingPeer.send(JSON.stringify({ event: 'peer_offline', role, referenceCode: rc }));
             }
 
             // Only clean up if both are truly gone
             if (!currentRoom.doctor && !currentRoom.employee) {
-              this.rooms.delete(referenceCode);
+              this.rooms.delete(rc);
             }
           }
-        }
+        });
       });
 
       ws.on('error', (err) => {
-        logger.warn({ err: err.message, referenceCode, role }, '[CallSignaling] WebSocket client error');
+        logger.warn({ err: err.message, referenceCodes: refList, role }, '[CallSignaling] WebSocket client error');
       });
     });
   }
@@ -253,14 +270,43 @@ class CallSignalingHub {
    * Relays signaling messages between Doctor and Employee
    */
   async handleSignalMessage(senderWs, msg) {
-    const { referenceCode, role } = senderWs;
-    if (!referenceCode || !role) return;
+    const { role } = senderWs;
+    if (!role) return;
+
+    // Support dynamic room subscription
+    if (msg.action === 'subscribe' && Array.isArray(msg.referenceCodes)) {
+      senderWs.referenceCodes = senderWs.referenceCodes || [];
+      for (const rawCode of msg.referenceCodes) {
+        const rc = (rawCode || '').trim().toUpperCase();
+        if (!rc || senderWs.referenceCodes.includes(rc)) continue;
+        const ok = await this.verifyRoomAccess(rc, role, senderWs.token || '');
+        if (ok) {
+          senderWs.referenceCodes.push(rc);
+          if (!this.rooms.has(rc)) {
+            this.rooms.set(rc, { doctor: null, employee: null, callState: 'idle' });
+          }
+          const room = this.rooms.get(rc);
+          room[role] = senderWs;
+          const peer = role === 'doctor' ? room.employee : room.doctor;
+          if (peer && peer.readyState === WebSocket.OPEN) {
+            peer.send(JSON.stringify({ event: 'peer_online', role, referenceCode: rc }));
+            senderWs.send(JSON.stringify({ event: 'peer_online', role: role === 'doctor' ? 'employee' : 'doctor', referenceCode: rc }));
+          } else {
+            senderWs.send(JSON.stringify({ event: 'peer_offline', role: role === 'doctor' ? 'employee' : 'doctor', referenceCode: rc }));
+          }
+        }
+      }
+      return;
+    }
+
+    const targetRef = (msg.referenceCode || senderWs.referenceCode || (senderWs.referenceCodes && senderWs.referenceCodes[0]) || '').trim().toUpperCase();
+    if (!targetRef) return;
 
     // Self-heal: ensure room exists and sender is bound
-    if (!this.rooms.has(referenceCode)) {
-      this.rooms.set(referenceCode, { doctor: null, employee: null, callState: 'idle' });
+    if (!this.rooms.has(targetRef)) {
+      this.rooms.set(targetRef, { doctor: null, employee: null, callState: 'idle' });
     }
-    const room = this.rooms.get(referenceCode);
+    const room = this.rooms.get(targetRef);
     if (room[role] !== senderWs) {
       room[role] = senderWs;
     }
@@ -276,7 +322,7 @@ class CallSignalingHub {
         if (peer && peer.readyState === WebSocket.OPEN) {
           peer.send(JSON.stringify({
             event: 'incoming_call',
-            referenceCode,
+            referenceCode: targetRef,
             fromRole: role,
             callerName: msg.callerName || (role === 'doctor' ? 'Medical Assessor' : 'Patient'),
             offer: msg.offer,
@@ -287,19 +333,20 @@ class CallSignalingHub {
           // Peer is offline in the signaling room
           senderWs.send(JSON.stringify({
             event: 'callee_offline',
+            referenceCode: targetRef,
             calleeRole: peerRole,
             message: `${peerRole === 'doctor' ? 'Doctor' : 'Patient'} is not currently active in the consultation room.`
           }));
 
           // Trigger push notification if available
-          this.dispatchOfflineCallNotification(referenceCode, role, msg.callerName);
+          this.dispatchOfflineCallNotification(targetRef, role, msg.callerName);
         }
         break;
       }
 
       case 'ringing': {
         if (peer && peer.readyState === WebSocket.OPEN) {
-          peer.send(JSON.stringify({ event: 'call_ringing', referenceCode }));
+          peer.send(JSON.stringify({ event: 'call_ringing', referenceCode: targetRef }));
         }
         break;
       }
@@ -309,7 +356,7 @@ class CallSignalingHub {
         if (peer && peer.readyState === WebSocket.OPEN) {
           peer.send(JSON.stringify({
             event: 'call_answered',
-            referenceCode,
+            referenceCode: targetRef,
             answer: msg.answer,
           }));
         }
@@ -320,7 +367,7 @@ class CallSignalingHub {
         if (peer && peer.readyState === WebSocket.OPEN && msg.candidate) {
           peer.send(JSON.stringify({
             event: 'candidate',
-            referenceCode,
+            referenceCode: targetRef,
             candidate: msg.candidate,
           }));
         }
@@ -332,7 +379,7 @@ class CallSignalingHub {
         if (peer && peer.readyState === WebSocket.OPEN) {
           peer.send(JSON.stringify({
             event: 'call_declined',
-            referenceCode,
+            referenceCode: targetRef,
             reason: msg.reason || 'Call was declined',
           }));
         }
@@ -344,7 +391,7 @@ class CallSignalingHub {
         if (peer && peer.readyState === WebSocket.OPEN) {
           peer.send(JSON.stringify({
             event: 'call_ended',
-            referenceCode,
+            referenceCode: targetRef,
             reason: msg.reason || 'Call ended by peer',
           }));
         }

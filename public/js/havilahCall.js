@@ -26,6 +26,9 @@
       this.activeCallState = 'idle';  // 'idle' | 'calling' | 'ringing' | 'connected' | 'ended'
       this.cachedIceServers = null;
       this.signalWsUrl = null;
+      this.pendingCandidates = [];
+      this.peerPresenceMap = new Map();
+      this.activeCallRef = null;
 
       // Event hooks
       this.onIncomingCall = null;
@@ -206,13 +209,61 @@
     }
 
     /**
+    /**
+     * Checks if a peer is currently online for a given reference code
+     */
+    isPeerOnline(refCode) {
+      if (refCode && this.peerPresenceMap) {
+        return !!this.peerPresenceMap.get(refCode.toUpperCase().trim());
+      }
+      return !!this.lastPeerOnline;
+    }
+
+    /**
      * Dispatches signaling messages over the WebSocket
      */
     sendSignal(payload) {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify(payload));
+        const primaryRef = this.referenceCode ? this.referenceCode.split(',')[0].trim().toUpperCase() : '';
+        const targetRef = payload.referenceCode || this.activeCallRef || primaryRef;
+        const enriched = {
+          ...payload,
+          referenceCode: targetRef
+        };
+        this.ws.send(JSON.stringify(enriched));
       } else {
         console.warn('[HavilahCall] Cannot send signal; WebSocket not open. State:', this.ws?.readyState);
+      }
+    }
+
+    /**
+     * Subscribes to additional consultation cases dynamically without reconnecting
+     */
+    subscribe(refCodes) {
+      const list = Array.isArray(refCodes) ? refCodes : [refCodes];
+      const valid = list.map(r => (r || '').trim().toUpperCase()).filter(Boolean);
+      if (valid.length === 0) return;
+      this.sendSignal({
+        action: 'subscribe',
+        referenceCodes: valid
+      });
+    }
+
+    /**
+     * Drains any ICE candidates received prior to setRemoteDescription completion
+     */
+    async drainPendingCandidates() {
+      if (!this.pc || !this.pc.remoteDescription) return;
+      if (!this.pendingCandidates || this.pendingCandidates.length === 0) return;
+      const queued = [...this.pendingCandidates];
+      this.pendingCandidates = [];
+      for (const cand of queued) {
+        try {
+          await this.pc.addIceCandidate(new RTCIceCandidate(cand));
+          console.log('[HavilahCall] Added buffered ICE candidate successfully');
+        } catch (e) {
+          console.warn('[HavilahCall] Drain candidate error:', e.message);
+        }
       }
     }
 
@@ -273,11 +324,13 @@
     /**
      * Initiates an outgoing consultation call
      */
-    async startCall(callerName) {
+    async startCall(callerName, targetRef) {
       if (this.activeCallState !== 'idle') {
         alert('A call session is already active.');
         return;
       }
+
+      this.activeCallRef = (targetRef || this.referenceCode || '').split(',')[0].trim().toUpperCase();
 
       try {
         this.updateStatus('Requesting microphone access...');
@@ -323,25 +376,43 @@
 
           this.sendSignal({
             action: 'candidate',
+            referenceCode: this.activeCallRef,
             candidate: event.candidate
           });
         };
 
-        // Connection state watcher
+        this.pendingCandidates = [];
+
+        const handleConnected = () => {
+          if (this.activeCallState === 'connected') return;
+          this.activeCallState = 'connected';
+          this.startCallTimer();
+          this.updateStatus('Connected');
+          this.showCallOverlay();
+          if (typeof this.onCallConnected === 'function') {
+            this.onCallConnected();
+          }
+        };
+
+        // Connection state watchers (both PeerConnection & ICE state)
         this.pc.onconnectionstatechange = () => {
-          const state = this.pc.connectionState;
+          const state = this.pc ? this.pc.connectionState : 'closed';
           console.log(`[HavilahCall] WebRTC Connection State: ${state}`);
 
           if (state === 'connected') {
-            this.activeCallState = 'connected';
-            this.startCallTimer();
-            this.updateStatus('Connected');
-            this.showCallOverlay();
-            if (typeof this.onCallConnected === 'function') {
-              this.onCallConnected();
-            }
+            handleConnected();
           } else if (['disconnected', 'failed', 'closed'].includes(state)) {
             this.endCallUI(state === 'failed' ? 'Connection failed' : 'Call ended');
+          }
+        };
+
+        this.pc.oniceconnectionstatechange = () => {
+          const iceState = this.pc ? this.pc.iceConnectionState : 'closed';
+          console.log(`[HavilahCall] ICE Connection State: ${iceState}`);
+          if (iceState === 'connected' || iceState === 'completed') {
+            handleConnected();
+          } else if (iceState === 'failed') {
+            this.endCallUI('Relay connection failed');
           }
         };
 
@@ -357,6 +428,7 @@
         this.activeCallState = 'calling';
         this.sendSignal({
           action: 'offer',
+          referenceCode: this.activeCallRef,
           callerName: callerName || (this.role === 'doctor' ? 'Medical Assessor' : 'Patient'),
           offer: { type: offer.type, sdp: offer.sdp },
           ipShield: this.ipShield
@@ -384,6 +456,7 @@
       this.hideIncomingCallOverlay();
       const callData = this.storedIncomingCall;
       this.storedIncomingCall = null;
+      this.activeCallRef = callData.referenceCode || (this.referenceCode ? this.referenceCode.split(',')[0].trim().toUpperCase() : '');
 
       // Inherit caller's IP shield mode if enabled
       if (callData.ipShield) {
@@ -392,6 +465,7 @@
 
       try {
         this.updateStatus('Connecting...');
+        this.activeCallState = 'connecting';
 
         // 1. Capture microphone audio stream
         this.localStream = await navigator.mediaDevices.getUserMedia({
@@ -426,37 +500,55 @@
           }
           this.sendSignal({
             action: 'candidate',
+            referenceCode: this.activeCallRef,
             candidate: event.candidate
           });
         };
 
+        const handleAnswerConnected = () => {
+          if (this.activeCallState === 'connected') return;
+          this.activeCallState = 'connected';
+          this.startCallTimer();
+          this.updateStatus('Connected');
+          this.showCallOverlay();
+          if (typeof this.onCallConnected === 'function') {
+            this.onCallConnected();
+          }
+        };
+
         this.pc.onconnectionstatechange = () => {
-          const state = this.pc.connectionState;
+          const state = this.pc ? this.pc.connectionState : 'closed';
           console.log(`[HavilahCall] WebRTC Connection State: ${state}`);
           if (state === 'connected') {
-            this.activeCallState = 'connected';
-            this.startCallTimer();
-            this.updateStatus('Connected');
-            this.showCallOverlay();
-            if (typeof this.onCallConnected === 'function') {
-              this.onCallConnected();
-            }
+            handleAnswerConnected();
           } else if (['disconnected', 'failed', 'closed'].includes(state)) {
             this.endCallUI(state === 'failed' ? 'Connection failed' : 'Call ended');
           }
         };
 
-        // 3. Set remote description (caller offer)
+        this.pc.oniceconnectionstatechange = () => {
+          const iceState = this.pc ? this.pc.iceConnectionState : 'closed';
+          console.log(`[HavilahCall] ICE Connection State: ${iceState}`);
+          if (iceState === 'connected' || iceState === 'completed') {
+            handleAnswerConnected();
+          } else if (iceState === 'failed') {
+            this.endCallUI('Relay connection failed');
+          }
+        };
+
+        // 3. Set remote description (caller offer) and drain buffered candidates
         await this.pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
+        await this.drainPendingCandidates();
 
         // 4. Create answer
         const answer = await this.pc.createAnswer();
         await this.pc.setLocalDescription(answer);
 
         // 5. Send answer over signaling
-        this.activeCallState = 'connected';
+        this.activeCallState = 'connecting';
         this.sendSignal({
           action: 'answer',
+          referenceCode: this.activeCallRef,
           answer: { type: answer.type, sdp: answer.sdp }
         });
 
@@ -526,6 +618,9 @@
 
       this.isMuted = false;
       this.isSpeaker = false;
+      this.pendingCandidates = [];
+      const callRef = this.activeCallRef || (this.referenceCode ? this.referenceCode.split(',')[0].trim().toUpperCase() : '');
+      this.activeCallRef = null;
       this.storedIncomingCall = null;
       const wasActive = this.activeCallState !== 'idle';
       this.activeCallState = 'idle';
@@ -533,8 +628,8 @@
       this.updateStatus(reason);
 
       // Log call duration to referral audit trail if call lasted > 0 seconds
-      if (wasActive && finalDuration > 0 && this.referenceCode) {
-        this.logCallOutcome(finalDuration, reason);
+      if (wasActive && finalDuration > 0 && callRef) {
+        this.logCallOutcome(finalDuration, reason, callRef);
       }
 
       if (typeof this.onCallEnded === 'function') {
@@ -545,13 +640,15 @@
     /**
      * Logs consultation outcome to Havilah backend
      */
-    async logCallOutcome(durationSeconds, endReason) {
+    async logCallOutcome(durationSeconds, endReason, callRef) {
       try {
+        const refToLog = callRef || this.referenceCode;
+        if (!refToLog) return;
         await fetch('/api/v1/calls/log', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            referenceCode: this.referenceCode,
+            referenceCode: refToLog.split(',')[0].trim().toUpperCase(),
             durationSeconds,
             callerRole: this.role,
             endReason
@@ -672,9 +769,10 @@
       switch (msg.event) {
         case 'incoming_call': {
           this.storedIncomingCall = msg;
+          this.activeCallRef = msg.referenceCode || (this.referenceCode ? this.referenceCode.split(',')[0].trim().toUpperCase() : '');
           this.activeCallState = 'ringing';
           this.showIncomingCallOverlay(msg.callerName || 'Consultation Peer', msg.fromRole);
-          this.sendSignal({ action: 'ringing' });
+          this.sendSignal({ action: 'ringing', referenceCode: this.activeCallRef });
           if (typeof this.onIncomingCall === 'function') {
             try { this.onIncomingCall(msg); } catch (e) {}
           }
@@ -690,15 +788,22 @@
           this.updateStatus('Answering...');
           if (this.pc && msg.answer) {
             this.pc.setRemoteDescription(new RTCSessionDescription(msg.answer))
+              .then(() => this.drainPendingCandidates())
               .catch(err => console.error('[HavilahCall] setRemoteDescription error on answer:', err));
           }
           break;
         }
 
         case 'candidate': {
-          if (this.pc && msg.candidate) {
-            this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate))
-              .catch(err => console.warn('[HavilahCall] addIceCandidate error:', err));
+          if (msg.candidate) {
+            if (this.pc && this.pc.remoteDescription && this.pc.remoteDescription.type) {
+              this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate))
+                .catch(err => console.warn('[HavilahCall] addIceCandidate error:', err));
+            } else {
+              console.log('[HavilahCall] Buffering incoming ICE candidate (remoteDescription not ready)');
+              if (!this.pendingCandidates) this.pendingCandidates = [];
+              this.pendingCandidates.push(msg.candidate);
+            }
           }
           break;
         }
@@ -721,46 +826,76 @@
         }
 
         case 'peer_online': {
-          console.log(`[HavilahCall] Peer (${msg.role}) is now online`);
+          const ref = (msg.referenceCode || this.referenceCode || '').split(',')[0].trim().toUpperCase();
+          if (ref) {
+            this.peerPresenceMap.set(ref, true);
+          }
           this.lastPeerOnline = true;
-          const aPill = document.getElementById('assessorPeerPresencePill');
-          if (aPill) {
-            aPill.textContent = '🟢 Patient Online';
-            aPill.style.background = '#dcfce7';
-            aPill.style.color = '#15803d';
-          }
-          const ePill = document.getElementById('empPeerPresencePill');
-          if (ePill) {
-            ePill.textContent = '🟢 Doctor Online';
-            ePill.style.background = '#dcfce7';
-            ePill.style.color = '#15803d';
-          }
-          if (typeof this.onPeerPresence === 'function') {
-            this.onPeerPresence(true, msg.role);
-          }
+          this.updatePeerPresence(true, msg.role, ref);
           break;
         }
 
         case 'peer_offline': {
-          console.log(`[HavilahCall] Peer (${msg.role}) is offline`);
+          const ref = (msg.referenceCode || this.referenceCode || '').split(',')[0].trim().toUpperCase();
+          if (ref) {
+            this.peerPresenceMap.set(ref, false);
+          }
           this.lastPeerOnline = false;
-          const aPill = document.getElementById('assessorPeerPresencePill');
-          if (aPill) {
-            aPill.textContent = '⚪ Patient Offline';
-            aPill.style.background = '#e2e8f0';
-            aPill.style.color = '#475569';
-          }
-          const ePill = document.getElementById('empPeerPresencePill');
-          if (ePill) {
-            ePill.textContent = '⚪ Doctor Offline';
-            ePill.style.background = '#e2e8f0';
-            ePill.style.color = '#475569';
-          }
-          if (typeof this.onPeerPresence === 'function') {
-            this.onPeerPresence(false, msg.role);
-          }
+          this.updatePeerPresence(false, msg.role, ref);
           break;
         }
+      }
+    }
+
+    /**
+     * Centralized peer presence update helper
+     */
+    updatePeerPresence(isOnline, peerRole, refCode) {
+      if (refCode) {
+        const dot = document.getElementById(`presence-dot-${refCode}`);
+        if (dot) {
+          dot.style.background = isOnline ? '#10b981' : '#cbd5e1';
+          dot.title = isOnline ? 'Online now' : 'Offline';
+        }
+        const text = document.getElementById(`presence-text-${refCode}`);
+        if (text) {
+          text.textContent = isOnline ? 'Online' : 'Offline';
+          text.style.color = isOnline ? '#10b981' : '#94a3b8';
+        }
+        const badge = document.getElementById(`presence-badge-${refCode}`);
+        if (badge) {
+          badge.textContent = isOnline ? '🟢 Online' : '⚪ Offline';
+          badge.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+          badge.style.color = isOnline ? '#15803d' : '#475569';
+        }
+      }
+
+      const aPill = document.getElementById('assessorPeerPresencePill');
+      if (aPill) {
+        aPill.textContent = isOnline ? '🟢 Patient Online' : '⚪ Patient Offline';
+        aPill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+        aPill.style.color = isOnline ? '#15803d' : '#475569';
+      }
+
+      const ePill = document.getElementById('empPeerPresencePill');
+      if (ePill) {
+        ePill.textContent = isOnline ? '🟢 Doctor Online' : '⚪ Doctor Offline';
+        ePill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+        ePill.style.color = isOnline ? '#15803d' : '#475569';
+      }
+
+      const dashPill = document.getElementById('dashboardDoctorPresencePill');
+      if (dashPill) {
+        dashPill.style.display = 'inline-block';
+        dashPill.textContent = isOnline ? '🟢 Doctor Online' : '⚪ Doctor Offline';
+        dashPill.style.background = isOnline ? '#dcfce7' : '#f1f5f9';
+        dashPill.style.color = isOnline ? '#15803d' : '#64748b';
+      }
+
+      if (typeof this.onPeerPresence === 'function') {
+        try {
+          this.onPeerPresence(isOnline, peerRole, refCode);
+        } catch (e) {}
       }
     }
 
@@ -793,10 +928,11 @@
         document.getElementById('h-call-decline-btn').addEventListener('click', () => this.declineCall());
       }
 
+      const currentRef = this.activeCallRef || (this.referenceCode ? this.referenceCode.split(',')[0].trim().toUpperCase() : '');
       document.getElementById('h-call-caller-name').textContent = callerName;
       document.getElementById('h-call-caller-sub').textContent = fromRole === 'doctor'
-        ? 'Medical Assessor is calling for consultation #' + this.referenceCode
-        : 'Employee is calling for consultation #' + this.referenceCode;
+        ? 'Medical Assessor is calling for consultation #' + currentRef
+        : 'Employee is calling for consultation #' + currentRef;
 
       overlay.style.display = 'flex';
 
@@ -830,7 +966,7 @@
               <div class="h-call-soundwave">
                 <span></span><span></span><span></span><span></span><span></span>
               </div>
-              <p class="h-call-case-ref">Case: <span id="h-call-ref-display">${this.referenceCode}</span></p>
+              <p class="h-call-case-ref">Case: <span id="h-call-ref-display"></span></p>
             </div>
             <div class="h-call-controls">
               <button id="havilah-call-mute-btn" class="h-ctrl-btn">🎙️ Mute</button>
@@ -846,7 +982,9 @@
         document.getElementById('havilah-call-hangup-btn').addEventListener('click', () => this.hangup());
       }
 
-      document.getElementById('h-call-ref-display').textContent = this.referenceCode;
+      const currentRef = this.activeCallRef || (this.referenceCode ? this.referenceCode.split(',')[0].trim().toUpperCase() : '');
+      const refEl = document.getElementById('h-call-ref-display');
+      if (refEl) refEl.textContent = currentRef;
       overlay.style.display = 'flex';
     }
 

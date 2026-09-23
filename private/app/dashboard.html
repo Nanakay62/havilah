@@ -1479,8 +1479,9 @@
                 <textarea id="consultNotesInput" class="input" rows="2" placeholder="Optional details or specific accommodations needed..." style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem; resize: vertical;"></textarea>
               </div>
               <button type="button" class="cosmic-pill emerald" style="cursor: pointer; padding: 10px 16px; font-weight: 700; width: 100%; margin-top: 4px; justify-content: center;" onclick="App.submitClinicalConsultation()">Submit Request to FZ Safety Practitioner</button>
-              <button type="button" onclick="window.openConsultTrackModal();" style="width: 100%; cursor: pointer; padding: 9px 16px; font-weight: 700; background: rgba(13,148,136,0.1); color: #0d9488; border: 1.5px solid rgba(13,148,136,0.35); border-radius: 8px; font-size: 0.82rem; margin-top: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;">
+              <button type="button" onclick="window.openConsultTrackModal();" style="width: 100%; cursor: pointer; padding: 9px 16px; font-weight: 700; background: rgba(13,148,136,0.1); color: #0d9488; border: 1.5px solid rgba(13,148,136,0.35); border-radius: 8px; font-size: 0.82rem; margin-top: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
                 <span>🔍</span> <span>Track Existing Consultation &amp; Dialogue</span>
+                <span id="dashboardDoctorPresencePill" style="display:none; font-size:10.5px; padding:2px 8px; border-radius:99px; font-weight:700; margin-left:4px;"></span>
               </button>
             </div>
 
@@ -4390,23 +4391,47 @@ const App = (() => {
       });
     }
 
-    // Auto-initialize WebRTC Call signaling if a saved consultation exists
-    const savedRef = localStorage.getItem('havilah_last_consult_ref');
-    if (savedRef && window.HavilahCall) {
-      window.HavilahCall.init({
-        role: 'employee',
-        referenceCode: savedRef,
-        token: localStorage.getItem('token') || localStorage.getItem('havilah_token') || '',
-        onPeerPresence: (isOnline) => {
-          const pill = document.getElementById('empPeerPresencePill');
-          if (pill) {
-            pill.textContent = isOnline ? '🟢 Doctor Online' : '⚪ Doctor Offline';
-            pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
-            pill.style.color = isOnline ? '#15803d' : '#475569';
+    // Auto-initialize WebRTC Call signaling and online presence for employee
+    (async () => {
+      try {
+        let savedRef = localStorage.getItem('havilah_last_consult_ref');
+        if (!savedRef) {
+          const token = localStorage.getItem('token') || localStorage.getItem('havilah_token') || '';
+          const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+          const res = await fetch('/api/v1/referrals/my-active', { headers });
+          const data = await res.json().catch(() => null);
+          if (data && data.success && data.data && data.data.referenceCode) {
+            savedRef = data.data.referenceCode;
+            localStorage.setItem('havilah_last_consult_ref', savedRef);
           }
         }
-      });
-    }
+
+        if (savedRef && window.HavilahCall) {
+          window.HavilahCall.init({
+            role: 'employee',
+            referenceCode: savedRef,
+            token: localStorage.getItem('token') || localStorage.getItem('havilah_token') || '',
+            onPeerPresence: (isOnline) => {
+              const pill = document.getElementById('empPeerPresencePill');
+              if (pill) {
+                pill.textContent = isOnline ? '🟢 Doctor Online' : '⚪ Doctor Offline';
+                pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+                pill.style.color = isOnline ? '#15803d' : '#475569';
+              }
+              const dashPill = document.getElementById('dashboardDoctorPresencePill');
+              if (dashPill) {
+                dashPill.style.display = 'inline-block';
+                dashPill.textContent = isOnline ? '🟢 Doctor Online' : '⚪ Doctor Offline';
+                dashPill.style.background = isOnline ? '#dcfce7' : '#f1f5f9';
+                dashPill.style.color = isOnline ? '#15803d' : '#64748b';
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Call signaling initialization notice:', e.message);
+      }
+    })();
 
     await window.fetchDashboardData();
 

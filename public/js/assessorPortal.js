@@ -483,10 +483,83 @@
       updateCompanyFilter();
       processFilteredQueue();
       updateKPIs();
+
+      // Initialize doctor call signaling for active cases
+      initDoctorCallSignaling();
     } catch (err) {
       console.error('Queue load error', err);
       showToast('Error loading queue: ' + err.message);
     }
+  };
+
+  function initDoctorCallSignaling() {
+    if (!window.HavilahCall) return;
+    const token = getAssessorToken();
+    if (!token) return;
+
+    const activeRefs = (state.queue || [])
+      .filter(r => r.referenceCode && r.status !== 'completed' && r.status !== 'archived')
+      .map(r => r.referenceCode.trim().toUpperCase());
+
+    if (activeRefs.length === 0) return;
+
+    window.HavilahCall.init({
+      role: 'doctor',
+      referenceCode: activeRefs.join(','),
+      token: token,
+      onPeerPresence: (isOnline, peerRole, refCode) => {
+        if (refCode) {
+          const dot = document.getElementById(`presence-dot-${refCode}`);
+          if (dot) {
+            dot.style.background = isOnline ? '#10b981' : '#cbd5e1';
+            dot.title = isOnline ? 'Patient is Online now' : 'Patient is Offline';
+          }
+        }
+        if (state.selectedCase && (!refCode || state.selectedCase.referenceCode === refCode)) {
+          const pill = document.getElementById('assessorPeerPresencePill');
+          if (pill) {
+            pill.textContent = isOnline ? '🟢 Patient Online' : '⚪ Patient Offline';
+            pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+            pill.style.color = isOnline ? '#15803d' : '#475569';
+          }
+        }
+      },
+      onIncomingCall: (callData) => {
+        console.log('[AssessorPortal] Incoming consultation call for:', callData.referenceCode);
+        const matched = (state.queue || []).find(r => r.referenceCode === callData.referenceCode);
+        if (matched) {
+          if (!state.selectedCase || state.selectedCase.referenceCode !== callData.referenceCode) {
+            window.openCaseDetail(matched._id);
+          }
+        }
+      },
+      onCallEnded: (durationSeconds) => {
+        if (durationSeconds > 0) {
+          const badge = document.getElementById('assessorCallDurationBadge');
+          const text = document.getElementById('assessorCallDurationText');
+          if (badge && text) {
+            const mins = Math.floor(durationSeconds / 60);
+            const secs = durationSeconds % 60;
+            text.textContent = `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
+            badge.style.display = 'inline-flex';
+          }
+          const notesInput = document.getElementById('scheduleNotesInput');
+          if (notesInput && !notesInput.value.includes('Call completed')) {
+            const prev = notesInput.value ? `${notesInput.value} | ` : '';
+            notesInput.value = `${prev}Call completed (${Math.floor(durationSeconds / 60)}m ${durationSeconds % 60}s)`;
+          }
+        }
+      }
+    });
+  }
+
+  window.quickCallCase = (refCode, patientName) => {
+    if (!window.HavilahCall) {
+      alert('Secure call engine is initializing. Please try again in a moment.');
+      return;
+    }
+    const docName = (state.assessor?.name || state.profile?.fullName) ? `Dr. ${state.assessor?.name || state.profile?.fullName}` : 'Medical Assessor';
+    window.HavilahCall.startCall(docName, refCode);
   };
 
   function updateKPIs() {
@@ -858,9 +931,15 @@
       }
 
       const isCompleted = r.status === 'completed';
+      const isOnline = window.HavilahCall ? window.HavilahCall.isPeerOnline(r.referenceCode) : false;
+      const dotColor = isOnline ? '#10b981' : '#cbd5e1';
+      const dotTitle = isOnline ? 'Patient is Online now' : 'Patient is Offline';
 
       tr.innerHTML = `
-        <td style="font-family:monospace; font-weight:700; color:var(--accent); font-size:0.86rem;">${r.referenceCode}</td>
+        <td style="font-family:monospace; font-weight:700; color:var(--accent); font-size:0.86rem; white-space:nowrap;">
+          <span id="presence-dot-${r.referenceCode}" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${dotColor}; margin-right:6px; vertical-align:middle; transition:background 0.3s;" title="${dotTitle}"></span>
+          ${r.referenceCode}
+        </td>
         <td style="font-weight:700; color:var(--text-1); font-size:0.84rem;">${companyName}</td>
         <td style="font-weight:700; color:var(--text-1);">${patientName}</td>
         <td>${contactHtml}</td>
@@ -879,6 +958,7 @@
         <td>
           <div style="display:flex; gap:4px; align-items:center;">
             <button class="btn btn-ghost btn-sm" onclick="openCaseDetail('${r._id}')">View</button>
+            ${!isCompleted && st !== 'archived' ? `<button class="btn btn-outline btn-sm" onclick="quickCallCase('${r.referenceCode}', '${(patientName || 'Patient').replace(/'/g, "\\'")}')" style="padding:4px 8px; font-size:0.75rem; color:#0d9488; border-color:#0d9488;" title="Call Patient Direct">📞</button>` : ''}
             ${!isCompleted && st !== 'archived' ? `<button class="btn btn-primary btn-sm" onclick="openCompleteModal('${r._id}')">Complete</button>` : ''}
             <button class="btn btn-ghost btn-sm" onclick="quickArchiveCase('${r._id}', ${st === 'archived'})" title="${st === 'archived' ? 'Restore Case' : 'Archive Case'}" style="padding:4px 6px; font-size:0.82rem;">
               ${st === 'archived' ? '📤' : '📦'}
@@ -1052,49 +1132,22 @@
       archiveBtn.style.color = isArchived ? '#0D9488' : 'var(--text-1)';
     }
 
-    // Initialize WebRTC Call Client for the case
+    // Update WebRTC Call Client presence for this specific case
     if (window.HavilahCall && item.referenceCode) {
+      if (typeof window.HavilahCall.subscribe === 'function') {
+        window.HavilahCall.subscribe(item.referenceCode);
+      }
       const shieldCheckbox = document.getElementById('assessorIpShieldToggle');
       if (shieldCheckbox) {
         shieldCheckbox.checked = window.HavilahCall.ipShield;
       }
       const presencePill = document.getElementById('assessorPeerPresencePill');
       if (presencePill) {
-        presencePill.textContent = 'Connecting...';
-        presencePill.style.background = '#e2e8f0';
-        presencePill.style.color = '#475569';
+        const isOnline = window.HavilahCall.isPeerOnline(item.referenceCode);
+        presencePill.textContent = isOnline ? '🟢 Patient Online' : '⚪ Patient Offline';
+        presencePill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
+        presencePill.style.color = isOnline ? '#15803d' : '#475569';
       }
-
-      window.HavilahCall.init({
-        role: 'doctor',
-        referenceCode: item.referenceCode,
-        token: getAssessorToken(),
-        onPeerPresence: (isOnline) => {
-          const pill = document.getElementById('assessorPeerPresencePill');
-          if (pill) {
-            pill.textContent = isOnline ? '🟢 Patient Online' : '⚪ Patient Offline';
-            pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
-            pill.style.color = isOnline ? '#15803d' : '#475569';
-          }
-        },
-        onCallEnded: (durationSeconds) => {
-          if (durationSeconds > 0) {
-            const badge = document.getElementById('assessorCallDurationBadge');
-            const text = document.getElementById('assessorCallDurationText');
-            if (badge && text) {
-              const mins = Math.floor(durationSeconds / 60);
-              const secs = durationSeconds % 60;
-              text.textContent = `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
-              badge.style.display = 'inline-flex';
-            }
-            const notesInput = document.getElementById('scheduleNotesInput');
-            if (notesInput && !notesInput.value.includes('Call completed')) {
-              const prev = notesInput.value ? `${notesInput.value} | ` : '';
-              notesInput.value = `${prev}Call completed (${Math.floor(durationSeconds / 60)}m ${durationSeconds % 60}s)`;
-            }
-          }
-        }
-      });
     }
 
     openModal('caseDetailModal');
@@ -1103,8 +1156,8 @@
 
   window.startAssessorCall = () => {
     if (!state.selectedCase || !window.HavilahCall) return;
-    const docName = (state.profile?.name || state.profile?.fullName) ? `Dr. ${state.profile.name || state.profile.fullName}` : 'Medical Assessor';
-    window.HavilahCall.startCall(docName);
+    const docName = (state.assessor?.name || state.profile?.name || state.profile?.fullName) ? `Dr. ${state.assessor?.name || state.profile?.name || state.profile?.fullName}` : 'Medical Assessor';
+    window.HavilahCall.startCall(docName, state.selectedCase.referenceCode);
   };
 
   window.handleToggleArchiveCurrentCase = async () => {

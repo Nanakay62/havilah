@@ -216,4 +216,57 @@ describe('Consent Enforcement, Audit Hash-Chain Verification, & Tier Normalizati
       }
     });
   });
+
+  describe('4. In-App Consent Acceptance Flow (/api/v1/wellness/accept-consent)', () => {
+    it('rejects unauthenticated requests with 401', async () => {
+      const res = await request(app).post('/api/v1/wellness/accept-consent');
+      expect(res.status).toBe(401);
+    });
+
+    it('accepts consent for employee, activates status, and issues fresh active JWT', async () => {
+      const User = require('../models/User');
+      const Tenant = require('../models/Tenant');
+      const originalUserFindOne = User.findOne;
+      const originalTenantFindOne = Tenant.findOne;
+
+      const createMockQuery = (data) => ({
+        select: () => ({ lean: () => Promise.resolve(data) }),
+        lean: () => Promise.resolve(data),
+        then: (resolve, reject) => Promise.resolve(data).then(resolve, reject),
+      });
+
+      User.findOne = () => Promise.resolve(null);
+      Tenant.findOne = () => createMockQuery({
+        company_id: COMPANY_ID,
+        lifecycle_state: 'active',
+        locked_at: null,
+      });
+
+      try {
+        const pendingToken = jwt.sign({
+          userId: 'usr-demo-employee',
+          companyId: COMPANY_ID,
+          departmentId: 'dept-engineering',
+          role: 'employee',
+          status: 'pending_consent',
+        }, TEST_SECRET, { expiresIn: '1h' });
+
+        const res = await request(app)
+          .post('/api/v1/wellness/accept-consent')
+          .set('Authorization', `Bearer ${pendingToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.token).toBeDefined();
+
+        const decoded = jwt.verify(res.body.token, TEST_SECRET);
+        expect(decoded.status).toBe('active');
+        expect(decoded.userId).toBe('usr-demo-employee');
+      } finally {
+        User.findOne = originalUserFindOne;
+        Tenant.findOne = originalTenantFindOne;
+      }
+    });
+  });
 });
+

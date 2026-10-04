@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/js/vendor/chart.umd.min.js"></script>
+<script src="/js/vendor/jspdf.umd.min.js"></script>
 <script src="/js/data.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/router.js"></script>
@@ -1768,10 +1768,20 @@
 async function apiFetch(url, options = {}) {
   const token = localStorage.getItem('havilah_token') || localStorage.getItem('session_token') || localStorage.getItem('token') || '';
   const defaultHeaders = {
-    'Authorization': 'Bearer ' + token,
     'Content-Type': 'application/json',
   };
-  options.headers = { ...defaultHeaders, ...(options.headers || {}) };
+  if (token) {
+    defaultHeaders['Authorization'] = 'Bearer ' + token;
+  }
+  const headers = { ...defaultHeaders, ...(options.headers || {}) };
+  if (!headers['Authorization'] || headers['Authorization'] === 'Bearer null' || headers['Authorization'] === 'Bearer undefined' || headers['Authorization'] === 'Bearer ') {
+    if (token) {
+      headers['Authorization'] = 'Bearer ' + token;
+    } else {
+      delete headers['Authorization'];
+    }
+  }
+  options.headers = headers;
   
   const response = await fetch(url, options);
   
@@ -3450,8 +3460,11 @@ const App = (() => {
     const lockKey = internalKey.startsWith('copsoq3') ? 'copsoq3' : internalKey;
     const lockState = (state.assessmentLocks && state.assessmentLocks[lockKey]) || { status: 'locked' };
     
-    if (lockState.status === 'locked') {
-      if (typeof showToast === 'function') showToast('Assessment Locked', 'This cycle is not currently open.', 'info');
+    if (lockState.status === 'locked' || lockState.status === 'expired' || (lockState.deadline && new Date() > new Date(lockState.deadline))) {
+      const msg = (lockState.status === 'expired' || (lockState.deadline && new Date() > new Date(lockState.deadline)))
+        ? 'The deadline for this assessment cycle has passed.'
+        : 'This cycle is not currently open.';
+      if (typeof showToast === 'function') showToast('Assessment Unavailable', msg, 'info');
       return;
     }
 
@@ -3586,8 +3599,7 @@ const App = (() => {
       const res = await apiFetch('/api/v1/wellness/submit-checkin', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
           survey_type: sType, 
@@ -3597,10 +3609,23 @@ const App = (() => {
           answers 
         })
       });
-      const data = await res.json();
+
+      const cType = res.headers.get('content-type') || '';
+      let data = {};
+      if (cType.includes('application/json')) {
+        try {
+          data = await res.json();
+        } catch(e) {
+          data = {};
+        }
+      }
       
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to submit check-in');
+        if (res.status === 403 && (data.error === 'CONSENT_REQUIRED' || String(data.message || '').includes('consent') || String(data.error || '').includes('CONSENT'))) {
+          showConsentPromptModal();
+          return;
+        }
+        throw new Error(data.message || data.error || ('Failed to submit check-in (HTTP ' + res.status + ')'));
       }
       
       // Update global state with the returned baseline
@@ -3616,10 +3641,16 @@ const App = (() => {
       }
     } catch (err) {
       console.error(err);
+      const codeEl = document.getElementById('modalCode');
+      const titleEl = document.getElementById('modalTitle');
+      if (codeEl) codeEl.textContent = (state.surveyState && state.surveyState.instrumentCode) || 'CHECK-IN';
+      if (titleEl) titleEl.textContent = 'Assessment Submission Notice';
       document.getElementById('modalQText').innerHTML = `
-        <div style="text-align:center; padding: 40px 0; color: var(--critical);">
-          <p>Failed to save results. Please try again later.</p>
-          <button class="btn btn-primary" style="margin-top: 10px;" onclick="App.closeSurvey()">Close</button>
+        <div style="text-align:center; padding: 32px 0;">
+          <div style="font-size: 2.2rem; margin-bottom: 12px;">⚠️</div>
+          <h4 style="font-size: 1.15rem; font-weight: 700; color: var(--text-1); margin-bottom: 8px;">Unable to Save Results</h4>
+          <p style="color: var(--text-2); font-size: 0.9rem; max-width: 380px; margin: 0 auto 18px; line-height: 1.5;">${err.message || 'Failed to save results. Please try again later.'}</p>
+          <button class="btn btn-primary" style="padding: 8px 24px;" onclick="App.closeSurvey()">Close</button>
         </div>
       `;
       return;
@@ -3713,6 +3744,97 @@ const App = (() => {
     document.getElementById('modalNext').style.display = 'none';
     document.getElementById('modalQNum').style.display = 'none';
   }
+
+  function showConsentPromptModal() {
+    const codeEl = document.getElementById('modalCode');
+    const titleEl = document.getElementById('modalTitle');
+    if (codeEl) codeEl.textContent = 'PRIVACY CONSENT';
+    if (titleEl) titleEl.textContent = 'Confidential Assessment Agreement';
+
+    document.getElementById('modalQText').innerHTML = `
+      <div style="text-align:left; padding: 6px 0 12px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+          <div style="width:44px; height:44px; border-radius:12px; background:rgba(0,183,195,0.12); display:flex; align-items:center; justify-content:center; color:var(--accent); font-size:22px; flex-shrink:0;">🛡️</div>
+          <div>
+            <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-1); margin:0;">Consent for Wellbeing Check-in</h3>
+            <p style="font-size:0.75rem; color:var(--text-3); margin:0;">Under GDPR Article 9 & ISO 45003 workplace standards</p>
+          </div>
+        </div>
+        <div style="background:var(--bg-base); border:1px solid var(--border); border-radius:12px; padding:14px 16px; font-size:0.85rem; color:var(--text-2); line-height:1.5; margin-bottom:14px;">
+          <p style="margin-bottom:8px;"><strong>100% Confidential & Encrypted:</strong> Your individual responses are encrypted and strictly private. Your employer never sees your personal survey answers or identified scores.</p>
+          <p style="margin-bottom:8px;">Only anonymized statistical indicators across cohorts of at least 5 employees are aggregated for workplace health hazard management.</p>
+          <p style="margin:0;">To complete and save your assessment, please confirm your consent to process your check-in data.</p>
+        </div>
+        <div id="consentErrorAlert" style="display:none; color:var(--critical); font-size:0.8rem; margin-bottom:12px;"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button class="btn btn-secondary" style="font-size:0.85rem; padding:8px 16px;" onclick="App.closeSurvey()">Decline & Exit</button>
+          <button class="btn btn-primary" id="btnConfirmConsent" style="font-size:0.85rem; padding:8px 18px;" onclick="App.acceptConsentAndSubmit()">I Agree & Save Results</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('modalOptions').innerHTML = '';
+    document.getElementById('modalBack').style.display = 'none';
+    document.getElementById('modalNext').style.display = 'none';
+    document.getElementById('modalQNum').style.display = 'none';
+  }
+  window.showConsentPromptModal = showConsentPromptModal;
+
+  async function acceptConsentAndSubmit() {
+    const btn = document.getElementById('btnConfirmConsent');
+    const errAlert = document.getElementById('consentErrorAlert');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = 'Saving Consent...';
+    }
+    if (errAlert) errAlert.style.display = 'none';
+
+    try {
+      const res = await apiFetch('/api/v1/wellness/accept-consent', {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || data.error || 'Failed to record consent');
+      }
+
+      if (data.token) {
+        localStorage.setItem('havilah_token', data.token);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('session_token', data.token);
+      }
+      localStorage.setItem('wf_consent', 'true');
+
+      // Dismiss the banner if displayed
+      const banner = document.getElementById('consentPendingBanner');
+      if (banner) banner.remove();
+
+      // Retry survey completion seamlessly if active, or reload dashboard data
+      if (state.surveyState && state.surveyState.active) {
+        await completeSurvey();
+      } else {
+        closeModal('surveyBackdrop');
+        if (typeof fetchDashboardData === 'function') {
+          await fetchDashboardData();
+        }
+      }
+    } catch (e) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'I Agree & Save Results';
+      }
+      if (errAlert) {
+        errAlert.textContent = 'Could not save consent: ' + (e.message || 'Please try again.');
+        errAlert.style.display = 'block';
+      }
+    }
+  }
+  window.acceptConsentAndSubmit = acceptConsentAndSubmit;
+
+  function openDirectConsentModal() {
+    openModal('surveyBackdrop');
+    showConsentPromptModal();
+  }
+  window.openDirectConsentModal = openDirectConsentModal;
 
   async function fetchAssessmentLocks() {
     try {
@@ -4122,7 +4244,8 @@ const App = (() => {
 
     formalSurveys.forEach(({ code, lockKey, instrumentCode }) => {
       const lockState = (state.assessmentLocks && state.assessmentLocks[lockKey]) || { status: 'locked' };
-      const isLocked = lockState.status === 'locked';
+      const isExpired = lockState.status === 'expired' || (lockState.deadline && new Date() > new Date(lockState.deadline));
+      const isLocked = lockState.status === 'locked' || isExpired;
       const isUnlocked = !isLocked;
 
       // For COPSOQ, determine which variant to use based on depth
@@ -4165,7 +4288,9 @@ const App = (() => {
 
       // Status badge
       let statusBadge;
-      if (isLocked) {
+      if (isExpired) {
+        statusBadge = `<span class="survey-lock-badge" style="color:var(--critical);background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.2);">⏱️ Expired</span>`;
+      } else if (isLocked) {
         statusBadge = `<span class="survey-lock-badge">🔒 Locked</span>`;
       } else if (isCompleted) {
         statusBadge = `<span class="survey-status done">• Completed</span>`;
@@ -4290,20 +4415,76 @@ const App = (() => {
     }
   }
 
+  function showConsentPendingBanner() {
+    if (localStorage.getItem('wf_consent') === 'true') return;
+    if (document.getElementById('consentPendingBanner')) return;
+    let bannerContainer = document.getElementById('activeCycleBanners');
+    if (!bannerContainer) {
+      bannerContainer = document.createElement('div');
+      bannerContainer.id = 'activeCycleBanners';
+      const mainContent = document.querySelector('.main-content') || document.querySelector('main') || document.body.firstElementChild;
+      if (mainContent && mainContent.firstChild) {
+        mainContent.insertBefore(bannerContainer, mainContent.firstChild);
+      } else {
+        document.body.insertBefore(bannerContainer, document.body.firstChild);
+      }
+    }
+    const banner = document.createElement('div');
+    banner.id = 'consentPendingBanner';
+    banner.className = 'assessment-cycle-banner';
+    banner.style.cssText = `
+      position: relative;
+      background: rgba(0, 183, 195, 0.08);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(0, 183, 195, 0.3);
+      border-radius: 16px;
+      padding: 16px 24px;
+      margin: 0 0 16px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 0 24px rgba(0, 183, 195, 0.08);
+      animation: bannerSlideIn 0.4s ease;
+    `;
+    banner.innerHTML = `
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:20px;">🛡️</span>
+        <div>
+          <strong style="color:var(--text-1); font-size:14px;">Confidential Wellbeing Space</strong>
+          <p style="margin:2px 0 0; font-size:12px; color:var(--text-2);">Your assessments are protected under GDPR Article 9 & ISO 45003. Grant consent to activate your personal scores and trend tracking.</p>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="btn btn-primary btn-sm" style="padding:6px 14px; font-size:12px;" onclick="App.openDirectConsentModal()">Review & Consent</button>
+      </div>
+    `;
+    bannerContainer.insertBefore(banner, bannerContainer.firstChild);
+  }
+
   window.fetchDashboardData = async function fetchDashboardData() {
     try {
-      const res = await apiFetch('/api/v1/wellness/dashboard-data', {
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
-      });
+      const res = await apiFetch('/api/v1/wellness/dashboard-data');
       if (!res.ok) {
+        if (res.status === 403) {
+          try {
+            const errData = await res.clone().json();
+            if (errData && (errData.error === 'CONSENT_REQUIRED' || String(errData.message || '').includes('consent'))) {
+              showConsentPendingBanner();
+            }
+          } catch (e) {}
+        }
         console.warn('[Dashboard] /api/v1/wellness/dashboard-data returned', res.status);
+        updateTrendChart();
+        renderEmployeeDashboard();
         return;
       }
       const cType = res.headers.get('content-type') || '';
       if (!cType.includes('application/json')) {
         console.warn('[Dashboard] /api/v1/wellness/dashboard-data returned non-JSON content');
+        updateTrendChart();
+        renderEmployeeDashboard();
         return;
       }
       const data = await res.json();
@@ -4345,6 +4526,8 @@ const App = (() => {
       renderEmployeeDashboard();
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
+      updateTrendChart();
+      renderEmployeeDashboard();
     }
   };
 
@@ -4435,6 +4618,8 @@ const App = (() => {
       }
     })();
 
+    renderEmployeeDashboard();
+    updateTrendChart();
     await window.fetchDashboardData();
 
     // Clear stale completion cache keys from localStorage
@@ -5017,6 +5202,9 @@ const App = (() => {
     navigate,
     openSurvey,
     closeSurvey,
+    showConsentPromptModal,
+    acceptConsentAndSubmit,
+    openDirectConsentModal,
     handleNewCheckinClick,
     openDailyPulseModal: window.openDailyPulseModal,
     closeDailyPulseModal: window.closeDailyPulseModal,

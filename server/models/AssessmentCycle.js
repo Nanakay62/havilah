@@ -76,16 +76,23 @@ AssessmentCycleSchema.index(
  * Returns a map of survey_type -> cycle status for the employee
  */
 AssessmentCycleSchema.statics.getActiveForEmployee = async function (companyId, departmentId) {
-  const activeCycles = await this.find({
+  const query = this.find({
     company_id: companyId,
     status: 'unlocked',
     $or: [{ department_id: null }, { department_id: departmentId }]
-  }).lean();
+  });
 
+  const rawCycles = await (typeof query.sort === 'function' ? query.sort({ created_at: -1 }) : query).lean();
+  const activeCycles = Array.isArray(rawCycles) ? rawCycles : [];
+  activeCycles.sort((a, b) => new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0));
+
+  const now = new Date();
   const statusMap = {};
   for (const cycle of activeCycles) {
+    if (statusMap[cycle.survey_type]) continue;
+    const isExpired = cycle.deadline && now > new Date(cycle.deadline);
     statusMap[cycle.survey_type] = {
-      status: cycle.status,
+      status: isExpired ? 'expired' : cycle.status,
       deadline: cycle.deadline,
       cycle_id: cycle.cycle_id,
       depth: cycle.copsoq_depth || 'core',

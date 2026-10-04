@@ -90,7 +90,7 @@ AssessmentCycleSchema.statics.getActiveForEmployee = async function (companyId, 
   const statusMap = {};
   for (const cycle of activeCycles) {
     if (statusMap[cycle.survey_type]) continue;
-    const isExpired = cycle.deadline && now > new Date(cycle.deadline);
+    const isExpired = cycle.deadline && (now.getTime() - new Date(cycle.deadline).getTime() > 5000);
     statusMap[cycle.survey_type] = {
       status: isExpired ? 'expired' : cycle.status,
       deadline: cycle.deadline,
@@ -100,6 +100,28 @@ AssessmentCycleSchema.statics.getActiveForEmployee = async function (companyId, 
     };
   }
   return statusMap;
+};
+
+/**
+ * Extends active (unlocked) assessment cycles whose deadline passed during a subscription lapse or outage.
+ */
+AssessmentCycleSchema.statics.extendUnlockedCyclesOnRenewal = async function (companyId, newExpiry) {
+  if (!companyId || !newExpiry) return { modifiedCount: 0 };
+  const expiryDate = new Date(newExpiry);
+  try {
+    return await this.updateMany(
+      {
+        company_id: companyId,
+        status: 'unlocked',
+        deadline: { $lt: new Date() }
+      },
+      {
+        $set: { deadline: expiryDate }
+      }
+    );
+  } catch (err) {
+    return { modifiedCount: 0, error: err.message };
+  }
 };
 
 module.exports = mongoose.models.AssessmentCycle || mongoose.model('AssessmentCycle', AssessmentCycleSchema);

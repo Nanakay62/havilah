@@ -554,6 +554,21 @@ router.patch('/tenants/:id/status', async (req, res, next) => {
       return res.status(404).json({ success: false, error: 'Tenant not found' });
     }
 
+    // Extend any active assessment cycles whose deadline passed during suspension
+    if (lifecycle_state === 'active' && tenant.access_expires_at && new Date(tenant.access_expires_at) > new Date()) {
+      const AssessmentCycle = require('../models/AssessmentCycle');
+      await AssessmentCycle.updateMany(
+        {
+          company_id: req.params.id,
+          status: 'unlocked',
+          deadline: { $lt: new Date() }
+        },
+        {
+          $set: { deadline: tenant.access_expires_at }
+        }
+      ).catch(() => {});
+    }
+
     // Audit log
     const AuditLog = require('../models/AuditLog');
     const eventType = lifecycle_state === 'suspended' ? 'TENANT_LOCKED' : 'TENANT_STATUS_CHANGED';

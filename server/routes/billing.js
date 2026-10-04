@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const Tenant = require('../models/Tenant');
+const AssessmentCycle = require('../models/AssessmentCycle');
 const AuditLog = require('../models/AuditLog');
 const { validateSession, requireRole } = require('../middleware/auth');
 const logger = require('../utils/logger');
@@ -170,6 +171,18 @@ router.post('/webhook', async (req, res) => {
             },
             { session: dbSession || undefined }
           );
+
+          await AssessmentCycle.updateMany(
+            {
+              company_id: companyId,
+              status: 'unlocked',
+              deadline: { $lt: new Date() }
+            },
+            {
+              $set: { deadline: nextPeriodEnd }
+            },
+            { session: dbSession || undefined }
+          ).catch(() => {});
         });
 
         logger.info({ companyId, tier: tierKey, reference }, '[Paystack Webhook] Tenant subscription activated/renewed via charge.success');
@@ -441,6 +454,17 @@ router.get('/verify/:reference', async (req, res, next) => {
           }
         }
       );
+
+      await AssessmentCycle.updateMany(
+        {
+          company_id,
+          status: 'unlocked',
+          deadline: { $lt: new Date() }
+        },
+        {
+          $set: { deadline: nextPeriodEnd }
+        }
+      ).catch(() => {});
     }
 
     res.json({

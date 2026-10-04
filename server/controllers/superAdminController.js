@@ -80,6 +80,22 @@ async function updateTenantSubscription(req, res, next) {
 
     await tenant.save();
 
+    // Extend any active assessment cycles whose deadline passed during the lapse/outage
+    const newAccessExpiry = tenant.access_expires_at || tenant.subscription?.trialEndsAt || tenant.subscription?.currentPeriodEnd;
+    if (newAccessExpiry && (tenant.lifecycle_state === 'active' || tenant.subscription?.status === 'active' || tenant.subscription?.status === 'trialing')) {
+      const AssessmentCycle = require('../models/AssessmentCycle');
+      await AssessmentCycle.updateMany(
+        {
+          company_id: tenant.company_id,
+          status: 'unlocked',
+          deadline: { $lt: new Date() }
+        },
+        {
+          $set: { deadline: new Date(newAccessExpiry) }
+        }
+      ).catch(() => {});
+    }
+
     // Append audit log
     try {
       const superAdminId = req.sessionData ? req.sessionData.user_id : 'SUPERADMIN';

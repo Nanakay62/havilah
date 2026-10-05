@@ -12,32 +12,59 @@ const logger = require('../utils/logger');
  */
 router.get('/ice-config', async (req, res) => {
   try {
-    const turnUrl = process.env.TURN_URL || 'turn:relay.metered.ca:80';
     const turnUsername = process.env.TURN_USERNAME || 'openrelay';
     const turnCredential = process.env.TURN_CREDENTIAL || 'openrelay';
 
-    // Parse comma-separated or array URLs if configured
-    const turnUrls = turnUrl.includes(',') ? turnUrl.split(',').map(s => s.trim()) : [
-      turnUrl,
-      'turn:relay.metered.ca:443',
-      'turn:relay.metered.ca:443?transport=tcp',
-      'turn:openrelay.metered.ca:80',
+    // Mobile carrier friendly TURN list:
+    // Port 443 over TCP and TLS (TURNS) penetrates Carrier-Grade NAT (CGNAT) and mobile firewall UDP blocks
+    const defaultTurnUrls = [
+      'turns:openrelay.metered.ca:443?transport=tcp',
+      'turn:openrelay.metered.ca:443?transport=tcp',
       'turn:openrelay.metered.ca:443',
-      'turn:openrelay.metered.ca:443?transport=tcp'
+      'turns:openrelay.metered.ca:5349?transport=tcp',
+      'turn:openrelay.metered.ca:80',
+      'turn:openrelay.metered.ca:80?transport=tcp',
+      'turn:openrelay.metered.ca:3478'
     ];
 
-    const iceServers = [
+    let turnUrls = process.env.TURN_URL
+      ? (process.env.TURN_URL.includes(',') ? process.env.TURN_URL.split(',').map(s => s.trim()) : [process.env.TURN_URL, ...defaultTurnUrls])
+      : defaultTurnUrls;
+
+    let iceServers = [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun2.l.google.com:19302' },
       { urls: 'stun:stun.cloudflare.com:3478' },
-      { urls: 'stun:relay.metered.ca:80' },
+      { urls: 'stun:openrelay.metered.ca:80' },
       {
         urls: turnUrls,
         username: turnUsername,
         credential: turnCredential,
       }
     ];
+
+    // Optional dynamic credentials via Metered API if configured
+    if (process.env.METERED_API_KEY) {
+      try {
+        const appName = process.env.METERED_APP_NAME || 'havilah';
+        const response = await fetch(`https://${appName}.metered.live/api/v1/turn/credentials?apiKey=${process.env.METERED_API_KEY}`);
+        if (response.ok) {
+          const liveServers = await response.json();
+          if (Array.isArray(liveServers) && liveServers.length > 0) {
+            iceServers = [
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:stun1.l.google.com:19302' },
+              { urls: 'stun:stun2.l.google.com:19302' },
+              { urls: 'stun:stun.cloudflare.com:3478' },
+              ...liveServers
+            ];
+          }
+        }
+      } catch (e) {
+        logger.warn({ err: e.message }, '[CallRoutes] Error fetching Metered live credentials');
+      }
+    }
 
     const defaultSignalUrl = (process.env.NODE_ENV === 'production' || process.env.RENDER)
       ? 'wss://havilah-api.onrender.com/api/v1/calls/ws'

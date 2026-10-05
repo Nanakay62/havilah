@@ -280,15 +280,16 @@
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun.cloudflare.com:3478' },
-        { urls: 'stun:relay.metered.ca:80' },
+        { urls: 'stun:openrelay.metered.ca:80' },
         {
           urls: [
-            'turn:relay.metered.ca:80',
-            'turn:relay.metered.ca:443',
-            'turn:relay.metered.ca:443?transport=tcp',
-            'turn:openrelay.metered.ca:80',
+            'turns:openrelay.metered.ca:443?transport=tcp',
+            'turn:openrelay.metered.ca:443?transport=tcp',
             'turn:openrelay.metered.ca:443',
-            'turn:openrelay.metered.ca:443?transport=tcp'
+            'turns:openrelay.metered.ca:5349?transport=tcp',
+            'turn:openrelay.metered.ca:80',
+            'turn:openrelay.metered.ca:80?transport=tcp',
+            'turn:openrelay.metered.ca:3478'
           ],
           username: 'openrelay',
           credential: 'openrelay'
@@ -313,13 +314,13 @@
         // IP Shield ON: only allow TURN relays and mandate relay transport
         const relayOnlyServers = iceServers.filter(s => {
           const urls = Array.isArray(s.urls) ? s.urls : [s.urls];
-          return urls.some(u => typeof u === 'string' && u.startsWith('turn:'));
+          return urls.some(u => typeof u === 'string' && (u.startsWith('turn:') || u.startsWith('turns:')));
         });
 
         return {
           iceServers: relayOnlyServers.length > 0 ? relayOnlyServers : iceServers,
           iceTransportPolicy: 'relay',
-          iceCandidatePoolSize: 0
+          iceCandidatePoolSize: 1
         };
       }
 
@@ -327,7 +328,7 @@
       return {
         iceServers,
         iceTransportPolicy: 'all',
-        iceCandidatePoolSize: 0
+        iceCandidatePoolSize: 1
       };
     }
 
@@ -411,6 +412,7 @@
         // ICE candidate gathering with robust JSON serialization
         this.pc.onicecandidate = (event) => {
           if (!event.candidate) {
+            console.log('[HavilahCall] Local candidate gathering completed.');
             // End-of-candidates notification
             this.sendSignal({
               action: 'candidate',
@@ -419,6 +421,8 @@
             });
             return;
           }
+
+          console.log(`[HavilahCall] Gathered candidate: type=${event.candidate.type}, protocol=${event.candidate.protocol}`);
 
           const candData = event.candidate.toJSON ? event.candidate.toJSON() : {
             candidate: event.candidate.candidate,
@@ -599,6 +603,7 @@
 
         this.pc.onicecandidate = (event) => {
           if (!event.candidate) {
+            console.log('[HavilahCall] Callee candidate gathering completed.');
             this.sendSignal({
               action: 'candidate',
               referenceCode: this.activeCallRef,
@@ -606,6 +611,8 @@
             });
             return;
           }
+
+          console.log(`[HavilahCall] Callee gathered candidate: type=${event.candidate.type}, protocol=${event.candidate.protocol}`);
 
           const candData = event.candidate.toJSON ? event.candidate.toJSON() : {
             candidate: event.candidate.candidate,

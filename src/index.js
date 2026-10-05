@@ -85,7 +85,7 @@ export default {
       targetPath = '/portal/hr.html';
     } else if (path === '/app/superadmin' || path === '/superadmin' || path === '/superadmin.html') {
       targetPath = '/app/superadmin.html';
-    } else if (path === '/portal/clinical' || path === '/portal/clinical.html' || path === '/clinical') {
+    } else if (path === '/portal/clinical' || path === '/portal/clinical.html' || path === '/clinical' || path === '/clinical-portal' || path === '/clinical-portal.html') {
       targetPath = '/clinical-portal.html';
     } else if (path === '/login') {
       targetPath = '/login.html';
@@ -105,13 +105,29 @@ export default {
 
     // Delegate to Cloudflare Static Assets
     if (env.ASSETS && typeof env.ASSETS.fetch === 'function') {
+      let assetRequest = request;
       if (targetPath !== path) {
         const rewrittenUrl = new URL(request.url);
         rewrittenUrl.pathname = targetPath;
-        const rewrittenRequest = new Request(rewrittenUrl.toString(), request);
-        return env.ASSETS.fetch(rewrittenRequest);
+        assetRequest = new Request(rewrittenUrl.toString(), request);
       }
-      return env.ASSETS.fetch(request);
+
+      const response = await env.ASSETS.fetch(assetRequest);
+
+      // Prevent aggressive caching on HTML and JS so updates deploy instantly
+      const headers = new Headers(response.headers);
+      if (path.endsWith('.html') || path === '/' || !path.includes('.')) {
+        headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        headers.set('Pragma', 'no-cache');
+      } else if (path.endsWith('.js') || path.endsWith('.css')) {
+        headers.set('Cache-Control', 'public, max-age=120, must-revalidate');
+      }
+
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
     }
 
     return new Response('Not Found', { status: 404 });

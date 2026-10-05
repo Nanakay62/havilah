@@ -6,3 +6,6 @@ server/node_modules
 server
 scratch
 functions
+.agents
+.cursor
+.vscode

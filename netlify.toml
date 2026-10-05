@@ -1,10 +1,11 @@
 [build]
   publish = "."
 
+# Forward all Netlify traffic to Cloudflare Primary Host
 [[redirects]]
-  from = "/api/v1/*"
-  to = "https://havilah-api.onrender.com/api/v1/:splat"
-  status = 200
+  from = "/*"
+  to = "https://havilah.dic20016.workers.dev/:splat"
+  status = 301
   force = true
 
 [[redirects]]

@@ -361,6 +361,12 @@ async function manualProvisionTenant(req, res, next) {
 
     // Dispatch background email
     const clientBaseUrl = (() => {
+      if (process.env.APP_BASE_URL && !process.env.APP_BASE_URL.includes('localhost')) {
+        return process.env.APP_BASE_URL.replace(/\/+$/, '');
+      }
+      if (process.env.CLIENT_ORIGIN && !process.env.CLIENT_ORIGIN.includes('localhost')) {
+        return process.env.CLIENT_ORIGIN.replace(/\/+$/, '');
+      }
       if (process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost')) {
         return process.env.CLIENT_URL.replace(/\/+$/, '');
       }
@@ -371,7 +377,7 @@ async function manualProvisionTenant(req, res, next) {
       if (origin && !origin.includes('localhost')) {
         try { return new URL(origin).origin; } catch (e) {}
       }
-      return 'https://havilahss.netlify.app';
+      return 'https://havilah.dic20016.workers.dev';
     })();
 
     if (hrAdminResult && hrAdminResult.email) {

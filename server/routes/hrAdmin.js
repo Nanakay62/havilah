@@ -309,6 +309,12 @@ router.post('/generate-invite', async (req, res, next) => {
 
     // Resolve client base URL dynamically from request headers or production fallback
     const clientBaseUrl = (() => {
+      if (process.env.APP_BASE_URL && !process.env.APP_BASE_URL.includes('localhost')) {
+        return process.env.APP_BASE_URL.replace(/\/+$/, '');
+      }
+      if (process.env.CLIENT_ORIGIN && !process.env.CLIENT_ORIGIN.includes('localhost')) {
+        return process.env.CLIENT_ORIGIN.replace(/\/+$/, '');
+      }
       if (process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost')) {
         return process.env.CLIENT_URL.replace(/\/+$/, '');
       }
@@ -324,7 +330,7 @@ router.post('/generate-invite', async (req, res, next) => {
         const proto = req.get('x-forwarded-proto') || 'https';
         return `${proto}://${fwdHost}`;
       }
-      return 'https://havilahss.netlify.app';
+      return 'https://havilah.dic20016.workers.dev';
     })();
 
     const magicLink = `${clientBaseUrl}/register.html?invite=${generatedCode}`;

@@ -708,9 +708,14 @@
     const code = codeToCopy || window._activeHrInviteCode;
     if (!code) return;
     
-    const host = window.location.host;
-    const protocol = window.location.protocol;
-    const url = `${protocol}//${host}/activate.html?code=${code}`;
+    let url;
+    if (!codeToCopy && window._activeHrMagicLink) {
+      url = window._activeHrMagicLink;
+    } else {
+      const host = window.location.host;
+      const protocol = window.location.protocol;
+      url = `${protocol}//${host}/register.html?invite=${code}`;
+    }
 
     navigator.clipboard.writeText(url).then(() => {
       if (window.App && typeof App.toast === 'function') {

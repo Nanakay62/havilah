@@ -72,9 +72,9 @@ async function run() {
     notes: "Automated test"
   };
 
-  console.log("=== VERIFYING NETLIFY & RENDER API INTEGRATION ===");
+  console.log("=== VERIFYING CLOUDFLARE & RENDER API INTEGRATION ===");
   await postAuth('https://havilah-api.onrender.com/api/v1/referrals/occupational-health', payload);
-  await postAuth('https://havilahss.netlify.app/api/v1/referrals/occupational-health', payload);
+  await postAuth('https://havilah.dic20016.workers.dev/api/v1/referrals/occupational-health', payload);
 }
 
 run();

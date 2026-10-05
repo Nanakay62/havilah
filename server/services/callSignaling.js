@@ -327,6 +327,7 @@ class CallSignalingHub {
             callerName: msg.callerName || (role === 'doctor' ? 'Medical Assessor' : 'Patient'),
             offer: msg.offer,
             ipShield: !!msg.ipShield,
+            iceRestart: !!msg.iceRestart,
             timestamp: Date.now(),
           }));
         } else {
@@ -358,6 +359,7 @@ class CallSignalingHub {
             event: 'call_answered',
             referenceCode: targetRef,
             answer: msg.answer,
+            iceRestart: !!msg.iceRestart,
           }));
         }
         break;

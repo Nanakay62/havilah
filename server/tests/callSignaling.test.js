@@ -65,12 +65,13 @@ describe('WebRTC Call Routes & Signaling Integration', () => {
       callState: 'idle'
     });
 
-    // Test SDP Offer relay from Doctor to Employee
+    // Test SDP Offer relay from Doctor to Employee with iceRestart
     callSignalingHub.handleSignalMessage(mockDoctorWs, {
       action: 'offer',
       offer: { type: 'offer', sdp: 'v=0\r\ntest' },
       callerName: 'Dr. Test',
-      ipShield: true
+      ipShield: true,
+      iceRestart: true
     });
 
     expect(mockEmployeeWs.send).toHaveBeenCalled();
@@ -78,16 +79,19 @@ describe('WebRTC Call Routes & Signaling Integration', () => {
     expect(sentToEmployee.event).toBe('incoming_call');
     expect(sentToEmployee.callerName).toBe('Dr. Test');
     expect(sentToEmployee.ipShield).toBe(true);
+    expect(sentToEmployee.iceRestart).toBe(true);
 
-    // Test SDP Answer relay from Employee to Doctor
+    // Test SDP Answer relay from Employee to Doctor with iceRestart
     callSignalingHub.handleSignalMessage(mockEmployeeWs, {
       action: 'answer',
-      answer: { type: 'answer', sdp: 'v=0\r\nanswer' }
+      answer: { type: 'answer', sdp: 'v=0\r\nanswer' },
+      iceRestart: true
     });
 
     expect(mockDoctorWs.send).toHaveBeenCalled();
     const sentToDoctor = JSON.parse(mockDoctorWs.send.mock.calls[0][0]);
     expect(sentToDoctor.event).toBe('call_answered');
+    expect(sentToDoctor.iceRestart).toBe(true);
 
     // Test ICE Candidate relay
     callSignalingHub.handleSignalMessage(mockDoctorWs, {

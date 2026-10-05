@@ -262,7 +262,7 @@
           if (!cand || !cand.candidate) {
             await this.pc.addIceCandidate(null);
           } else {
-            await this.pc.addIceCandidate(cand);
+            await this.pc.addIceCandidate(new RTCIceCandidate(cand));
           }
           console.log('[HavilahCall] Added buffered ICE candidate successfully');
         } catch (e) {
@@ -277,9 +277,15 @@
     getIceConfiguration() {
       let iceServers = this.cachedIceServers || [
         { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun.cloudflare.com:3478' },
+        { urls: 'stun:relay.metered.ca:80' },
         {
           urls: [
+            'turn:relay.metered.ca:80',
+            'turn:relay.metered.ca:443',
+            'turn:relay.metered.ca:443?transport=tcp',
             'turn:openrelay.metered.ca:80',
             'turn:openrelay.metered.ca:443',
             'turn:openrelay.metered.ca:443?transport=tcp'
@@ -321,7 +327,7 @@
       return {
         iceServers,
         iceTransportPolicy: 'all',
-        iceCandidatePoolSize: 1
+        iceCandidatePoolSize: 0
       };
     }
 
@@ -392,28 +398,39 @@
           this.pc.addTrack(track, this.localStream);
         });
 
-        // Remote audio stream playback
+        // Remote audio stream playback (handle streams[0] and direct track)
         this.pc.ontrack = (event) => {
           this.ensureAudioElement();
-          if (this.remoteAudio && event.streams && event.streams[0]) {
-            this.remoteAudio.srcObject = event.streams[0];
+          if (this.remoteAudio) {
+            const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+            this.remoteAudio.srcObject = stream;
             this.remoteAudio.play().catch(e => console.warn('[HavilahCall] Auto-play audio prevented:', e));
           }
         };
 
-        // ICE candidate gathering with IP Shield filtering
+        // ICE candidate gathering with robust JSON serialization
         this.pc.onicecandidate = (event) => {
-          if (!event.candidate) return;
-
-          // IP Shield filter: drop any non-relay candidate
-          if (this.ipShield && !event.candidate.candidate.includes('typ relay')) {
+          if (!event.candidate) {
+            // End-of-candidates notification
+            this.sendSignal({
+              action: 'candidate',
+              referenceCode: this.activeCallRef,
+              candidate: null
+            });
             return;
           }
+
+          const candData = event.candidate.toJSON ? event.candidate.toJSON() : {
+            candidate: event.candidate.candidate,
+            sdpMid: event.candidate.sdpMid,
+            sdpMLineIndex: event.candidate.sdpMLineIndex,
+            usernameFragment: event.candidate.usernameFragment
+          };
 
           this.sendSignal({
             action: 'candidate',
             referenceCode: this.activeCallRef,
-            candidate: event.candidate
+            candidate: candData
           });
         };
 
@@ -446,13 +463,35 @@
           }
         };
 
+        let relayFallbackTriggered = false;
         this.pc.oniceconnectionstatechange = () => {
           const iceState = this.pc ? this.pc.iceConnectionState : 'closed';
           console.log(`[HavilahCall] ICE Connection State: ${iceState}`);
-          if (iceState === 'connected' || iceState === 'completed') {
+
+          if (iceState === 'checking') {
+            // If in IP Shield relay mode and stuck in checking for > 6s, auto-fallback to direct P2P
+            if (this.ipShield && !relayFallbackTriggered) {
+              setTimeout(() => {
+                if (this.pc && this.pc.iceConnectionState === 'checking' && this.ipShield && !relayFallbackTriggered) {
+                  relayFallbackTriggered = true;
+                  console.warn('[HavilahCall] Relay ICE check taking longer than 6s; auto-falling back to direct P2P connectivity...');
+                  this.updateStatus('Optimizing connection path...');
+                  this.ipShield = false;
+                  this.triggerIceRestart();
+                }
+              }, 6000);
+            }
+          } else if (iceState === 'connected' || iceState === 'completed') {
             handleConnected();
           } else if (iceState === 'failed') {
-            this.endCallUI('Relay connection failed');
+            if (this.ipShield && !relayFallbackTriggered) {
+              relayFallbackTriggered = true;
+              console.warn('[HavilahCall] Relay ICE failed; falling back to direct P2P...');
+              this.ipShield = false;
+              this.triggerIceRestart();
+            } else {
+              this.endCallUI('Relay connection failed');
+            }
           }
         };
 
@@ -460,15 +499,19 @@
         if (this._watchdogTimer) clearTimeout(this._watchdogTimer);
         this._watchdogTimer = setTimeout(() => {
           if (this.activeCallState === 'calling' || this.activeCallState === 'connecting') {
-            console.warn('[HavilahCall] Connection watchdog timeout (20s):', {
+            console.warn('[HavilahCall] Connection watchdog timeout (12s):', {
               pcState: this.pc?.connectionState,
               iceState: this.pc?.iceConnectionState
             });
-            if (this.pc && this.pc.connectionState !== 'connected' && typeof this.pc.restartIce === 'function') {
-              try { this.pc.restartIce(); } catch (e) {}
+            if (this.pc && this.pc.connectionState !== 'connected') {
+              if (this.ipShield) {
+                console.warn('[HavilahCall] Watchdog: Disabling IP Shield relay restriction and restarting ICE...');
+                this.ipShield = false;
+              }
+              this.triggerIceRestart();
             }
           }
-        }, 20000);
+        }, 12000);
 
         // 3. Create SDP Offer
         const offer = await this.pc.createOffer({
@@ -547,21 +590,34 @@
 
         this.pc.ontrack = (event) => {
           this.ensureAudioElement();
-          if (this.remoteAudio && event.streams && event.streams[0]) {
-            this.remoteAudio.srcObject = event.streams[0];
+          if (this.remoteAudio) {
+            const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+            this.remoteAudio.srcObject = stream;
             this.remoteAudio.play().catch(e => console.warn('[HavilahCall] Auto-play audio prevented:', e));
           }
         };
 
         this.pc.onicecandidate = (event) => {
-          if (!event.candidate) return;
-          if (this.ipShield && !event.candidate.candidate.includes('typ relay')) {
+          if (!event.candidate) {
+            this.sendSignal({
+              action: 'candidate',
+              referenceCode: this.activeCallRef,
+              candidate: null
+            });
             return;
           }
+
+          const candData = event.candidate.toJSON ? event.candidate.toJSON() : {
+            candidate: event.candidate.candidate,
+            sdpMid: event.candidate.sdpMid,
+            sdpMLineIndex: event.candidate.sdpMLineIndex,
+            usernameFragment: event.candidate.usernameFragment
+          };
+
           this.sendSignal({
             action: 'candidate',
             referenceCode: this.activeCallRef,
-            candidate: event.candidate
+            candidate: candData
           });
         };
 
@@ -590,10 +646,23 @@
           }
         };
 
+        let calleeFallbackTriggered = false;
         this.pc.oniceconnectionstatechange = () => {
           const iceState = this.pc ? this.pc.iceConnectionState : 'closed';
           console.log(`[HavilahCall] ICE Connection State: ${iceState}`);
-          if (iceState === 'connected' || iceState === 'completed') {
+          if (iceState === 'checking') {
+            if (this.ipShield && !calleeFallbackTriggered) {
+              setTimeout(() => {
+                if (this.pc && this.pc.iceConnectionState === 'checking' && this.ipShield && !calleeFallbackTriggered) {
+                  calleeFallbackTriggered = true;
+                  console.warn('[HavilahCall] Callee relay ICE check taking longer than 6s; preparing P2P path...');
+                  this.updateStatus('Optimizing connection path...');
+                  this.ipShield = false;
+                  this.drainPendingCandidates();
+                }
+              }, 6000);
+            }
+          } else if (iceState === 'connected' || iceState === 'completed') {
             handleAnswerConnected();
           } else if (iceState === 'failed') {
             this.endCallUI('Relay connection failed');
@@ -604,16 +673,17 @@
         if (this._watchdogTimer) clearTimeout(this._watchdogTimer);
         this._watchdogTimer = setTimeout(() => {
           if (this.activeCallState === 'connecting') {
-            console.warn('[HavilahCall] Callee connection watchdog timeout (20s):', {
+            console.warn('[HavilahCall] Callee connection watchdog timeout (12s):', {
               connectionState: this.pc?.connectionState,
               iceState: this.pc?.iceConnectionState
             });
             if (this.pc && this.pc.connectionState !== 'connected') {
               this.updateStatus('Re-verifying audio connection...');
+              this.ipShield = false;
               this.drainPendingCandidates();
             }
           }
-        }, 20000);
+        }, 12000);
 
         // 3. Set remote description (caller offer) and drain buffered candidates
         await this.pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
@@ -804,6 +874,35 @@
     }
 
     /**
+     * Executes an authentic WebRTC ICE restart renegotiation
+     */
+    async triggerIceRestart() {
+      if (!this.pc || this.activeCallState === 'ended' || this.activeCallState === 'idle') return;
+      try {
+        console.log('[HavilahCall] Executing authentic ICE restart with createOffer...');
+        this.updateStatus('Reconnecting audio channel...');
+        if (typeof this.pc.restartIce === 'function') {
+          this.pc.restartIce();
+        }
+        const offer = await this.pc.createOffer({
+          iceRestart: true,
+          offerToReceiveAudio: true
+        });
+        await this.pc.setLocalDescription(offer);
+        this.sendSignal({
+          action: 'offer',
+          referenceCode: this.activeCallRef,
+          callerName: this.role === 'doctor' ? 'Medical Assessor' : 'Patient',
+          offer: { type: offer.type, sdp: offer.sdp },
+          ipShield: this.ipShield,
+          iceRestart: true
+        });
+      } catch (err) {
+        console.warn('[HavilahCall] ICE restart failed:', err.message);
+      }
+    }
+
+    /**
      * Starts call duration timer
      */
     startCallTimer() {
@@ -853,6 +952,24 @@
     handleSignalingMessage(msg) {
       switch (msg.event) {
         case 'incoming_call': {
+          if (msg.iceRestart && (this.activeCallState === 'connecting' || this.activeCallState === 'connected') && this.pc) {
+            console.log('[HavilahCall] Received ICE restart offer; renegotiating silently.');
+            this.pc.setRemoteDescription(new RTCSessionDescription(msg.offer))
+              .then(() => this.drainPendingCandidates())
+              .then(() => this.pc.createAnswer())
+              .then(answer => this.pc.setLocalDescription(answer).then(() => answer))
+              .then(answer => {
+                this.sendSignal({
+                  action: 'answer',
+                  referenceCode: this.activeCallRef,
+                  answer: { type: answer.type, sdp: answer.sdp },
+                  iceRestart: true
+                });
+              })
+              .catch(err => console.error('[HavilahCall] ICE restart answer error:', err));
+            break;
+          }
+
           this.storedIncomingCall = msg;
           this.activeCallRef = msg.referenceCode || (this.referenceCode ? this.referenceCode.split(',')[0].trim().toUpperCase() : '');
           this.activeCallState = 'ringing';
@@ -884,9 +1001,9 @@
         }
 
         case 'candidate': {
-          if (msg.candidate) {
+          if (msg.candidate !== undefined) {
             if (this.pc && this.pc.remoteDescription && this.pc.remoteDescription.type) {
-              const candPayload = (!msg.candidate.candidate) ? null : msg.candidate;
+              const candPayload = (!msg.candidate || !msg.candidate.candidate) ? null : new RTCIceCandidate(msg.candidate);
               this.pc.addIceCandidate(candPayload)
                 .catch(err => console.warn('[HavilahCall] addIceCandidate error:', err));
             } else {

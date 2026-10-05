@@ -12,20 +12,26 @@ const logger = require('../utils/logger');
  */
 router.get('/ice-config', async (req, res) => {
   try {
-    const turnUrl = process.env.TURN_URL || 'turn:openrelay.metered.ca:80';
+    const turnUrl = process.env.TURN_URL || 'turn:relay.metered.ca:80';
     const turnUsername = process.env.TURN_USERNAME || 'openrelay';
     const turnCredential = process.env.TURN_CREDENTIAL || 'openrelay';
 
     // Parse comma-separated or array URLs if configured
     const turnUrls = turnUrl.includes(',') ? turnUrl.split(',').map(s => s.trim()) : [
       turnUrl,
+      'turn:relay.metered.ca:443',
+      'turn:relay.metered.ca:443?transport=tcp',
+      'turn:openrelay.metered.ca:80',
       'turn:openrelay.metered.ca:443',
       'turn:openrelay.metered.ca:443?transport=tcp'
     ];
 
     const iceServers = [
       { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
       { urls: 'stun:stun.cloudflare.com:3478' },
+      { urls: 'stun:relay.metered.ca:80' },
       {
         urls: turnUrls,
         username: turnUsername,

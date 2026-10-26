@@ -187,14 +187,21 @@ describe('Remediation & Production Hardening Suite', () => {
 
   describe('4. WebRTC Single-Port Signaling Config', () => {
     it('GET /api/v1/calls/ice-config returns valid STUN/TURN servers and signalPort', async () => {
-      const res = await request(app)
-        .get('/api/v1/calls/ice-config');
+      const Referral = require('../models/Referral');
+      const origExists = Referral.exists;
+      Referral.exists = async () => ({ _id: 'ref-1' });
+      try {
+        const res = await request(app)
+          .get('/api/v1/calls/ice-config?ref=REF-TEST-01');
 
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(Array.isArray(res.body.iceServers)).toBe(true);
-      expect(res.body.iceServers.length).toBeGreaterThanOrEqual(2);
-      expect(res.body.signalPort).toBeDefined();
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(Array.isArray(res.body.iceServers)).toBe(true);
+        expect(res.body.iceServers.length).toBeGreaterThanOrEqual(2);
+        expect(res.body.signalPort).toBeDefined();
+      } finally {
+        Referral.exists = origExists;
+      }
     });
   });
 });

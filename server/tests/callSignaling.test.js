@@ -6,27 +6,74 @@ const app = require('../server');
 const { callSignalingHub } = require('../services/callSignaling');
 
 describe('WebRTC Call Routes & Signaling Integration', () => {
-  it('GET /api/v1/calls/ice-config returns STUN and TURN server configuration', async () => {
-    const res = await request(app).get('/api/v1/calls/ice-config');
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(Array.isArray(res.body.iceServers)).toBe(true);
-    expect(res.body.iceServers.length).toBeGreaterThanOrEqual(2);
+  describe('GET /api/v1/calls/ice-config', () => {
+    const Referral = require('../models/Referral');
+    const meteredServers = [
+      { urls: 'stun:stun.relay.metered.ca:80' },
+      { urls: ['turn:global.relay.metered.ca:80', 'turns:global.relay.metered.ca:443?transport=tcp'], username: 'u', credential: 'c' },
+    ];
+    let existsSpy;
+    let fetchSpy;
 
-    // Verify STUN servers are included
-    const hasStun = res.body.iceServers.some(s => {
-      const urls = Array.isArray(s.urls) ? s.urls : [s.urls];
-      return urls.some(u => typeof u === 'string' && u.startsWith('stun:'));
+    beforeEach(() => {
+      process.env.METERED_API_KEY = 'test-key';
+      process.env.METERED_APP_NAME = 'testapp';
+      existsSpy = vi.spyOn(Referral, 'exists').mockResolvedValue({ _id: 'x' });
+      fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        json: async () => meteredServers,
+      });
     });
-    expect(hasStun).toBe(true);
 
-    // Verify TURN servers are included
-    const hasTurn = res.body.iceServers.some(s => {
-      const urls = Array.isArray(s.urls) ? s.urls : [s.urls];
-      return urls.some(u => typeof u === 'string' && u.startsWith('turn:'));
+    afterEach(() => {
+      vi.restoreAllMocks();
+      delete process.env.METERED_API_KEY;
+      delete process.env.METERED_APP_NAME;
     });
-    expect(hasTurn).toBe(true);
-    expect(res.body).toHaveProperty('signalPort');
+
+    it('requires a reference code', async () => {
+      const res = await request(app).get('/api/v1/calls/ice-config');
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('rejects unknown reference codes', async () => {
+      existsSpy.mockResolvedValue(null);
+      const res = await request(app).get('/api/v1/calls/ice-config?ref=NOPE1234');
+      expect(res.status).toBe(403);
+    });
+
+    it('returns STUN and Metered TURN/TURNS servers, no public openrelay credentials', async () => {
+      const res = await request(app).get('/api/v1/calls/ice-config?ref=REF-TEST1234');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.headers['cache-control']).toContain('no-store');
+      expect(Array.isArray(res.body.iceServers)).toBe(true);
+
+      const allUrls = res.body.iceServers.flatMap(s => (Array.isArray(s.urls) ? s.urls : [s.urls]));
+      expect(allUrls.some(u => u.startsWith('stun:'))).toBe(true);
+      expect(allUrls.some(u => u.startsWith('turn:'))).toBe(true);
+      expect(allUrls.some(u => u.startsWith('turns:'))).toBe(true);
+      expect(JSON.stringify(res.body)).not.toContain('openrelay');
+      expect(res.body.relayConfigured).toBe(true);
+      expect(res.body).toHaveProperty('signalPort');
+    });
+
+    it('returns 503 in production when no relay is available', async () => {
+      delete process.env.METERED_API_KEY;
+      process.env.RENDER = 'true';
+      const callRoutes = require('../routes/callRoutes');
+      if (typeof callRoutes.__resetMeteredCache === 'function') {
+        callRoutes.__resetMeteredCache();
+      }
+      try {
+        const res = await request(app).get('/api/v1/calls/ice-config?ref=REF-TEST1234');
+        expect(res.status).toBe(503);
+        expect(res.body.success).toBe(false);
+      } finally {
+        delete process.env.RENDER;
+      }
+    });
   });
 
   it('POST /api/v1/calls/log validates required referenceCode', async () => {
@@ -36,6 +83,106 @@ describe('WebRTC Call Routes & Signaling Integration', () => {
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
     expect(res.body.error).toContain('Reference code is required');
+  });
+
+  it('POST /api/v1/calls/log records connectionPath in call audit trail', async () => {
+    const Referral = require('../models/Referral');
+    const origFindOne = Referral.findOne;
+    const mockReferral = {
+      referenceCode: 'REF-LOGPATH1',
+      thread: [],
+      status: 'scheduled',
+      appointmentNotes: '',
+      save: vi.fn().mockResolvedValue(true)
+    };
+    Referral.findOne = vi.fn().mockResolvedValue(mockReferral);
+
+    try {
+      const res = await request(app)
+        .post('/api/v1/calls/log')
+        .send({
+          referenceCode: 'REF-LOGPATH1',
+          durationSeconds: 125,
+          callerRole: 'doctor',
+          endReason: 'Normal hangup',
+          connectionPath: 'relay'
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.connectionPath).toBe('relay');
+      expect(mockReferral.thread[0].message).toContain('Path: relay.');
+      expect(mockReferral.save).toHaveBeenCalled();
+    } finally {
+      Referral.findOne = origFindOne;
+    }
+  });
+
+  it('POST /api/v1/calls/log sanitizes unvalidated connectionPath to unknown', async () => {
+    const Referral = require('../models/Referral');
+    const origFindOne = Referral.findOne;
+    const mockReferral = {
+      referenceCode: 'REF-XSSPATH',
+      thread: [],
+      status: 'scheduled',
+      appointmentNotes: '',
+      save: vi.fn().mockResolvedValue(true)
+    };
+    Referral.findOne = vi.fn().mockResolvedValue(mockReferral);
+
+    try {
+      const res = await request(app)
+        .post('/api/v1/calls/log')
+        .send({
+          referenceCode: 'REF-XSSPATH',
+          durationSeconds: 45,
+          callerRole: 'doctor',
+          endReason: 'Normal hangup',
+          connectionPath: '<script>alert(1)</script>'
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.connectionPath).toBe('unknown');
+      expect(mockReferral.thread[0].message).not.toContain('<script>');
+    } finally {
+      Referral.findOne = origFindOne;
+    }
+  });
+
+  it('CallSignalingHub relays restart_request event from peer', () => {
+    const mockDoctorWs = {
+      referenceCode: 'REF-RESTART1',
+      role: 'doctor',
+      readyState: 1,
+      send: vi.fn(),
+      close: vi.fn(),
+    };
+    const mockEmployeeWs = {
+      referenceCode: 'REF-RESTART1',
+      role: 'employee',
+      readyState: 1,
+      send: vi.fn(),
+      close: vi.fn(),
+    };
+    callSignalingHub.rooms.set('REF-RESTART1', {
+      doctor: mockDoctorWs,
+      employee: mockEmployeeWs,
+      callState: 'connected'
+    });
+
+    callSignalingHub.handleSignalMessage(mockEmployeeWs, {
+      action: 'restart_request',
+      referenceCode: 'REF-RESTART1',
+      reason: 'callee_reconnect'
+    });
+
+    expect(mockDoctorWs.send).toHaveBeenCalled();
+    const sent = JSON.parse(mockDoctorWs.send.mock.calls[0][0]);
+    expect(sent.event).toBe('restart_request');
+    expect(sent.referenceCode).toBe('REF-RESTART1');
+
+    callSignalingHub.rooms.delete('REF-RESTART1');
   });
 
   it('CallSignalingHub initializes and manages room lifecycle cleanly', () => {
@@ -285,6 +432,169 @@ describe('WebRTC Call Routes & Signaling Integration', () => {
     } finally {
       Tenant.findOne = origTenantFindOne;
       Referral.findOne = origReferralFindOne;
+    }
+  });
+
+  it('CallSignalingHub returns restart_deferred instead of callee_offline on iceRestart offer when peer is offline', () => {
+    const mockDoctorWs = {
+      referenceCode: 'REF-DEFER1',
+      role: 'doctor',
+      readyState: 1,
+      send: vi.fn(),
+      close: vi.fn(),
+    };
+
+    callSignalingHub.rooms.set('REF-DEFER1', {
+      doctor: mockDoctorWs,
+      employee: null,
+      callState: 'connected'
+    });
+
+    callSignalingHub.handleSignalMessage(mockDoctorWs, {
+      action: 'offer',
+      referenceCode: 'REF-DEFER1',
+      offer: { type: 'offer', sdp: 'v=0' },
+      iceRestart: true
+    });
+
+    expect(mockDoctorWs.send).toHaveBeenCalled();
+    const sent = JSON.parse(mockDoctorWs.send.mock.calls[0][0]);
+    expect(sent.event).toBe('restart_deferred');
+    expect(sent.referenceCode).toBe('REF-DEFER1');
+
+    callSignalingHub.rooms.delete('REF-DEFER1');
+  });
+
+  it('delays call_ended on peer socket drop during connected call and terminates after 20s if peer does not rejoin', () => {
+    vi.useFakeTimers();
+    try {
+      const ref = 'REF-DELAYED1';
+      const mockDoctorWs = {
+        referenceCode: ref,
+        role: 'doctor',
+        readyState: 1,
+        send: vi.fn(),
+        close: vi.fn(),
+      };
+      const mockEmployeeWs = {
+        referenceCode: ref,
+        role: 'employee',
+        readyState: 1,
+        send: vi.fn(),
+        close: vi.fn(),
+      };
+
+      const mockWss = { on: vi.fn() };
+      callSignalingHub.attachHandlers(mockWss);
+      const connectionHandler = mockWss.on.mock.calls.find(c => c[0] === 'connection')[1];
+
+      let closeHandler;
+      const empWsWrapper = {
+        ...mockEmployeeWs,
+        on: vi.fn((event, handler) => {
+          if (event === 'close') closeHandler = handler;
+        })
+      };
+
+      connectionHandler(empWsWrapper);
+      const room = callSignalingHub.rooms.get(ref);
+      room.doctor = mockDoctorWs;
+      room.callState = 'connected';
+
+      expect(closeHandler).toBeDefined();
+
+      // Trigger socket close during active call
+      closeHandler();
+
+      // doctor receives peer_offline, but NOT call_ended yet
+      const offlineCalls = mockDoctorWs.send.mock.calls.map(c => JSON.parse(c[0]));
+      expect(offlineCalls.some(m => m.event === 'peer_offline')).toBe(true);
+      expect(offlineCalls.some(m => m.event === 'call_ended')).toBe(false);
+
+      // Advance timers by 19s: still no call_ended
+      vi.advanceTimersByTime(19000);
+      const midCalls = mockDoctorWs.send.mock.calls.map(c => JSON.parse(c[0]));
+      expect(midCalls.some(m => m.event === 'call_ended')).toBe(false);
+
+      // Advance by another 2s (total 21s): call_ended sent
+      vi.advanceTimersByTime(2000);
+      const finalCalls = mockDoctorWs.send.mock.calls.map(c => JSON.parse(c[0]));
+      expect(finalCalls.some(m => m.event === 'call_ended')).toBe(true);
+      expect(callSignalingHub.rooms.get(ref)?.callState).toBe('idle');
+
+      callSignalingHub.rooms.delete(ref);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('cancels delayed call_ended timer and dispatches peer_rejoined when peer reconnects within 20s', () => {
+    vi.useFakeTimers();
+    try {
+      const ref = 'REF-REJOIN1';
+      const mockDoctorWs = {
+        referenceCode: ref,
+        role: 'doctor',
+        readyState: 1,
+        send: vi.fn(),
+        close: vi.fn(),
+      };
+      const mockEmployeeWs1 = {
+        referenceCode: ref,
+        role: 'employee',
+        readyState: 1,
+        send: vi.fn(),
+        close: vi.fn(),
+      };
+
+      const mockWss = { on: vi.fn() };
+      callSignalingHub.attachHandlers(mockWss);
+      const connectionHandler = mockWss.on.mock.calls.find(c => c[0] === 'connection')[1];
+
+      let closeHandler;
+      const empWs1 = {
+        ...mockEmployeeWs1,
+        on: vi.fn((event, handler) => {
+          if (event === 'close') closeHandler = handler;
+        })
+      };
+
+      connectionHandler(empWs1);
+      const room = callSignalingHub.rooms.get(ref);
+      room.doctor = mockDoctorWs;
+      room.callState = 'connected';
+
+      // Drop socket 1
+      closeHandler();
+      expect(room.endTimer).not.toBeNull();
+
+      // Employee reconnects before 20s
+      vi.advanceTimersByTime(5000);
+      const mockEmployeeWs2 = {
+        referenceCode: ref,
+        role: 'employee',
+        readyState: 1,
+        send: vi.fn(),
+        close: vi.fn(),
+        on: vi.fn()
+      };
+      connectionHandler(mockEmployeeWs2);
+
+      // Timer should be cleared
+      expect(room.endTimer).toBeNull();
+
+      // Doctor should have received peer_rejoined
+      const doctorMsgs = mockDoctorWs.send.mock.calls.map(c => JSON.parse(c[0]));
+      expect(doctorMsgs.some(m => m.event === 'peer_rejoined')).toBe(true);
+
+      // Advance another 20s: call_ended should NEVER be sent
+      vi.advanceTimersByTime(20000);
+      const afterCalls = mockDoctorWs.send.mock.calls.map(c => JSON.parse(c[0]));
+      expect(afterCalls.some(m => m.event === 'call_ended')).toBe(false);
+
+      callSignalingHub.rooms.delete(ref);
+    } finally {
+      vi.useRealTimers();
     }
   });
 });

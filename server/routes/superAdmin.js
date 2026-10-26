@@ -1250,5 +1250,147 @@ router.patch('/reports/:id', async (req, res, next) => {
   }
 });
 
+const {
+  findUserByEmail,
+  checkRemovalAllowed,
+  removeUser,
+} = require('../services/userRemovalService');
+
+// POST /api/v1/superadmin/users/lookup - Preview registered user by email
+router.post('/users/lookup', async (req, res, next) => {
+  try {
+    const { email } = req.body || {};
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_EMAIL',
+        message: 'A valid email address is required.',
+      });
+    }
+
+    const found = await findUserByEmail(email);
+    if (!found) {
+      return res.json({
+        success: true,
+        found: false,
+        message: 'No account found for this email. They can already register.',
+      });
+    }
+
+    const { user, companyName, departmentName, wellnessCount } = found;
+    const actor = {
+      user_id: req.sessionData?.user_id || 'system-admin-key',
+      role: req.sessionData?.role || 'super_admin',
+    };
+
+    // For preview, evaluate with confirmAdmin: true so HR/tenant admins appear removable (with extra confirm)
+    const check = checkRemovalAllowed({
+      target: user,
+      wellnessCount,
+      actor,
+      mode: 'superadmin',
+      confirmAdmin: true,
+    });
+
+    return res.json({
+      success: true,
+      found: true,
+      removable: check.allowed,
+      reasonCode: check.reasonCode,
+      requiresAdminConfirm: user.role === 'hr_admin' || user.role === 'tenant_admin',
+      user: {
+        user_id: user.user_id,
+        full_name: user.full_name,
+        company_id: user.company_id,
+        company_name: companyName,
+        department_id: user.department_id,
+        department: departmentName,
+        role: user.role,
+        status: user.status,
+        created_at: user.created_at,
+        last_login_at: user.last_login_at,
+        wellness_count: wellnessCount,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/superadmin/users/remove - Permanently remove registered user
+router.post('/users/remove', async (req, res, next) => {
+  try {
+    const { email, reason, confirmAdmin } = req.body || {};
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_EMAIL',
+        message: 'A valid email address is required.',
+      });
+    }
+
+    const cleanReason = typeof reason === 'string' ? reason.trim() : '';
+    if (cleanReason.length < 5 || cleanReason.length > 300) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_REASON',
+        message: 'A removal reason between 5 and 300 characters is required.',
+      });
+    }
+
+    const found = await findUserByEmail(email);
+    if (!found) {
+      return res.status(404).json({
+        success: false,
+        error: 'NOT_FOUND',
+        message: 'No account found with this email address.',
+      });
+    }
+
+    const { user, wellnessCount } = found;
+    const actor = {
+      user_id: req.sessionData?.user_id || 'system-admin-key',
+      role: req.sessionData?.role || 'super_admin',
+      mode: 'superadmin',
+    };
+
+    const check = checkRemovalAllowed({
+      target: user,
+      wellnessCount,
+      actor,
+      mode: 'superadmin',
+      confirmAdmin: confirmAdmin === true,
+    });
+
+    if (!check.allowed) {
+      return res.status(403).json({
+        success: false,
+        error: check.reasonCode,
+        reasonCode: check.reasonCode,
+        message:
+          check.reasonCode === 'ADMIN_CONFIRM_REQUIRED'
+            ? 'This account is an administrator. Explicit admin removal confirmation is required.'
+            : check.reasonCode === 'CANNOT_REMOVE_SELF'
+              ? 'You cannot remove your own account.'
+              : 'Super admin accounts cannot be removed.',
+      });
+    }
+
+    const counts = await removeUser({
+      target: user,
+      actor,
+      reason: cleanReason,
+    });
+
+    return res.json({
+      success: true,
+      message: 'Account removed. Seat freed. They can now register again.',
+      ...counts,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
 

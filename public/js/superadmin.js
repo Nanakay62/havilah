@@ -1929,3 +1929,190 @@ async function sendSuperAdminReportReply() {
   }
 }
 
+
+/* ───── User Account Lookup & Removal ───── */
+let currentLookedUpUser = null;
+
+function escapeHtmlSafe(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+async function lookupUserAccount() {
+  const emailInput = document.getElementById('saUserLookupEmail');
+  const resultEl = document.getElementById('saUserLookupResult');
+  const btn = document.getElementById('saUserLookupBtn');
+
+  if (!emailInput || !resultEl) return;
+  const email = emailInput.value.trim();
+
+  if (!email || !email.includes('@')) {
+    showToast('Invalid Email', 'Please enter a valid email address.', 'error');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Looking up...'; }
+
+  try {
+    token = getAuthToken();
+    const res = await fetch('/api/v1/superadmin/users/lookup', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email })
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      logout();
+      return;
+    }
+
+    const data = await res.json();
+    resultEl.style.display = 'block';
+
+    if (!data.success) {
+      currentLookedUpUser = null;
+      resultEl.innerHTML = `<div style="color: #DC2626; font-weight: 600;">${escapeHtmlSafe(data.message || data.error || 'Lookup failed.')}</div>`;
+      return;
+    }
+
+    if (!data.found) {
+      currentLookedUpUser = null;
+      resultEl.innerHTML = `<div style="color: #059669; font-weight: 600;">No account found for ${escapeHtmlSafe(email)} — they can register freely.</div>`;
+      return;
+    }
+
+    const u = data.user;
+    currentLookedUpUser = { email, ...u, removable: data.removable, reasonCode: data.reasonCode, requiresAdminConfirm: data.requiresAdminConfirm };
+
+    const createdStr = u.created_at ? new Date(u.created_at).toLocaleString() : '-';
+    const lastLoginStr = u.last_login_at ? new Date(u.last_login_at).toLocaleString() : 'Never';
+
+    let actionAreaHtml = '';
+    if (!data.removable) {
+      const reasonText =
+        data.reasonCode === 'CANNOT_REMOVE_SELF'
+          ? 'You cannot remove your own account.'
+          : data.reasonCode === 'CANNOT_REMOVE_SUPER_ADMIN'
+            ? 'Super admin accounts cannot be removed.'
+            : `Account cannot be removed (${data.reasonCode}).`;
+      actionAreaHtml = `<div style="margin-top: 14px; padding: 10px 12px; background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.25); color: #DC2626; border-radius: 6px; font-weight: 600; font-size: 13px;">${escapeHtmlSafe(reasonText)}</div>`;
+    } else {
+      const adminWarn = data.requiresAdminConfirm
+        ? `<div style="margin-top: 12px; padding: 10px 12px; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); color: #B45309; border-radius: 6px; font-weight: 600; font-size: 13px;">Warning: This account is an organization administrator (${escapeHtmlSafe(u.role)}).</div>`
+        : '';
+      actionAreaHtml = `
+        ${adminWarn}
+        <div style="margin-top: 16px;">
+          <button class="btn-action-primary" id="saRemoveUserBtn" style="background: #DC2626;" onclick="removeLookedUpUserAccount()">Remove account</button>
+        </div>
+      `;
+    }
+
+    resultEl.innerHTML = `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 13px;">
+        <div><span style="color: var(--text-2); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700;">Full Name</span><strong>${escapeHtmlSafe(u.full_name)}</strong></div>
+        <div><span style="color: var(--text-2); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700;">Company</span><strong>${escapeHtmlSafe(u.company_name)}</strong> <span style="color: var(--text-2); font-size: 11px;">(${escapeHtmlSafe(u.company_id)})</span></div>
+        <div><span style="color: var(--text-2); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700;">Department</span><strong>${escapeHtmlSafe(u.department)}</strong></div>
+        <div><span style="color: var(--text-2); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700;">Role / Status</span><strong>${escapeHtmlSafe(u.role)} / ${escapeHtmlSafe(u.status)}</strong></div>
+        <div><span style="color: var(--text-2); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700;">Registered</span><strong>${escapeHtmlSafe(createdStr)}</strong></div>
+        <div><span style="color: var(--text-2); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700;">Last Login</span><strong>${escapeHtmlSafe(lastLoginStr)}</strong></div>
+        <div><span style="color: var(--text-2); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700;">Wellness Records</span><strong>${Number(u.wellness_count || 0)}</strong></div>
+      </div>
+      ${actionAreaHtml}
+    `;
+  } catch (err) {
+    showToast('Lookup Error', err.message || 'Could not reach server.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Look up'; }
+  }
+}
+
+async function removeLookedUpUserAccount() {
+  if (!currentLookedUpUser || !currentLookedUpUser.removable) return;
+  const target = currentLookedUpUser;
+
+  const submitBtnEl = document.getElementById('customPromptSubmitBtn');
+  if (submitBtnEl) submitBtnEl.textContent = 'Continue';
+
+  const reason = await showCustomPrompt(
+    'Removal Reason Required',
+    `Enter the reason for removing ${target.full_name} (${target.company_name}). This reason (5-300 characters) will be recorded in the audit log.`,
+    '',
+    'e.g. Registered under wrong activation code / department'
+  );
+  if (reason === null) return;
+
+  const cleanReason = reason.trim();
+  if (cleanReason.length < 5 || cleanReason.length > 300) {
+    showToast('Invalid Reason', 'Reason must be between 5 and 300 characters.', 'error');
+    return;
+  }
+
+  const confirmed = await showCustomConfirm({
+    title: 'Remove Account Permanently?',
+    message: `Permanently delete ${target.full_name} (${target.email}) from ${target.company_name}?\n\nThis will delete ${target.wellness_count || 0} wellness record(s), free 1 tenant seat, and allow this email to register again.`,
+    confirmText: 'Remove account',
+    cancelText: 'Cancel',
+    danger: true,
+    icon: '⚠️'
+  });
+  if (!confirmed) return;
+
+  let confirmAdmin = false;
+  if (target.requiresAdminConfirm || target.role === 'hr_admin' || target.role === 'tenant_admin') {
+    const secondConfirm = await showCustomConfirm({
+      title: 'Confirm Admin Account Removal',
+      message: `${target.full_name} holds the '${target.role}' administrator role for ${target.company_name}. Are you certain you want to remove this administrator account?`,
+      confirmText: 'Yes, Remove Admin',
+      cancelText: 'Cancel',
+      danger: true,
+      icon: '🛑'
+    });
+    if (!secondConfirm) return;
+    confirmAdmin = true;
+  }
+
+  try {
+    token = getAuthToken();
+    const res = await fetch('/api/v1/superadmin/users/remove', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: target.email,
+        reason: cleanReason,
+        confirmAdmin
+      })
+    });
+
+    if (res.status === 401) {
+      logout();
+      return;
+    }
+
+    const data = await res.json();
+    if (data.success) {
+      showToast('Account Removed', data.message || 'Account removed. Seat freed. They can now register again.', 'success');
+      currentLookedUpUser = null;
+      const emailInput = document.getElementById('saUserLookupEmail');
+      const resultEl = document.getElementById('saUserLookupResult');
+      if (emailInput) emailInput.value = '';
+      if (resultEl) { resultEl.style.display = 'none'; resultEl.innerHTML = ''; }
+      fetchTenants();
+      fetchStats();
+    } else {
+      showToast('Removal Blocked', data.message || data.error || 'Could not remove account.', 'error');
+    }
+  } catch (err) {
+    showToast('Error', err.message || 'Could not reach server.', 'error');
+  }
+}

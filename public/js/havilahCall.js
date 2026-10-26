@@ -12,18 +12,30 @@
       this.referenceCode = null;      // 'REF-XXXXXXXX'
       this.token = null;
       this.ws = null;
+      this._wsIntentionalClose = false;
+      this._wsRetry = 0;
+      this._wsReconnectTimer = null;
       this.pc = null;
       this.localStream = null;
       this.remoteAudio = null;
       this.storedIncomingCall = null;
       this.iceConfig = null;
       this.ipShield = false;          // Opt-in toggle (defaults false for max direct P2P clarity)
+      this.sessionIpShieldOverride = false; // Bypasses relay restriction if user confirms fallback during active call
+      this.connectionPath = 'unknown';      // 'relay' | 'srflx' | 'prflx' | 'host' | 'unknown'
+      this._watchdogTimer = null;
+      this._disconnectedGraceTimer = null;
+      this._checkingShieldTimer = null;
+      this._promptingShieldFallback = false;
+      this._recoveryAttempts = 0;
+      this.MAX_RECOVERY_ATTEMPTS = 3;
+      this._lastRestartAt = 0;
       this.isMuted = false;
       this.isSpeaker = false;
       this.callStartTime = null;
       this.callTimerInterval = null;
       this.activeDurationSeconds = 0;
-      this.activeCallState = 'idle';  // 'idle' | 'calling' | 'ringing' | 'connected' | 'ended'
+      this.activeCallState = 'idle';  // 'idle' | 'calling' | 'ringing' | 'connecting' | 'connected' | 'ended'
       this.cachedIceServers = null;
       this.signalWsUrl = null;
       this.pendingCandidates = [];
@@ -44,6 +56,16 @@
         } else if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', () => this.ensureAudioElement(), { once: true });
         }
+      }
+
+      // Instant signaling reconnect upon mobile network recovery (e.g. Wi-Fi -> LTE handover)
+      if (typeof window !== 'undefined') {
+        window.addEventListener('online', () => {
+          console.log('[HavilahCall] Network online event detected.');
+          if (this.referenceCode && this.role && (!this.ws || this.ws.readyState !== WebSocket.OPEN)) {
+            this.connectSignaling();
+          }
+        });
       }
     }
 
@@ -129,15 +151,34 @@
      */
     async fetchIceConfig() {
       try {
-        const res = await fetch('/api/v1/calls/ice-config');
+        const refs = encodeURIComponent(this.referenceCode || '');
+        const headers = this.token ? { Authorization: `Bearer ${this.token}` } : {};
+        const res = await fetch(`/api/v1/calls/ice-config?ref=${refs}`, { headers, cache: 'no-store' });
         const data = await res.json();
         if (data && data.success) {
           this.cachedIceServers = data.iceServers;
-          this.signalWsUrl = data.signalUrl;
+          this.relayConfigured = data.relayConfigured !== false;
+          this.iceFetchedAt = Date.now();
+          if (data.signalUrl) this.signalWsUrl = data.signalUrl;
+        } else {
+          console.warn('[HavilahCall] ICE config unavailable:', data && data.error);
         }
       } catch (err) {
-        console.warn('[HavilahCall] Could not fetch remote ICE config; using defaults:', err.message);
+        console.warn('[HavilahCall] Could not fetch remote ICE config:', err.message);
       }
+    }
+
+    /**
+     * Refreshes ICE (TURN) credentials if missing or older than 4 minutes.
+     * Called right before a call is placed/answered so long-lived tabs never use stale credentials.
+     * @returns {Promise<boolean>} true when a relay-capable ICE configuration is available
+     */
+    async ensureFreshIceConfig() {
+      const STALE_MS = 4 * 60 * 1000;
+      if (!this.cachedIceServers || !this.iceFetchedAt || Date.now() - this.iceFetchedAt > STALE_MS) {
+        await this.fetchIceConfig();
+      }
+      return !!this.cachedIceServers && this.relayConfigured !== false;
     }
 
     /**
@@ -169,8 +210,16 @@
 
       if (this.ws) {
         try {
+          this._wsIntentionalClose = true;
+          this.ws.onclose = null;
           this.ws.close();
         } catch (e) {}
+        this._wsIntentionalClose = false;
+      }
+
+      if (this._wsReconnectTimer) {
+        clearTimeout(this._wsReconnectTimer);
+        this._wsReconnectTimer = null;
       }
 
       const wsUrl = this.getSignalingUrl();
@@ -181,7 +230,14 @@
 
         this.ws.onopen = () => {
           console.log(`[HavilahCall] Signaling connected for ${this.referenceCode}`);
+          this._wsRetry = 0;
           this.updateStatus('Signaling Ready');
+          if (this.activeCallState === 'connecting' || this.activeCallState === 'connected') {
+            if (this.activeCallRef) {
+              this.subscribe(this.activeCallRef);
+            }
+            this.attemptConnectionRecovery('signaling_reconnected');
+          }
         };
 
         this.ws.onmessage = (event) => {
@@ -195,8 +251,16 @@
 
         this.ws.onclose = (event) => {
           console.log(`[HavilahCall] Signaling disconnected (code ${event.code})`);
-          if (this.activeCallState === 'connected' || this.activeCallState === 'calling') {
+          if (this.activeCallState === 'connected' || this.activeCallState === 'calling' || this.activeCallState === 'connecting') {
             this.updateStatus('Signaling disconnected');
+          }
+          if (!this._wsIntentionalClose) {
+            const delay = Math.min(1000 * (2 ** this._wsRetry++), 10000);
+            console.log(`[HavilahCall] Scheduling signaling auto-reconnect in ${delay}ms (retry ${this._wsRetry})`);
+            this._wsReconnectTimer = setTimeout(() => {
+              this._wsReconnectTimer = null;
+              this.connectSignaling();
+            }, delay);
           }
         };
 
@@ -208,7 +272,6 @@
       }
     }
 
-    /**
     /**
      * Checks if a peer is currently online for a given reference code
      */
@@ -275,25 +338,11 @@
      * Constructs RTCConfiguration object according to standard or IP Shield mode
      */
     getIceConfiguration() {
+      // No hardcoded TURN credentials: relay servers come from the server (/ice-config, private Metered app).
       let iceServers = this.cachedIceServers || [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun.cloudflare.com:3478' },
-        { urls: 'stun:openrelay.metered.ca:80' },
-        {
-          urls: [
-            'turns:openrelay.metered.ca:443?transport=tcp',
-            'turn:openrelay.metered.ca:443?transport=tcp',
-            'turn:openrelay.metered.ca:443',
-            'turns:openrelay.metered.ca:5349?transport=tcp',
-            'turn:openrelay.metered.ca:80',
-            'turn:openrelay.metered.ca:80?transport=tcp',
-            'turn:openrelay.metered.ca:3478'
-          ],
-          username: 'openrelay',
-          credential: 'openrelay'
-        }
+        { urls: 'stun:stun.cloudflare.com:3478' }
       ];
 
       // Custom TURN override if configured in localStorage
@@ -310,7 +359,7 @@
         } catch (e) {}
       }
 
-      if (this.ipShield) {
+      if (this.isEffectiveIpShield()) {
         // IP Shield ON: only allow TURN relays and mandate relay transport
         const relayOnlyServers = iceServers.filter(s => {
           const urls = Array.isArray(s.urls) ? s.urls : [s.urls];
@@ -329,6 +378,340 @@
         iceServers,
         iceTransportPolicy: 'all',
         iceCandidatePoolSize: 1
+      };
+    }
+
+    /**
+     * Determines whether IP Shield relay enforcement is active for this session
+     */
+    isEffectiveIpShield() {
+      return this.ipShield && !this.sessionIpShieldOverride;
+    }
+
+    /**
+     * Starts watchdog timer during active media negotiation (default 20s)
+     * Automatically initiates recovery or user confirmation if connection remains unestablished
+     */
+    startConnectionWatchdog(timeoutMs = 20000) {
+      this.stopConnectionWatchdog();
+      this._watchdogTimer = setTimeout(() => {
+        if (this.activeCallState === 'connecting' || this.activeCallState === 'calling') {
+          console.warn(`[HavilahCall] Connection watchdog timeout (${timeoutMs / 1000}s):`, {
+            pcState: this.pc?.connectionState,
+            iceState: this.pc?.iceConnectionState
+          });
+          if (this.pc && this.pc.connectionState !== 'connected') {
+            if (this.isEffectiveIpShield()) {
+              this.promptIpShieldFallback();
+            } else {
+              this.attemptConnectionRecovery('watchdog_timeout');
+            }
+          }
+        }
+      }, timeoutMs);
+    }
+
+    /**
+     * Clears connection watchdog timer
+     */
+    stopConnectionWatchdog() {
+      if (this._watchdogTimer) {
+        clearTimeout(this._watchdogTimer);
+        this._watchdogTimer = null;
+      }
+    }
+
+    /**
+     * Gives temporary mobile connection dropouts 20s grace period to recover automatically
+     */
+    startDisconnectedGraceTimer(timeoutMs = 20000) {
+      if (this._disconnectedGraceTimer) return;
+      console.warn(`[HavilahCall] Connection temporarily disconnected. Starting ${timeoutMs / 1000}s grace timer for automatic recovery...`);
+      this._disconnectedGraceTimer = setTimeout(() => {
+        this._disconnectedGraceTimer = null;
+        if (this.pc && this.pc.connectionState !== 'connected') {
+          console.warn('[HavilahCall] Disconnect grace period expired without recovery; tearing down call.');
+          this.terminateCall('Connection timed out');
+        }
+      }, timeoutMs);
+    }
+
+    /**
+     * Cancels disconnect grace timer once connection is restored
+     */
+    stopDisconnectedGraceTimer() {
+      if (this._disconnectedGraceTimer) {
+        clearTimeout(this._disconnectedGraceTimer);
+        this._disconnectedGraceTimer = null;
+      }
+    }
+
+    /**
+     * Requests connection recovery: caller restarts ICE, callee asks caller to restart
+     */
+    attemptConnectionRecovery(reason = 'recovery') {
+      if (!this.pc || this.activeCallState === 'ended' || this.activeCallState === 'idle') return;
+      if (++this._recoveryAttempts > this.MAX_RECOVERY_ATTEMPTS) {
+        console.warn(`[HavilahCall] Max recovery attempts (${this.MAX_RECOVERY_ATTEMPTS}) exceeded; terminating call.`);
+        this.terminateCall('Could not establish an audio connection. Please check your network and try again.');
+        return;
+      }
+      if (this.role === 'doctor') {
+        console.log(`[HavilahCall] Doctor initiating ICE restart (attempt ${this._recoveryAttempts}/${this.MAX_RECOVERY_ATTEMPTS}) for reason: ${reason}`);
+        this.triggerIceRestart();
+      } else {
+        console.log(`[HavilahCall] Callee dispatching restart_request (attempt ${this._recoveryAttempts}/${this.MAX_RECOVERY_ATTEMPTS}) for reason: ${reason}`);
+        this.sendSignal({
+          action: 'restart_request',
+          referenceCode: this.activeCallRef,
+          reason
+        });
+      }
+    }
+
+    /**
+     * Interactive confirmation before falling back to direct P2P when IP Shield relay path fails
+     */
+    async promptIpShieldFallback() {
+      if (this._promptingShieldFallback || !this.isEffectiveIpShield()) return;
+      this._promptingShieldFallback = true;
+      this.stopConnectionWatchdog();
+      this.stopDisconnectedGraceTimer();
+
+      try {
+        const proceed = await this.showShieldFallbackModal();
+        if (proceed) {
+          console.log('[HavilahCall] User confirmed direct P2P fallback. Bypassing IP Shield relay policy for this call session.');
+          this.sessionIpShieldOverride = true;
+          this.updateStatus('Reconnecting in standard mode...');
+          if (this.pc) {
+            const rtcConfig = this.getIceConfiguration();
+            if (typeof this.pc.setConfiguration === 'function') {
+              try {
+                this.pc.setConfiguration(rtcConfig);
+              } catch (e) {
+                console.warn('[HavilahCall] setConfiguration error:', e.message);
+              }
+            }
+            this.attemptConnectionRecovery('ip_shield_fallback_confirmed');
+            this.startConnectionWatchdog(20000);
+          }
+        } else {
+          console.log('[HavilahCall] User declined direct P2P fallback.');
+          this.terminateCall('Private connection unavailable');
+        }
+      } finally {
+        this._promptingShieldFallback = false;
+      }
+    }
+
+    /**
+     * Non-blocking modal for IP Shield fallback confirmation (auto-resolves false after 30s)
+     * @returns {Promise<boolean>}
+     */
+    showShieldFallbackModal() {
+      return new Promise((resolve) => {
+        let settled = false;
+        let modal = document.getElementById('havilah-shield-fallback-modal');
+        if (modal) {
+          modal.remove();
+        }
+
+        modal = document.createElement('div');
+        modal.id = 'havilah-shield-fallback-modal';
+        modal.innerHTML = `
+          <div class="h-shield-modal-backdrop"></div>
+          <div class="h-shield-modal-card">
+            <div class="h-shield-modal-header">
+              <span class="h-shield-modal-icon">🛡️</span>
+              <h4>Private Connection Notice</h4>
+            </div>
+            <div class="h-shield-modal-body">
+              <p>A relay-only (IP Shield) connection could not be established over this network.</p>
+              <p>Would you like to connect directly without hiding your IP address?</p>
+            </div>
+            <div class="h-shield-modal-actions">
+              <button id="h-shield-modal-decline" class="h-btn-decline">Cancel</button>
+              <button id="h-shield-modal-accept" class="h-btn-accept">Connect Directly</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+
+        const timer = setTimeout(() => {
+          cleanup(false);
+        }, 30000);
+
+        const cleanup = (result) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (modal && modal.parentNode) {
+            modal.parentNode.removeChild(modal);
+          }
+          resolve(result);
+        };
+
+        const acceptBtn = document.getElementById('h-shield-modal-accept');
+        const declineBtn = document.getElementById('h-shield-modal-decline');
+        if (acceptBtn) acceptBtn.addEventListener('click', () => cleanup(true));
+        if (declineBtn) declineBtn.addEventListener('click', () => cleanup(false));
+      });
+    }
+
+    /**
+     * Inspects active RTCPeerConnection stats to identify selected transport path (relay, srflx, prflx, or host)
+     */
+    async detectConnectionPath() {
+      if (!this.pc || typeof this.pc.getStats !== 'function') return;
+      try {
+        const stats = await this.pc.getStats();
+        let selectedPair = null;
+        let hasTransport = false;
+
+        stats.forEach(report => {
+          if (report.type === 'transport' && report.selectedCandidatePairId) {
+            hasTransport = true;
+            selectedPair = stats.get(report.selectedCandidatePairId);
+          }
+        });
+
+        // Fallback for browsers (e.g. Firefox) without transport report: scan candidate-pair for selected === true
+        if (!hasTransport) {
+          stats.forEach(report => {
+            if (report.type === 'candidate-pair' && report.selected === true) {
+              selectedPair = report;
+            }
+          });
+        }
+
+        if (selectedPair) {
+          const localCand = stats.get(selectedPair.localCandidateId);
+          const remoteCand = stats.get(selectedPair.remoteCandidateId);
+          const localType = localCand ? (localCand.candidateType || localCand.type) : 'unknown';
+          const remoteType = remoteCand ? (remoteCand.candidateType || remoteCand.type) : 'unknown';
+
+          let path = 'unknown';
+          if (localType === 'relay' || remoteType === 'relay') {
+            path = 'relay';
+          } else if (localType === 'prflx' || remoteType === 'prflx') {
+            path = 'prflx';
+          } else if (localType === 'srflx' || remoteType === 'srflx') {
+            path = 'srflx';
+          } else if (localType === 'host' && remoteType === 'host') {
+            path = 'host';
+          }
+
+          this.connectionPath = path;
+          console.log(`[HavilahCall] Active transport path: ${path} (local=${localType}, remote=${remoteType})`);
+          this.updateStatus(path === 'relay' ? 'Connected (Encrypted Relay)' : 'Connected (Direct P2P)');
+        }
+      } catch (e) {
+        console.warn('[HavilahCall] detectConnectionPath stats error:', e.message);
+      }
+    }
+
+    /**
+     * Unified peer connection state and ICE watcher handler
+     */
+    attachPeerConnectionWatchers(pc) {
+      const handleConnected = () => {
+        this.stopConnectionWatchdog();
+        this.stopDisconnectedGraceTimer();
+        this._recoveryAttempts = 0;
+
+        if (this.activeCallState === 'connected') {
+          this.updateStatus('Connected');
+          this.detectConnectionPath();
+          setTimeout(() => {
+            if (this.pc === pc && this.activeCallState === 'connected') {
+              this.detectConnectionPath();
+            }
+          }, 1000);
+          return;
+        }
+
+        this.activeCallState = 'connected';
+        this.startCallTimer();
+        this.updateStatus('Connected');
+        this.showCallOverlay();
+        this.detectConnectionPath();
+        setTimeout(() => {
+          if (this.pc === pc && this.activeCallState === 'connected') {
+            this.detectConnectionPath();
+          }
+        }, 1000);
+        if (typeof this.onCallConnected === 'function') {
+          this.onCallConnected();
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        const state = pc ? pc.connectionState : 'closed';
+        console.log(`[HavilahCall] WebRTC Connection State: ${state}`);
+
+        if (state === 'connected') {
+          handleConnected();
+        } else if (state === 'disconnected') {
+          this.updateStatus('Reconnecting audio channel...');
+          this.startDisconnectedGraceTimer(20000);
+          setTimeout(() => {
+            if (this.pc === pc && pc.connectionState === 'disconnected') {
+              this.attemptConnectionRecovery('connection_disconnected');
+            }
+          }, 3000);
+        } else if (state === 'failed') {
+          this.stopDisconnectedGraceTimer();
+          if (this.isEffectiveIpShield()) {
+            this.promptIpShieldFallback();
+          } else {
+            this.startDisconnectedGraceTimer(20000);
+            this.attemptConnectionRecovery('connection_failed');
+          }
+        } else if (state === 'closed') {
+          this.stopDisconnectedGraceTimer();
+          this.endCallUI('Call closed');
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        const iceState = pc ? pc.iceConnectionState : 'closed';
+        console.log(`[HavilahCall] ICE Connection State: ${iceState}`);
+
+        if (iceState === 'connected' || iceState === 'completed') {
+          handleConnected();
+        } else if (iceState === 'checking') {
+          this.updateStatus('Verifying secure connection...');
+          if (this.isEffectiveIpShield()) {
+            if (this._checkingShieldTimer) {
+              clearTimeout(this._checkingShieldTimer);
+            }
+            this._checkingShieldTimer = setTimeout(() => {
+              this._checkingShieldTimer = null;
+              if (this.pc === pc && pc.iceConnectionState === 'checking' && this.isEffectiveIpShield() && this.activeCallState !== 'connected') {
+                this.promptIpShieldFallback();
+              }
+            }, 10000);
+          }
+        } else if (pc.connectionState === undefined) {
+          // Fallback for legacy browsers without standard connectionState support
+          if (iceState === 'disconnected') {
+            this.updateStatus('Reconnecting audio channel...');
+            this.startDisconnectedGraceTimer(20000);
+            setTimeout(() => {
+              if (this.pc === pc && pc.iceConnectionState === 'disconnected') {
+                this.attemptConnectionRecovery('ice_disconnected');
+              }
+            }, 3000);
+          } else if (iceState === 'failed') {
+            if (this.isEffectiveIpShield()) {
+              this.promptIpShieldFallback();
+            } else {
+              this.startDisconnectedGraceTimer(20000);
+              this.attemptConnectionRecovery('ice_failed');
+            }
+          }
+        }
       };
     }
 
@@ -376,6 +759,14 @@
       }
 
       try {
+        this.updateStatus('Preparing secure connection...');
+        const relayReady = await this.ensureFreshIceConfig();
+        if (!relayReady) {
+          alert('The secure call relay is currently unavailable, so the call cannot be connected reliably. Please try again in a moment.');
+          this.endCallUI('Relay unavailable');
+          return;
+        }
+
         this.updateStatus('Requesting microphone access...');
 
         // 1. Capture microphone audio stream
@@ -440,82 +831,8 @@
 
         this.pendingCandidates = [];
 
-        const handleConnected = () => {
-          if (this._watchdogTimer) {
-            clearTimeout(this._watchdogTimer);
-            this._watchdogTimer = null;
-          }
-          if (this.activeCallState === 'connected') return;
-          this.activeCallState = 'connected';
-          this.startCallTimer();
-          this.updateStatus('Connected');
-          this.showCallOverlay();
-          if (typeof this.onCallConnected === 'function') {
-            this.onCallConnected();
-          }
-        };
-
-        // Connection state watchers (both PeerConnection & ICE state)
-        this.pc.onconnectionstatechange = () => {
-          const state = this.pc ? this.pc.connectionState : 'closed';
-          console.log(`[HavilahCall] WebRTC Connection State: ${state}`);
-
-          if (state === 'connected') {
-            handleConnected();
-          } else if (['disconnected', 'failed', 'closed'].includes(state)) {
-            this.endCallUI(state === 'failed' ? 'Connection failed' : 'Call ended');
-          }
-        };
-
-        let relayFallbackTriggered = false;
-        this.pc.oniceconnectionstatechange = () => {
-          const iceState = this.pc ? this.pc.iceConnectionState : 'closed';
-          console.log(`[HavilahCall] ICE Connection State: ${iceState}`);
-
-          if (iceState === 'checking') {
-            // If in IP Shield relay mode and stuck in checking for > 6s, auto-fallback to direct P2P
-            if (this.ipShield && !relayFallbackTriggered) {
-              setTimeout(() => {
-                if (this.pc && this.pc.iceConnectionState === 'checking' && this.ipShield && !relayFallbackTriggered) {
-                  relayFallbackTriggered = true;
-                  console.warn('[HavilahCall] Relay ICE check taking longer than 6s; auto-falling back to direct P2P connectivity...');
-                  this.updateStatus('Optimizing connection path...');
-                  this.ipShield = false;
-                  this.triggerIceRestart();
-                }
-              }, 6000);
-            }
-          } else if (iceState === 'connected' || iceState === 'completed') {
-            handleConnected();
-          } else if (iceState === 'failed') {
-            if (this.ipShield && !relayFallbackTriggered) {
-              relayFallbackTriggered = true;
-              console.warn('[HavilahCall] Relay ICE failed; falling back to direct P2P...');
-              this.ipShield = false;
-              this.triggerIceRestart();
-            } else {
-              this.endCallUI('Relay connection failed');
-            }
-          }
-        };
-
-        // Watchdog to prevent permanent stalls on subsequent calls
-        if (this._watchdogTimer) clearTimeout(this._watchdogTimer);
-        this._watchdogTimer = setTimeout(() => {
-          if (this.activeCallState === 'calling' || this.activeCallState === 'connecting') {
-            console.warn('[HavilahCall] Connection watchdog timeout (12s):', {
-              pcState: this.pc?.connectionState,
-              iceState: this.pc?.iceConnectionState
-            });
-            if (this.pc && this.pc.connectionState !== 'connected') {
-              if (this.ipShield) {
-                console.warn('[HavilahCall] Watchdog: Disabling IP Shield relay restriction and restarting ICE...');
-                this.ipShield = false;
-              }
-              this.triggerIceRestart();
-            }
-          }
-        }, 12000);
+        // Attach unified peer connection and ICE state watchers
+        this.attachPeerConnectionWatchers(this.pc);
 
         // 3. Create SDP Offer
         const offer = await this.pc.createOffer({
@@ -525,14 +842,14 @@
 
         await this.pc.setLocalDescription(offer);
 
-        // 4. Send offer via signaling
+        // 4. Send offer via signaling (state is 'calling' while ringing; watchdog will activate once answered)
         this.activeCallState = 'calling';
         this.sendSignal({
           action: 'offer',
           referenceCode: this.activeCallRef,
           callerName: callerName || (this.role === 'doctor' ? 'Medical Assessor' : 'Patient'),
           offer: { type: offer.type, sdp: offer.sdp },
-          ipShield: this.ipShield
+          ipShield: this.isEffectiveIpShield()
         });
 
         this.updateStatus('Ringing remote party...');
@@ -559,11 +876,6 @@
       this.storedIncomingCall = null;
       this.activeCallRef = callData.referenceCode || (this.referenceCode ? this.referenceCode.split(',')[0].trim().toUpperCase() : '');
 
-      // Inherit caller's IP shield mode if enabled
-      if (callData.ipShield) {
-        this.ipShield = true;
-      }
-
       try {
         // Ensure audio element is created and primed inside the user click gesture
         this.ensureAudioElement();
@@ -573,6 +885,13 @@
 
         this.updateStatus('Connecting...');
         this.activeCallState = 'connecting';
+
+        // Refresh relay credentials so a long-open tab never uses expired TURN credentials
+        const relayReady = await this.ensureFreshIceConfig();
+        if (!relayReady) {
+          console.warn('[HavilahCall] Relay unavailable on answerCall; connection may fail across networks.');
+          this.updateStatus('Relay unavailable, connection may fail');
+        }
 
         // 1. Capture microphone audio stream
         this.localStream = await navigator.mediaDevices.getUserMedia({
@@ -628,69 +947,8 @@
           });
         };
 
-        const handleAnswerConnected = () => {
-          if (this._watchdogTimer) {
-            clearTimeout(this._watchdogTimer);
-            this._watchdogTimer = null;
-          }
-          if (this.activeCallState === 'connected') return;
-          this.activeCallState = 'connected';
-          this.startCallTimer();
-          this.updateStatus('Connected');
-          this.showCallOverlay();
-          if (typeof this.onCallConnected === 'function') {
-            this.onCallConnected();
-          }
-        };
-
-        this.pc.onconnectionstatechange = () => {
-          const state = this.pc ? this.pc.connectionState : 'closed';
-          console.log(`[HavilahCall] WebRTC Connection State: ${state}`);
-          if (state === 'connected') {
-            handleAnswerConnected();
-          } else if (['disconnected', 'failed', 'closed'].includes(state)) {
-            this.endCallUI(state === 'failed' ? 'Connection failed' : 'Call ended');
-          }
-        };
-
-        let calleeFallbackTriggered = false;
-        this.pc.oniceconnectionstatechange = () => {
-          const iceState = this.pc ? this.pc.iceConnectionState : 'closed';
-          console.log(`[HavilahCall] ICE Connection State: ${iceState}`);
-          if (iceState === 'checking') {
-            if (this.ipShield && !calleeFallbackTriggered) {
-              setTimeout(() => {
-                if (this.pc && this.pc.iceConnectionState === 'checking' && this.ipShield && !calleeFallbackTriggered) {
-                  calleeFallbackTriggered = true;
-                  console.warn('[HavilahCall] Callee relay ICE check taking longer than 6s; preparing P2P path...');
-                  this.updateStatus('Optimizing connection path...');
-                  this.ipShield = false;
-                  this.drainPendingCandidates();
-                }
-              }, 6000);
-            }
-          } else if (iceState === 'connected' || iceState === 'completed') {
-            handleAnswerConnected();
-          } else if (iceState === 'failed') {
-            this.endCallUI('Relay connection failed');
-          }
-        };
-
-        // Callee watchdog timer
-        if (this._watchdogTimer) clearTimeout(this._watchdogTimer);
-        this._watchdogTimer = setTimeout(() => {
-          if (this.activeCallState === 'connecting') {
-            console.warn('[HavilahCall] Callee connection watchdog timeout (12s):', {
-              connectionState: this.pc?.connectionState,
-              iceState: this.pc?.iceConnectionState
-            });
-            if (this.pc && this.pc.connectionState !== 'connected') {
-              this.updateStatus('Re-verifying audio connection...');
-              this.ipShield = false;
-              this.drainPendingCandidates();
-            }
-          }
-        }, 12000);
+        // Attach unified peer connection and ICE state watchers
+        this.attachPeerConnectionWatchers(this.pc);
 
         // 3. Set remote description (caller offer) and drain buffered candidates
         await this.pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
@@ -700,8 +958,9 @@
         const answer = await this.pc.createAnswer();
         await this.pc.setLocalDescription(answer);
 
-        // 5. Send answer over signaling
+        // 5. Send answer over signaling and activate 20s media watchdog
         this.activeCallState = 'connecting';
+        this.startConnectionWatchdog(20000);
         this.sendSignal({
           action: 'answer',
           referenceCode: this.activeCallRef,
@@ -741,14 +1000,38 @@
     }
 
     /**
+     * Terminates call actively, informing remote peer before tearing down local session
+     */
+    terminateCall(reason = 'Call ended') {
+      this.sendSignal({
+        action: 'hangup',
+        referenceCode: this.activeCallRef,
+        reason
+      });
+      this.endCallUI(reason);
+    }
+
+    /**
      * Single teardown handler for all call completions
      */
     endCallUI(reason = 'Call ended') {
       const finalDuration = this.activeDurationSeconds;
+      const pathUsed = this.connectionPath;
 
-      if (this._watchdogTimer) {
-        clearTimeout(this._watchdogTimer);
-        this._watchdogTimer = null;
+      this.stopConnectionWatchdog();
+      this.stopDisconnectedGraceTimer();
+      if (this._checkingShieldTimer) {
+        clearTimeout(this._checkingShieldTimer);
+        this._checkingShieldTimer = null;
+      }
+      this.sessionIpShieldOverride = false;
+      this._promptingShieldFallback = false;
+      this._recoveryAttempts = 0;
+      this._lastRestartAt = 0;
+
+      const fallbackModal = document.getElementById('havilah-shield-fallback-modal');
+      if (fallbackModal && fallbackModal.parentNode) {
+        fallbackModal.parentNode.removeChild(fallbackModal);
       }
 
       this.stopCallTimer();
@@ -784,14 +1067,15 @@
       const callRef = this.activeCallRef || (this.referenceCode ? this.referenceCode.split(',')[0].trim().toUpperCase() : '');
       this.activeCallRef = null;
       this.storedIncomingCall = null;
+      this.connectionPath = 'unknown';
       const wasActive = this.activeCallState !== 'idle';
       this.activeCallState = 'idle';
 
       this.updateStatus(reason);
 
-      // Log call duration to referral audit trail if call lasted > 0 seconds
-      if (wasActive && finalDuration > 0 && callRef) {
-        this.logCallOutcome(finalDuration, reason, callRef);
+      // Log call duration to referral audit trail if call lasted > 0 seconds (doctor logs only to prevent duplicates)
+      if (this.role === 'doctor' && wasActive && finalDuration > 0 && callRef) {
+        this.logCallOutcome(finalDuration, reason, callRef, pathUsed);
       }
 
       if (typeof this.onCallEnded === 'function') {
@@ -802,7 +1086,7 @@
     /**
      * Logs consultation outcome to Havilah backend
      */
-    async logCallOutcome(durationSeconds, endReason, callRef) {
+    async logCallOutcome(durationSeconds, endReason, callRef, connectionPath = 'unknown') {
       try {
         const refToLog = callRef || this.referenceCode;
         if (!refToLog) return;
@@ -813,7 +1097,8 @@
             referenceCode: refToLog.split(',')[0].trim().toUpperCase(),
             durationSeconds,
             callerRole: this.role,
-            endReason
+            endReason,
+            connectionPath: connectionPath || this.connectionPath || 'unknown'
           })
         });
       } catch (e) {
@@ -871,6 +1156,7 @@
      */
     setIpShield(enabled) {
       this.ipShield = !!enabled;
+      this.sessionIpShieldOverride = false;
       localStorage.setItem('havilah_call_ip_shield', this.ipShield ? 'true' : 'false');
       console.log(`[HavilahCall] IP Shield set to: ${this.ipShield}`);
 
@@ -885,6 +1171,16 @@
      */
     async triggerIceRestart() {
       if (!this.pc || this.activeCallState === 'ended' || this.activeCallState === 'idle') return;
+      if (this.pc.signalingState !== 'stable') {
+        console.log('[HavilahCall] Restart skipped: negotiation in progress');
+        return;
+      }
+      if (this._lastRestartAt && Date.now() - this._lastRestartAt < 5000) {
+        console.log('[HavilahCall] Restart skipped: throttled (within 5s)');
+        return;
+      }
+      this._lastRestartAt = Date.now();
+
       try {
         console.log('[HavilahCall] Executing authentic ICE restart with createOffer...');
         this.updateStatus('Reconnecting audio channel...');
@@ -901,7 +1197,7 @@
           referenceCode: this.activeCallRef,
           callerName: this.role === 'doctor' ? 'Medical Assessor' : 'Patient',
           offer: { type: offer.type, sdp: offer.sdp },
-          ipShield: this.ipShield,
+          ipShield: this.isEffectiveIpShield(),
           iceRestart: true
         });
       } catch (err) {
@@ -961,6 +1257,9 @@
         case 'incoming_call': {
           if (msg.iceRestart && (this.activeCallState === 'connecting' || this.activeCallState === 'connected') && this.pc) {
             console.log('[HavilahCall] Received ICE restart offer; renegotiating silently.');
+            if (this.activeCallState !== 'connected') {
+              this.startConnectionWatchdog(20000);
+            }
             this.pc.setRemoteDescription(new RTCSessionDescription(msg.offer))
               .then(() => this.drainPendingCandidates())
               .then(() => this.pc.createAnswer())
@@ -995,7 +1294,12 @@
 
         case 'call_answered': {
           console.log('[HavilahCall] Received call_answered for ref:', msg.referenceCode);
-          this.updateStatus('Answering...');
+          const wasConnected = this.activeCallState === 'connected';
+          if (!(msg.iceRestart && wasConnected)) {
+            this.activeCallState = 'connecting';
+            this.startConnectionWatchdog(20000);
+            this.updateStatus('Connecting...');
+          }
           if (this.pc && msg.answer) {
             this.pc.setRemoteDescription(new RTCSessionDescription(msg.answer))
               .then(() => {
@@ -1004,6 +1308,28 @@
               })
               .catch(err => console.error('[HavilahCall] setRemoteDescription error on answer:', err));
           }
+          break;
+        }
+
+        case 'restart_request': {
+          console.log('[HavilahCall] Received restart_request from peer:', msg.reason);
+          if (this.pc && (this.activeCallState === 'connecting' || this.activeCallState === 'connected')) {
+            this.triggerIceRestart();
+          }
+          break;
+        }
+
+        case 'peer_rejoined': {
+          console.log('[HavilahCall] Remote peer rejoined signaling session:', msg.referenceCode);
+          if (this.activeCallState === 'connecting' || this.activeCallState === 'connected') {
+            this.attemptConnectionRecovery('peer_rejoined');
+          }
+          break;
+        }
+
+        case 'restart_deferred': {
+          console.log('[HavilahCall] ICE restart deferred; peer temporarily offline.');
+          this.updateStatus('Waiting for other party to reconnect...');
           break;
         }
 
@@ -1033,6 +1359,11 @@
         }
 
         case 'callee_offline': {
+          if (this.pc && (this.activeCallState === 'connecting' || this.activeCallState === 'connected')) {
+            console.log('[HavilahCall] Callee offline during active call; waiting for reconnect.');
+            this.updateStatus('Waiting for other party to reconnect...');
+            break;
+          }
           this.updateStatus(msg.message || 'Remote party is offline');
           alert(msg.message || 'Remote party is not currently online in the consultation room. A notification has been dispatched.');
           this.endCallUI('Party offline');
@@ -1396,6 +1727,52 @@
       font-weight: 600;
     }
     .h-ctrl-btn.h-hangup:hover { background: #f43f5e; }
+
+    /* IP Shield Fallback Modal */
+    #havilah-shield-fallback-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 100002;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .h-shield-modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .h-shield-modal-card {
+      position: relative;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      animation: hSlideIn 0.25s ease-out;
+    }
+    .h-shield-modal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .h-shield-modal-icon { font-size: 24px; }
+    .h-shield-modal-header h4 { margin: 0; font-size: 16px; font-weight: 600; color: #fff; }
+    .h-shield-modal-body p { margin: 0 0 8px; font-size: 13px; line-height: 1.5; color: #cbd5e1; }
+    .h-shield-modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 18px; }
 
     @keyframes hSlideIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes hPulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } 100% { opacity: 1; transform: scale(1); } }

@@ -205,6 +205,10 @@ class CallSignalingHub {
             } catch (e) {}
           }
         }
+        if (room.endTimer) {
+          clearTimeout(room.endTimer);
+          room.endTimer = null;
+        }
         room[role] = ws;
 
         logger.info({ referenceCode: rc, role }, `[CallSignaling] ${role.toUpperCase()} joined call room ${rc}`);
@@ -212,6 +216,9 @@ class CallSignalingHub {
         // Notify peer and client of presence state for rc
         const peer = role === 'doctor' ? room.employee : room.doctor;
         if (peer && peer.readyState === WebSocket.OPEN) {
+          if (room.callState === 'connected' || room.callState === 'ringing') {
+            peer.send(JSON.stringify({ event: 'peer_rejoined', referenceCode: rc, role }));
+          }
           peer.send(JSON.stringify({ event: 'peer_online', role, referenceCode: rc }));
           ws.send(JSON.stringify({ event: 'peer_online', role: role === 'doctor' ? 'employee' : 'doctor', referenceCode: rc }));
         } else {
@@ -244,9 +251,30 @@ class CallSignalingHub {
           const currentRoom = this.rooms.get(rc);
           if (currentRoom && currentRoom[role] === ws) {
             currentRoom[role] = null;
-            currentRoom.callState = 'idle';
-
             const remainingPeer = role === 'doctor' ? currentRoom.employee : currentRoom.doctor;
+
+            // C1 Fix: Delay ending call if room is currently active to permit mobile reconnect
+            if (currentRoom.callState === 'connected' || currentRoom.callState === 'ringing') {
+              if (remainingPeer && remainingPeer.readyState === WebSocket.OPEN) {
+                remainingPeer.send(JSON.stringify({ event: 'peer_offline', role, referenceCode: rc }));
+              }
+              clearTimeout(currentRoom.endTimer);
+              currentRoom.endTimer = setTimeout(() => {
+                if (!currentRoom[role]) { // peer never rejoined
+                  currentRoom.callState = 'idle';
+                  const p = role === 'doctor' ? currentRoom.employee : currentRoom.doctor;
+                  if (p && p.readyState === WebSocket.OPEN) {
+                    p.send(JSON.stringify({ event: 'call_ended', referenceCode: rc, reason: 'Peer did not reconnect' }));
+                  }
+                  if (!currentRoom.doctor && !currentRoom.employee) {
+                    this.rooms.delete(rc);
+                  }
+                }
+              }, 20000);
+              return; // skip immediate call_ended / room deletion
+            }
+
+            currentRoom.callState = 'idle';
             if (remainingPeer && remainingPeer.readyState === WebSocket.OPEN) {
               remainingPeer.send(JSON.stringify({ event: 'call_ended', referenceCode: rc, reason: `${role === 'doctor' ? 'Doctor' : 'Patient'} disconnected` }));
               remainingPeer.send(JSON.stringify({ event: 'peer_offline', role, referenceCode: rc }));
@@ -286,9 +314,16 @@ class CallSignalingHub {
             this.rooms.set(rc, { doctor: null, employee: null, callState: 'idle' });
           }
           const room = this.rooms.get(rc);
+          if (room.endTimer) {
+            clearTimeout(room.endTimer);
+            room.endTimer = null;
+          }
           room[role] = senderWs;
           const peer = role === 'doctor' ? room.employee : room.doctor;
           if (peer && peer.readyState === WebSocket.OPEN) {
+            if (room.callState === 'connected' || room.callState === 'ringing') {
+              peer.send(JSON.stringify({ event: 'peer_rejoined', referenceCode: rc, role }));
+            }
             peer.send(JSON.stringify({ event: 'peer_online', role, referenceCode: rc }));
             senderWs.send(JSON.stringify({ event: 'peer_online', role: role === 'doctor' ? 'employee' : 'doctor', referenceCode: rc }));
           } else {
@@ -308,6 +343,10 @@ class CallSignalingHub {
     }
     const room = this.rooms.get(targetRef);
     if (room[role] !== senderWs) {
+      if (room.endTimer) {
+        clearTimeout(room.endTimer);
+        room.endTimer = null;
+      }
       room[role] = senderWs;
     }
 
@@ -316,8 +355,10 @@ class CallSignalingHub {
 
     switch (msg.action) {
       case 'offer': {
-        room.callState = 'ringing';
-        room.activeCaller = role;
+        if (!msg.iceRestart) {
+          room.callState = 'ringing';
+          room.activeCaller = role;
+        }
 
         if (peer && peer.readyState === WebSocket.OPEN) {
           peer.send(JSON.stringify({
@@ -331,16 +372,23 @@ class CallSignalingHub {
             timestamp: Date.now(),
           }));
         } else {
-          // Peer is offline in the signaling room
-          senderWs.send(JSON.stringify({
-            event: 'callee_offline',
-            referenceCode: targetRef,
-            calleeRole: peerRole,
-            message: `${peerRole === 'doctor' ? 'Doctor' : 'Patient'} is not currently active in the consultation room.`
-          }));
+          if (msg.iceRestart) {
+            senderWs.send(JSON.stringify({
+              event: 'restart_deferred',
+              referenceCode: targetRef,
+            }));
+          } else {
+            // Peer is offline in the signaling room
+            senderWs.send(JSON.stringify({
+              event: 'callee_offline',
+              referenceCode: targetRef,
+              calleeRole: peerRole,
+              message: `${peerRole === 'doctor' ? 'Doctor' : 'Patient'} is not currently active in the consultation room.`
+            }));
 
-          // Trigger push notification if available
-          this.dispatchOfflineCallNotification(targetRef, role, msg.callerName);
+            // Trigger push notification if available
+            this.dispatchOfflineCallNotification(targetRef, role, msg.callerName);
+          }
         }
         break;
       }
@@ -378,6 +426,10 @@ class CallSignalingHub {
 
       case 'decline': {
         room.callState = 'idle';
+        if (room.endTimer) {
+          clearTimeout(room.endTimer);
+          room.endTimer = null;
+        }
         if (peer && peer.readyState === WebSocket.OPEN) {
           peer.send(JSON.stringify({
             event: 'call_declined',
@@ -390,11 +442,26 @@ class CallSignalingHub {
 
       case 'hangup': {
         room.callState = 'idle';
+        if (room.endTimer) {
+          clearTimeout(room.endTimer);
+          room.endTimer = null;
+        }
         if (peer && peer.readyState === WebSocket.OPEN) {
           peer.send(JSON.stringify({
             event: 'call_ended',
             referenceCode: targetRef,
             reason: msg.reason || 'Call ended by peer',
+          }));
+        }
+        break;
+      }
+
+      case 'restart_request': {
+        if (peer && peer.readyState === WebSocket.OPEN) {
+          peer.send(JSON.stringify({
+            event: 'restart_request',
+            referenceCode: targetRef,
+            reason: msg.reason || 'Peer requested ICE restart',
           }));
         }
         break;

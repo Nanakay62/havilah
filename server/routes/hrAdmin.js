@@ -973,4 +973,161 @@ router.patch('/settings/copsoq-depth', async (req, res, next) => {
   }
 });
 
+const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
+const {
+  findUserByEmail,
+  checkRemovalAllowed,
+  removeUser,
+} = require('../services/userRemovalService');
+
+const HR_REASON_MESSAGES = {
+  ACCOUNT_TOO_OLD: 'This account is older than 30 days. Please contact Havilah support to remove it.',
+  HAS_WELLNESS_DATA: 'This employee has already submitted wellness data. Please contact Havilah support.',
+  ADMIN_REQUIRES_SUPERADMIN: 'Admin accounts can only be removed by Havilah support.',
+  CANNOT_REMOVE_SELF: 'You cannot remove your own account.',
+  CANNOT_REMOVE_SUPER_ADMIN: 'Admin accounts can only be removed by Havilah support.',
+};
+
+// POST /api/v1/hr/users/lookup - Scoped user lookup for accidental registration reset
+router.post('/users/lookup', sensitiveRateLimiter(10), async (req, res, next) => {
+  try {
+    const company_id = req.sessionData?.company_id;
+    if (!company_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'COMPANY_REQUIRED',
+        message: 'Company context is required.',
+      });
+    }
+
+    const { email } = req.body || {};
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_EMAIL',
+        message: 'A valid email address is required.',
+      });
+    }
+
+    const found = await findUserByEmail(email);
+    const actor = {
+      user_id: req.sessionData.user_id,
+      company_id,
+      role: req.sessionData.role || 'hr_admin',
+    };
+
+    const check = checkRemovalAllowed({
+      target: found ? found.user : null,
+      wellnessCount: found ? found.wellnessCount : 0,
+      actor,
+      mode: 'hr',
+    });
+
+    if (!found || check.reasonCode === 'NOT_FOUND') {
+      return res.json({
+        success: true,
+        found: false,
+        message: 'No account with this email in your organization.',
+      });
+    }
+
+    const { user, departmentName } = found;
+
+    return res.json({
+      success: true,
+      found: true,
+      removable: check.allowed,
+      reasonCode: check.reasonCode,
+      message: check.allowed
+        ? 'This account is eligible to be removed so the employee can register again.'
+        : HR_REASON_MESSAGES[check.reasonCode] || 'This account cannot be removed. Please contact Havilah support.',
+      user: {
+        full_name: user.full_name,
+        department: departmentName,
+        created_at: user.created_at,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/hr/users/remove - Remove eligible (<30d, 0 logs) employee in own organization
+router.post('/users/remove', sensitiveRateLimiter(10), async (req, res, next) => {
+  try {
+    const company_id = req.sessionData?.company_id;
+    if (!company_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'COMPANY_REQUIRED',
+        message: 'Company context is required.',
+      });
+    }
+
+    const { email, reason } = req.body || {};
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_EMAIL',
+        message: 'A valid email address is required.',
+      });
+    }
+
+    const cleanReason = typeof reason === 'string' ? reason.trim() : '';
+    if (cleanReason.length < 5 || cleanReason.length > 300) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_REASON',
+        message: 'A removal reason between 5 and 300 characters is required.',
+      });
+    }
+
+    const found = await findUserByEmail(email);
+    const actor = {
+      user_id: req.sessionData.user_id,
+      company_id,
+      role: req.sessionData.role || 'hr_admin',
+      mode: 'hr',
+    };
+
+    const check = checkRemovalAllowed({
+      target: found ? found.user : null,
+      wellnessCount: found ? found.wellnessCount : 0,
+      actor,
+      mode: 'hr',
+    });
+
+    if (!found || check.reasonCode === 'NOT_FOUND') {
+      return res.status(404).json({
+        success: false,
+        error: 'NOT_FOUND',
+        message: 'No account with this email in your organization.',
+      });
+    }
+
+    if (!check.allowed) {
+      return res.status(403).json({
+        success: false,
+        error: check.reasonCode,
+        reasonCode: check.reasonCode,
+        message:
+          HR_REASON_MESSAGES[check.reasonCode] || 'This account cannot be removed. Please contact Havilah support.',
+      });
+    }
+
+    await removeUser({
+      target: found.user,
+      actor,
+      reason: cleanReason,
+    });
+
+    return res.json({
+      success: true,
+      message: 'Account removed. Seat freed. The employee can now register again.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

@@ -788,6 +788,188 @@
     }
   };
 
+  function escapeHrHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  let currentHrLookedUpUser = null;
+
+  window.lookupHrUserAccount = async () => {
+    const emailInput = document.getElementById('hrUserLookupEmail');
+    const resultEl = document.getElementById('hrUserLookupResult');
+    const btn = document.getElementById('hrUserLookupBtn');
+
+    if (!emailInput || !resultEl) return;
+    const email = emailInput.value.trim();
+
+    if (!email || !email.includes('@')) {
+      if (window.App && typeof App.toast === 'function') {
+        App.toast('Invalid Email', 'Please enter a valid email address.', 'warning');
+      }
+      return;
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Looking up...'; }
+
+    try {
+      const token = localStorage.getItem('havilah_token') || localStorage.getItem('token') || localStorage.getItem('session_token');
+      const res = await fetch('/api/v1/hr/users/lookup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ email })
+      });
+
+      resultEl.style.display = 'block';
+
+      if (res.status === 429) {
+        currentHrLookedUpUser = null;
+        resultEl.innerHTML = `<div style="color: #b45309; font-weight: 600; font-size: 0.875rem;">Too many attempts. Try again in 15 minutes.</div>`;
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        currentHrLookedUpUser = null;
+        resultEl.innerHTML = `<div style="color: #dc2626; font-weight: 600; font-size: 0.875rem;">${escapeHrHtml(data.message || data.error || 'Lookup failed.')}</div>`;
+        return;
+      }
+
+      if (!data.found) {
+        currentHrLookedUpUser = null;
+        resultEl.innerHTML = `<div style="color: var(--text-2); font-weight: 600; font-size: 0.875rem;">${escapeHrHtml(data.message || 'No account with this email in your organization.')}</div>`;
+        return;
+      }
+
+      const u = data.user || {};
+      currentHrLookedUpUser = { email, ...u, removable: data.removable };
+      const createdStr = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
+
+      let actionSection = '';
+      if (data.removable) {
+        actionSection = `
+          <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <label class="form-label" style="margin-bottom: 4px; font-size: 0.8rem;">Reason for removal (required, 5–300 characters)</label>
+              <input type="text" id="hrUserRemoveReason" class="form-input" placeholder="e.g. Used wrong department activation code" style="max-width: 480px;" />
+            </div>
+            <div>
+              <button type="button" class="btn btn-primary" id="hrUserRemoveBtn" style="background: #dc2626; border-color: #dc2626;" onclick="window.removeHrUserAccount()">Remove &amp; allow re-registration</button>
+            </div>
+          </div>
+        `;
+      } else {
+        actionSection = `
+          <div style="margin-top: 12px; padding: 10px 12px; background: #fef3c7; border: 1px solid #fde68a; color: #92400e; border-radius: 8px; font-size: 0.85rem; font-weight: 600;">
+            ${escapeHrHtml(data.message || 'This account cannot be removed. Please contact Havilah support.')}
+          </div>
+        `;
+      }
+
+      resultEl.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; font-size: 0.85rem;">
+          <div><span style="color: var(--text-3); display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600;">Name</span><strong style="color: var(--text-1);">${escapeHrHtml(u.full_name)}</strong></div>
+          <div><span style="color: var(--text-3); display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600;">Department</span><strong style="color: var(--text-1);">${escapeHrHtml(u.department)}</strong></div>
+          <div><span style="color: var(--text-3); display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 600;">Registration Date</span><strong style="color: var(--text-1);">${escapeHrHtml(createdStr)}</strong></div>
+        </div>
+        ${actionSection}
+      `;
+    } catch (err) {
+      if (window.App && typeof App.toast === 'function') {
+        App.toast('Error', err.message || 'Could not reach server.', 'error');
+      }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Look up'; }
+    }
+  };
+
+  window.removeHrUserAccount = async () => {
+    if (!currentHrLookedUpUser || !currentHrLookedUpUser.removable) return;
+    const reasonInput = document.getElementById('hrUserRemoveReason');
+    const reason = reasonInput ? reasonInput.value.trim() : '';
+
+    if (reason.length < 5 || reason.length > 300) {
+      if (window.App && typeof App.toast === 'function') {
+        App.toast('Reason Required', 'Please enter a reason between 5 and 300 characters.', 'warning');
+      }
+      return;
+    }
+
+    let confirmed = true;
+    if (typeof showCustomConfirm === 'function') {
+      confirmed = await showCustomConfirm({
+        title: 'Remove Account & Allow Re-Registration?',
+        message: `Remove ${currentHrLookedUpUser.full_name} (${currentHrLookedUpUser.email}) so they can register again with a valid code?`,
+        confirmText: 'Remove Account',
+        danger: true
+      });
+    } else if (typeof confirm === 'function') {
+      confirmed = confirm(`Remove ${currentHrLookedUpUser.full_name} (${currentHrLookedUpUser.email}) so they can register again?`);
+    }
+    if (!confirmed) return;
+
+    const btn = document.getElementById('hrUserRemoveBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Removing...'; }
+
+    try {
+      const token = localStorage.getItem('havilah_token') || localStorage.getItem('token') || localStorage.getItem('session_token');
+      const res = await fetch('/api/v1/hr/users/remove', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          email: currentHrLookedUpUser.email,
+          reason
+        })
+      });
+
+      if (res.status === 429) {
+        if (window.App && typeof App.toast === 'function') {
+          App.toast('Rate Limit Reached', 'Too many attempts. Try again in 15 minutes.', 'warning');
+        }
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        if (window.App && typeof App.toast === 'function') {
+          App.toast('Removal Blocked', data.message || data.error || 'Could not remove account.', 'error');
+        }
+        return;
+      }
+
+      if (window.App && typeof App.toast === 'function') {
+        App.toast('Account Removed', data.message || 'Account removed. Seat freed. The employee can now register again.', 'success');
+      }
+
+      currentHrLookedUpUser = null;
+      const emailInput = document.getElementById('hrUserLookupEmail');
+      const resultEl = document.getElementById('hrUserLookupResult');
+      if (emailInput) emailInput.value = '';
+      if (resultEl) { resultEl.style.display = 'none'; resultEl.innerHTML = ''; }
+
+      await Promise.all([fetchInvites(), fetchDepartments()]);
+      if (window.App && typeof App.loadDashboard === 'function') {
+        try { App.loadDashboard(); } catch (e) {}
+      }
+    } catch (err) {
+      if (window.App && typeof App.toast === 'function') {
+        App.toast('Error', err.message || 'Could not remove account.', 'error');
+      }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Remove & allow re-registration'; }
+    }
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     init();
   });

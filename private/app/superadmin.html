@@ -12,6 +12,21 @@
 <link rel="stylesheet" href="/css/styles.css">
 <style>
   :root {
+    /* Compat aliases: tokens referenced by this page that tokens.css does not define */
+    --surface-card: var(--surface);
+    --surface-canvas: var(--bg);
+    --brand-subtle: #E6F4F2;
+    --border-subtle: #EEF0F3;
+    --border-strong: #C9CED6;
+    --success-subtle: var(--success-bg);
+    --success-border: #A7D7C0;
+    --warning-subtle: var(--warning-bg);
+    --warning-border: #F1C98A;
+    --danger-subtle: var(--danger-bg);
+    --danger-border: #F2B8B5;
+    --danger-hover: #A8201A;
+    --shadow-lg: var(--shadow-overlay);
+
     --accent: var(--brand);
     --accent-hover: var(--brand-hover);
     --accent-light: var(--brand-subtle);
@@ -20,13 +35,12 @@
     --text-1: var(--text);
     --text-2: var(--text-muted);
     --text-muted: var(--text-subtle);
-    --border: var(--border);
     --border-light: var(--border-subtle);
-    --radius-sm: var(--radius-sm);
-    --radius-md: var(--radius-md);
-    --radius-lg: var(--radius-lg);
-    --shadow-sm: var(--shadow-sm);
-    --shadow-md: var(--shadow-md);
+    --radius-sm: var(--radius-control);
+    --radius-md: var(--radius-card);
+    --radius-lg: var(--radius-modal);
+    --shadow-sm: var(--shadow-card);
+    --shadow-md: var(--shadow-overlay);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,6 +59,7 @@
     background: var(--bg-base);
     color: var(--text-1);
     display: flex;
+    flex-direction: row;
     min-height: 100vh;
     font-size: 14px;
   }

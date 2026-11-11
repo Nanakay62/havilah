@@ -4,7 +4,9 @@
     invites: [],
     departments: [],
     referralBilling: [],
-    activeTab: 'analytics'
+    activeTab: 'analytics',
+    ethicsReports: [],
+    ethicsUrgencyFilter: 'all'
   };
 
   async function apiFetch(url, options = {}) {
@@ -29,7 +31,7 @@
     hrInvitesTableBody.innerHTML = '';
 
     if (!state.invites || state.invites.length === 0) {
-      hrInvitesTableBody.innerHTML = '<tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--text-2);">No activation codes generated yet.</td></tr>';
+      hrInvitesTableBody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">No activation codes generated yet.</td></tr>';
       return;
     }
 
@@ -39,32 +41,39 @@
       let statusBadge = '';
       
       if (invite.status === 'revoked') {
-        statusBadge = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Revoked</span>';
+        statusBadge = '<span class="badge badge-danger">Revoked</span>';
       } else if (invite.status === 'used') {
-        statusBadge = '<span style="background: #e2e8f0; color: #475569; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Used</span>';
+        statusBadge = '<span class="badge badge-neutral">Used</span>';
       } else if (isExpired || invite.status === 'expired') {
-        statusBadge = '<span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Expired</span>';
+        statusBadge = '<span class="badge badge-warning">Expired</span>';
       } else {
-        statusBadge = '<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Active</span>';
+        statusBadge = '<span class="badge badge-success">Active</span>';
       }
 
       const redemptions = invite.usage_count || (invite.status === 'used' ? 1 : 0);
       const isRevokable = invite.status === 'active' || invite.status === 'pending';
 
       tr.innerHTML = `
-        <td style="padding: 12px 14px; border-bottom: 1px solid var(--border);">
-          <div style="font-family: monospace; font-size: 0.95rem; font-weight: 700; color: var(--text-1); letter-spacing: 0.05em;">${invite.activation_code}</div>
-          <div style="font-size: 0.75rem; color: var(--text-3); margin-top: 2px;">1-Click Registration Link Ready</div>
+        <td data-label="Code">
+          <div style="font-family: monospace; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; white-space: nowrap;">${invite.activation_code}</div>
         </td>
-        <td style="padding: 12px 14px; border-bottom: 1px solid var(--border); font-weight: 600;">${invite.department_name}</td>
-        <td style="padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--text-2);">${redemptions} worker${redemptions === 1 ? '' : 's'}</td>
-        <td style="padding: 12px 14px; border-bottom: 1px solid var(--border);">${statusBadge}</td>
-        <td style="padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text-2); font-size: 0.8rem;">${new Date(invite.expires_at).toLocaleDateString()}</td>
-        <td style="padding: 12px 14px; border-bottom: 1px solid var(--border);">
-          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-            <button class="btn btn-ghost btn-sm" onclick="window.copyHrInviteLink('${invite.activation_code}')" style="padding: 4px 8px; font-size: 0.75rem;" title="Copy 1-Click Magic Link">📋 Copy Link</button>
-            ${isRevokable ? `<button class="btn btn-ghost btn-sm" onclick="window.revokeHrInvite('${invite.activation_code}')" style="padding: 4px 8px; font-size: 0.75rem; color: #dc2626;" title="Revoke Code">🚫 Revoke</button>` : ''}
-            <button class="btn btn-ghost btn-sm" onclick="window.deleteHrInvite('${invite.activation_code}')" style="padding: 4px 8px; font-size: 0.75rem; color: #b91c1c; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2);" title="Delete Code & Link">🗑️ Delete</button>
+        <td data-label="Department" style="font-weight: var(--weight-medium); color: var(--text);">${invite.department_name}</td>
+        <td data-label="Redemptions" style="font-size: var(--text-sm); color: var(--text-muted); font-variant-numeric: tabular-nums;">${redemptions}</td>
+        <td data-label="Status">${statusBadge}</td>
+        <td data-label="Expires" style="color: var(--text-muted); font-size: var(--text-sm); font-variant-numeric: tabular-nums; white-space: nowrap;">${new Date(invite.expires_at).toLocaleDateString()}</td>
+        <td data-label="Actions" style="text-align: right;">
+          <div style="display: inline-flex; gap: var(--space-1); align-items: center; justify-content: flex-end;">
+            <button class="btn btn-secondary btn-sm" onclick="window.copyHrInviteLink('${invite.activation_code}')" title="Copy registration link" style="padding: 4px 8px; font-size: var(--text-xs);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copy</span>
+            </button>
+            ${isRevokable ? `
+            <button class="btn btn-ghost btn-sm" onclick="window.revokeHrInvite('${invite.activation_code}')" style="color: var(--danger); padding: 4px 6px;" title="Revoke code" aria-label="Revoke code">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+            </button>` : ''}
+            <button class="btn btn-ghost btn-sm" onclick="window.deleteHrInvite('${invite.activation_code}')" style="color: var(--danger); padding: 4px 6px;" title="Delete invitation" aria-label="Delete invitation">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
           </div>
         </td>
       `;
@@ -320,7 +329,7 @@
 
   function renderEthicsReports() {
     const tableBody = document.getElementById('hrEthicsTableBody');
-    const reports = state.ethicsReports || [];
+    const rawReports = state.ethicsReports || [];
 
     // Update KPIs
     const totalEl = document.getElementById('ethicsTotalCount');
@@ -328,52 +337,63 @@
     const actionEl = document.getElementById('ethicsActionCount');
     const closedEl = document.getElementById('ethicsClosedCount');
 
-    if (totalEl) totalEl.textContent = reports.length;
-    if (investigatingEl) investigatingEl.textContent = reports.filter(r => r.status === 'under_investigation').length;
-    if (actionEl) actionEl.textContent = reports.filter(r => r.status === 'action_taken').length;
-    if (closedEl) closedEl.textContent = reports.filter(r => r.status === 'closed').length;
+    if (totalEl) totalEl.textContent = rawReports.length;
+    if (investigatingEl) investigatingEl.textContent = rawReports.filter(r => r.status === 'under_investigation').length;
+    if (actionEl) actionEl.textContent = rawReports.filter(r => r.status === 'action_taken').length;
+    if (closedEl) closedEl.textContent = rawReports.filter(r => r.status === 'closed').length;
 
     if (!tableBody) return;
 
+    if (rawReports.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">No whistleblower or ethics reports submitted for your organization.</td></tr>';
+      return;
+    }
+
+    // Default sort: Critical -> Urgent -> Standard, then descending by date
+    const urgencyRank = { Critical: 3, Urgent: 2, Standard: 1 };
+    let reports = [...rawReports].sort((a, b) => {
+      const diff = (urgencyRank[b.urgency] || 0) - (urgencyRank[a.urgency] || 0);
+      if (diff !== 0) return diff;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+
+    // Apply urgency filter if active
+    if (state.ethicsUrgencyFilter && state.ethicsUrgencyFilter !== 'all') {
+      reports = reports.filter(r => (r.urgency || 'Standard').toLowerCase() === state.ethicsUrgencyFilter.toLowerCase());
+    }
+
     if (reports.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="6" style="padding: 28px; text-align: center; color: var(--text-3); font-size: 0.875rem;">No whistleblower or ethics reports submitted for your organization.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">No reports matching selected urgency filter.</td></tr>';
       return;
     }
 
     tableBody.innerHTML = reports.map(r => {
-      const urgencyColors = {
-        Critical: '#ef4444',
-        Urgent: '#f59e0b',
-        Standard: '#6366f1',
+      const urgencyBadgeClass = r.urgency === 'Critical' ? 'badge-danger' : r.urgency === 'Urgent' ? 'badge-warning' : 'badge-neutral';
+      const statusBadges = {
+        submitted: { label: 'Submitted', badgeClass: 'badge-info' },
+        under_investigation: { label: 'Investigating', badgeClass: 'badge-warning' },
+        action_taken: { label: 'Action Taken', badgeClass: 'badge-info' },
+        closed: { label: 'Closed', badgeClass: 'badge-success' },
       };
-      const urgencyColor = urgencyColors[r.urgency] || '#6366f1';
-      const statusLabels = {
-        submitted: { label: 'Submitted', bg: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' },
-        under_investigation: { label: 'Investigating', bg: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' },
-        action_taken: { label: 'Action Taken', bg: 'rgba(14, 165, 233, 0.1)', color: '#0ea5e9' },
-        closed: { label: 'Closed', bg: 'rgba(16, 185, 129, 0.1)', color: '#10b981' },
-      };
-      const st = statusLabels[r.status] || { label: r.status, bg: '#f3f4f6', color: '#6b7280' };
+      const st = statusBadges[r.status] || { label: r.status, badgeClass: 'badge-neutral' };
       const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
       return `
-        <tr style="border-bottom: 1px solid var(--border); font-size: 0.84rem;">
-          <td style="padding: 12px 14px; font-family: monospace; font-weight: 700; color: #4f46e5;">${r.trackingCode || '—'}</td>
-          <td style="padding: 12px 14px; font-weight: 600; color: var(--text-1);">${r.category || 'General'}</td>
-          <td style="padding: 12px 14px;">
-            <span style="font-size: 0.75rem; font-weight: 700; color: ${urgencyColor}; border: 1px solid ${urgencyColor}40; background: ${urgencyColor}15; padding: 2px 8px; border-radius: 99px;">
-              ${r.urgency || 'Standard'}
-            </span>
+        <tr>
+          <td data-label="Tracking code">
+            <span style="font-family: monospace; font-weight: var(--weight-semibold); color: var(--brand); font-variant-numeric: tabular-nums;">${r.trackingCode || '—'}</span>
           </td>
-          <td style="padding: 12px 14px; color: var(--text-2);">${dateStr}</td>
-          <td style="padding: 12px 14px;">
-            <span style="font-size: 0.75rem; font-weight: 700; color: ${st.color}; background: ${st.bg}; padding: 2px 8px; border-radius: 99px;">
-              ${st.label}
-            </span>
+          <td data-label="Category" style="font-weight: var(--weight-medium); color: var(--text);">${r.category || 'General'}</td>
+          <td data-label="Urgency">
+            <span class="badge ${urgencyBadgeClass}">${r.urgency || 'Standard'}</span>
           </td>
-          <td style="padding: 12px 14px;">
-            <button onclick="window.openHrReportModal('${r._id}')" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.78rem; font-weight: 600;">
-              View &amp; Respond
+          <td data-label="Submitted date" style="color: var(--text-muted); font-variant-numeric: tabular-nums;">${dateStr}</td>
+          <td data-label="Status">
+            <span class="badge ${st.badgeClass}">${st.label}</span>
+          </td>
+          <td data-label="Actions" style="text-align: right;">
+            <button onclick="window.openHrReportModal('${r._id}')" class="btn btn-secondary btn-sm">
+              View &amp; respond
             </button>
           </td>
         </tr>
@@ -400,18 +420,18 @@
           if (trialEnd && now < trialEnd) {
             const msLeft = trialEnd.getTime() - now.getTime();
             const daysLeft = Math.max(1, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
-            bannerText.innerHTML = `⚡ <strong>Pro Reverse Trial:</strong> ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining. You have full access to all Pro analytics, conflict guards & clinical linkages.`;
+            bannerText.innerHTML = `<strong>Pro Reverse Trial:</strong> ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining. Full access to Pro analytics, conflict guards &amp; clinical linkages.`;
             banner.style.display = 'block';
-            banner.style.background = 'linear-gradient(90deg, #0f766e 0%, #0d9488 50%, #0284c7 100%)';
+            banner.style.background = 'var(--brand)';
           } else {
-            bannerText.innerHTML = `⚠️ <strong>Pro Trial Expired:</strong> Your 30-day Pro trial has ended and your account is currently on the <strong>Free Community tier</strong>. Upgrade to restore full Pro capabilities.`;
+            bannerText.innerHTML = `<strong>Pro Trial Expired:</strong> Your 30-day Pro trial has ended and your account is currently on the <strong>Free Community tier</strong>. Upgrade to restore full Pro capabilities.`;
             banner.style.display = 'block';
-            banner.style.background = 'linear-gradient(90deg, #b45309 0%, #d97706 100%)';
+            banner.style.background = 'var(--warning)';
           }
         } else if (effectiveTier === 'free') {
-          bannerText.innerHTML = `ℹ️ You are currently on the <strong>Free Community tier</strong> (Max 10 employees). Upgrade to unlock unlimited seats & clinical routing.`;
+          bannerText.innerHTML = `You are currently on the <strong>Free Community tier</strong> (Max 10 employees). Upgrade to unlock unlimited seats &amp; clinical routing.`;
           banner.style.display = 'block';
-          banner.style.background = 'linear-gradient(90deg, #334155 0%, #475569 100%)';
+          banner.style.background = 'var(--text-muted)';
         } else {
           banner.style.display = 'none';
         }
@@ -441,6 +461,7 @@
     const analyticsSection = document.getElementById('hr-section-analytics');
     const billingSection = document.getElementById('hr-section-billing');
     const ethicsSection = document.getElementById('hr-section-ethics');
+    const invitesSection = document.getElementById('hr-section-invites');
 
     // Close mobile drawer if open
     const sidebar = document.getElementById('appSidebar');
@@ -455,7 +476,7 @@
 
     // Reset all tabs
     [analyticsTabBtn, billingTabBtn, ethicsTabBtn, invitesTabBtn].forEach(btn => btn && btn.classList.remove('active'));
-    [analyticsSection, billingSection, ethicsSection].forEach(sec => sec && (sec.style.display = 'none'));
+    [analyticsSection, billingSection, ethicsSection, invitesSection].forEach(sec => sec && (sec.style.display = 'none'));
 
     if (tabName === 'billing') {
       if (billingTabBtn) billingTabBtn.classList.add('active');
@@ -467,15 +488,18 @@
       fetchEthicsReports();
     } else if (tabName === 'invites') {
       if (invitesTabBtn) invitesTabBtn.classList.add('active');
-      if (analyticsSection) {
-        analyticsSection.style.display = 'block';
-        const inviteEl = document.getElementById('hr-access-management') || document.getElementById('hrGenerateInviteForm');
-        if (inviteEl) inviteEl.scrollIntoView({ behavior: 'smooth' });
-      }
+      if (invitesSection) invitesSection.style.display = 'block';
+      fetchInvites();
+      fetchDepartments();
     } else {
       if (analyticsTabBtn) analyticsTabBtn.classList.add('active');
       if (analyticsSection) analyticsSection.style.display = 'block';
     }
+  };
+
+  window.filterEthicsByUrgency = (urgency) => {
+    state.ethicsUrgencyFilter = urgency;
+    renderEthicsReports();
   };
 
   // Global actions attached to window
@@ -563,7 +587,8 @@
     if (catEl) catEl.textContent = report.category || 'General';
     if (urgEl) {
       urgEl.textContent = report.urgency || 'Standard';
-      urgEl.style.color = report.urgency === 'Critical' ? '#ef4444' : report.urgency === 'Urgent' ? '#f59e0b' : '#6366f1';
+      urgEl.className = `badge ${report.urgency === 'Critical' ? 'badge-danger' : report.urgency === 'Urgent' ? 'badge-warning' : 'badge-neutral'}`;
+      urgEl.style.color = '';
     }
     if (descEl) descEl.textContent = report.description || '—';
     if (statusSelect) statusSelect.value = report.status || 'submitted';
@@ -579,19 +604,22 @@
     if (!container) return;
 
     if (!thread || thread.length === 0) {
-      container.innerHTML = '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:12px;">No messages in thread yet.</div>';
+      container.innerHTML = '<div style="color: var(--text-subtle); font-size: var(--text-xs); text-align: center; padding: var(--space-3);">No messages in thread yet.</div>';
       return;
     }
 
     container.innerHTML = thread.map(msg => {
       const isInvestigator = msg.sender === 'investigator';
       const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const investigatorSender = `<span style="display: inline-flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Investigator (You)</span>`;
+      const whistleblowerSender = `<span style="display: inline-flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Anonymous Whistleblower</span>`;
+
       return `
-        <div style="display:flex;flex-direction:column;align-items:${isInvestigator ? 'flex-end' : 'flex-start'};margin-bottom:10px;">
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:2px;">
-            ${isInvestigator ? '🛡️ You (Investigator)' : '👤 Anonymous Whistleblower'} • ${timeStr}
+        <div style="display: flex; flex-direction: column; align-items: ${isInvestigator ? 'flex-end' : 'flex-start'}; margin-bottom: var(--space-3);">
+          <div style="font-size: var(--text-xs); color: var(--text-subtle); margin-bottom: 2px;">
+            ${isInvestigator ? investigatorSender : whistleblowerSender} • ${timeStr}
           </div>
-          <div style="max-width:85%;padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.4;background:${isInvestigator ? '#4f46e5' : '#f3f4f6'};color:${isInvestigator ? '#fff' : 'var(--text-1)'};word-break:break-word;">
+          <div style="max-width: 85%; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); font-size: var(--text-sm); line-height: 1.4; background: ${isInvestigator ? 'var(--brand)' : 'var(--bg)'}; color: ${isInvestigator ? '#ffffff' : 'var(--text)'}; border: ${isInvestigator ? 'none' : '1px solid var(--border)'}; word-break: break-word;">
             ${(msg.message || '').replace(/</g, '&lt;')}
           </div>
         </div>
@@ -771,9 +799,9 @@
       
       if (window.App && typeof App.toast === 'function') {
         const msg = res.emails_invited && res.emails_invited.length > 0 
-          ? `Code ${res.code} created & magic links sent to ${res.emails_invited.length} worker(s)!`
-          : `Code ${res.code} created successfully with 1-click magic link!`;
-        App.toast('1-Click Link Generated', msg, 'success');
+          ? `Code ${res.code} created and sent to ${res.emails_invited.length} employee(s).`
+          : `Code ${res.code} created for ${res.department}.`;
+        App.toast('Invitation created', msg, 'success');
       }
     } catch (err) {
       if (window.App && typeof App.toast === 'function') {
@@ -801,7 +829,7 @@
 
     navigator.clipboard.writeText(url).then(() => {
       if (window.App && typeof App.toast === 'function') {
-        App.toast('Link Copied!', '1-click registration link copied to clipboard.', 'info');
+        App.toast('Link copied', 'Registration link copied to clipboard.', 'info');
       }
     }).catch(err => {
       console.error('Failed to copy link:', err);

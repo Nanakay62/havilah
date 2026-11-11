@@ -701,58 +701,57 @@
 <div id="hr-section-analytics">
 <!-- ============ HR VIEW ============ -->
 <section class="view active" id="view-hr" style="display:block;" aria-label="HR analytics dashboard">
-  <div class="page-head">
-    <div>
-      <span class="eyebrow">HR Analytics</span>
-      <h1>Organization wellness overview</h1>
-      <p id="hrSubtitle">Aggregated across 1,842 employees · Last refresh 14 min ago</p>
+  <div class="page-header">
+    <div class="page-header-titles">
+      <h1 class="page-title">Organization wellness overview</h1>
     </div>
-    <div class="page-head-actions">
-      <button class="btn btn-ghost btn-sm" onclick="App.openSettings()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        Settings
+    <div class="page-header-actions">
+      <button class="btn btn-secondary btn-sm" onclick="App.openSettings()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Settings</span>
       </button>
-      <button class="btn btn-ghost btn-sm" onclick="App.openExport()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Export
+      <button class="btn btn-secondary btn-sm" onclick="App.openExport()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Export</span>
       </button>
-      <button onclick="generateComplianceReport()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.3s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
-        📄 Download ISO 45003 Report
+      <button class="btn btn-secondary btn-sm" onclick="generateComplianceReport()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        <span>Download ISO 45003 report</span>
       </button>
-      <button class="btn btn-ghost btn-sm" onclick="App.openAssessmentCycles()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Assessment cycles
+      <button class="btn btn-secondary btn-sm" onclick="App.openAssessmentCycles()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>Assessment cycles</span>
       </button>
       <button class="btn btn-primary btn-sm" onclick="App.openPulseBuilder()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
-        Launch pulse
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+        <span>Launch pulse</span>
       </button>
     </div>
   </div>
   
   <!-- Predictive Risk Alert Banner -->
-  <div class="risk-alert-banner cosmic-glass-panel" id="predictiveRiskBanner" role="alert" style="display: none; border-color: rgba(244, 63, 94, 0.3);">
-    <div class="risk-alert-icon" style="color: #e11d48;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    </div>
-    <div class="risk-alert-content">
-      <div class="risk-alert-title" style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
-        <span>Predictive Risk Alert · Early Warning System</span>
-        <span class="cosmic-pill rose">Critical Hazard</span>
+  <div class="alert-banner alert-warning" id="predictiveRiskBanner" role="alert" style="display: none; margin-bottom: var(--space-4); justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-3);">
+    <div style="display: flex; align-items: flex-start; gap: var(--space-3);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--warning); flex-shrink: 0; margin-top: 2px;" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div>
+        <div style="font-weight: var(--weight-semibold); font-size: var(--text-sm); display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;">
+          <span>Early warning risk alert</span>
+          <span class="badge badge-danger">Critical hazard</span>
+        </div>
+        <div id="predictiveRiskText" style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);"></div>
       </div>
-      <div class="risk-alert-desc" id="predictiveRiskText"></div>
     </div>
-    <div class="risk-alert-actions" style="display: flex; gap: 8px; align-items: center;">
-      <button class="cosmic-pill emerald" style="cursor: pointer; padding: 6px 12px; font-weight: 700;" onclick="App.dispatchIntervention('Risk Intervention')">Dispatch Intervention to <span id="bannerActiveProvider">FZ Safety and Health</span></button>
-      <button class="btn btn-sm btn-ghost" style="font-weight: 700;" onclick="App.openPulseBuilderWithTarget('Department', 'Burnout Focus')">Targeted Pulse</button>
-      <button class="risk-alert-close" onclick="App.dismissRiskBanner()" aria-label="Dismiss alert">✕</button>
+    <div style="display: flex; gap: var(--space-2); align-items: center;">
+      <button class="btn btn-secondary btn-sm" onclick="App.dispatchIntervention('Risk Intervention')">Dispatch intervention to <span id="bannerActiveProvider">FZ Safety and Health</span></button>
+      <button class="btn btn-ghost btn-sm" onclick="App.openPulseBuilderWithTarget('Department', 'Burnout Focus')">Targeted pulse</button>
+      <button class="btn btn-ghost btn-sm" onclick="App.dismissRiskBanner()" aria-label="Dismiss alert" style="padding: 4px 8px;">✕</button>
     </div>
   </div>
   
-  <div class="filter-bar" role="region" aria-label="Filters">
-    <div class="filter-group">
-      <span class="filter-label">Department</span>
-      <select class="select" id="deptFilter" onchange="App.applyFilters()">
+  <div class="filter-bar" role="region" aria-label="Filters" style="display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; padding: var(--space-3); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); margin-bottom: var(--space-4); width: 100%;">
+    <div class="filter-group" style="display: flex; align-items: center; gap: var(--space-2);">
+      <label for="deptFilter" class="form-label" style="margin-bottom: 0; font-size: var(--text-xs); color: var(--text-subtle);">Department</label>
+      <select class="form-select form-select-sm" id="deptFilter" onchange="App.applyFilters()">
         <option value="all">All departments</option>
         <option value="Engineering">Engineering</option>
         <option value="Sales">Sales</option>
@@ -763,43 +762,45 @@
         <option value="Customer Success">Customer Success</option>
       </select>
     </div>
-    <div class="filter-group">
-      <span class="filter-label">Role level</span>
-      <select class="select" id="roleFilter" onchange="App.applyFilters()">
+    <div class="filter-group" style="display: flex; align-items: center; gap: var(--space-2);">
+      <label for="roleFilter" class="form-label" style="margin-bottom: 0; font-size: var(--text-xs); color: var(--text-subtle);">Role level</label>
+      <select class="form-select form-select-sm" id="roleFilter" onchange="App.applyFilters()">
         <option value="all">All levels</option>
         <option value="ic">Individual contributor</option>
         <option value="manager">Manager</option>
         <option value="director">Director+</option>
       </select>
     </div>
-    <div class="filter-group">
-      <span class="filter-label">Time window</span>
-      <select class="select" id="timeFilter" onchange="App.applyFilters()">
+    <div class="filter-group" style="display: flex; align-items: center; gap: var(--space-2);">
+      <label for="timeFilter" class="form-label" style="margin-bottom: 0; font-size: var(--text-xs); color: var(--text-subtle);">Time window</label>
+      <select class="form-select form-select-sm" id="timeFilter" onchange="App.applyFilters()">
         <option value="30">Last 30 days</option>
         <option value="90">Last 90 days</option>
         <option value="180">Last 6 months</option>
         <option value="365">Last 12 months</option>
       </select>
     </div>
-    <div class="filter-spacer"></div>
-    <button class="filter-pill active" data-metric="phq9" onclick="App.setMetric(this, 'phq9')">PHQ-9</button>
-    <button class="filter-pill" data-metric="gad7" onclick="App.setMetric(this, 'gad7')">GAD-7</button>
-    <button class="filter-pill" data-metric="pss10" onclick="App.setMetric(this, 'pss10')">PSS-10</button>
-    <button class="filter-pill" data-metric="fas10" onclick="App.setMetric(this, 'fas10')">FAS-10</button>
-    <button class="filter-pill" data-metric="copsoq" onclick="App.setMetric(this, 'copsoq')">COPSOQ-II</button>
+    <div style="flex: 1 1 auto;"></div>
+    <div class="segmented-control" role="tablist" aria-label="Assessment metric">
+      <button class="segmented-item filter-pill active" data-metric="phq9" onclick="App.setMetric(this, 'phq9')" role="tab" aria-selected="true">PHQ-9</button>
+      <button class="segmented-item filter-pill" data-metric="gad7" onclick="App.setMetric(this, 'gad7')" role="tab" aria-selected="false">GAD-7</button>
+      <button class="segmented-item filter-pill" data-metric="pss10" onclick="App.setMetric(this, 'pss10')" role="tab" aria-selected="false">PSS-10</button>
+      <button class="segmented-item filter-pill" data-metric="fas10" onclick="App.setMetric(this, 'fas10')" role="tab" aria-selected="false">FAS-10</button>
+      <button class="segmented-item filter-pill" data-metric="copsoq" onclick="App.setMetric(this, 'copsoq')" role="tab" aria-selected="false">COPSOQ-II</button>
+    </div>
   </div>
   
-  <div class="kpi-grid" id="kpiGrid"></div>
+  <div class="stat-grid" id="kpiGrid"></div>
   
   <div class="charts-grid">
     <div class="chart-card" id="risk-trends-container">
       <div class="chart-head">
         <div><div class="chart-title">Risk severity trends</div><div class="chart-subtitle" id="severitySubtitle">Distribution across 4 severity bands, last 8 weeks</div></div>
         <div class="chart-legend">
-          <span class="legend-item"><span class="legend-dot" style="background: #4FB286;"></span>Healthy</span>
-          <span class="legend-item"><span class="legend-dot" style="background: #E8A33D;"></span>Mild</span>
-          <span class="legend-item"><span class="legend-dot" style="background: #E5646E;"></span>Moderate</span>
-          <span class="legend-item"><span class="legend-dot" style="background: #B23A48;"></span>Severe</span>
+          <span class="legend-item"><span class="legend-dot" style="background: #15803D;"></span>Healthy</span>
+          <span class="legend-item"><span class="legend-dot" style="background: #0F766E;"></span>Mild</span>
+          <span class="legend-item"><span class="legend-dot" style="background: #B45309;"></span>Moderate</span>
+          <span class="legend-item"><span class="legend-dot" style="background: #B91C1C;"></span>Severe</span>
         </div>
       </div>
       <div class="chart-canvas-wrap"><canvas id="severityChart"></canvas></div>
@@ -814,19 +815,19 @@
   
 <!-- Main Heatmap Card Panel Container -->
 <div class="chart-card heatmap-card" id="heatmap-container">
-  <div class="chart-head" style="align-items: center;">
+  <div class="chart-head" style="align-items: center; flex-wrap: wrap; gap: var(--space-2);">
     <div>
       <div class="chart-title">Risk heatmap · Department × Dimension</div>
-      <div class="chart-subtitle">Click any cell to drill down. Scores 0–100, higher = more risk.</div>
+      <div class="chart-subtitle">Scores 0–100, higher = more risk. Click any cell to inspect.</div>
     </div>
     <div class="heatmap-scale" style="margin-top: 0;">
       <span>Lower risk</span>
       <div class="scale-bar">
-        <div class="scale-cell" style="background: #52B788;"></div>
-        <div class="scale-cell" style="background: #74C69D;"></div>
-        <div class="scale-cell" style="background: #E9A944;"></div>
-        <div class="scale-cell" style="background: #E56B6F;"></div>
-        <div class="scale-cell" style="background: #B53540;"></div>
+        <div class="scale-cell" style="background: #15803D;"></div>
+        <div class="scale-cell" style="background: #0F766E;"></div>
+        <div class="scale-cell" style="background: #1D4ED8;"></div>
+        <div class="scale-cell" style="background: #B45309;"></div>
+        <div class="scale-cell" style="background: #B91C1C;"></div>
       </div>
       <span>Higher risk</span>
     </div>
@@ -866,53 +867,68 @@
   </div>
 </div>
 </section>
+</div>
 
-
-  <!-- Access Management Hub -->
-  <div class="section-bar" style="margin-top: 48px;">
-    <div>
-      <h2 style="font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em;">Access Management Hub - 1-Click Employee Onboarding Engine</h2>
-      <p style="color: var(--text-2); font-size: 0.875rem;">Generate 1-click magic links & 15-day activation codes bound to strict, canonical department groups.</p>
+<!-- ============ EMPLOYEE INVITATIONS VIEW ============ -->
+<div id="hr-section-invites" style="display: none;">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-titles">
+      <h1 class="page-title">Employee invitations</h1>
+      <p class="page-header-desc">Generate activation codes and registration links assigned to specific departments.</p>
+    </div>
+    <div class="page-header-actions">
+      <button class="btn btn-secondary btn-sm" id="refresh-codes-btn" onclick="window.refreshHrInvites()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        <span>Refresh</span>
+      </button>
     </div>
   </div>
-  
-  <div class="bottom-grid">
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: var(--space-4); align-items: start;">
     <!-- Generator Card -->
     <div class="chart-card">
       <div class="chart-head">
-        <div class="chart-title">Generate Access &amp; Magic Links</div>
-        <div class="chart-subtitle">Codes &amp; 1-click registration links are anchored to a department and expire in 15 days.</div>
+        <div>
+          <div class="chart-title">Create invitation</div>
+          <div class="chart-subtitle">Codes and registration links expire after 15 days.</div>
+        </div>
       </div>
-      <form id="hrGenerateInviteForm" style="display: flex; flex-direction: column; gap: 16px;" onsubmit="event.preventDefault(); window.generateHrInvite();">
+      <form id="hrGenerateInviteForm" style="display: flex; flex-direction: column; gap: var(--space-4);" onsubmit="event.preventDefault(); window.generateHrInvite();">
         <div class="form-group" style="margin-bottom: 0;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <label class="form-label" style="margin-bottom: 0;">Target Department</label>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="window.openNewDeptModal()" style="font-size: 0.75rem; color: var(--accent-deep); padding: 2px 6px;">+ Provision New Dept</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-1);">
+            <label for="hrDeptSelect" class="form-label" style="margin-bottom: 0;">Target department</label>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="window.openNewDeptModal()" style="font-size: var(--text-xs); color: var(--brand); padding: 2px 6px;">+ Add department</button>
           </div>
           <select id="hrDeptSelect" name="target-department-select" class="form-select" style="width: 100%;">
             <option value="">Loading departments...</option>
           </select>
-          <div class="form-hint" style="margin-top: 4px;">Strict selection prevents duplicate departmental groups (e.g. Eng vs Engineering).</div>
+          <div class="form-hint" style="margin-top: 4px;">Department assignments ensure clean reporting groups.</div>
         </div>
 
         <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label">Worker Emails (Optional - Direct Invites)</label>
-          <textarea id="hrEmailsInput" class="form-textarea" rows="2" placeholder="e.g. john@acme.com, sarah@acme.com" style="font-size: 0.8125rem; resize: vertical;"></textarea>
-          <div class="form-hint">Separate multiple email addresses with commas. Invites contain 1-click magic links.</div>
+          <label for="hrEmailsInput" class="form-label">Worker emails (optional)</label>
+          <textarea id="hrEmailsInput" class="form-textarea" rows="2" placeholder="e.g. john@acme.com, sarah@acme.com" style="font-size: var(--text-sm); resize: vertical;"></textarea>
+          <div class="form-hint">Separate multiple email addresses with commas.</div>
         </div>
 
-        <button type="submit" class="btn btn-primary" id="hrGenerateBtn" style="width: 100%; justify-content: center; margin-top: 4px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-          🚀 Generate &amp; Send Invites
+        <button type="submit" class="btn btn-primary btn-sm" id="hrGenerateBtn" style="width: 100%; justify-content: center; height: 38px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Generate invitation</span>
         </button>
       </form>
 
       <!-- Result Card -->
-      <div id="hrInviteResult" style="margin-top: 20px; padding: 16px; background: var(--accent-soft); border: 1px solid rgba(0, 183, 195, 0.2); border-radius: 12px; display: none;">
-        <div style="font-size: 0.75rem; color: var(--accent-deep); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Success! 1-Click Onboarding Code Created</div>
-        <div id="hrResultCode" style="font-size: 1.4rem; font-weight: 700; color: var(--text-1); letter-spacing: 0.08em; font-family: monospace; margin-bottom: 6px;"></div>
-        <div style="font-size: 0.8125rem; color: var(--text-2); margin-bottom: 12px;">Provisioned for <strong id="hrResultDept" style="color: var(--text-1);"></strong> • Valid for 15 Days</div>
-        <button class="btn btn-primary btn-sm" onclick="window.copyHrInviteLink()" style="width: 100%; justify-content: center;">📋 Copy 1-Click Magic Link</button>
+      <div id="hrInviteResult" style="margin-top: var(--space-4); padding: var(--space-4); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-card); display: none;">
+        <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2);">
+          <span class="badge badge-success">Invite created</span>
+        </div>
+        <div id="hrResultCode" style="font-size: var(--text-xl); font-weight: var(--weight-semibold); color: var(--text); letter-spacing: 0.06em; font-family: monospace; margin-bottom: var(--space-1); font-variant-numeric: tabular-nums;"></div>
+        <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-3);">Valid for <strong id="hrResultDept" style="color: var(--text);"></strong> · Expires in 15 days</div>
+        <button class="btn btn-secondary btn-sm" onclick="window.copyHrInviteLink()" style="width: 100%; justify-content: center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy registration link</span>
+        </button>
       </div>
     </div>
     
@@ -920,25 +936,24 @@
     <div class="chart-card">
       <div class="chart-head" style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <div class="chart-title">Active Codes &amp; Provisioning History</div>
-          <div class="chart-subtitle">Real-time status, redemptions, and 1-click links</div>
+          <div class="chart-title">Active invitations</div>
+          <div class="chart-subtitle">Redemption status and department links</div>
         </div>
-        <button class="btn btn-ghost btn-sm" id="refresh-codes-btn" onclick="window.refreshHrInvites()">↻ Refresh</button>
       </div>
       <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <table class="data-table table-to-cards" style="width: 100%;">
           <thead>
-            <tr style="border-bottom: 1px solid var(--border-strong); background: var(--bg-base);">
-              <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Code &amp; Magic Link</th>
-              <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Department</th>
-              <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Redemptions</th>
-              <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Status</th>
-              <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Expires</th>
-              <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Actions</th>
+            <tr>
+              <th style="white-space: nowrap;">Code</th>
+              <th>Department</th>
+              <th>Redemptions</th>
+              <th>Status</th>
+              <th>Expires</th>
+              <th style="text-align: right;">Actions</th>
             </tr>
           </thead>
           <tbody id="hrInvitesTableBody">
-            <tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-3); font-size: 0.875rem;">Loading onboarding history...</td></tr>
+            <tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">Loading invitations...</td></tr>
           </tbody>
         </table>
       </div>
@@ -946,47 +961,47 @@
   </div>
 
   <!-- Employee registered by mistake? Panel -->
-  <div class="chart-card" style="margin-top: 20px;">
+  <div class="chart-card" style="margin-top: var(--space-6);">
     <div class="chart-head">
       <div>
-        <div class="chart-title">Employee registered by mistake?</div>
+        <div class="chart-title">Reset employee registration</div>
         <div class="chart-subtitle">Removes accounts created in the last 30 days with no wellness data so the employee can register again.</div>
       </div>
     </div>
-    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+    <div style="display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap;">
       <input type="email" id="hrUserLookupEmail" class="form-input" placeholder="employee@company.com" style="flex: 1; min-width: 240px; max-width: 380px;" />
-      <button type="button" class="btn btn-primary" id="hrUserLookupBtn" onclick="window.lookupHrUserAccount()">Look up</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="hrUserLookupBtn" onclick="window.lookupHrUserAccount()">Look up</button>
     </div>
-    <div id="hrUserLookupResult" style="display: none; margin-top: 16px; padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 10px;">
+    <div id="hrUserLookupResult" style="display: none; margin-top: var(--space-4); padding: var(--space-4); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-card);">
       <!-- Populated by window.lookupHrUserAccount() -->
     </div>
   </div>
 
   <!-- Provision New Department Modal -->
   <div class="modal-backdrop" id="newDeptModalBackdrop">
-    <div class="modal" style="max-width: 420px;">
+    <div class="modal" style="max-width: 440px;">
       <div class="modal-head">
         <div class="modal-head-top">
           <div>
-            <div style="font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.1em; color: var(--accent-deep); text-transform: uppercase;">HEATMAP STRUCTURE</div>
-            <div style="font-size: 1.125rem; font-weight: 600; letter-spacing: -0.015em;">Provision New Department</div>
+            <div class="modal-title">Add department</div>
+            <div class="modal-subtitle">Creates a new reporting group for your organization.</div>
           </div>
-          <button class="modal-close" onclick="window.closeNewDeptModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <button class="modal-close" onclick="window.closeNewDeptModal()" aria-label="Close modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       </div>
       <div class="modal-body">
-        <p style="color: var(--text-2); font-size: 0.84rem; margin-bottom: 16px;">Provisioning a new department initializes a brand-new reporting group on your organization's ISO 45003 Risk Heatmap once $N \ge 5$ responses are received.</p>
-        <div class="form-group">
-          <label class="form-label">Department Name</label>
-          <input type="text" id="newDeptNameInput" class="form-input" placeholder="e.g. Data Science & AI" />
-          <div class="form-hint">Use standard capitalization. Avoid duplicate names.</div>
+        <p style="color: var(--text-muted); font-size: var(--text-xs); margin-bottom: var(--space-4);">Departments will display on the ISO 45003 Risk Heatmap once at least 5 responses are recorded.</p>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="newDeptNameInput" class="form-label">Department name</label>
+          <input type="text" id="newDeptNameInput" class="form-input" placeholder="e.g. Data Science &amp; AI" />
+          <div class="form-hint" style="margin-top: 4px;">Use standard capitalization. Avoid duplicate names.</div>
         </div>
       </div>
       <div class="modal-foot">
-        <button class="btn btn-ghost btn-sm" onclick="window.closeNewDeptModal()">Cancel</button>
-        <button class="btn btn-primary btn-sm" onclick="window.submitNewDept()">Provision &amp; Select</button>
+        <button class="btn btn-secondary btn-sm" onclick="window.closeNewDeptModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="window.submitNewDept()">Add &amp; select</button>
       </div>
     </div>
   </div>
@@ -1076,77 +1091,84 @@
 </div>
 
 <!-- ============ ETHICS & HAZARD REPORTS VIEW ============ -->
-<div id="hr-section-ethics" style="display: none; padding-top: 10px;">
-  <div class="page-head">
-    <div>
-      <span class="eyebrow" style="color: #6366f1;">Anonymous Governance</span>
-      <h1>Ethics &amp; Hazard Reports</h1>
-      <p style="color: var(--text-2); font-size: 0.875rem;">
-        Confidential workplace hazard reports, safety alerts, and anonymous whistleblower threads.
-      </p>
+<div id="hr-section-ethics" style="display: none;">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-titles">
+      <h1 class="page-title">Ethics &amp; hazard reports</h1>
+      <p class="page-header-desc">Confidential workplace hazard reports, safety alerts, and anonymous whistleblower dialogue.</p>
     </div>
-    <div class="page-head-actions">
-      <button class="btn btn-ghost btn-sm" onclick="window.refreshEthicsReports()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-        ↻ Refresh Reports
+    <div class="page-header-actions">
+      <button class="btn btn-secondary btn-sm" onclick="window.refreshEthicsReports()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        <span>Refresh</span>
       </button>
     </div>
   </div>
 
-  <!-- Privacy Guarantee Alert -->
-  <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-    <div style="font-size: 1.3rem;">🛡️</div>
-    <div style="font-size: 0.84rem; color: var(--text-2); line-height: 1.5;">
-      <strong style="color: var(--text-1);">Whistleblower Anonymity:</strong> Submissions are cryptographically severed from user accounts and IP logs. Reports involving HR or Executive Leadership are automatically routed to the SuperAdmin Ombudsman and do not appear in this ledger.
+  <!-- Whistleblower Anonymity Notice -->
+  <div class="alert-banner alert-info" style="margin-bottom: var(--space-6);">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--info); flex-shrink: 0; margin-top: 1px;" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+    <div style="font-size: var(--text-xs); color: var(--text); line-height: 1.5;">
+      <strong>Whistleblower anonymity:</strong> Submissions are cryptographically severed from user accounts and IP logs. Reports involving HR or Executive Leadership are automatically routed to the SuperAdmin Ombudsman and do not appear in this ledger.
     </div>
   </div>
 
-  <!-- KPI Grid -->
-  <div class="kpi-grid" style="margin-bottom: 20px;">
-    <div class="kpi-card">
-      <div class="kpi-label">Total Reports</div>
-      <div class="kpi-value" id="ethicsTotalCount">0</div>
-      <div class="kpi-hint">Filed organization reports</div>
+  <!-- Stat Grid -->
+  <div class="stat-grid" style="margin-bottom: var(--space-6);">
+    <div class="stat-card">
+      <div class="stat-card-label">Total reports</div>
+      <div class="stat-card-value" id="ethicsTotalCount">0</div>
+      <div class="stat-card-hint">Filed organization reports</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Under Investigation</div>
-      <div class="kpi-value" id="ethicsInvestigatingCount" style="color: #f59e0b;">0</div>
-      <div class="kpi-hint">Active inquiry underway</div>
+    <div class="stat-card">
+      <div class="stat-card-label">Under investigation</div>
+      <div class="stat-card-value" id="ethicsInvestigatingCount">0</div>
+      <div class="stat-card-hint">Active inquiries underway</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Action Taken</div>
-      <div class="kpi-value" id="ethicsActionCount" style="color: #0284c7;">0</div>
-      <div class="kpi-hint">Mitigations applied</div>
+    <div class="stat-card">
+      <div class="stat-card-label">Action taken</div>
+      <div class="stat-card-value" id="ethicsActionCount">0</div>
+      <div class="stat-card-hint">Mitigations applied</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Resolved / Closed</div>
-      <div class="kpi-value" id="ethicsClosedCount" style="color: #10b981;">0</div>
-      <div class="kpi-hint">Completed case files</div>
+    <div class="stat-card">
+      <div class="stat-card-label">Resolved / Closed</div>
+      <div class="stat-card-value" id="ethicsClosedCount">0</div>
+      <div class="stat-card-hint">Completed case files</div>
     </div>
   </div>
 
-  <!-- Reports Table Card -->
+  <!-- Reports Table Card with Urgency Filter -->
   <div class="chart-card">
-    <div class="chart-head" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="chart-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-3);">
       <div>
-        <div class="chart-title">Whistleblower Incident Ledger</div>
-        <div class="chart-subtitle">Direct records of submitted workplace concerns and ongoing investigator threads</div>
+        <div class="chart-title">Incident ledger</div>
+        <div class="chart-subtitle">Workplace safety concerns and investigator dialogue</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: var(--space-2);">
+        <label for="ethicsUrgencyFilter" class="form-label" style="margin-bottom: 0; font-size: var(--text-xs); color: var(--text-subtle);">Urgency</label>
+        <select id="ethicsUrgencyFilter" class="form-select form-select-sm" onchange="window.filterEthicsByUrgency(this.value)">
+          <option value="all">All urgencies</option>
+          <option value="Critical">Critical</option>
+          <option value="Urgent">Urgent</option>
+          <option value="Standard">Standard</option>
+        </select>
       </div>
     </div>
     <div style="overflow-x: auto;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <table class="data-table table-to-cards" style="width: 100%;">
         <thead>
-          <tr style="border-bottom: 1px solid var(--border-strong); background: var(--bg-base);">
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Tracking Code</th>
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Category</th>
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Urgency</th>
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Submitted Date</th>
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Status</th>
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Actions</th>
+          <tr>
+            <th>Tracking code</th>
+            <th>Category</th>
+            <th>Urgency</th>
+            <th>Submitted date</th>
+            <th>Status</th>
+            <th style="text-align: right;">Actions</th>
           </tr>
         </thead>
         <tbody id="hrEthicsTableBody">
-          <tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-3); font-size: 0.875rem;">Loading ethics reports...</td></tr>
+          <tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">Loading ethics reports...</td></tr>
         </tbody>
       </table>
     </div>
@@ -1154,60 +1176,64 @@
 </div>
 
 <!-- ============ HR REPORT VIEW & RESPOND MODAL ============ -->
-<div id="hrReportModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);align-items:center;justify-content:center;" onclick="if(event.target===this)window.closeHrReportModal()">
-  <div style="background:#fff;border-radius:16px;width:95%;max-width:620px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);border:1px solid var(--border);">
-    <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <h3 style="margin:0;font-size:17px;color:var(--text-1);" id="hrModalTitle">Report Details</h3>
-          <span id="hrModalCodeChip" style="font-family:monospace;font-size:12px;font-weight:700;background:rgba(99,102,241,0.1);color:#4f46e5;padding:2px 8px;border-radius:6px;">WBL-XXXXXX</span>
+<div id="hrReportModalBackdrop" style="display: none; position: fixed; inset: 0; z-index: 9999; background: var(--overlay-backdrop); align-items: center; justify-content: center;" onclick="if(event.target===this)window.closeHrReportModal()">
+  <div class="modal" style="width: 95%; max-width: 620px; max-height: 88vh; display: flex; flex-direction: column;">
+    <div class="modal-head">
+      <div class="modal-head-top">
+        <div>
+          <div style="display: flex; align-items: center; gap: var(--space-2);">
+            <div class="modal-title" id="hrModalTitle">Report details</div>
+            <span id="hrModalCodeChip" class="badge badge-neutral" style="font-family: monospace;">WBL-XXXXXX</span>
+          </div>
+          <div class="modal-subtitle">Confidential case investigation &amp; whistleblower dialogue</div>
         </div>
-        <p style="margin:2px 0 0;font-size:12px;color:var(--text-3);">Confidential Case Investigation &amp; Whistleblower Dialogue</p>
+        <button class="modal-close" onclick="window.closeHrReportModal()" aria-label="Close modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
-      <button onclick="window.closeHrReportModal()" style="background:none;border:none;color:var(--text-3);font-size:20px;cursor:pointer;">&times;</button>
     </div>
 
-    <div style="padding:20px 24px;">
+    <div class="modal-body" style="overflow-y: auto;">
       <!-- Metadata & Status -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;background:var(--bg-base);padding:12px 16px;border-radius:10px;border:1px solid var(--border);">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-4); background: var(--bg); padding: var(--space-3); border-radius: var(--radius-card); border: 1px solid var(--border);">
         <div>
-          <span style="font-size:11px;color:var(--text-3);text-transform:uppercase;font-weight:600;">Category</span>
-          <div style="font-weight:600;color:var(--text-1);font-size:13px;" id="hrModalCategory">—</div>
+          <span style="font-size: var(--text-xs); color: var(--text-subtle); font-weight: var(--weight-medium); display: block;">Category</span>
+          <div style="font-weight: var(--weight-medium); color: var(--text); font-size: var(--text-sm); margin-top: 2px;" id="hrModalCategory">—</div>
         </div>
         <div>
-          <span style="font-size:11px;color:var(--text-3);text-transform:uppercase;font-weight:600;">Urgency</span>
-          <div style="font-weight:600;font-size:13px;" id="hrModalUrgency">—</div>
+          <span style="font-size: var(--text-xs); color: var(--text-subtle); font-weight: var(--weight-medium); display: block;">Urgency</span>
+          <div style="margin-top: 2px;" id="hrModalUrgency">—</div>
         </div>
       </div>
 
       <!-- Incident Description -->
-      <div style="margin-bottom:18px;">
-        <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;">Incident Description</label>
-        <div id="hrModalDescription" style="padding:12px 14px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text-1);line-height:1.5;max-height:120px;overflow-y:auto;white-space:pre-wrap;">—</div>
+      <div style="margin-bottom: var(--space-4);">
+        <label class="form-label" style="font-size: var(--text-xs);">Incident description</label>
+        <div id="hrModalDescription" style="padding: var(--space-3); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-control); font-size: var(--text-sm); color: var(--text); line-height: 1.5; max-height: 120px; overflow-y: auto; white-space: pre-wrap;">—</div>
       </div>
 
       <!-- Status Manager -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;background:rgba(243,244,246,0.8);padding:10px 14px;border-radius:8px;">
-        <label style="font-size:12px;font-weight:700;color:var(--text-1);white-space:nowrap;">Case Status:</label>
-        <select id="hrModalStatusSelect" style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);font-size:13px;background:#fff;color:var(--text-1);">
+      <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); background: var(--bg); padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); border: 1px solid var(--border); flex-wrap: wrap;">
+        <label for="hrModalStatusSelect" class="form-label" style="margin-bottom: 0; font-size: var(--text-xs); white-space: nowrap;">Case status:</label>
+        <select id="hrModalStatusSelect" class="form-select form-select-sm" style="flex: 1; min-width: 160px;">
           <option value="submitted">Submitted</option>
           <option value="under_investigation">Under Investigation</option>
           <option value="action_taken">Action Taken</option>
           <option value="closed">Closed / Resolved</option>
         </select>
-        <button onclick="window.saveHrReportStatus()" class="btn btn-secondary btn-sm" id="hrSaveStatusBtn" style="padding:6px 12px;font-size:12px;">Save Status</button>
+        <button onclick="window.saveHrReportStatus()" class="btn btn-secondary btn-sm" id="hrSaveStatusBtn">Save status</button>
       </div>
 
       <!-- Thread Feed -->
-      <div style="font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;margin-bottom:8px;">Investigation Thread</div>
-      <div id="hrModalThreadContainer" style="background:var(--bg-base);border:1px solid var(--border);border-radius:10px;padding:12px;max-height:180px;overflow-y:auto;margin-bottom:14px;">
+      <div style="font-size: var(--text-xs); font-weight: var(--weight-medium); color: var(--text-subtle); margin-bottom: var(--space-2);">Investigation thread</div>
+      <div id="hrModalThreadContainer" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: var(--space-3); max-height: 200px; overflow-y: auto; margin-bottom: var(--space-3);">
         <!-- Thread messages -->
       </div>
 
       <!-- Investigator Reply -->
-      <div style="display:flex;gap:8px;">
-        <input type="text" id="hrModalReplyInput" placeholder="Send message to anonymous whistleblower..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendHrReportReply();}" style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
-        <button onclick="window.sendHrReportReply()" class="btn btn-primary btn-sm" id="hrSendReplyBtn" style="padding:9px 16px;font-size:13px;">Send</button>
+      <div style="display: flex; gap: var(--space-2);">
+        <input type="text" id="hrModalReplyInput" class="form-input" placeholder="Send message to anonymous whistleblower..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendHrReportReply();}" style="flex: 1;">
+        <button onclick="window.sendHrReportReply()" class="btn btn-primary btn-sm" id="hrSendReplyBtn">Send</button>
       </div>
     </div>
   </div>
@@ -1223,22 +1249,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/></svg>
       </div>
       <div class="footer-author">
-        <span>© 2026 Havilah Health & Technologies. All rights reserved.</span>
-        <span class="footer-author-dot"></span>
-        <span>Made by <strong>Nana Kwame Dickson</strong></span>
+        <span>© 2026 Havilah Health &amp; Technologies. All rights reserved.</span>
       </div>
     </div>
     <div class="footer-links" role="navigation" aria-label="Footer">
       <a onclick="App.openLegal('privacy')">Privacy</a>
       <a onclick="App.openLegal('terms')">Terms</a>
-      <a onclick="App.openLegal('hipaa')">HIPAA</a>
-      <a onclick="App.openLegal('gdpr')">GDPR</a>
       <a onclick="App.openContact()">Contact</a>
       <a onclick="App.openStatus()">Status</a>
-    </div>
-    <div class="footer-compliance">
-      <span class="compliance-badge">SOC 2</span>
-      <span class="compliance-badge">ISO 27001</span>
     </div>
   </div>
 </footer>
@@ -1813,7 +1831,11 @@ async function generateComplianceReport() {
     pdf.setFontSize(8.5);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(51, 65, 85);
-    pdf.text('Hotline: 0551022714 (+233 55 102 2714)   |   Email: nanakwamedickson62@gmail.com', margin + 8, y + 15);
+    const pdfContactEmail = (window.tenantConfig && window.tenantConfig.eap_contact_email) ? window.tenantConfig.eap_contact_email : '';
+    const pdfContactLine = pdfContactEmail 
+      ? `Hotline: 0551022714 (+233 55 102 2714)   |   Email: ${pdfContactEmail}`
+      : 'Hotline: 0551022714 (+233 55 102 2714)';
+    pdf.text(pdfContactLine, margin + 8, y + 15);
     pdf.text(`Status: ${isColdStart ? 'Standby EAP Support Active' : 'Active Clinical Dispatch Available'}`, margin + 8, y + 21);
 
     y += 34;
@@ -1847,7 +1869,7 @@ async function generateComplianceReport() {
 
     const dateStr = new Date().toISOString().split('T')[0];
     pdf.save(`Havilah_ISO45003_Audit_${dateStr}.pdf`);
-    showToast('Report Downloaded 📄', 'Your 3-page ISO 45003 compliance audit report has been saved.', 'success');
+    showToast('Report downloaded', 'Your 3-page ISO 45003 compliance audit report has been saved.', 'success');
   } catch (err) {
     console.error('[PDF] Report generation failed:', err);
     showToast('Export Error', 'Failed to generate PDF report: ' + err.message, 'error');
@@ -2678,7 +2700,8 @@ const App = (() => {
     // Update subtitle
     const dept = state.hrFilters.department === 'all' ? 'All departments' : state.hrFilters.department;
     const days = state.hrFilters.time;
-    $('#hrSubtitle').textContent = `Showing: ${dept} · Last ${days} days · Auto-refreshed`;
+    const subEl = $('#hrSubtitle');
+    if (subEl) subEl.textContent = `Showing: ${dept} · Last ${days} days · Auto-refreshed`;
     
     // Re-render charts with filter-aware data
     if (state.charts.severity) {
@@ -2786,11 +2809,12 @@ const App = (() => {
 
     grid.innerHTML = '';
     kpis.forEach(k => {
-      const card = el('div', 'kpi-card');
-      const trendIcon = k.dir === 'up'
-        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
-      card.innerHTML = `<div class="kpi-top"><span class="kpi-label">${k.label}</span><div class="kpi-icon ${k.icon}">${k.svg}</div></div><div class="kpi-value">${k.value}</div><span class="kpi-trend ${k.dir}">${trendIcon}${k.trend}</span>`;
+      const card = el('div', 'stat-card');
+      card.innerHTML = `
+        <div class="stat-card-label">${k.label}</div>
+        <div class="stat-card-value">${k.value}</div>
+        <div class="stat-card-hint">${k.trend}</div>
+      `;
       grid.appendChild(card);
     });
   }
@@ -2814,10 +2838,10 @@ const App = (() => {
       data: {
         labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'Wk 6', 'Wk 7', 'Wk 8'],
         datasets: [
-          { label: 'Healthy', data: generateSeverityData(0, 30), backgroundColor: '#4FB286', borderRadius: 0, borderSkipped: false, stack: 's' },
-          { label: 'Mild', data: generateSeverityData(1, 30), backgroundColor: '#E8A33D', borderRadius: 0, borderSkipped: false, stack: 's' },
-          { label: 'Moderate', data: generateSeverityData(2, 30), backgroundColor: '#E5646E', borderRadius: 0, borderSkipped: false, stack: 's' },
-          { label: 'Severe', data: generateSeverityData(3, 30), backgroundColor: '#B23A48', borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, stack: 's' }
+          { label: 'Healthy', data: generateSeverityData(0, 30), backgroundColor: '#15803D', borderRadius: 0, borderSkipped: false, stack: 's' },
+          { label: 'Mild', data: generateSeverityData(1, 30), backgroundColor: '#0F766E', borderRadius: 0, borderSkipped: false, stack: 's' },
+          { label: 'Moderate', data: generateSeverityData(2, 30), backgroundColor: '#B45309', borderRadius: 0, borderSkipped: false, stack: 's' },
+          { label: 'Severe', data: generateSeverityData(3, 30), backgroundColor: '#B91C1C', borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, stack: 's' }
         ]
       },
       options: {
@@ -2905,10 +2929,12 @@ const App = (() => {
   }
 
   const emptyStateCardHtml = `
-    <div class="empty-state-card" style="padding: 40px; text-align: center; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; margin: 12px 0;">
-      <div style="font-size: 28px; margin-bottom: 8px;">🔒</div>
-      <h4 style="margin: 0 0 4px 0; color: #0F172A; font-weight: 600;">Privacy Shield Active (N &lt; 5)</h4>
-      <p style="margin: 0; color: #64748B; font-size: 13px;">
+    <div class="empty-state" style="padding: var(--space-8) var(--space-4); text-align: center; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-card); margin: var(--space-3) 0;">
+      <div style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); margin-bottom: var(--space-2); color: var(--text-subtle);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      </div>
+      <h4 style="margin: 0 0 var(--space-1) 0; color: var(--text); font-weight: var(--weight-semibold); font-size: var(--text-sm);">Privacy threshold active (N &lt; 5)</h4>
+      <p style="margin: 0; color: var(--text-subtle); font-size: var(--text-xs); max-width: 420px; margin-inline: auto;">
         ISO 45003 trend charts and heatmaps activate automatically once at least 5 employee pulse responses are recorded.
       </p>
     </div>
@@ -2994,9 +3020,9 @@ const App = (() => {
   }
 
   function getRiskBrickStyle(score) {
-    if (score >= 60) return 'background-color: #fecaca; color: #991b1b;';
-    if (score >= 35) return 'background-color: #fef08a; color: #854d0e;';
-    return 'background-color: #bbf7d0; color: #166534;';
+    if (score >= 60) return 'background-color: var(--danger-bg); color: var(--danger); font-variant-numeric: tabular-nums;';
+    if (score >= 35) return 'background-color: var(--warning-bg); color: var(--warning); font-variant-numeric: tabular-nums;';
+    return 'background-color: var(--success-bg); color: var(--success); font-variant-numeric: tabular-nums;';
   }
 
   function renderHeatmap() {
@@ -3044,8 +3070,8 @@ const App = (() => {
           let content, styleStr, tooltip;
           
           if (dept.meetsNSize === false) {
-            content = '🔒';
-            styleStr = 'background-color: #cbd5e1; color: #64748b; cursor: help; height: 38px;';
+            content = '<span style="font-size: 11px; font-weight: 600;">N &lt; 5</span>';
+            styleStr = 'background-color: var(--bg); color: var(--text-subtle); border: 1px solid var(--border); cursor: help; height: 38px;';
             tooltip = 'title="Section Protected (N < 5 responses)"';
           } else {
             const score = dept.scores[dim] || 0;
@@ -3099,10 +3125,12 @@ const App = (() => {
   }
 
   const noActiveAlertsHtml = `
-    <div style="padding: 30px; text-align: center; background: #F8FAFC; border: 1px dashed #E2E8F0; border-radius: 8px; margin: 8px 0;">
-      <div style="font-size: 24px; margin-bottom: 6px;">🛡️</div>
-      <h5 style="margin: 0 0 4px 0; color: #0F172A; font-weight: 600;">No Active Risk Alerts</h5>
-      <p style="margin: 0; color: #64748B; font-size: 13px;">
+    <div class="empty-state" style="padding: var(--space-6) var(--space-4); text-align: center; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-card); margin: var(--space-2) 0;">
+      <div style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); margin-bottom: var(--space-2); color: var(--success);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+      </div>
+      <h5 style="margin: 0 0 var(--space-1) 0; color: var(--text); font-weight: var(--weight-semibold); font-size: var(--text-sm);">No active risk alerts</h5>
+      <p style="margin: 0; color: var(--text-subtle); font-size: var(--text-xs); max-width: 380px; margin-inline: auto;">
         Automated threshold alerts will trigger here if department risk indicators exceed safety baselines.
       </p>
     </div>
@@ -3145,7 +3173,7 @@ const App = (() => {
     if (criticalAlert && banner) {
       const textEl = document.getElementById('predictiveRiskText');
       if (textEl) {
-        textEl.innerText = `⚠️ Warning: ${criticalAlert.desc || criticalAlert.title || 'Department risk indicators exceed safety threshold.'}`;
+        textEl.innerText = `Warning: ${criticalAlert.desc || criticalAlert.title || 'Department risk indicators exceed safety threshold.'}`;
       }
       banner.style.display = 'flex';
     } else if (banner) {
@@ -3171,12 +3199,12 @@ const App = (() => {
     };
 
     realAlerts.forEach(a => {
-      const item = el('div', 'alert-item cosmic-card');
+      const item = el('div', 'alert-item');
       const alertIconKey = (a.icon || (a.severity === 'CRITICAL' ? 'critical' : a.severity === 'WARNING' ? 'moderate' : 'info')).toLowerCase();
       let dispatchHtml = '';
       if (alertIconKey === 'critical' || alertIconKey === 'moderate') {
         const safeTitle = (a.title || a.headline || 'Threshold Alert').replace(/'/g, "\\'");
-        dispatchHtml = `<div style="margin-top:8px;"><button class="cosmic-pill emerald" style="cursor:pointer;" onclick="event.stopPropagation(); App.dispatchIntervention('${safeTitle}')">Dispatch Intervention to ${activeProvider}</button></div>`;
+        dispatchHtml = `<div style="margin-top:8px;"><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); App.dispatchIntervention('${safeTitle}')">Dispatch Intervention to ${activeProvider}</button></div>`;
       }
       item.innerHTML = `<div class="alert-icon ${alertIconKey}">${iconSvgs[alertIconKey] || iconSvgs.info}</div><div class="alert-content"><div class="alert-title">${a.title}</div><div class="alert-desc">${a.desc}</div>${dispatchHtml}<div class="alert-time" style="margin-top:4px;">${a.time}</div></div>`;
       item.addEventListener('click', () => toast('Alert details', a.title, alertIconKey === 'critical' ? 'error' : alertIconKey === 'moderate' ? 'warning' : 'info'));
@@ -4031,23 +4059,27 @@ document.addEventListener('DOMContentLoaded', App.init);
 </script>
   <script src="/js/hrDashboard.js?v=20261026"></script>
 
-<!-- Glassmorphic Privacy & Anonymity Modal -->
-<div id="privacy-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(2,6,23,0.85); backdrop-filter:blur(8px); justify-content:center; align-items:center; z-index:9999;">
-  <div style="background:rgba(15,23,42,0.95); border:1px solid rgba(45,212,191,0.3); border-radius:16px; padding:24px; max-width:500px; width:100%; color:#e2e8f0; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:12px; margin-bottom:16px;">
-      <h3 style="color:#2dd4bf; margin:0; font-size:1.25rem; font-weight:700;">🔒 Data Retention & Anonymity Guarantee</h3>
-      <button onclick="document.getElementById('privacy-modal').style.display='none'" style="background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer;">&times;</button>
+<!-- Privacy & Anonymity Modal -->
+<div id="privacy-modal" class="modal-backdrop" style="display:none; position:fixed; inset:0; background:var(--overlay-backdrop); justify-content:center; align-items:center; z-index:9999;" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal" style="max-width:500px; width:95%;">
+    <div class="modal-head">
+      <div class="modal-head-top">
+        <div class="modal-title">Data retention &amp; anonymity guarantee</div>
+        <button class="modal-close" onclick="document.getElementById('privacy-modal').style.display='none'" aria-label="Close modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
     </div>
-    <div style="font-size:0.875rem; line-height:1.6;">
-      <p style="font-weight:600; color:#f8fafc; margin-top:8px;">🔒 Hardcoded Anonymity Threshold (N ≥ 5)</p>
-      <p style="margin-bottom:12px;">Department risk scores are displayed ONLY when at least 5 responses (N ≥ 5) have been submitted. Smaller team metrics are automatically suppressed or rolled up.</p>
-      <p style="font-weight:600; color:#f8fafc; margin-top:8px;">🛡️ Zero Raw Data Exposure to HR</p>
-      <p style="margin-bottom:12px;">HR Administrators view aggregate statistical trends only. Individual PHQ-9, GAD-7, and COPSOQ III responses are cryptographically detached from employee accounts and never accessible.</p>
-      <p style="font-weight:600; color:#f8fafc; margin-top:8px;">⏳ Data Retention Policy</p>
-      <p style="margin-bottom:0;">Aggregated logs are retained for ISO 45003 compliance audit reporting according to company policies and automatically purged thereafter.</p>
+    <div class="modal-body" style="font-size:var(--text-sm); line-height:1.6; color:var(--text);">
+      <p style="font-weight:var(--weight-semibold); color:var(--text); margin-top:8px;">Hardcoded anonymity threshold (N ≥ 5)</p>
+      <p style="margin-bottom:12px; color:var(--text-muted);">Department risk scores are displayed ONLY when at least 5 responses (N ≥ 5) have been submitted. Smaller team metrics are automatically suppressed or rolled up.</p>
+      <p style="font-weight:var(--weight-semibold); color:var(--text); margin-top:8px;">Zero raw data exposure to HR</p>
+      <p style="margin-bottom:12px; color:var(--text-muted);">HR Administrators view aggregate statistical trends only. Individual PHQ-9, GAD-7, and COPSOQ III responses are cryptographically detached from employee accounts and never accessible.</p>
+      <p style="font-weight:var(--weight-semibold); color:var(--text); margin-top:8px;">Data retention policy</p>
+      <p style="margin-bottom:0; color:var(--text-muted);">Aggregated logs are retained for ISO 45003 compliance audit reporting according to company policies and automatically purged thereafter.</p>
     </div>
-    <div style="margin-top:20px; display:flex; justify-content:flex-end;">
-      <button onclick="document.getElementById('privacy-modal').style.display='none'" style="background:rgba(45,212,191,0.2); border:1px solid rgba(45,212,191,0.4); color:#5eead4; font-weight:600; padding:8px 16px; border-radius:8px; cursor:pointer;">Got it</button>
+    <div class="modal-foot">
+      <button class="btn btn-primary btn-sm" onclick="document.getElementById('privacy-modal').style.display='none'">Got it</button>
     </div>
   </div>
 </div>

@@ -303,7 +303,7 @@
       tbody.innerHTML = `
         <tr>
           <td colspan="7" style="text-align: center; padding: 28px; color: var(--text-muted);">
-            No clinicians registered in this practice yet. Click <strong>➕ Add New Doctor</strong> to onboard staff.
+            No clinicians registered in this practice yet. Click <strong>Add New Doctor</strong> to onboard staff.
           </td>
         </tr>
       `;
@@ -366,7 +366,7 @@
       alert('Error creating clinician account: ' + err.message);
     } finally {
       btn.disabled = false;
-      btn.textContent = '➕ Create Clinician Account';
+      btn.textContent = 'Create Clinician Account';
     }
   };
 
@@ -413,12 +413,12 @@
         if (res.data.assignedDoctorId) {
           const docName = res.data.assignedDoctorId.fullName || 'Assigned Clinician';
           badgeEl.textContent = `Assigned: ${docName}`;
-          badgeEl.style.background = '#DCFCE7';
-          badgeEl.style.color = '#15803D';
+          badgeEl.style.background = 'var(--success-subtle)';
+          badgeEl.style.color = 'var(--success)';
         } else {
           badgeEl.textContent = 'Unassigned';
-          badgeEl.style.background = '#FEF3C7';
-          badgeEl.style.color = '#92400E';
+          badgeEl.style.background = 'var(--warning-subtle)';
+          badgeEl.style.color = 'var(--warning)';
         }
       }
 
@@ -437,7 +437,7 @@
     } catch (err) {
       alert('Error delegating referral: ' + err.message);
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = '✓ Delegate Case'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Delegate Case'; }
     }
   };
 
@@ -468,6 +468,11 @@
   };
 
   window.logoutAssessor = () => {
+    openModal('assessorSignOutModal');
+  };
+
+  window.confirmLogoutAssessor = () => {
+    closeModal('assessorSignOutModal');
     clearAssessorToken();
     state.assessor = null;
     state.queue = [];
@@ -518,9 +523,10 @@
         if (state.selectedCase && (!refCode || state.selectedCase.referenceCode === refCode)) {
           const pill = document.getElementById('assessorPeerPresencePill');
           if (pill) {
-            pill.textContent = isOnline ? '🟢 Patient Online' : '⚪ Patient Offline';
-            pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
-            pill.style.color = isOnline ? '#15803d' : '#475569';
+            pill.textContent = isOnline ? 'Patient Online' : 'Patient Offline';
+            pill.style.background = isOnline ? 'var(--success-subtle)' : 'var(--surface-canvas)';
+            pill.style.color = isOnline ? 'var(--success)' : 'var(--text-2)';
+            pill.style.borderColor = isOnline ? 'var(--success-border)' : 'var(--border)';
           }
         }
       },
@@ -859,18 +865,18 @@
       let statusBadge = '';
       const st = (r.status || 'pending').toLowerCase();
       if (st === 'completed') {
-        statusBadge = '<span class="badge badge-completed">✓ Completed</span>';
+        statusBadge = '<span class="badge badge-completed">Completed</span>';
       } else if (st === 'scheduled') {
-        statusBadge = '<span class="badge badge-scheduled">📅 Scheduled</span>';
+        statusBadge = '<span class="badge badge-scheduled">Scheduled</span>';
       } else if (st === 'cancelled') {
-        statusBadge = '<span class="badge badge-cancelled">✕ Cancelled</span>';
+        statusBadge = '<span class="badge badge-cancelled">Cancelled</span>';
       } else if (st === 'archived') {
-        statusBadge = '<span class="badge" style="background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1;">📦 Archived</span>';
+        statusBadge = '<span class="badge" style="background:var(--surface-canvas); color:var(--text-muted); border:1px solid var(--border);">Archived</span>';
       } else {
-        statusBadge = '<span class="badge badge-pending">⏳ Pending</span>';
+        statusBadge = '<span class="badge badge-pending">Pending</span>';
       }
 
-      const staleBadge = r.isStale ? '<span class="badge badge-stale" title="Pending >48hrs">⏱️ 48h+</span>' : '';
+      const staleBadge = r.isStale ? '<span class="badge badge-stale" title="Pending >48hrs">48h+ Overdue</span>' : '';
 
       // Clinician Column
       let clinicianHtml = '';
@@ -879,7 +885,7 @@
         const docSpec = r.assignedDoctorId.specialty ? `<div style="font-size:0.7rem; color:var(--text-muted);">${r.assignedDoctorId.specialty}</div>` : '';
         clinicianHtml = `
           <div>
-            <span class="badge badge-clinician">🩺 ${docName}</span>
+            <span class="badge badge-clinician">${docName}</span>
             ${docSpec}
           </div>
         `;
@@ -887,19 +893,19 @@
         if (isClinicAdmin && r.status !== 'completed' && r.status !== 'archived') {
           clinicianHtml = `
             <div style="display:flex; align-items:center; gap:4px;">
-              <span class="badge badge-unassigned">○ Unassigned</span>
+              <span class="badge badge-unassigned">Unassigned</span>
               <button class="btn btn-outline btn-sm" onclick="openCaseDetail('${r._id}')" style="padding:2px 6px; font-size:0.7rem;" title="Triage & Delegate">Assign</button>
             </div>
           `;
         } else {
-          clinicianHtml = '<span class="badge badge-unassigned">○ Unassigned</span>';
+          clinicianHtml = '<span class="badge badge-unassigned">Unassigned</span>';
         }
       }
 
       // Appointment date badge
       let appointmentStr = '<span style="color:var(--text-muted); font-size:0.78rem;">Not set</span>';
       if (r.scheduledAt) {
-        appointmentStr = `<span style="font-weight:600; color:#1E429F; font-size:0.8rem;">📅 ${new Date(r.scheduledAt).toLocaleDateString()}</span>`;
+        appointmentStr = `<span style="font-weight:600; color:var(--brand); font-size:0.8rem;">${new Date(r.scheduledAt).toLocaleDateString()}</span>`;
       }
 
       // Billing Amount
@@ -912,11 +918,11 @@
       let settlementPill = '';
       const settlement = r.billing?.settlementStatus || (r.billing?.isBilled ? 'pending_payment' : 'unbilled');
       if (settlement === 'settled') {
-        settlementPill = `<span class="settlement-pill settlement-settled" onclick="toggleSettlementStatus('${r._id}', 'settled')" title="Click to toggle settlement">✓ Settled</span>`;
+        settlementPill = `<span class="settlement-pill settlement-settled" onclick="toggleSettlementStatus('${r._id}', 'settled')" title="Click to toggle settlement">Settled</span>`;
       } else if (settlement === 'pending_payment') {
-        settlementPill = `<span class="settlement-pill settlement-pending" onclick="toggleSettlementStatus('${r._id}', 'pending_payment')" title="Click to mark Settled / Paid">⏳ Pending Pay</span>`;
+        settlementPill = `<span class="settlement-pill settlement-pending" onclick="toggleSettlementStatus('${r._id}', 'pending_payment')" title="Click to mark Settled / Paid">Pending Payment</span>`;
       } else {
-        settlementPill = '<span class="settlement-pill settlement-unbilled">○ Unbilled</span>';
+        settlementPill = '<span class="settlement-pill settlement-unbilled">Unbilled</span>';
       }
 
       // Action links for contact
@@ -924,15 +930,15 @@
       const isPhone = !isEmail && patientContact.length >= 7;
       let contactHtml = `<span style="color:var(--text-1); font-size:0.82rem;">${patientContact}</span>`;
       if (isPhone) {
-        contactHtml = `<a href="tel:${patientContact.replace(/\s+/g, '')}" style="color:#0284c7; text-decoration:none; font-weight:600; font-size:0.82rem;">📞 ${patientContact}</a>`;
+        contactHtml = `<a href="tel:${patientContact.replace(/\s+/g, '')}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.82rem; display:inline-flex; align-items:center; gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${patientContact}</a>`;
       } else if (isEmail) {
         const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${r.referenceCode}]`);
-        contactHtml = `<a href="mailto:${patientContact}?subject=${mailtoSubj}" style="color:#0284c7; text-decoration:none; font-weight:600; font-size:0.82rem;">✉️ ${patientContact}</a>`;
+        contactHtml = `<a href="mailto:${patientContact}?subject=${mailtoSubj}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.82rem; display:inline-flex; align-items:center; gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>${patientContact}</a>`;
       }
 
       const isCompleted = r.status === 'completed';
       const isOnline = window.HavilahCall ? window.HavilahCall.isPeerOnline(r.referenceCode) : false;
-      const dotColor = isOnline ? '#10b981' : '#cbd5e1';
+      const dotColor = isOnline ? 'var(--success)' : 'var(--border-strong)';
       const dotTitle = isOnline ? 'Patient is Online now' : 'Patient is Offline';
 
       tr.innerHTML = `
@@ -958,13 +964,13 @@
         <td>
           <div style="display:flex; gap:4px; align-items:center;">
             <button class="btn btn-ghost btn-sm" onclick="openCaseDetail('${r._id}')">View</button>
-            ${!isCompleted && st !== 'archived' ? `<button class="btn btn-outline btn-sm" onclick="quickCallCase('${r.referenceCode}', '${(patientName || 'Patient').replace(/'/g, "\\'")}')" style="padding:4px 8px; font-size:0.75rem; color:#0d9488; border-color:#0d9488;" title="Call Patient Direct">📞</button>` : ''}
+            ${!isCompleted && st !== 'archived' ? `<button class="btn btn-outline btn-sm" onclick="quickCallCase('${r.referenceCode}', '${(patientName || 'Patient').replace(/'/g, "\\'")}')" style="padding:4px 8px; font-size:0.75rem; color:var(--brand); border-color:var(--border);" title="Call Patient Direct"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>` : ''}
             ${!isCompleted && st !== 'archived' ? `<button class="btn btn-primary btn-sm" onclick="openCompleteModal('${r._id}')">Complete</button>` : ''}
             <button class="btn btn-ghost btn-sm" onclick="quickArchiveCase('${r._id}', ${st === 'archived'})" title="${st === 'archived' ? 'Restore Case' : 'Archive Case'}" style="padding:4px 6px; font-size:0.82rem;">
-              ${st === 'archived' ? '📤' : '📦'}
+              ${st === 'archived' ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>' : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>'}
             </button>
-            <button class="btn btn-ghost btn-sm" onclick="quickDeleteCase('${r._id}', '${r.referenceCode}')" title="Delete Case" style="padding:4px 6px; font-size:0.82rem; color:#DC2626;">
-              🗑️
+            <button class="btn btn-ghost btn-sm" onclick="quickDeleteCase('${r._id}', '${r.referenceCode}')" title="Delete Case" style="padding:4px 6px; font-size:0.82rem; color:var(--danger);">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
           </div>
         </td>
@@ -1022,10 +1028,10 @@
     const isPhone = !isEmail && pContact.length >= 7;
     let contactAction = pContact;
     if (isPhone) {
-      contactAction = `<a href="tel:${pContact.replace(/\s+/g, '')}" style="color:#0284c7; font-weight:700; text-decoration:none;">📞 Call ${pContact}</a>`;
+      contactAction = `<a href="tel:${pContact.replace(/\s+/g, '')}" style="color:var(--brand); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call ${pContact}</a>`;
     } else if (isEmail) {
       const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${item.referenceCode}]`);
-      contactAction = `<a href="mailto:${pContact}?subject=${mailtoSubj}" style="color:#0284c7; font-weight:700; text-decoration:none;">✉️ Email ${pContact}</a>`;
+      contactAction = `<a href="mailto:${pContact}?subject=${mailtoSubj}" style="color:var(--brand); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Email ${pContact}</a>`;
     }
 
     const assignedDocText = item.assignedDoctorId
@@ -1128,8 +1134,8 @@
     const archiveBtn = document.getElementById('modalArchiveCaseBtn');
     if (archiveBtn) {
       const isArchived = item.status === 'archived';
-      archiveBtn.textContent = isArchived ? '📤 Restore from Archive' : '📦 Archive Case';
-      archiveBtn.style.color = isArchived ? '#0D9488' : 'var(--text-1)';
+      archiveBtn.textContent = isArchived ? 'Restore from Archive' : 'Archive Case';
+      archiveBtn.style.color = isArchived ? 'var(--brand)' : 'var(--text-1)';
     }
 
     // Update WebRTC Call Client presence for this specific case
@@ -1145,9 +1151,10 @@
       if (presencePill) {
         presencePill.dataset.ref = item.referenceCode;
         const isOnline = window.HavilahCall.isPeerOnline(item.referenceCode);
-        presencePill.textContent = isOnline ? '🟢 Patient Online' : '⚪ Patient Offline';
-        presencePill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
-        presencePill.style.color = isOnline ? '#15803d' : '#475569';
+        presencePill.textContent = isOnline ? 'Patient Online' : 'Patient Offline';
+        presencePill.style.background = isOnline ? 'var(--success-subtle)' : 'var(--surface-canvas)';
+        presencePill.style.color = isOnline ? 'var(--success)' : 'var(--text-2)';
+        presencePill.style.borderColor = isOnline ? 'var(--success-border)' : 'var(--border)';
       }
     }
 
@@ -1196,7 +1203,7 @@
   };
 
   window.quickDeleteCase = async (referralId, referenceCode) => {
-    const confirmPrompt = confirm(`⚠️ Are you sure you want to permanently delete referral ${referenceCode}?\n\nThis will remove it from the system and cannot be undone.`);
+    const confirmPrompt = confirm(`Are you sure you want to permanently delete referral ${referenceCode}?\n\nThis will remove it from the system and cannot be undone.`);
     if (!confirmPrompt) return;
 
     try {
@@ -1218,7 +1225,7 @@
 
     if (!attachments || attachments.length === 0) {
       attachList.innerHTML = `
-        <div style="color: var(--text-muted); font-size: 0.8rem; background: #F8FAFC; border: 1px dashed var(--border); border-radius: 8px; padding: 14px; text-align: center;">
+        <div style="color: var(--text-muted); font-size: 0.8rem; background: var(--surface-canvas); border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 14px; text-align: center;">
           No medical documents attached yet. Click <strong>+ Attach Certificate</strong> above to issue a medical certificate or clinical report.
         </div>
       `;
@@ -1226,9 +1233,7 @@
     }
 
     attachList.innerHTML = attachments.map((att, idx) => {
-      const isPdf = (att.fileName || '').toLowerCase().endsWith('.pdf') || (att.fileType || '').includes('pdf');
-      const isImg = /\.(png|jpg|jpeg|webp)$/i.test(att.fileName || '') || (att.fileType || '').includes('image');
-      const icon = isPdf ? '📕' : isImg ? '🖼️' : '📝';
+      const iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
       
       const sizeStr = att.fileSize 
         ? (att.fileSize > 1024 * 1024 
@@ -1241,25 +1246,25 @@
         : 'Recently';
 
       return `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--surface-card); border: 1px solid var(--border); padding: 10px 14px; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); gap: 10px;">
           <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
-            <div style="font-size: 1.4rem; flex-shrink: 0;">${icon}</div>
+            <div style="flex-shrink: 0; display: flex; align-items: center;">${iconSvg}</div>
             <div style="min-width: 0; flex: 1;">
               <div style="font-weight: 700; color: var(--text-1); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${att.fileName || 'Clinical_Document'}</div>
               <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
                 <span>${timeStr}</span>
                 ${sizeStr ? `<span>•</span><span>${sizeStr}</span>` : ''}
-                <span style="color: #059669; font-weight: 600;">• Verified</span>
+                <span style="color: var(--success); font-weight: 600;">• Verified</span>
               </div>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-            <a href="${att.fileData}" download="${att.fileName}" class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-              <span>📥</span>
+            <a href="${att.fileData}" download="${att.fileName}" class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               <span>Download</span>
             </a>
-            <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteAssessorAttachment(${idx})" style="padding: 4px 8px; font-size: 0.75rem; color: #DC2626; border-color: #FECACA;" title="Remove Document">
-              🗑️
+            <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteAssessorAttachment(${idx})" style="padding: 4px 8px; font-size: 0.75rem; color: var(--danger); border-color: var(--danger-border);" title="Remove Document">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
           </div>
         </div>
@@ -1355,9 +1360,9 @@
       return `
         <div style="display:flex;flex-direction:column;align-items:${isAssessor ? 'flex-end' : 'flex-start'};gap:2px;margin-bottom:6px;">
           <div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);padding:0 4px;">
-            ${isAssessor ? '🩺 You (Practitioner)' : '👤 Patient (Employee)'} • ${timeStr}
+            ${isAssessor ? 'You (Practitioner)' : 'Patient (Employee)'} • ${timeStr}
           </div>
-          <div style="max-width:82%;padding:8px 12px;border-radius:${isAssessor ? '14px 14px 2px 14px' : '14px 14px 14px 2px'};font-size:0.82rem;line-height:1.45;background:${isAssessor ? 'linear-gradient(135deg, #0d9488, #0f766e)' : '#FFFFFF'};color:${isAssessor ? '#FFFFFF' : 'var(--text-1)'};border:1px solid ${isAssessor ? 'transparent' : 'var(--border)'};box-shadow:0 1px 3px rgba(0,0,0,0.05);word-break:break-word;">
+          <div style="max-width:82%;padding:8px 12px;border-radius:${isAssessor ? '14px 14px 2px 14px' : '14px 14px 14px 2px'};font-size:0.82rem;line-height:1.45;background:${isAssessor ? 'var(--brand)' : 'var(--surface-card)'};color:${isAssessor ? '#FFFFFF' : 'var(--text-1)'};border:1px solid ${isAssessor ? 'transparent' : 'var(--border)'};box-shadow:0 1px 3px rgba(0,0,0,0.05);word-break:break-word;">
             ${safeMsg}
           </div>
         </div>
@@ -1399,7 +1404,7 @@
     } catch (err) {
       alert('Error sending message: ' + err.message);
     } finally {
-      if (btn) { btn.disabled = false; btn.innerHTML = '<span>Send</span> <span>✉️</span>'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<span>Send</span>'; }
     }
   };
 

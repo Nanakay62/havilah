@@ -5590,12 +5590,14 @@ const App = (() => {
       const titleEl = document.getElementById('genericPanelTitle');
       const bodyEl = document.getElementById('genericPanelBody');
       titleEl.innerText = 'Contact & Support';
+      const eapEmail = (window.companyConfig && window.companyConfig.eap_contact_email) || null;
+      const emailLine = eapEmail ? `<li><strong>${eapEmail}</strong>: Organization wellness support.</li>` : '';
       bodyEl.innerHTML = `
         <h3>Support Triage Lines</h3>
-        <p>Dedicated contact emails divided by urgency:</p>
+        <p>For assistance, please contact your organization's wellness administrator or crisis support:</p>
         <ul>
-          <li><strong>nanakwamedickson@outlook.com</strong>: Platform crashes & urgent technical support.</li>
-          <li><strong>bnanakwamedickson@outlook.com</strong>: Enterprise accounts & billing.</li>
+          ${emailLine}
+          <li><strong>Crisis Helpline</strong>: Toll-free 24/7 confidential crisis line.</li>
         </ul>
         <h3>Response Window Assurances</h3>
         <p>Our support engineering team typically responds to enterprise dashboard tickets within 24 operational business hours.</p>

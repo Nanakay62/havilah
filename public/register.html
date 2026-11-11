@@ -4,115 +4,126 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Havilah - Account Registration</title>
+  <link rel="preload" href="/fonts/Roboto.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/tailwind.css">
+  <link rel="stylesheet" href="/css/tour.css">
+  <script src="/js/icons.js"></script>
   <script src="/js/auth.js"></script>
-<link rel="stylesheet" href="/css/tour.css">
 </head>
-<body class="bg-gradient-to-br from-slate-900 to-slate-950 text-white min-h-screen flex items-center justify-center p-4">
-  <div class="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden">
+<body class="auth-page">
+  <main class="auth-card" id="registerCard">
     
     <!-- Progress Indicator -->
-    <div class="flex gap-2 mb-6" id="progress-bar">
-      <div class="h-1 flex-1 bg-cyan-500 rounded-full transition-all duration-300" id="prog-1"></div>
-      <div class="h-1 flex-1 bg-white/10 rounded-full transition-all duration-300" id="prog-2"></div>
-      <div class="h-1 flex-1 bg-white/10 rounded-full transition-all duration-300" id="prog-3"></div>
+    <div class="auth-progress" id="progress-bar" aria-label="Registration progress">
+      <div class="auth-progress-step is-active" id="prog-1"></div>
+      <div class="auth-progress-step" id="prog-2"></div>
+      <div class="auth-progress-step" id="prog-3"></div>
     </div>
 
     <!-- Error Banner -->
-    <div id="error-banner" class="hidden mb-5 p-3.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-sm flex items-start gap-2.5">
-      <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-      </svg>
-      <div id="error-banner-text" class="flex-1 leading-snug"></div>
+    <div id="error-banner" class="hidden alert-banner alert-danger" style="margin-bottom: var(--space-4);" role="alert">
+      <span class="alert-icon" id="error-banner-icon" style="flex-shrink: 0;"></span>
+      <div id="error-banner-text" style="flex: 1;"></div>
     </div>
 
     <!-- STEP 1 & 2: Verification -->
-    <div id="step-verify" class="transition-all duration-500 transform translate-x-0 opacity-100">
-      <div class="text-center mb-6">
-        <h2 class="text-3xl font-bold mb-2">Join Your Team</h2>
-        <p class="text-slate-400 text-sm">Enter your corporate email and activation code provided by HR.</p>
-      </div>
+    <div id="step-verify" class="transition-all duration-300">
+      <header class="auth-header">
+        <div class="auth-brand-mark" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <h1 class="auth-title">Join your team</h1>
+        <p class="auth-subtitle">Enter your corporate email and the activation code provided by your administrator.</p>
+      </header>
       
-      <form id="verify-form" class="space-y-4">
-        <div>
-          <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Corporate Email</label>
-          <input type="email" id="verify-email" required class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 transition-colors" placeholder="you@company.com">
+      <form id="verify-form" novalidate>
+        <div class="form-field">
+          <label for="verify-email" class="form-label">Corporate email</label>
+          <input type="email" id="verify-email" required class="input" placeholder="you@company.com" autocomplete="username">
         </div>
 
-        <div>
-          <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Activation Code</label>
-          <input type="text" id="verify-code" required class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 transition-colors uppercase tracking-widest font-mono" placeholder="WF-XXX-XXXX">
+        <div class="form-field">
+          <label for="verify-code" class="form-label">Activation code</label>
+          <input type="text" id="verify-code" required class="input font-mono uppercase tracking-widest" placeholder="WF-XXX-XXXX" autocomplete="off">
         </div>
 
         <!-- Locked Department Indicator (Shown when parsed from invite) -->
-        <div id="dept-lock-container" class="hidden bg-cyan-950/40 border border-cyan-500/30 p-3 rounded-lg flex items-center justify-between">
+        <div id="dept-lock-container" class="hidden auth-dept-badge">
           <div>
-            <div class="text-[10px] uppercase font-bold text-cyan-400">Target Department (Locked)</div>
-            <div id="locked-dept-name" class="text-sm font-semibold text-white">Engineering</div>
+            <div class="auth-dept-badge-label">Target department (Locked)</div>
+            <div id="locked-dept-name" class="auth-dept-badge-val">General</div>
           </div>
-          <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+          <span id="dept-lock-icon" style="color: var(--brand);"></span>
         </div>
 
-        <button type="submit" id="btn-verify" class="w-full bg-cyan-600 hover:bg-cyan-500 transition duration-200 py-2.5 rounded-lg font-semibold mt-4 shadow-lg shadow-cyan-600/20 flex justify-center items-center">
+        <button type="submit" id="btn-verify" class="btn btn-primary" style="width: 100%; margin-top: var(--space-4);">
           <span>Verify Code</span>
         </button>
       </form>
     </div>
 
     <!-- STEP 3: Setup Password -->
-    <div id="step-setup" class="hidden transition-all duration-500 transform translate-x-8 opacity-0 absolute top-8 left-8 right-8">
-      <div class="flex items-center justify-center w-12 h-12 bg-green-500/20 text-green-400 rounded-full mx-auto mb-4 border border-green-500/30">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-      </div>
-      <h2 class="text-2xl font-bold text-center mb-1">Welcome to <span id="display-company" class="text-cyan-400">Your Company</span></h2>
-      <p class="text-slate-400 text-center text-sm mb-6">Code validated. Complete registration to continue.</p>
+    <div id="step-setup" class="hidden transition-all duration-300">
+      <header class="auth-header">
+        <div class="auth-brand-mark" style="background-color: var(--success-bg); color: var(--success); border-color: rgba(21, 128, 61, 0.2);" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h2 class="auth-title">Welcome to <span id="display-company" style="color: var(--brand);">Your Company</span></h2>
+        <p class="auth-subtitle">Code validated. Complete your registration to continue.</p>
+      </header>
       
-      <form id="setup-form" class="space-y-4">
-        <div>
-          <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Full Name</label>
-          <input type="text" id="setup-name" required class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500" placeholder="Jane Doe">
+      <form id="setup-form" novalidate>
+        <div class="form-field">
+          <label for="setup-name" class="form-label">Full name</label>
+          <input type="text" id="setup-name" required class="input" placeholder="Jane Doe" autocomplete="name">
         </div>
-        <div>
-          <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Assigned Department</label>
-          <input type="text" id="setup-dept" readonly class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-slate-300 cursor-not-allowed font-medium" value="General">
+
+        <div class="form-field">
+          <label for="setup-dept" class="form-label">Assigned department</label>
+          <input type="text" id="setup-dept" readonly class="input" style="background-color: var(--bg); cursor: not-allowed; color: var(--text-muted);" value="General">
         </div>
-        <div>
-          <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Set Password</label>
-          <div class="relative">
-            <input type="password" id="setup-password" required minlength="8" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:border-cyan-500" placeholder="••••••••">
-            <button type="button" onclick="const p = document.getElementById('setup-password'); if(p.type==='password'){p.type='text';this.textContent='🙈';}else{p.type='password';this.textContent='👁️';}" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-base focus:outline-none" title="Toggle Password Visibility">👁️</button>
+
+        <div class="form-field">
+          <label for="setup-password" class="form-label">Set password</label>
+          <div class="input-with-button">
+            <input type="password" id="setup-password" required minlength="8" class="input" placeholder="••••••••" autocomplete="new-password">
+            <button type="button" id="toggleSetupPasswordBtn" class="input-action-btn" title="Toggle password visibility" aria-label="Toggle password visibility"></button>
           </div>
         </div>
-        <div>
-          <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Confirm Password</label>
-          <div class="relative">
-            <input type="password" id="setup-confirm" required minlength="8" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:border-cyan-500" placeholder="••••••••">
-            <button type="button" onclick="const p = document.getElementById('setup-confirm'); if(p.type==='password'){p.type='text';this.textContent='🙈';}else{p.type='password';this.textContent='👁️';}" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-base focus:outline-none" title="Toggle Password Visibility">👁️</button>
+
+        <div class="form-field">
+          <label for="setup-confirm" class="form-label">Confirm password</label>
+          <div class="input-with-button">
+            <input type="password" id="setup-confirm" required minlength="8" class="input" placeholder="••••••••" autocomplete="new-password">
+            <button type="button" id="toggleSetupConfirmBtn" class="input-action-btn" title="Toggle password visibility" aria-label="Toggle password visibility"></button>
           </div>
-          <p id="pwd-error" class="text-red-400 text-xs mt-1 hidden">Passwords do not match.</p>
+          <p id="pwd-error" class="form-error hidden" style="margin-top: 4px;">Passwords do not match.</p>
         </div>
         
-        <div class="pt-2 pb-2">
-          <label class="flex items-start gap-3 cursor-pointer group">
-            <div class="relative flex items-center pt-0.5">
-              <input type="checkbox" id="accept-terms" required class="peer appearance-none w-4 h-4 border border-white/20 rounded bg-white/5 checked:bg-cyan-500 checked:border-cyan-500 transition-colors">
-              <svg class="absolute w-3 h-3 left-0.5 pointer-events-none opacity-0 peer-checked:opacity-100 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </div>
-            <span class="text-xs text-slate-400 leading-tight group-hover:text-slate-300 transition-colors">I agree to the <a href="#" class="text-cyan-400 hover:underline">Privacy Terms</a> and understand that my wellness data remains strictly confidential and anonymous ($N \ge 5$).</span>
+        <div class="form-field">
+          <label class="auth-checkbox-label">
+            <input type="checkbox" id="accept-terms" required>
+            <span>I agree to the <a href="/terms" target="_blank">Privacy Terms</a> and understand that my wellness data remains strictly confidential and anonymous (N &ge; 5).</span>
           </label>
         </div>
 
-        <button type="submit" id="btn-activate" class="w-full bg-cyan-600 hover:bg-cyan-500 transition duration-200 py-2.5 rounded-lg font-semibold mt-4 shadow-lg shadow-cyan-600/20 flex justify-center items-center">
+        <button type="submit" id="btn-activate" class="btn btn-primary" style="width: 100%; margin-top: var(--space-4);">
           <span>Complete Registration</span>
         </button>
       </form>
     </div>
 
     <!-- Footer link -->
-    <div id="footer-links" class="text-center text-xs text-slate-500 mt-6 pt-4 border-t border-white/10">
-      Already registered? <a href="/login.html" class="text-cyan-400 hover:underline">Log in</a>
-    </div>
-  </div>
+    <footer id="footer-links" class="auth-footer">
+      Already registered? <a href="/login.html">Log in</a>
+    </footer>
+  </main>
 
   <script>
     const stepVerify = document.getElementById('step-verify');
@@ -126,6 +137,38 @@
     let validatedEmail = '';
     let validatedCode = '';
     let assignedDepartment = 'General';
+
+    function initPasswordToggle(inputId, btnId) {
+      const pass = document.getElementById(inputId);
+      const btn = document.getElementById(btnId);
+      if (btn && pass) {
+        btn.innerHTML = HavilahIcons.eye(18);
+        btn.addEventListener('click', () => {
+          if (pass.type === 'password') {
+            pass.type = 'text';
+            btn.innerHTML = HavilahIcons.eyeOff(18);
+            btn.setAttribute('aria-label', 'Hide password');
+          } else {
+            pass.type = 'password';
+            btn.innerHTML = HavilahIcons.eye(18);
+            btn.setAttribute('aria-label', 'Show password');
+          }
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initPasswordToggle('setup-password', 'toggleSetupPasswordBtn');
+      initPasswordToggle('setup-confirm', 'toggleSetupConfirmBtn');
+      const deptIcon = document.getElementById('dept-lock-icon');
+      if (deptIcon && window.HavilahIcons) {
+        deptIcon.innerHTML = HavilahIcons.lock(18);
+      }
+      const errIcon = document.getElementById('error-banner-icon');
+      if (errIcon && window.HavilahIcons) {
+        errIcon.innerHTML = HavilahIcons.alertCircle(18);
+      }
+    });
 
     function showError(msg) {
       const banner = document.getElementById('error-banner');
@@ -185,8 +228,14 @@
       const email = document.getElementById('verify-email').value.trim();
       const code = document.getElementById('verify-code').value.trim().toUpperCase();
 
+      if (!email || !code) {
+        showError('Please enter both your corporate email and activation code.');
+        return;
+      }
+
       btnVerify.disabled = true;
-      btnVerify.innerHTML = '<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+      btnVerify.classList.add('is-loading');
+      btnVerify.innerHTML = '<svg class="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
 
       try {
         const res = await fetch('/api/v1/auth/verify-invite', {
@@ -206,22 +255,23 @@
           document.getElementById('display-company').innerText = companyText;
           document.getElementById('setup-dept').value = deptText;
           
-          document.getElementById('prog-2').classList.replace('bg-white/10', 'bg-cyan-500');
-          document.getElementById('prog-3').classList.replace('bg-white/10', 'bg-cyan-500');
+          document.getElementById('prog-2').classList.add('is-active');
+          document.getElementById('prog-3').classList.add('is-active');
 
-          stepVerify.classList.replace('opacity-100', 'opacity-0');
-          stepVerify.classList.replace('translate-x-0', '-translate-x-8');
+          stepVerify.style.opacity = '0';
+          stepVerify.style.transform = 'translateX(-16px)';
           footerLinks.style.display = 'none';
 
           setTimeout(() => {
             stepVerify.classList.add('hidden');
             stepSetup.classList.remove('hidden');
+            stepSetup.style.opacity = '0';
+            stepSetup.style.transform = 'translateX(16px)';
             void stepSetup.offsetWidth;
-            stepSetup.classList.replace('opacity-0', 'opacity-100');
-            stepSetup.classList.replace('translate-x-8', 'translate-x-0');
-            stepSetup.classList.remove('absolute', 'top-8', 'left-8', 'right-8');
+            stepSetup.style.opacity = '1';
+            stepSetup.style.transform = 'translateX(0)';
             setTimeout(() => document.getElementById('setup-name').focus(), 100);
-          }, 500);
+          }, 300);
 
         } else {
           const errMsg = data.message || data.error || (res.status === 429 ? 'Too many attempts. Please try again in a few minutes.' : 'Invalid or revoked activation code.');
@@ -231,6 +281,7 @@
         showError('Network error. Please try again.');
       } finally {
         btnVerify.disabled = false;
+        btnVerify.classList.remove('is-loading');
         btnVerify.innerHTML = '<span>Verify Code</span>';
       }
     });
@@ -243,6 +294,11 @@
       const conf = document.getElementById('setup-confirm').value;
       const pwdError = document.getElementById('pwd-error');
 
+      if (!name) {
+        showError('Please enter your full name.');
+        return;
+      }
+
       if (pwd !== conf) {
         pwdError.classList.remove('hidden');
         return;
@@ -250,7 +306,8 @@
       pwdError.classList.add('hidden');
 
       btnActivate.disabled = true;
-      btnActivate.innerHTML = '<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+      btnActivate.classList.add('is-loading');
+      btnActivate.innerHTML = '<svg class="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
 
       try {
         const res = await fetch('/api/v1/auth/activate', {
@@ -263,7 +320,7 @@
           window.location.href = '/login.html?registered=true';
         } else {
           if (data.error === 'EMAIL_ALREADY_EXISTS' || (data.error && data.error.includes('already registered')) || (data.message && data.message.includes('already exists'))) {
-            showError('An account with this email address already exists. <a href="/login.html" class="underline font-semibold text-cyan-300 hover:text-cyan-200">Log in here</a>');
+            showError('An account with this email address already exists. <a href="/login.html">Log in here</a>');
           } else if (res.status === 429) {
             showError(data.message || 'Too many attempts. Please try again in a few minutes.');
           } else {
@@ -274,34 +331,35 @@
         showError('Network error during registration.');
       } finally {
         btnActivate.disabled = false;
+        btnActivate.classList.remove('is-loading');
         btnActivate.innerHTML = '<span>Complete Registration</span>';
       }
     });
   </script>
-<script src="/js/tour.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    HavilahTour.init({
-      tourId: 'register-page',
-      welcomeTitle: 'Employee Registration',
-      welcomeDesc: 'Here\'s how to activate your Havilah wellness account using the code from your HR team.',
-      autoStart: false,
-      steps: [
-        {
-          target: '#progress-bar',
-          title: 'Registration Progress',
-          description: 'Your registration has 3 steps: verify your email & activation code, set your password, then you\'re in. The progress bar shows where you are.',
-          placement: 'bottom'
-        },
-        {
-          target: '#step-verify',
-          title: 'Step 1: Verification',
-          description: 'Enter your corporate email and the activation code provided by your HR administrator. This links your account to your organization\'s wellness workspace.',
-          placement: 'bottom'
-        }
-      ]
+  <script src="/js/tour.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      HavilahTour.init({
+        tourId: 'register-page',
+        welcomeTitle: 'Employee Registration',
+        welcomeDesc: 'Here\'s how to activate your Havilah wellness account using the code from your HR team.',
+        autoStart: false,
+        steps: [
+          {
+            target: '#progress-bar',
+            title: 'Registration Progress',
+            description: 'Your registration has 3 steps: verify your email & activation code, set your password, then you\'re in. The progress bar shows where you are.',
+            placement: 'bottom'
+          },
+          {
+            target: '#step-verify',
+            title: 'Step 1: Verification',
+            description: 'Enter your corporate email and the activation code provided by your HR administrator. This links your account to your organization\'s wellness workspace.',
+            placement: 'bottom'
+          }
+        ]
+      });
     });
-  });
-</script>
+  </script>
 </body>
 </html>

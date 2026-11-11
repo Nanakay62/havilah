@@ -1188,7 +1188,7 @@
         <div style="display: flex; gap: 10px; max-width: 480px; width: 100%; box-sizing: border-box;">
           <div style="position: relative; flex: 1; width: 100%; box-sizing: border-box;">
             <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-subtle);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="learnSearchInput" placeholder="Search breathing, anxiety, sleep, burnout..." oninput="App.searchLearnArticles(this.value)" class="form-input" style="width: 100%; box-sizing: border-box; padding: 8px 12px 8px 36px; border-radius: var(--radius-control); border: 1px solid var(--border); background: var(--surface); font-size: 14px; color: var(--text); outline: none;">
+            <input type="text" id="learnSearchInput" aria-label="Search breathing, anxiety, sleep, and burnout resources" placeholder="Search breathing, anxiety, sleep, burnout..." oninput="App.searchLearnArticles(this.value)" class="form-input" style="width: 100%; box-sizing: border-box; padding: 8px 12px 8px 36px; border-radius: var(--radius-control); border: 1px solid var(--border); background: var(--surface); font-size: 14px; color: var(--text); outline: none;">
           </div>
         </div>
       </div>
@@ -1338,19 +1338,19 @@
         <div style="margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <label style="font-size: 0.9375rem; font-weight: 700; color: var(--text-1);">Daily Micro Check-In Reminder</label>
-            <input type="checkbox" id="prefDailyReminder" checked style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;" onchange="App.savePreferences()">
+            <input type="checkbox" id="prefDailyReminder" aria-label="Daily micro check-in reminder toggle" checked style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;" onchange="App.savePreferences()">
           </div>
           <p style="font-size: 0.8125rem; color: var(--text-2); margin-bottom: 10px;">Receive a subtle daily prompt for your 2-minute micro check-in.</p>
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 0.8125rem; font-weight: 600; color: var(--text-2);">Preferred Time:</span>
-            <input type="time" id="prefReminderTime" value="09:00" style="padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.875rem;" onchange="App.savePreferences()">
+            <input type="time" id="prefReminderTime" aria-label="Preferred daily reminder time" value="09:00" style="padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.875rem;" onchange="App.savePreferences()">
           </div>
         </div>
 
         <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <label style="font-size: 0.9375rem; font-weight: 700; color: var(--text-1);">Assessment Cycle Alerts</label>
-            <input type="checkbox" id="prefCycleAlerts" checked style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;" onchange="App.savePreferences()">
+            <input type="checkbox" id="prefCycleAlerts" aria-label="Assessment cycle alerts toggle" checked style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;" onchange="App.savePreferences()">
           </div>
           <p style="font-size: 0.8125rem; color: var(--text-2);">Email alerts when HR opens scheduled assessment cycles (COPSOQ III, PSS-10, PHQ-9).</p>
         </div>
@@ -1358,7 +1358,7 @@
         <div style="border-top: 1px solid var(--border); padding-top: 16px;">
           <label style="font-size: 0.9375rem; font-weight: 700; color: var(--text-1); display: block; margin-bottom: 6px;">Weekly Wellness Digest</label>
           <p style="font-size: 0.8125rem; color: var(--text-2); margin-bottom: 10px;">Personalized summary email of your progress and trends.</p>
-          <select id="prefDigestFrequency" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.875rem; width: 100%; max-width: 260px;" onchange="App.savePreferences()">
+          <select id="prefDigestFrequency" aria-label="Personalized progress summary digest frequency" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.875rem; width: 100%; max-width: 260px;" onchange="App.savePreferences()">
             <option value="weekly">Weekly Digest (Mondays)</option>
             <option value="monthly">Monthly Summary</option>
             <option value="none">Disabled</option>
@@ -1369,7 +1369,7 @@
       <!-- TAB 3: Privacy & Security -->
       <div id="prof-tab-content-privacy" class="prof-tab-panel" style="display: none;">
         <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: rgba(79,178,134,0.08); border: 1px solid rgba(79,178,134,0.2); border-radius: 10px; margin-bottom: 20px;">
-          <span style="font-size: 1.25rem;">🛡️</span>
+          
           <div>
             <div style="font-size: 0.8125rem; font-weight: 700; color: #2e7d5b;">ISO 45003 Privacy Protection Guaranteed</div>
             <div style="font-size: 0.75rem; color: var(--text-2);">Your check-ins are strictly confidential. HR only sees group trends when N ≥ 5.</div>
@@ -1379,7 +1379,7 @@
         <h3 style="font-size: 0.875rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Data Portability & Management</h3>
         <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
           <button class="btn btn-outline" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px;" onclick="App.exportMyData()">
-            <span>📥 Export My Check-In History (JSON)</span>
+            <span>Export My Check-In History (JSON)</span>
             <span style="font-size: 0.75rem; font-weight: 600; color: var(--accent-deep);">Download</span>
           </button>
           <button class="btn btn-outline" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px;" onclick="App.clearLocalCache()">
@@ -1520,25 +1520,25 @@
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
                   <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Employee Name *</label>
-                  <input type="text" id="consultNameInput" class="form-input" placeholder="Your Full Name" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
+                  <input type="text" id="consultNameInput" aria-label="Your full name" class="form-input" placeholder="Your Full Name" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
                 </div>
                 <div>
                   <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Contact Phone / Email *</label>
-                  <input type="text" id="consultContactInput" class="form-input" placeholder="Phone (+233...) or Email" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
+                  <input type="text" id="consultContactInput" aria-label="Contact phone number or email" class="form-input" placeholder="Phone (+233...) or Email" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
                 </div>
               </div>
               <div>
                 <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Consultation Topic / Reason</label>
-                <input type="text" id="consultTopicInput" class="form-input" placeholder="e.g. Work stress, Fatigue, Anxiety, Sleep disturbance" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
+                <input type="text" id="consultTopicInput" aria-label="Consultation primary topic" class="form-input" placeholder="e.g. Work stress, Fatigue, Anxiety, Sleep disturbance" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
               </div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
                   <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Preferred Date</label>
-                  <input type="date" id="consultDateInput" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
+                  <input type="date" id="consultDateInput" aria-label="Preferred consultation appointment date" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
                 </div>
                 <div>
                   <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Preferred Time</label>
-                  <select id="consultTimeInput" class="form-select" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
+                  <select id="consultTimeInput" aria-label="Preferred consultation appointment time" class="form-select" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
                     <option value="As soon as available">As soon as available</option>
                     <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
                     <option value="Afternoon (13:00 - 17:00)">Afternoon (13:00 - 17:00)</option>
@@ -1548,7 +1548,7 @@
               </div>
               <div>
                 <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Additional Notes (Optional)</label>
-                <textarea id="consultNotesInput" class="form-textarea" rows="2" placeholder="Optional details or specific accommodations needed..." style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text); resize: vertical;"></textarea>
+                <textarea id="consultNotesInput" aria-label="Optional consultation notes or requests" class="form-textarea" rows="2" placeholder="Optional details or specific accommodations needed..." style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text); resize: vertical;"></textarea>
               </div>
               <button type="button" class="btn btn-primary" style="width: 100%; margin-top: 6px;" onclick="App.submitClinicalConsultation()">Submit Request to Clinical Partner</button>
               <button type="button" onclick="window.openConsultTrackModal();" class="btn btn-secondary" style="width: 100%; margin-top: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
@@ -1647,7 +1647,7 @@
 <div class="cmd-palette" id="cmdPalette" role="dialog" aria-label="Search" aria-modal="true">
   <div class="cmd-input-wrap">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-    <input type="text" class="cmd-input" id="cmdInput" placeholder="Search surveys, views, resources, actions..." autocomplete="off" />
+    <input type="text" class="cmd-input" id="cmdInput" aria-label="Search surveys, views, and actions" placeholder="Search surveys, views, resources, actions..." autocomplete="off" />
     <span class="cmd-kbd">ESC</span>
   </div>
   <div class="cmd-results" id="cmdResults"></div>
@@ -1668,7 +1668,7 @@
   </div>
   <div class="panel-body" id="notifBody"></div>
   <div class="panel-foot">
-    <button class="btn btn-ghost btn-sm" style="width: 100%;" onclick="App.markAllRead()">Mark all as read</button>
+    <button class="btn btn-ghost btn-sm" style="width: 100%;" aria-label="Mark all notifications as read" onclick="App.markAllRead()">Mark all as read</button>
   </div>
 </aside>
 
@@ -1788,7 +1788,7 @@
       <div class="modal-options" id="modalOptions"></div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost btn-sm" id="modalBack" onclick="App.surveyBack()">
+      <button class="btn btn-ghost btn-sm" id="modalBack" aria-label="Back to previous question" onclick="App.surveyBack()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Back
       </button>
@@ -2386,7 +2386,7 @@ function renderVaultThreadOnly(report) {
   if (statusEl) {
     const stKey = (report.status || 'submitted').toLowerCase();
     const statusMap = {
-      submitted: { label: '✓ SUBMITTED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
+      submitted: { label: 'SUBMITTED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
       under_investigation: { label: '⏳ INVESTIGATING', bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
       action_taken: { label: '🛡️ ACTION TAKEN', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' },
       closed: { label: '🔒 CLOSED', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' }
@@ -2560,7 +2560,7 @@ function renderTrackedReportView(report) {
   if (statusEl) {
     const stKey = (report.status || 'submitted').toLowerCase();
     const statusMap = {
-      submitted: { label: '✓ SUBMITTED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
+      submitted: { label: 'SUBMITTED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
       under_investigation: { label: '⏳ INVESTIGATING', bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
       action_taken: { label: '🛡️ ACTION TAKEN', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' },
       closed: { label: '🔒 CLOSED', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' }
@@ -2859,7 +2859,7 @@ window.lookupConsultationReport = async function(codeOverride) {
           onPeerPresence: (isOnline) => {
             const pill = document.getElementById('empPeerPresencePill');
             if (pill) {
-              pill.textContent = isOnline ? '🟢 Doctor Online' : '⚪ Doctor Offline';
+              pill.textContent = isOnline ? 'Doctor Online' : 'Doctor Offline';
               pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
               pill.style.color = isOnline ? '#15803d' : '#475569';
             }
@@ -3125,7 +3125,7 @@ window.sendConsultationEmployeeReply = async function() {
   } catch (err) {
     if (typeof window.showToast === 'function') window.showToast('Connection Error', 'Could not reach server.', 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<span>Send</span> <span>✉️</span>'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span>Send</span>'; }
     if (inputEl) inputEl.focus();
   }
 };
@@ -3341,7 +3341,7 @@ const App = (() => {
       <div onclick="App.openLearnArticle('${art.slug}')" style="background: #ffffff; border: 1px solid var(--border-strong); border-radius: 16px; padding: 20px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
         <div>
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <span style="font-size: 1.75rem;">${art.thumbnail_emoji || '🧠'}</span>
+            <span style="color: var(--brand);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></span>
             <span style="background: rgba(0, 183, 195, 0.1); color: var(--accent-deep); font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; text-transform: uppercase;">${art.category}</span>
           </div>
           <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-1); margin-bottom: 8px; line-height: 1.4;">${art.title}</h3>
@@ -3381,7 +3381,7 @@ const App = (() => {
       <div onclick="App.openLearnArticle('${art.slug}')" style="background: #ffffff; border: 1px solid var(--border-strong); border-radius: 16px; padding: 22px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
         <div>
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <span style="font-size: 1.75rem;">${art.thumbnail_emoji || '🧠'}</span>
+            <span style="color: var(--brand);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></span>
             <span style="background: var(--bg-base); color: var(--text-2); font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase;">${art.category}</span>
           </div>
           <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-1); margin-bottom: 8px; line-height: 1.4;">${art.title}</h3>
@@ -3444,7 +3444,7 @@ const App = (() => {
 
       document.getElementById('articleReaderContent').innerHTML = `
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-          <span style="font-size: 2.5rem;">${art.thumbnail_emoji || '🧠'}</span>
+          <span style="color: var(--brand);"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></span>
           <h1 style="font-size: 1.65rem; font-weight: 800; color: var(--text-1); line-height: 1.25; margin: 0;">${art.title}</h1>
         </div>
         <p style="font-size: 1.05rem; color: var(--text-2); font-weight: 500; line-height: 1.5; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
@@ -3710,7 +3710,7 @@ const App = (() => {
       if (titleEl) titleEl.textContent = 'Assessment Submission Notice';
       document.getElementById('modalQText').innerHTML = `
         <div style="text-align:center; padding: 32px 0;">
-          <div style="font-size: 2.2rem; margin-bottom: 12px;">⚠️</div>
+          <div style="margin-bottom: 12px; color: var(--warning);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>
           <h4 style="font-size: 1.15rem; font-weight: 700; color: var(--text-1); margin-bottom: 8px;">Unable to Save Results</h4>
           <p style="color: var(--text-2); font-size: 0.9rem; max-width: 380px; margin: 0 auto 18px; line-height: 1.5;">${err.message || 'Failed to save results. Please try again later.'}</p>
           <button class="btn btn-primary" style="padding: 8px 24px;" onclick="App.closeSurvey()">Close</button>
@@ -3778,7 +3778,7 @@ const App = (() => {
       lowScoreTriggerHtml = `
         <div class="cosmic-glass-panel" style="margin-top: 20px; padding: 18px; text-align: left; border: 1px solid rgba(244, 63, 94, 0.35); background: rgba(15, 23, 42, 0.9);">
           <div style="font-size: 0.875rem; font-weight: 700; color: #fb7185; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-            <span>⚡ Confidential Doctor Support Recommended</span>
+            <span>Confidential Doctor Support Recommended</span>
             <span class="cosmic-pill rose">Low Score Trigger</span>
           </div>
           <p style="font-size: 0.8125rem; color: #cbd5e1; margin-bottom: 12px; line-height: 1.5;">Your score indicates elevated pressure on the ${dimLabel} area. We strongly encourage you to speak with our registered medical assessor, <strong>${providerName}</strong> (024 362 9870), for a free, 100% private consultation.</p>
@@ -4160,7 +4160,7 @@ const App = (() => {
                     <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${matchedColor};"></span>
                     <strong style="font-size:0.875rem;color:#0F172A;">${matchedName}</strong>
                   </div>
-                  <div class="tooltip-date">📅 Completed: ${dateStr}</div>
+                  <div class="tooltip-date">Completed: ${dateStr}</div>
                   <div style="font-weight:700;font-size:15px;color:${tier.color};margin:4px 0;">Overall Index: ${overallIndex}</div>
                   ${dimBars}
                 `;
@@ -4177,7 +4177,7 @@ const App = (() => {
                     <span style="display:inline-block;width:10px;height:10px;background:${matchedColor};clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);"></span>
                     <strong style="font-size:0.875rem;color:#0F172A;">${matchedName}</strong>
                   </div>
-                  <div class="tooltip-date">📅 Completed: ${dateStr}</div>
+                  <div class="tooltip-date">Completed: ${dateStr}</div>
                   <div style="font-weight:700;font-size:15px;color:${tier.color};margin:4px 0;">
                     ${rawScoreText}Overall Index: ${overallIndex}
                   </div>
@@ -4662,14 +4662,14 @@ const App = (() => {
             onPeerPresence: (isOnline) => {
               const pill = document.getElementById('empPeerPresencePill');
               if (pill) {
-                pill.textContent = isOnline ? '🟢 Doctor Online' : '⚪ Doctor Offline';
+                pill.textContent = isOnline ? 'Doctor Online' : 'Doctor Offline';
                 pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
                 pill.style.color = isOnline ? '#15803d' : '#475569';
               }
               const dashPill = document.getElementById('dashboardDoctorPresencePill');
               if (dashPill) {
                 dashPill.style.display = 'inline-block';
-                dashPill.textContent = isOnline ? '🟢 Doctor Online' : '⚪ Doctor Offline';
+                dashPill.textContent = isOnline ? 'Doctor Online' : 'Doctor Offline';
                 dashPill.style.background = isOnline ? '#dcfce7' : '#f1f5f9';
                 dashPill.style.color = isOnline ? '#15803d' : '#64748b';
               }
@@ -5063,7 +5063,7 @@ const App = (() => {
       htmlContent = `
         <div style="line-height: 1.6; color: var(--text-dark);">
           <p style="margin-top:0; color: var(--text-muted);">List what is overwhelming you right now, separated by commas. We will sort them to restore clarity.</p>
-          <textarea id="braindumpInput" placeholder="e.g. Server crash, upcoming presentation, rent due, client email..." style="width: 100%; height: 100px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; resize: none; font-family: inherit; font-size: 1rem; margin-bottom: 16px; box-sizing: border-box;"></textarea>
+          <textarea id="braindumpInput" aria-label="Brain dump private thought log" placeholder="e.g. Server crash, upcoming presentation, rent due, client email..." style="width: 100%; height: 100px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; resize: none; font-family: inherit; font-size: 1rem; margin-bottom: 16px; box-sizing: border-box;"></textarea>
           <button onclick="App.sortBrainDump()" style="width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Sort My Thoughts</button>
           <div id="braindumpResults" style="margin-top: 24px;"></div>
         </div>
@@ -5119,13 +5119,13 @@ const App = (() => {
           <p style="margin-top:0; color: var(--text-muted);">Target Hazard: <strong>WorkLifeBalance / Environment</strong></p>
           <p>Biological health directly drives psychological resistance. These resources focus on optimizing the physical systems that dictate your mood.</p>
           
-          <h3 style="margin-top: 24px;">☕ The Caffeine Timing Curve</h3>
+          <h3 style="margin-top: 24px;">The Caffeine Timing Curve</h3>
           <p>Drinking caffeine during the first 90 minutes of waking up can crash your adenosine system later in the afternoon. This causes anxiety spikes that feel exactly like a workload panic attack.</p>
           <div style="background: #f4f5f7; padding: 12px; border-radius: 8px; border-left: 4px solid var(--accent); margin: 16px 0;">
             <strong>Actionable Tip:</strong> Wait 90-120 minutes after waking before your first cup of coffee to allow natural cortisol to clear adenosine naturally.
           </div>
 
-          <h3 style="margin-top: 24px;">🌙 The Blue-Light Sleep Anchor</h3>
+          <h3 style="margin-top: 24px;">The Blue-Light Sleep Anchor</h3>
           <p>Monitor color temperatures heavily suppress melatonin, leading to fragmented sleep patterns and direct morning exhaustion.</p>
           <div style="background: #f4f5f7; padding: 12px; border-radius: 8px; border-left: 4px solid var(--blue); margin: 16px 0;">
             <strong>Actionable Tip:</strong> Enable "Night Shift" or "f.lux" on all devices exactly 2 hours before bed. Keep bedroom temperature between 65-68°F (18-20°C).
@@ -5139,7 +5139,7 @@ const App = (() => {
           <p style="margin-top:0; color: var(--text-muted);">Target Hazard: <strong>SocialSupport</strong></p>
           <p>Isolation is a quiet driver of high turn-over and low workplace mood, particularly in distributed or highly independent environments.</p>
           
-          <h3 style="margin-top: 24px;">🏆 The "Wins" Log Template</h3>
+          <h3 style="margin-top: 24px;">The "Wins" Log Template</h3>
           <p>A lightweight framework that guides a user through cataloging small victories or peer accomplishments from the week. This shifts focus away from what went wrong and reminds them of shared team milestones.</p>
           <ul style="margin: 16px 0; padding-left: 16px;">
             <li style="margin-bottom:8px;"><strong>Setup a #weekly-wins channel:</strong> Dedicate a Slack/Teams channel solely for wins.</li>
@@ -5147,7 +5147,7 @@ const App = (() => {
             <li><strong>Cadence:</strong> Every Friday at 2PM, schedule an automated prompt.</li>
           </ul>
 
-          <h3 style="margin-top: 24px;">🗣️ The Clear Communication Ritual</h3>
+          <h3 style="margin-top: 24px;">The Clear Communication Ritual</h3>
           <p>A guide for setting up brief, informal, non-work-related virtual check-ins with peers to encourage conversational connection without adding meeting fatigue.</p>
           <ul style="margin: 16px 0; padding-left: 16px;">
             <li style="margin-bottom:8px;"><strong>The "Donut" Match:</strong> Randomly pair team members for a 15-minute chat once every two weeks.</li>
@@ -5676,7 +5676,7 @@ window.App = App;
     <!-- Intake Form -->
     <div id="vaultFormContainer" style="padding:0 28px 28px;">
       <label style="display:block;margin-bottom:6px;font-size:12.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">Category *</label>
-      <select id="vaultCategory" style="width:100%;padding:12px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-size:14px;margin-bottom:16px;appearance:auto;outline:none;transition:border-color 0.2s;box-sizing:border-box;">
+      <select id="vaultCategory" aria-label="Whistleblower report hazard category" style="width:100%;padding:12px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-size:14px;margin-bottom:16px;appearance:auto;outline:none;transition:border-color 0.2s;box-sizing:border-box;">
         <option value="">Select a category...</option>
         <option value="Safety Hazard">Safety Hazard</option>
         <option value="Harassment / Bullying">Harassment / Bullying</option>
@@ -5687,7 +5687,7 @@ window.App = App;
       </select>
 
       <label style="display:block;margin-bottom:6px;font-size:12.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">Description *</label>
-      <textarea id="vaultDescription" rows="5" maxlength="5000" placeholder="Describe the workplace hazard or incident in detail..." style="width:100%;padding:12px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-size:14px;resize:vertical;margin-bottom:4px;font-family:inherit;box-sizing:border-box;outline:none;transition:border-color 0.2s;line-height:1.5;"></textarea>
+      <textarea id="vaultDescription" aria-label="Workplace hazard or ethics incident description" rows="5" maxlength="5000" placeholder="Describe the workplace hazard or incident in detail..." style="width:100%;padding:12px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-size:14px;resize:vertical;margin-bottom:4px;font-family:inherit;box-sizing:border-box;outline:none;transition:border-color 0.2s;line-height:1.5;"></textarea>
       <div style="text-align:right;font-size:11px;color:#94a3b8;margin-bottom:16px;"><span id="vaultCharCount">0</span>/5000</div>
 
       <label style="display:block;margin-bottom:6px;font-size:12.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">Urgency Level</label>
@@ -5706,7 +5706,7 @@ window.App = App;
       <!-- Conflict of Interest Checkbox -->
       <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:14px;padding:14px 16px;margin-bottom:20px;">
         <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:#991b1b;line-height:1.4;">
-          <input type="checkbox" id="vaultConflictCheck" style="margin-top:2px;accent-color:#dc2626;width:16px;height:16px;">
+          <input type="checkbox" id="vaultConflictCheck" aria-label="Whistleblower conflict of interest confirmation" style="margin-top:2px;accent-color:#dc2626;width:16px;height:16px;">
           <span><strong style="color:#991b1b;">Conflict of Interest Routing:</strong> Does this report involve HR, Senior Leadership, or Executive Management? <em style="display:block;font-size:11.5px;color:#7f1d1d;margin-top:3px;font-style:normal;">If checked, this report will completely bypass internal HR and route directly to the Independent SuperAdmin Ombudsman.</em></span>
         </label>
       </div>
@@ -5753,7 +5753,7 @@ window.App = App;
       
       <div style="text-align:center;margin-bottom:24px;">
         <div style="width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #e0e7ff, #c7d2fe);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(99,102,241,0.2);margin-bottom:14px;">
-          <span style="font-size:26px;">🔍</span>
+          <span style="color: var(--text-subtle);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
         </div>
         <h3 style="margin:0 0 4px;font-size:20px;font-weight:800;color:#0f172a;">Anonymous Report Tracking</h3>
         <p style="margin:0;font-size:13px;color:#64748b;">Enter your credentials to unlock your two-way secure thread</p>
@@ -5763,12 +5763,12 @@ window.App = App;
 
       <div style="margin-bottom:16px;">
         <label style="display:block;margin-bottom:6px;font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Tracking Code *</label>
-        <input type="text" id="trackCodeInput" placeholder="e.g. WBL-22891E" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:16px;font-weight:700;text-transform:uppercase;box-sizing:border-box;outline:none;transition:all 0.2s;">
+        <input type="text" id="trackCodeInput" aria-label="Whistleblower tracking code" placeholder="e.g. WBL-22891E" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:16px;font-weight:700;text-transform:uppercase;box-sizing:border-box;outline:none;transition:all 0.2s;">
       </div>
 
       <div style="margin-bottom:24px;">
         <label style="display:block;margin-bottom:6px;font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">4-Digit PIN *</label>
-        <input type="password" maxlength="4" id="trackPinInput" placeholder="••••" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:20px;letter-spacing:6px;box-sizing:border-box;outline:none;transition:all 0.2s;">
+        <input type="password" maxlength="4" id="trackPinInput" aria-label="Whistleblower 4-digit PIN" placeholder="••••" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:20px;letter-spacing:6px;box-sizing:border-box;outline:none;transition:all 0.2s;">
       </div>
 
       <button id="trackLookupBtn" onclick="window.lookupVaultReport()" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 8px 20px rgba(99,102,241,0.3);transition:all 0.2s;">
@@ -5828,7 +5828,7 @@ window.App = App;
         <div style="background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:24px 20px;display:flex;flex-direction:column;">
           <!-- Glowing Search Icon -->
           <div style="width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #e0e7ff, #c7d2fe);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(99,102,241,0.2);margin-bottom:16px;">
-            <span style="font-size:24px;">🔍</span>
+            <span style="color: var(--text-subtle);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
           </div>
 
           <h4 style="margin:0 0 4px;font-size:17px;font-weight:800;color:#0f172a;line-height:1.3;">Anonymous Report Tracking</h4>
@@ -5839,19 +5839,19 @@ window.App = App;
           <!-- Info Meta List -->
           <div style="display:flex;flex-direction:column;gap:14px;font-size:12.5px;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"><span>🛡️</span> Report ID</span>
+              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"> Report ID</span>
               <strong style="color:#0f172a;font-family:monospace;font-size:13px;" id="trackSidebarCode">WBL-22891E</strong>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"><span>📅</span> Submitted</span>
+              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"> Submitted</span>
               <strong style="color:#0f172a;" id="trackSidebarDate">21/08/2026</strong>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"><span>📁</span> Category</span>
+              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"> Category</span>
               <strong style="color:#0f172a;" id="trackSidebarCategory">Discrimination</strong>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"><span>⚡</span> Urgency</span>
+              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"> Urgency</span>
               <strong style="color:#d97706;" id="trackSidebarUrgency">Standard</strong>
             </div>
           </div>
@@ -5882,7 +5882,7 @@ window.App = App;
             <button type="button" style="background:none;border:none;color:#64748b;font-size:18px;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;" title="Attach file (optional)">
               📎
             </button>
-            <input type="text" id="trackReplyInput" placeholder="Type anonymous follow-up message..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendAnonymousReply();}" style="flex:1;border:none;background:transparent;color:#0f172a;font-size:13.5px;outline:none;padding:6px 4px;">
+            <input type="text" id="trackReplyInput" aria-label="Type anonymous follow-up message" placeholder="Type anonymous follow-up message..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendAnonymousReply();}" style="flex:1;border:none;background:transparent;color:#0f172a;font-size:13.5px;outline:none;padding:6px 4px;">
             <button id="trackReplyBtn" onclick="window.sendAnonymousReply()" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#ffffff;border:none;border-radius:9999px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(79,70,229,0.3);transition:all 0.2s;flex-shrink:0;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -5917,7 +5917,7 @@ window.App = App;
 
       <div style="margin-bottom:20px;">
         <label style="display:block;margin-bottom:6px;font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Reference Code *</label>
-        <input type="text" id="consultTrackCodeInput" placeholder="e.g. REF-E0A58FEF" onkeydown="if(event.key==='Enter')window.lookupConsultationReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:16px;font-weight:700;text-transform:uppercase;box-sizing:border-box;outline:none;transition:all 0.2s;">
+        <input type="text" id="consultTrackCodeInput" aria-label="Clinical referral tracking code" placeholder="e.g. REF-E0A58FEF" onkeydown="if(event.key==='Enter')window.lookupConsultationReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:16px;font-weight:700;text-transform:uppercase;box-sizing:border-box;outline:none;transition:all 0.2s;">
       </div>
 
       <button id="consultTrackLookupBtn" onclick="window.lookupConsultationReport()" style="width:100%;padding:14px;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 8px 20px rgba(13,148,136,0.3);transition:all 0.2s;">
@@ -5938,7 +5938,7 @@ window.App = App;
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
               <span id="consultDisplayCode" style="font-family:monospace;font-size:16px;font-weight:800;color:#0f172a;letter-spacing:0.5px;">REF-XXXXXXXX</span>
               <span id="consultDisplayStatus" style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:9999px;border:1px solid #86efac;background:#dcfce7;color:#15803d;">
-                ✓ SUBMITTED
+                SUBMITTED
               </span>
             </div>
             <div style="font-size:12.5px;color:#64748b;margin-top:3px;">
@@ -5966,21 +5966,21 @@ window.App = App;
         </div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <button type="button" id="consultInAppCallBtn" onclick="startEmployeeCall()" style="background:#10b981;color:#ffffff;border:none;font-weight:800;font-size:13.5px;padding:10px 18px;border-radius:10px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(16,185,129,0.3);cursor:pointer;transition:all 0.2s;">
-            <span>📞 Call Doctor</span>
+            <span>Call Doctor</span>
           </button>
           <a id="consultJoinMeetingBtn" href="#" target="_blank" rel="noopener noreferrer" style="display:none;background:rgba(255,255,255,0.15);color:#ffffff;text-decoration:none;font-weight:700;font-size:12.5px;padding:10px 14px;border-radius:10px;align-items:center;gap:6px;border:1px solid rgba(255,255,255,0.3);">
             <span>External Video Link &rarr;</span>
           </a>
           <label style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#ccfbf1;cursor:pointer;" title="Routes voice traffic through TURN relays to hide your IP">
-            <input type="checkbox" id="empIpShieldToggle" onchange="if(window.HavilahCall) window.HavilahCall.setIpShield(this.checked)">
-            <span>🛡️ IP Shield</span>
+            <input type="checkbox" id="empIpShieldToggle" aria-label="IP shield masking toggle" onchange="if(window.HavilahCall) window.HavilahCall.setIpShield(this.checked)">
+            <span>IP Shield</span>
           </label>
         </div>
       </div>
 
       <!-- Appointment Date Callout (When scheduled without meeting link) -->
       <div id="consultScheduleInfoCard" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:14px;padding:12px 18px;margin-bottom:16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
-        <span>📅</span>
+        
         <span id="consultScheduleInfoText">Confirmed Appointment: —</span>
       </div>
 
@@ -5992,7 +5992,7 @@ window.App = App;
             <span style="font-weight:700;font-size:14px;color:#0f172a;">Clinical Documents &amp; Medical Certificates</span>
           </div>
           <span style="font-size:11.5px;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;padding:2px 8px;border-radius:9999px;font-weight:700;">
-            ✓ Issued by Practitioner
+            Issued by Practitioner
           </span>
         </div>
         <div id="consultAttachmentsList" style="display:flex;flex-direction:column;gap:8px;">
@@ -6008,7 +6008,7 @@ window.App = App;
             <span style="font-weight:700;font-size:14px;color:#0f172a;">Practitioner Clinical Exchange</span>
           </div>
           <span style="font-size:12px;color:#64748b;display:flex;align-items:center;gap:4px;">
-            <span>🔒 Confidential &amp; Encrypted</span>
+            <span>Confidential &amp; Encrypted</span>
           </span>
         </div>
 
@@ -6019,10 +6019,10 @@ window.App = App;
 
         <!-- Message Input Area -->
         <div style="display:flex;gap:10px;align-items:flex-end;">
-          <textarea id="consultReplyInput" rows="2" placeholder="Send a message or follow-up note to your assigned practitioner..." style="flex:1;padding:12px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;color:#0f172a;font-size:13.5px;line-height:1.4;outline:none;resize:vertical;font-family:inherit;transition:all 0.2s;"></textarea>
+          <textarea id="consultReplyInput" aria-label="Follow-up note to assigned clinician" rows="2" placeholder="Send a message or follow-up note to your assigned practitioner..." style="flex:1;padding:12px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;color:#0f172a;font-size:13.5px;line-height:1.4;outline:none;resize:vertical;font-family:inherit;transition:all 0.2s;"></textarea>
           <button id="consultReplyBtn" onclick="window.sendConsultationEmployeeReply()" style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#ffffff;border:none;border-radius:14px;padding:12px 22px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(13,148,136,0.25);transition:all 0.2s;height:46px;">
             <span>Send</span>
-            <span>✉️</span>
+            
           </button>
         </div>
       </div>

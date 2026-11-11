@@ -19,6 +19,20 @@ if (!token) {
 }
 
 function logout() {
+  const modal = document.getElementById('superAdminSignOutModal');
+  if (modal) {
+    modal.style.display = 'flex';
+  } else {
+    confirmSuperAdminSignOut();
+  }
+}
+
+function closeSuperAdminSignOutModal() {
+  const modal = document.getElementById('superAdminSignOutModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function confirmSuperAdminSignOut() {
   if (typeof Auth !== 'undefined' && Auth.logout) {
     Auth.logout();
   } else {
@@ -170,11 +184,11 @@ async function fetchTenants() {
             break;
           case 'suspended':
             stateClass = 'badge-state-suspended';
-            stateText = '🔒 LOCKED';
+            stateText = 'LOCKED';
             break;
           case 'expired':
             stateClass = 'badge-state-expired';
-            stateText = '⏰ EXPIRED';
+            stateText = 'EXPIRED';
             break;
           case 'churned':
             stateClass = 'badge-state-churned';
@@ -196,19 +210,19 @@ async function fetchTenants() {
         if (expiryDate) {
           const daysLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
           if (daysLeft <= 0) {
-            expiryBadge = '<span style="background:rgba(239,68,68,0.15);color:#f87171;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">⏰ Expired</span>';
+            expiryBadge = '<span style="background:rgba(239,68,68,0.15);color:#f87171;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">Expired</span>';
           } else if (daysLeft <= 7) {
-            expiryBadge = '<span style="background:rgba(245,158,11,0.15);color:#f59e0b;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">⚠️ Expires: ' + expiryDate.toLocaleDateString() + '</span>';
+            expiryBadge = '<span style="background:rgba(245,158,11,0.15);color:#f59e0b;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">Expires: ' + expiryDate.toLocaleDateString() + '</span>';
           } else {
-            expiryBadge = '<span style="background:rgba(99,102,241,0.1);color:#a78bfa;padding:4px 10px;border-radius:6px;font-size:11px;">📅 Expires: ' + expiryDate.toLocaleDateString() + '</span>';
+            expiryBadge = '<span style="background:rgba(99,102,241,0.1);color:#a78bfa;padding:4px 10px;border-radius:6px;font-size:11px;">Expires: ' + expiryDate.toLocaleDateString() + '</span>';
           }
         }
 
         // 6. Action Button
         const nextState = isActive ? 'suspended' : 'active';
         const btnClass = isActive ? 'suspend' : 'activate';
-        const btnText = isActive ? '🔒 Lock' : '🔓 Unlock';
-        const extendBtn = `<button onclick="openExtendModal('${t.company_id}', '${t.company_name}', '${t.access_expires_at || ''}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:6px 12px;color:#a78bfa;font-size:11px;cursor:pointer;">📅 Extend</button>`;
+        const btnText = isActive ? 'Lock' : 'Unlock';
+        const extendBtn = `<button onclick="openExtendModal('${t.company_id}', '${t.company_name}', '${t.access_expires_at || ''}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:6px 12px;color:#a78bfa;font-size:11px;cursor:pointer;">Extend</button>`;
 
         tr.setAttribute('data-company', (t.company_name + ' ' + (t.slug || '') + ' ' + (t.domain || '')).toLowerCase());
         tr.setAttribute('data-tier', (t.billing_tier || 'trial').toLowerCase());
@@ -231,7 +245,7 @@ async function fetchTenants() {
             <div class="seat-meter-container">
               <div class="seat-count-label" style="display: flex; align-items: center; justify-content: space-between;">
                 <span>${used.toLocaleString()} / <strong>${max.toLocaleString()}</strong></span>
-                <button onclick="editSeatCapacity('${t.company_id}', '${t.company_name}', ${max})" style="border: none; background: transparent; cursor: pointer; color: var(--accent); font-weight: 700; font-size: 11px;" title="Edit Max Seats">✏️</button>
+                <button onclick="editSeatCapacity('${t.company_id}', '${t.company_name}', ${max})" style="border: none; background: transparent; cursor: pointer; color: var(--accent); font-weight: 700; font-size: 11px;" title="Edit Max Seats">Edit</button>
               </div>
               <div class="seat-progress-bar">
                 <div class="seat-progress-fill ${colorClass}" style="width: ${pct}%"></div>
@@ -253,12 +267,12 @@ async function fetchTenants() {
               <button class="btn-action-toggle" style="background:var(--bg-base); color:var(--text-1); border-color:var(--border);" onclick="toggleActionMenu('menu-${t.company_id}', event)">•••</button>
               
               <div id="menu-${t.company_id}" class="action-popover" style="display: none; position: absolute; right: 0; background: #FFFFFF; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 500; min-width: 190px; padding: 4px 0;">
-                <a onclick="extendTrial14Days('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">⏳ Extend Trial (+14 Days)</a>
-                <a onclick="editSeatCapacity('${t.company_id}', '${t.company_name}', ${max})" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">✏️ Edit Seat Limit</a>
-                <a onclick="resetHRCredentials('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">🔑 Set HR Password</a>
-                <a onclick="openGenerateCodesModal('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">🎫 Generate Codes</a>
-                <a onclick="openModuleFlagsModal('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">📦 Module Flags</a>
-                <a onclick="deleteTenant('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: #DC2626; cursor: pointer; border-top: 1px solid var(--border-light);">🗑️ Delete Tenant</a>
+                <a onclick="extendTrial14Days('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Extend Trial (+14 Days)</a>
+                <a onclick="editSeatCapacity('${t.company_id}', '${t.company_name}', ${max})" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Edit Seat Limit</a>
+                <a onclick="resetHRCredentials('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Set HR Password</a>
+                <a onclick="openGenerateCodesModal('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Generate Codes</a>
+                <a onclick="openModuleFlagsModal('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Module Flags</a>
+                <a onclick="deleteTenant('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: #DC2626; cursor: pointer; border-top: 1px solid var(--border-light);">Delete Tenant</a>
               </div>
             </div>
           </td>
@@ -353,19 +367,21 @@ function showToast(title, desc = '', type = 'success') {
     opacity: 0; transform: translateY(-10px);
   `;
   
-  let borderColor = '#0D9488';
-  let iconSvg = '🟢';
+  let statusColor = 'var(--brand)';
+  let iconSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--brand);"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
   if (type === 'error' || type === 'danger') {
-    borderColor = '#DC2626'; iconSvg = '🔴';
+    statusColor = 'var(--danger)';
+    iconSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--danger);"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
   } else if (type === 'warning') {
-    borderColor = '#D97706'; iconSvg = '🟡';
+    statusColor = 'var(--warning)';
+    iconSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--warning);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
   } else if (type === 'info') {
-    borderColor = '#0284C7'; iconSvg = '🔵';
+    statusColor = 'var(--brand)';
+    iconSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--brand);"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
   }
-  toast.style.borderLeft = `4px solid ${borderColor}`;
 
   toast.innerHTML = `
-    <div style="font-size: 1rem;">${iconSvg}</div>
+    <div style="flex-shrink:0; display:flex; align-items:center;">${iconSvg}</div>
     <div style="flex: 1; min-width: 0;">
       <div style="font-weight: 700; font-size: 0.875rem; color: var(--text-1);">${title}</div>
       ${desc ? `<div style="font-size: 0.8125rem; color: var(--text-2); margin-top: 2px;">${desc}</div>` : ''}
@@ -404,11 +420,14 @@ function showCustomAlert(title, message, iconType = 'info') {
     confirmBtn.style.background = 'var(--accent)';
 
     if (iconType === 'error') {
-      iconEl.textContent = '🔴'; iconEl.style.background = 'rgba(220,38,38,0.1)'; iconEl.style.color = '#DC2626';
+      iconEl.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+      iconEl.style.background = 'var(--danger-subtle)'; iconEl.style.color = 'var(--danger)';
     } else if (iconType === 'success') {
-      iconEl.textContent = '🟢'; iconEl.style.background = 'rgba(13,148,136,0.1)'; iconEl.style.color = '#0D9488';
+      iconEl.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      iconEl.style.background = 'var(--success-subtle)'; iconEl.style.color = 'var(--success)';
     } else {
-      iconEl.textContent = 'ℹ️'; iconEl.style.background = 'rgba(2,132,199,0.1)'; iconEl.style.color = '#0284C7';
+      iconEl.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+      iconEl.style.background = 'var(--brand-subtle)'; iconEl.style.color = 'var(--brand)';
     }
 
     overlay.style.display = 'flex';
@@ -420,7 +439,7 @@ function showCustomAlert(title, message, iconType = 'info') {
   });
 }
 
-function showCustomConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', danger = false, icon = '⚡' }) {
+function showCustomConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', danger = false, icon = 'action' }) {
   return new Promise(resolve => {
     const overlay = document.getElementById('customDialogOverlay');
     const titleEl = document.getElementById('customDialogTitle');
@@ -433,9 +452,15 @@ function showCustomConfirm({ title, message, confirmText = 'Confirm', cancelText
 
     titleEl.textContent = title;
     msgEl.textContent = message;
-    iconEl.textContent = icon;
-    iconEl.style.background = danger ? 'rgba(220,38,38,0.1)' : 'rgba(13,148,136,0.1)';
-    iconEl.style.color = danger ? '#DC2626' : '#0D9488';
+    if (danger) {
+      iconEl.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+      iconEl.style.background = 'var(--danger-subtle)';
+      iconEl.style.color = 'var(--danger)';
+    } else {
+      iconEl.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      iconEl.style.background = 'var(--brand-subtle)';
+      iconEl.style.color = 'var(--brand)';
+    }
 
     cancelBtn.style.display = 'inline-block';
     cancelBtn.textContent = cancelText;
@@ -460,11 +485,11 @@ async function changeTenantTier(companyId, companyName, oldTier, newTier, select
   if (oldTier.toLowerCase() === newTier.toLowerCase()) return;
   
   const confirmed = await showCustomConfirm({
-    title: '⚡ Update Billing Tier?',
+    title: 'Update Billing Tier?',
     message: `Are you sure you want to change ${companyName} from ${oldTier.toUpperCase()} to ${newTier.toUpperCase()}?\n\nChanging tier will automatically adjust seat allocations, unlock framework capabilities, and log an audit entry.`,
     confirmText: 'Confirm Update',
     cancelText: 'Cancel',
-    icon: '💳'
+    icon: 'tier'
   });
 
   if (!confirmed) {
@@ -498,11 +523,11 @@ async function changeTenantTier(companyId, companyName, oldTier, newTier, select
 
 async function extendTrial14Days(companyId, companyName) {
   const confirmed = await showCustomConfirm({
-    title: '⚡ Extend 14-Day Trial?',
+    title: 'Extend 14-Day Trial?',
     message: `Extend trial for ${companyName} by +14 days?`,
     confirmText: 'Extend +14 Days',
     cancelText: 'Cancel',
-    icon: '⏳'
+    icon: 'extend'
   });
   if (!confirmed) return;
 
@@ -539,7 +564,7 @@ function showCustomPrompt(title, message, defaultValue = '', placeholder = '') {
       overlay.innerHTML = `
         <div class="modal" style="max-width: 440px; border-radius: 16px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-            <div id="customPromptIcon" style="width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; flex-shrink: 0; background: rgba(2,132,199,0.1); color: #0284C7;">🪑</div>
+            <div id="customPromptIcon" style="width: 38px; height: 38px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--brand-subtle); color: var(--brand);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></div>
             <h3 id="customPromptTitle" style="font-size: 1.125rem; font-weight: 700; color: var(--text-1); margin: 0;">Input Required</h3>
           </div>
           <div id="customPromptMessage" style="font-size: 0.875rem; color: var(--text-2); line-height: 1.5; margin-bottom: 16px;"></div>
@@ -670,7 +695,7 @@ async function submitResetHrPassword() {
     if (data.success) {
       closeResetHrModal();
       showCustomAlert(
-        '🔑 HR Password Updated',
+        'HR Password Updated',
         `${data.message}\n\nHR Email: ${data.email}\nNew Password: ${data.new_password}\n\nLogin URL: ${window.location.origin}/login.html`,
         'success'
       );
@@ -718,7 +743,7 @@ async function submitGenerateCodes() {
       closeGenerateCodesModal();
       const codeList = data.codes.join('\n');
       showCustomAlert(
-        '🎫 Activation Codes Generated',
+        'Activation Codes Generated',
         `Generated ${data.codes.length} new activation codes for ${data.company_name}:\n\n${codeList}\n\nActivation URL: ${window.location.origin}/register.html`,
         'success'
       );
@@ -732,12 +757,12 @@ async function submitGenerateCodes() {
 
 async function deleteTenant(companyId, companyName) {
   const confirmed = await showCustomConfirm({
-    title: '🗑️ Permanently Delete Tenant?',
+    title: 'Permanently Delete Tenant?',
     message: `Are you sure you want to PERMANENTLY DELETE "${companyName}"?\n\nThis will remove the tenant, all associated HR & employee accounts, and all activation codes from the database. This action CANNOT be undone.`,
     confirmText: 'Delete Permanently',
     cancelText: 'Cancel',
     danger: true,
-    icon: '⚠️'
+    icon: 'warning'
   });
   if (!confirmed) return;
 
@@ -855,12 +880,12 @@ async function impersonateHR(companyId) {
 async function toggleStatus(companyId, newState) {
   if (newState === 'suspended') {
     const confirmed = await showCustomConfirm({
-      title: '🔒 Lock Tenant?',
+      title: 'Lock Tenant?',
       message: 'All active sessions for this tenant will be terminated. Continue?',
       confirmText: 'Lock Tenant',
       cancelText: 'Cancel',
       danger: true,
-      icon: '🔒'
+      icon: 'lock'
     });
     if (!confirmed) return;
   }
@@ -1052,7 +1077,7 @@ function openProvisionSuccessModal(data) {
         const chip = document.createElement('span');
         chip.style.cssText = 'background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #10b981; font-family: monospace; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;';
         chip.title = 'Click to copy code';
-        chip.innerHTML = `${c} <span style="opacity:0.6;">📋</span>`;
+        chip.innerHTML = `${c}`;
         chip.onclick = () => copyToClipboard(c, `Copied activation code: ${c}`);
         container.appendChild(chip);
       });
@@ -1097,10 +1122,10 @@ function togglePasswordVisibility(inputId, btnEl) {
   if (!input) return;
   if (input.type === 'password') {
     input.type = 'text';
-    if (btnEl) btnEl.innerHTML = '🙈';
+    if (btnEl) btnEl.innerHTML = 'Hide';
   } else {
     input.type = 'password';
-    if (btnEl) btnEl.innerHTML = '👁️';
+    if (btnEl) btnEl.innerHTML = 'Show';
   }
 }
 
@@ -1342,7 +1367,7 @@ function renderTenantAssessorTable(tenants) {
     const activeAssessor = t.activeAssessorId;
     const currentAssessorName = (typeof activeAssessor === 'object' && activeAssessor)
       ? `<span style="font-weight:600; color:var(--text-1);">${activeAssessor.name}</span> <span style="font-size:11px; color:var(--text-2);">(${activeAssessor.organization || activeAssessor.email})</span>`
-      : '<span style="color:#d97706; font-weight:600;">⚠️ Unassigned</span>';
+      : '<span style="color:var(--warning); font-weight:600;">Unassigned</span>';
 
     // Build select options for available assessors
     const currentAssessorId = (typeof activeAssessor === 'object' && activeAssessor)
@@ -1425,7 +1450,7 @@ function renderStaleReferralsTable(staleList) {
   tbody.innerHTML = '';
 
   if (!staleList || staleList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:#059669; font-weight:600;">✅ No stale referrals! All clinical referrals are within SLA (< 48 hrs).</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:#059669; font-weight:600;">No stale referrals. All clinical referrals are within SLA (< 48 hrs).</td></tr>';
     return;
   }
 
@@ -1545,7 +1570,7 @@ function openReassignModal(referralId) {
   globalAssessorsList.forEach(a => {
     const isCurrent = String(a._id) === String(item.assignedAssessorId?._id);
     const isRecommended = activeAssessorMatch && String(a._id) === String(activeAssessorMatch._id);
-    const label = `${a.name} (${a.organization || a.email}) ${isRecommended ? '★ (Tenant Active Assessor)' : ''} ${isCurrent ? '[Currently Assigned]' : ''}`;
+    const label = `${a.name} (${a.organization || a.email}) ${isRecommended ? '(Tenant Active Assessor)' : ''} ${isCurrent ? '[Currently Assigned]' : ''}`;
     const opt = document.createElement('option');
     opt.value = a._id;
     opt.textContent = label;
@@ -1666,16 +1691,16 @@ function renderConflictReports() {
 
     let urgencyBadge = '<span class="badge badge-state-pending">Standard</span>';
     if (r.urgency === 'Critical') {
-      urgencyBadge = '<span class="badge badge-state-suspended">🚨 Critical</span>';
+      urgencyBadge = '<span class="badge badge-state-suspended">Critical</span>';
     } else if (r.urgency === 'Urgent') {
-      urgencyBadge = '<span class="badge badge-state-expired">⚠️ Urgent</span>';
+      urgencyBadge = '<span class="badge badge-state-expired">Urgent</span>';
     }
 
     const statusMap = {
       submitted: '<span class="badge badge-state-pending">Submitted</span>',
       under_investigation: '<span class="badge badge-state-expired">⏳ Investigating</span>',
-      action_taken: '<span class="badge badge-state-active">🛡️ Action Taken</span>',
-      closed: '<span class="badge" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1;">🔒 Closed</span>',
+      action_taken: '<span class="badge badge-state-active">Action Taken</span>',
+      closed: '<span class="badge" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1;">Closed</span>',
     };
     const stBadge = statusMap[r.status] || `<span class="badge badge-billing">${r.status}</span>`;
     const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
@@ -1703,7 +1728,7 @@ function renderConflictReports() {
         </td>
         <td>
           <button class="btn-action-primary" onclick="openSuperAdminReportModal('${r._id}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; gap: 4px;">
-            <span>🔍</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <span>Investigate &amp; Reply</span>
           </button>
         </td>
@@ -1786,9 +1811,9 @@ function openSuperAdminReportModal(reportId) {
   
   if (urgContainer) {
     if (report.urgency === 'Critical') {
-      urgContainer.innerHTML = '<span class="badge badge-state-suspended">🚨 Critical Priority</span>';
+      urgContainer.innerHTML = '<span class="badge badge-state-suspended">Critical Priority</span>';
     } else if (report.urgency === 'Urgent') {
-      urgContainer.innerHTML = '<span class="badge badge-state-expired">⚠️ Urgent</span>';
+      urgContainer.innerHTML = '<span class="badge badge-state-expired">Urgent</span>';
     } else {
       urgContainer.innerHTML = '<span class="badge badge-state-pending">Standard</span>';
     }
@@ -1822,7 +1847,7 @@ function renderSuperAdminModalThread(thread) {
       return `
         <div style="display: flex; flex-direction: column; align-items: flex-end; max-width: 85%; align-self: flex-end; margin-bottom: 4px;">
           <div style="font-size: 11px; color: var(--text-2); font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 4px;">
-            <span>🛡️ You (SuperAdmin Ombudsman)</span>
+            <span>You (SuperAdmin Ombudsman)</span>
             <span>•</span>
             <span>${timeStr}</span>
           </div>
@@ -1836,7 +1861,7 @@ function renderSuperAdminModalThread(thread) {
       return `
         <div style="display: flex; flex-direction: column; align-items: flex-start; max-width: 85%; align-self: flex-start; margin-bottom: 4px;">
           <div style="font-size: 11px; color: var(--text-2); font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 4px;">
-            <span>👤 Anonymous Whistleblower</span>
+            <span>Anonymous Whistleblower</span>
             <span>•</span>
             <span>${timeStr}</span>
           </div>
@@ -2061,7 +2086,7 @@ async function removeLookedUpUserAccount() {
     confirmText: 'Remove account',
     cancelText: 'Cancel',
     danger: true,
-    icon: '⚠️'
+    icon: 'warning'
   });
   if (!confirmed) return;
 
@@ -2073,7 +2098,7 @@ async function removeLookedUpUserAccount() {
       confirmText: 'Yes, Remove Admin',
       cancelText: 'Cancel',
       danger: true,
-      icon: '🛑'
+      icon: 'purge'
     });
     if (!secondConfirm) return;
     confirmAdmin = true;

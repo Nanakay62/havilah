@@ -159,6 +159,9 @@ button, select, input, textarea, a, [role="button"], [tabindex="0"] {
   display: flex;
   min-height: 100vh;
   background-color: var(--bg);
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 .app-sidebar {
@@ -288,6 +291,8 @@ button, select, input, textarea, a, [role="button"], [tabindex="0"] {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .app-topbar {
@@ -604,20 +609,22 @@ button, select, input, textarea, a, [role="button"], [tabindex="0"] {
    -------------------------------------------------------------------------- */
 .stat-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-4);
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
   margin-bottom: var(--space-6);
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
   }
 }
 
 @media (min-width: 1024px) {
   .stat-grid {
     grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
   }
 }
 
@@ -632,13 +639,21 @@ button, select, input, textarea, a, [role="button"], [tabindex="0"] {
   gap: var(--space-1);
 }
 
-.stat-label {
+@media (max-width: 640px) {
+  .stat-card {
+    padding: var(--space-3);
+  }
+}
+
+.stat-label,
+.stat-card-label {
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   color: var(--text-muted);
 }
 
-.stat-value {
+.stat-value,
+.stat-card-value {
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
   color: var(--text);
@@ -646,7 +661,9 @@ button, select, input, textarea, a, [role="button"], [tabindex="0"] {
   line-height: 1.2;
 }
 
-.stat-hint {
+.stat-hint,
+.stat-card-hint,
+.stat-card-helper {
   font-size: var(--text-xs);
   color: var(--text-subtle);
   white-space: nowrap;
@@ -775,6 +792,20 @@ button, select, input, textarea, a, [role="button"], [tabindex="0"] {
     font-weight: var(--weight-medium);
     color: var(--text-subtle);
     padding-right: var(--space-3);
+  }
+
+  .data-table.table-to-cards tbody td:only-child,
+  .data-table.table-to-cards tbody tr.empty-row td {
+    display: block;
+    text-align: center;
+    border-bottom: none;
+    padding: var(--space-4) var(--space-2);
+  }
+
+  .data-table.table-to-cards tbody td:only-child::before,
+  .data-table.table-to-cards tbody tr.empty-row td::before {
+    display: none;
+    content: none;
   }
 
   .data-table.table-to-cards .num {

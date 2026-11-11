@@ -116,7 +116,7 @@
 
     const referrals = state.referralBilling || [];
 
-    // Update Summary KPI Badges if elements exist
+    // Update Summary KPI elements
     const totalCountEl = document.getElementById('billingTotalCount');
     const totalAmountEl = document.getElementById('billingTotalAmount');
     const billedCountEl = document.getElementById('billingBilledCount');
@@ -138,18 +138,19 @@
     });
 
     if (totalCountEl) totalCountEl.innerText = referrals.length;
-    if (totalAmountEl) totalAmountEl.innerText = `GHS ${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (totalAmountEl) {
+      totalAmountEl.innerText = totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
     if (billedCountEl) billedCountEl.innerText = `${billedCount} of ${referrals.length}`;
     if (staleCountEl) staleCountEl.innerText = staleCount;
 
     if (referrals.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="7" style="padding: 32px; text-align: center; color: var(--text-3); font-size: 0.875rem;">No clinical referral records found for your organization.</td></tr>';
+      tableBody.innerHTML = '<tr class="empty-row"><td colspan="7" style="padding: 32px; text-align: center; color: var(--text-subtle); font-size: var(--text-base);">No clinical referral records found for your organization.</td></tr>';
       return;
     }
 
     referrals.forEach(r => {
       const tr = document.createElement('tr');
-      tr.style.borderBottom = '1px solid var(--border)';
 
       const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', {
         month: 'short',
@@ -157,54 +158,75 @@
         year: 'numeric'
       }) : '—';
 
-      let statusBadge = '';
       const st = (r.status || 'pending').toLowerCase();
-      if (st === 'completed') {
-        statusBadge = '<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Completed</span>';
-      } else if (st === 'scheduled') {
-        statusBadge = '<span style="background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Scheduled</span>';
-      } else if (st === 'cancelled') {
-        statusBadge = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Cancelled</span>';
-      } else {
-        statusBadge = '<span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600;">Pending</span>';
+
+      // Age calculation (hours/days since created; if >48h and pending, show e.g. "2d" plus overdue badge)
+      let ageHtml = '—';
+      if (r.createdAt) {
+        const createdMs = new Date(r.createdAt).getTime();
+        const diffMs = Math.max(0, Date.now() - createdMs);
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffHours / 24);
+
+        let ageLabel = '';
+        if (diffHours < 1) {
+          ageLabel = '<1h';
+        } else if (diffHours < 24) {
+          ageLabel = `${diffHours}h`;
+        } else {
+          ageLabel = `${diffDays}d`;
+        }
+
+        const isOverdue = r.isStale || (st === 'pending' && diffHours >= 48);
+        if (isOverdue) {
+          ageHtml = `<div style="display: inline-flex; align-items: center; gap: 6px;"><span class="tabular-nums">${ageLabel}</span><span class="badge badge-danger">Overdue</span></div>`;
+        } else {
+          ageHtml = `<span class="tabular-nums">${ageLabel}</span>`;
+        }
       }
 
-      const staleBadge = r.isStale
-        ? '<span style="background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; padding: 2px 7px; border-radius: 99px; font-size: 0.72rem; font-weight: 700; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px;" title="Referral has been pending for over 48 hours">⏱️ Pending 48+ hrs</span>'
-        : '';
+      // Single Status Badge
+      let statusBadge = '';
+      if (st === 'completed') {
+        statusBadge = '<span class="badge badge-success">Completed</span>';
+      } else if (st === 'scheduled') {
+        statusBadge = '<span class="badge badge-info">Scheduled</span>';
+      } else if (st === 'cancelled') {
+        statusBadge = '<span class="badge badge-danger">Cancelled</span>';
+      } else {
+        statusBadge = '<span class="badge badge-warning">Pending</span>';
+      }
 
+      // Amount: Tabular numbers in cell, no GHS prefix (currency is in column header)
       const amountVal = (r.billing && typeof r.billing.amount === 'number')
         ? r.billing.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         : '0.00';
 
-      const currencyVal = r.billing?.currency || 'GHS';
+      // Billed: Yes/No badge
       const isBilledVal = r.billing?.isBilled
-        ? '<span style="color: #166534; font-weight: 700; background: #dcfce7; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">Yes</span>'
-        : '<span style="color: #64748b; font-weight: 500; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">No</span>';
+        ? '<span class="badge badge-success">Yes</span>'
+        : '<span class="badge badge-neutral">No</span>';
 
       tr.innerHTML = `
-        <td style="padding: 12px 14px; font-family: monospace; font-size: 0.9rem; font-weight: 700; color: var(--text-1); letter-spacing: 0.04em;">
+        <td data-label="Reference code" style="font-family: monospace; font-weight: 600; font-size: var(--text-sm); letter-spacing: 0.02em;">
           ${r.referenceCode || '—'}
         </td>
-        <td style="padding: 12px 14px; font-weight: 600; color: var(--text-1); font-size: 0.85rem;">
+        <td data-label="Department" style="font-weight: 500;">
           ${r.departmentName || 'General'}
         </td>
-        <td style="padding: 12px 14px; color: var(--text-2); font-size: 0.825rem;">
+        <td data-label="Date" style="color: var(--text-muted);">
           ${dateStr}
         </td>
-        <td style="padding: 12px 14px;">
-          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-            ${statusBadge}
-            ${staleBadge}
-          </div>
+        <td data-label="Age">
+          ${ageHtml}
         </td>
-        <td style="padding: 12px 14px; font-family: monospace; font-weight: 700; color: var(--text-1); font-size: 0.9rem;">
+        <td data-label="Status">
+          ${statusBadge}
+        </td>
+        <td data-label="Amount (GHS)" class="tabular-nums num" style="text-align: right; font-weight: 600;">
           ${amountVal}
         </td>
-        <td style="padding: 12px 14px; color: var(--text-2); font-size: 0.825rem; font-weight: 600;">
-          ${currencyVal}
-        </td>
-        <td style="padding: 12px 14px;">
+        <td data-label="Billed">
           ${isBilledVal}
         </td>
       `;
@@ -234,11 +256,52 @@
 
   async function fetchClinicalBilling() {
     try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isSample = urlParams.get('sample') === '1' || window.location.hash === '#sample';
+      if (isSample) {
+        state.referralBilling = [
+          {
+            referenceCode: 'REF-8842',
+            departmentName: 'Engineering',
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+            status: 'pending',
+            isStale: true,
+            billing: { amount: 450.00, currency: 'GHS', isBilled: false }
+          },
+          {
+            referenceCode: 'REF-8821',
+            departmentName: 'Marketing',
+            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            status: 'completed',
+            isStale: false,
+            billing: { amount: 620.00, currency: 'GHS', isBilled: true }
+          },
+          {
+            referenceCode: 'REF-8815',
+            departmentName: 'Operations',
+            createdAt: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString(),
+            status: 'scheduled',
+            isStale: false,
+            billing: { amount: 380.00, currency: 'GHS', isBilled: false }
+          },
+          {
+            referenceCode: 'REF-8790',
+            departmentName: 'Human Resources',
+            createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+            status: 'completed',
+            isStale: false,
+            billing: { amount: 550.00, currency: 'GHS', isBilled: true }
+          }
+        ];
+        renderClinicalBilling();
+        return;
+      }
       const res = await apiFetch('/api/v1/referrals/employer-billing');
       state.referralBilling = res.data || [];
       renderClinicalBilling();
     } catch (e) {
       console.error('Clinical billing load error', e);
+      renderClinicalBilling();
     }
   }
 
@@ -374,12 +437,24 @@
     const analyticsTabBtn = document.getElementById('hr-tab-analytics');
     const billingTabBtn = document.getElementById('hr-tab-billing');
     const ethicsTabBtn = document.getElementById('hr-tab-ethics');
+    const invitesTabBtn = document.getElementById('hr-tab-invites');
     const analyticsSection = document.getElementById('hr-section-analytics');
     const billingSection = document.getElementById('hr-section-billing');
     const ethicsSection = document.getElementById('hr-section-ethics');
 
+    // Close mobile drawer if open
+    const sidebar = document.getElementById('appSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    if (sidebar && sidebar.classList.contains('is-open')) {
+      sidebar.classList.remove('is-open');
+      if (backdrop) backdrop.classList.remove('is-open');
+      if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+
     // Reset all tabs
-    [analyticsTabBtn, billingTabBtn, ethicsTabBtn].forEach(btn => btn && btn.classList.remove('active'));
+    [analyticsTabBtn, billingTabBtn, ethicsTabBtn, invitesTabBtn].forEach(btn => btn && btn.classList.remove('active'));
     [analyticsSection, billingSection, ethicsSection].forEach(sec => sec && (sec.style.display = 'none'));
 
     if (tabName === 'billing') {
@@ -390,6 +465,13 @@
       if (ethicsTabBtn) ethicsTabBtn.classList.add('active');
       if (ethicsSection) ethicsSection.style.display = 'block';
       fetchEthicsReports();
+    } else if (tabName === 'invites') {
+      if (invitesTabBtn) invitesTabBtn.classList.add('active');
+      if (analyticsSection) {
+        analyticsSection.style.display = 'block';
+        const inviteEl = document.getElementById('hr-access-management') || document.getElementById('hrGenerateInviteForm');
+        if (inviteEl) inviteEl.scrollIntoView({ behavior: 'smooth' });
+      }
     } else {
       if (analyticsTabBtn) analyticsTabBtn.classList.add('active');
       if (analyticsSection) analyticsSection.style.display = 'block';
@@ -972,5 +1054,11 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     init();
+    const hash = (window.location.hash || '').replace('#', '');
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (hash === 'billing' || tabParam === 'billing' || hash === 'sample') {
+      window.switchHrViewTab('billing');
+    }
   });
 })();

@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Havilah - Occupational Health & Analytics Portal</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/Roboto.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/tokens.css">
+<link rel="stylesheet" href="/css/components.css">
+<script src="/js/icons.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="/js/vendor/jspdf.umd.min.js"></script>
 <script src="/js/vendor/html2canvas.min.js"></script>
@@ -48,7 +49,7 @@
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; width: 100%; max-width: 100vw; overflow-x: hidden; font-size: 15px; }
   body, button, input, select, textarea {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -57,8 +58,8 @@
     font-feature-settings: "tnum";
   }
   body {
-    background: var(--bg-base);
-    color: var(--text-1);
+    background: var(--bg);
+    color: var(--text);
     line-height: 1.5;
     font-size: 14px;
     overflow-x: hidden;
@@ -72,8 +73,8 @@
     position: absolute;
     top: -100px;
     left: 16px;
-    background: #1A1B1E;
-    color: #FFFFFF;
+    background: var(--text);
+    color: var(--surface);
     padding: 6px 14px;
     border-radius: 6px;
     z-index: 2000;
@@ -84,19 +85,11 @@
   }
   .skip-link:focus {
     top: 8px;
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--brand);
   }
   
   body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    background:
-      radial-gradient(ellipse 80% 60% at 12% 8%, rgba(0, 183, 195, 0.08) 0%, transparent 55%),
-      radial-gradient(ellipse 70% 50% at 88% 18%, rgba(112, 0, 255, 0.05) 0%, transparent 55%),
-      linear-gradient(180deg, #F4F5F8 0%, #EEF0F4 100%);
-    pointer-events: none;
+    display: none !important;
   }
   
   h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.015em; line-height: 1.2; color: var(--text-1); }
@@ -155,24 +148,33 @@
   .badge-dot {
     position: absolute; top: 6px; right: 6px;
     width: 6px; height: 6px; border-radius: 50%;
-    background: var(--critical); border: 1.5px solid #fff;
+    background: var(--danger); border: 1.5px solid var(--surface);
   }
   .profile {
     display: flex; align-items: center; gap: 8px;
-    padding: 3px 10px 3px 3px; border-radius: 10px;
-    border: 1px solid var(--border); background: var(--bg-acrylic-strong);
-    cursor: pointer; transition: all 0.2s var(--ease-out);
+    padding: 3px 10px 3px 3px; border-radius: var(--radius-control);
+    border: 1px solid var(--border); background: var(--surface);
+    cursor: pointer; transition: all 0.2s ease;
     font-family: inherit;
   }
-  .profile:hover { background: var(--bg-elev); box-shadow: var(--shadow-xs); }
+  .profile:hover { background: var(--bg); box-shadow: var(--shadow-card); }
   .avatar {
-    width: 26px; height: 26px; border-radius: 7px;
-    background: linear-gradient(135deg, var(--purple) 0%, var(--accent) 100%);
-    color: white; display: flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: var(--radius-full);
+    background: var(--brand);
+    color: #ffffff; display: flex; align-items: center; justify-content: center;
     font-weight: 600; font-size: 0.75rem;
   }
-  .profile-name { font-size: 0.78125rem; font-weight: 600; color: var(--text-1); }
-  .profile-role { font-size: 0.65rem; color: var(--text-3); }
+  .profile-name { font-size: 0.78125rem; font-weight: 600; color: var(--text); }
+  .profile-role { font-size: 0.65rem; color: var(--text-muted); }
+  @media (max-width: 640px) {
+    .profile {
+      padding: 3px;
+      border-radius: var(--radius-full);
+    }
+    .profile-name, .profile-role {
+      display: none;
+    }
+  }
 
   /* ============ DROPDOWN ============ */
   .dropdown {
@@ -397,8 +399,8 @@
   /* ============ SIDE PANELS (Notifications & Resources) ============ */
   .panel-backdrop { position: fixed; inset: 0; background: rgba(15, 20, 35, 0.35); backdrop-filter: blur(4px); z-index: 1050; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
   .panel-backdrop.open { opacity: 1; pointer-events: auto; }
-  .panel { position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 380px; background: var(--bg-elev); z-index: 1060; transform: translateX(100%); transition: transform 0.3s var(--ease-out); display: flex; flex-direction: column; box-shadow: -15px 0 45px rgba(15, 20, 35, 0.12); }
-  .panel.open { transform: translateX(0); }
+  .panel { position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 380px; background: var(--surface); z-index: 1060; transform: translateX(100%); visibility: hidden; pointer-events: none; transition: transform 0.3s var(--ease-out), visibility 0.3s; display: flex; flex-direction: column; box-shadow: var(--shadow-overlay); }
+  .panel.open { transform: translateX(0); visibility: visible; pointer-events: auto; }
   .panel-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .panel-title { font-size: 1.05rem; font-weight: 700; color: var(--text-1); }
   .panel-body { padding: 12px 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
@@ -570,93 +572,131 @@
 <body>
 
 <!-- ============ 30-DAY PRO TRIAL BANNER ============ -->
-<div id="hrTrialBanner" style="display: none; background: linear-gradient(90deg, #0f766e 0%, #0d9488 50%, #0284c7 100%); color: #ffffff; padding: 8px 24px; font-size: 0.8125rem; font-weight: 500; text-align: center; position: sticky; top: 0; z-index: 1001; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+<div id="hrTrialBanner" style="display: none; background: var(--brand); color: #ffffff; padding: 8px 24px; font-size: 0.8125rem; font-weight: 500; text-align: center; position: sticky; top: 0; z-index: 1001;">
   <div style="max-width: 1440px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
-    <span id="hrTrialBannerText">⚡ <strong>30-Day Pro Reverse Trial Active:</strong> You have full access to all Pro features including whistleblower isolation &amp; clinical routing.</span>
+    <span id="hrTrialBannerText"><strong>30-Day Pro Reverse Trial Active:</strong> You have full access to all Pro features including whistleblower isolation &amp; clinical routing.</span>
     <a href="/index.html#pricing" target="_blank" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); border-radius: 99px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">View Plans &rarr;</a>
   </div>
 </div>
 
-<!-- ============ HEADER ============ -->
-<header class="header" role="banner">
-  <div class="header-inner">
-    <button class="brand" onclick="App.navigate('landing')" aria-label="Havilah home">
-      <div class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/></svg>
-      </div>
-      Havilah
-    </button>
-    
-    <nav class="nav" role="navigation" aria-label="Primary">
-      <button class="nav-item active" id="hr-tab-analytics" onclick="window.switchHrViewTab('analytics')">HR Analytics</button>
-      <button class="nav-item" id="hr-tab-billing" onclick="window.switchHrViewTab('billing')">Clinical Billing</button>
-      <button class="nav-item" id="hr-tab-ethics" onclick="window.switchHrViewTab('ethics')">Ethics &amp; Hazard Reports</button>
-    </nav>
-    
-    <div class="header-right">
-      <button class="icon-btn" id="searchBtn" aria-label="Search (Ctrl+K)" title="Search (Ctrl+K)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      </button>
-      <button class="icon-btn" id="notifBtn" aria-label="Notifications" title="Notifications">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        <span class="badge-dot" id="notifBadge"></span>
-      </button>
-      <div style="position: relative;">
-        <button class="profile" id="profileBtn" aria-haspopup="true" aria-expanded="false">
-          <div class="avatar" id="user-avatar-initials">HR</div>
-          <div>
-            <div class="profile-name" id="user-display-name">HR Admin</div>
-            <div class="profile-role" id="user-role-label">HR Administrator</div>
-          </div>
-        </button>
-        <div class="dropdown" id="profileDropdown" role="menu">
-          <div class="dropdown-header">
-            <div class="avatar">HR</div>
-            <div>
-              <div class="dropdown-header-name">HR Admin</div>
-              <div class="dropdown-header-email">hr@company.com</div>
-            </div>
-          </div>
-          <button class="dropdown-item" onclick="App.openProfileSettings()" role="menuitem">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            My Profile
-          </button>
-          <button class="dropdown-item" onclick="App.openSettings()" role="menuitem">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Settings
-            <span class="dropdown-item-shortcut">⌘,</span>
-          </button>
-          <button class="dropdown-item" onclick="App.navigate('employee')" role="menuitem">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            My Wellness
-          </button>
-          <button class="dropdown-item" onclick="App.navigate('hr')" role="menuitem">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-            HR Analytics
-          </button>
-          <div class="dropdown-divider"></div>
-          <div class="dropdown-section-label">Help</div>
-          <button class="dropdown-item" onclick="App.openHelp()" role="menuitem">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            Help Center
-          </button>
-          <button class="dropdown-item" onclick="App.openKeyboardShortcuts()" role="menuitem">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/></svg>
-            Keyboard Shortcuts
-            <span class="dropdown-item-shortcut">?</span>
-          </button>
-          <div class="dropdown-divider"></div>
-          <button class="dropdown-item danger" onclick="App.signOut()" role="menuitem">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            Sign Out
-          </button>
+<div class="app-shell">
+  <!-- Mobile Sidebar Backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+  <!-- 240px Left Sidebar -->
+  <aside class="app-sidebar" id="appSidebar" aria-label="Sidebar navigation">
+    <div class="app-sidebar-header">
+      <button class="brand" onclick="App.navigate('landing')" aria-label="Havilah home" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0;font-family:inherit;font-weight:700;font-size:1rem;color:var(--text);letter-spacing:-0.02em;">
+        <div style="width:28px;height:28px;border-radius:6px;background:var(--brand);display:flex;align-items:center;justify-content:center;color:#ffffff;" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/></svg>
         </div>
+        <span>Havilah</span>
+      </button>
+    </div>
+    <nav class="app-sidebar-nav" role="navigation" aria-label="Primary navigation">
+      <button class="sidebar-nav-item active" id="hr-tab-analytics" onclick="window.switchHrViewTab('analytics')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+        <span>HR Analytics</span>
+      </button>
+      <button class="sidebar-nav-item" id="hr-tab-billing" onclick="window.switchHrViewTab('billing')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+        <span>Clinical Billing</span>
+      </button>
+      <button class="sidebar-nav-item" id="hr-tab-ethics" onclick="window.switchHrViewTab('ethics')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <span>Ethics &amp; Reports</span>
+      </button>
+      <button class="sidebar-nav-item" id="hr-tab-invites" onclick="window.switchHrViewTab('invites')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <span>Employee Invitations</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:var(--success);" aria-hidden="true"></span>
+        <span style="font-size:var(--text-xs);color:var(--text-subtle);font-weight:500;">Secure Portal</span>
       </div>
     </div>
-  </div>
-</header>
+  </aside>
 
-<main id="main">
+  <!-- Main Content Wrapper -->
+  <div class="app-main">
+    <!-- App Topbar with Hamburger Toggle & Header Actions -->
+    <header class="app-topbar" role="banner">
+      <div class="topbar-left">
+        <button id="sidebarToggleBtn" class="hamburger-btn" aria-label="Toggle navigation drawer" aria-expanded="false">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <div class="topbar-brand" style="display:none; align-items:center; gap:8px;">
+          <div style="width:24px;height:24px;border-radius:5px;background:var(--brand);display:flex;align-items:center;justify-content:center;color:#ffffff;" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/></svg>
+          </div>
+          <span style="font-weight:700;font-size:1rem;color:var(--text);letter-spacing:-0.02em;">Havilah</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" id="searchBtn" aria-label="Search (Ctrl+K)" title="Search (Ctrl+K)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+        <button class="icon-btn" id="notifBtn" aria-label="Notifications" title="Notifications">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="badge-dot" id="notifBadge"></span>
+        </button>
+        <div style="position: relative;">
+          <button class="profile" id="profileBtn" aria-haspopup="true" aria-expanded="false">
+            <div class="avatar" id="user-avatar-initials">HR</div>
+            <div>
+              <div class="profile-name" id="user-display-name">HR Admin</div>
+              <div class="profile-role" id="user-role-label">HR Administrator</div>
+            </div>
+          </button>
+          <div class="dropdown" id="profileDropdown" role="menu">
+            <div class="dropdown-header">
+              <div class="avatar">HR</div>
+              <div>
+                <div class="dropdown-header-name">HR Admin</div>
+                <div class="dropdown-header-email">hr@company.com</div>
+              </div>
+            </div>
+            <button class="dropdown-item" onclick="App.openProfileSettings()" role="menuitem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              My Profile
+            </button>
+            <button class="dropdown-item" onclick="App.openSettings()" role="menuitem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0 1.51 1z"/></svg>
+              Settings
+              <span class="dropdown-item-shortcut">⌘,</span>
+            </button>
+            <button class="dropdown-item" onclick="App.navigate('employee')" role="menuitem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              My Wellness
+            </button>
+            <button class="dropdown-item" onclick="App.navigate('hr')" role="menuitem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+              HR Analytics
+            </button>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-section-label">Help</div>
+            <button class="dropdown-item" onclick="App.openHelp()" role="menuitem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Help Center
+            </button>
+            <button class="dropdown-item" onclick="App.openKeyboardShortcuts()" role="menuitem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/></svg>
+              Keyboard Shortcuts
+              <span class="dropdown-item-shortcut">?</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" onclick="App.signOut()" role="menuitem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="page-container" style="padding-top: var(--space-6); padding-bottom: var(--space-8);">
 
 <div id="hr-section-analytics">
 <!-- ============ HR VIEW ============ -->
@@ -953,78 +993,82 @@
 </div>
 
 <!-- ============ CLINICAL BILLING VIEW ============ -->
-<div id="hr-section-billing" style="display: none; padding-top: 10px;">
-  <div class="page-head">
-    <div>
-      <span class="eyebrow" style="color: var(--accent-deep);">Confidential Invoicing</span>
-      <h1>Clinical Referral Billing &amp; Invoices</h1>
-      <p style="color: var(--text-2); font-size: 0.875rem;">
-        Track employee occupational health referrals and invoices without exposing patient identity.
-      </p>
+<div id="hr-section-billing" style="display: none;">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-titles">
+      <h1 class="page-title">Clinical referral billing</h1>
+      <p class="page-header-desc">Track employee occupational health referrals and invoices without exposing patient identity.</p>
     </div>
-    <div class="page-head-actions">
-      <button class="btn btn-ghost btn-sm" onclick="window.refreshClinicalBilling()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-        ↻ Refresh Billing
+    <div class="page-header-actions">
+      <button class="btn btn-secondary btn-sm" onclick="window.refreshClinicalBilling()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        Refresh billing
       </button>
     </div>
   </div>
 
-  <!-- Privacy Guarantee Alert -->
-  <div style="background: rgba(13, 148, 136, 0.08); border: 1px solid rgba(13, 148, 136, 0.25); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-    <div style="font-size: 1.3rem;">🔒</div>
-    <div style="font-size: 0.84rem; color: var(--text-2); line-height: 1.5;">
-      <strong style="color: var(--text-1);">Anonymity Guarantee:</strong> Patient identities, medical notes, and clinical records are strictly sequestered with the medical assessor. Only reference codes, department tags, and billing amounts are visible here.
+  <!-- Privacy Guarantee Alert Banner -->
+  <div class="alert-banner alert-banner-info" role="status">
+    <div class="alert-banner-icon" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+    </div>
+    <div class="alert-banner-content">
+      <strong>Anonymity Guarantee:</strong> Patient identities, medical notes, and clinical records are strictly sequestered with the medical assessor. Only reference codes, department tags, and billing amounts are visible here.
     </div>
   </div>
 
-  <!-- KPI Grid -->
-  <div class="kpi-grid" style="margin-bottom: 20px;">
-    <div class="kpi-card">
-      <div class="kpi-label">Total Referrals</div>
-      <div class="kpi-value" id="billingTotalCount">0</div>
-      <div class="kpi-hint">All clinical intake requests</div>
+  <!-- KPI Stat Grid (2x2 on mobile, 4 columns on desktop) -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total referrals</div>
+      <div class="stat-value" id="billingTotalCount">0</div>
+      <div class="stat-hint">All clinical intake requests</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Total Billed</div>
-      <div class="kpi-value" id="billingTotalAmount" style="color: #0d9488;">GHS 0.00</div>
-      <div class="kpi-hint">Completed clinical cases</div>
+    <div class="stat-card">
+      <div class="stat-label">Total billed (GHS)</div>
+      <div class="stat-value" id="billingTotalAmount">0.00</div>
+      <div class="stat-hint">Completed clinical cases</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Billed Rate</div>
-      <div class="kpi-value" id="billingBilledCount">0 of 0</div>
-      <div class="kpi-hint">Invoices settled</div>
+    <div class="stat-card">
+      <div class="stat-label">Billed rate</div>
+      <div class="stat-value" id="billingBilledCount">0 of 0</div>
+      <div class="stat-hint">Invoices settled</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Pending 48+ Hrs</div>
-      <div class="kpi-value" id="billingStaleCount" style="color: #ef4444;">0</div>
-      <div class="kpi-hint">Flagged for assessor review</div>
+    <div class="stat-card">
+      <div class="stat-label">Pending 48+ hrs</div>
+      <div class="stat-value" id="billingStaleCount">0</div>
+      <div class="stat-hint">Flagged for assessor review</div>
     </div>
   </div>
 
-  <!-- Billing Table Card -->
-  <div class="chart-card">
-    <div class="chart-head" style="display: flex; justify-content: space-between; align-items: center;">
+  <!-- Billing Table Card with Mobile Stacked Cards Layout -->
+  <div class="data-table-container">
+    <div class="data-table-header">
       <div>
-        <div class="chart-title">Referral Billing Records</div>
-        <div class="chart-subtitle">Direct ledger of occupational health assessments and billed fees</div>
+        <h2 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text); margin: 0;">Referral billing records</h2>
+        <p style="font-size: var(--text-xs); color: var(--text-subtle); margin: 2px 0 0 0;">Direct ledger of occupational health assessments and billed fees</p>
       </div>
     </div>
-    <div style="overflow-x: auto;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left;">
+    <div style="overflow-x: auto; width: 100%;">
+      <table class="data-table table-to-cards" aria-label="Clinical referral billing records">
         <thead>
-          <tr style="border-bottom: 1px solid var(--border-strong); background: var(--bg-base);">
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Reference Code</th>
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Department</th>
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Date</th>
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Status</th>
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Amount</th>
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Currency</th>
-            <th style="padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase;">Billed</th>
+          <tr>
+            <th scope="col">Reference code</th>
+            <th scope="col">Department</th>
+            <th scope="col">Date</th>
+            <th scope="col">Age</th>
+            <th scope="col">Status</th>
+            <th scope="col" style="text-align: right;">Amount (GHS)</th>
+            <th scope="col">Billed</th>
           </tr>
         </thead>
         <tbody id="hrBillingTableBody">
-          <tr><td colspan="7" style="padding: 24px; text-align: center; color: var(--text-3); font-size: 0.875rem;">Loading billing records...</td></tr>
+          <tr class="empty-row">
+            <td colspan="7" style="padding: 32px; text-align: center; color: var(--text-subtle);">
+              Loading billing records...
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -1195,7 +1239,11 @@
     <div class="footer-compliance">
       <span class="compliance-badge">SOC 2</span>
       <span class="compliance-badge">ISO 27001</span>
-</main>
+    </div>
+  </div>
+</footer>
+</div> <!-- /.app-main -->
+</div> <!-- /.app-shell -->
 
 <!-- ============ COMMAND PALETTE ============ -->
 <div class="modal-backdrop" id="cmdBackdrop"></div>
@@ -4007,6 +4055,9 @@ document.addEventListener('DOMContentLoaded', App.init);
 <script src="/js/tour.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    if (window.HavilahUI && typeof HavilahUI.initMobileDrawer === 'function') {
+      HavilahUI.initMobileDrawer('appSidebar', 'sidebarToggleBtn', 'sidebarBackdrop');
+    }
     setTimeout(function() {
       HavilahTour.init({
         tourId: 'hr-analytics-portal',

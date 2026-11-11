@@ -652,24 +652,24 @@ main {
 /* ── Alert Items ──────────────────────────────────────────────── */
 .alert-item {
   padding: 14px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   margin-bottom: 8px;
-  border-left: 3px solid;
+  border: 1px solid var(--border);
 }
 
 .alert-item.alert-critical {
   background: rgba(178, 58, 72, 0.06);
-  border-color: var(--red-dark);
+  border-color: var(--danger);
 }
 
 .alert-item.alert-warning {
   background: rgba(232, 163, 61, 0.06);
-  border-color: var(--yellow);
+  border-color: var(--warning);
 }
 
 .alert-item.alert-info {
-  background: var(--accent-light);
-  border-color: var(--accent);
+  background: var(--info-bg);
+  border-color: var(--info);
 }
 
 .alert-title {

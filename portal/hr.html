@@ -483,7 +483,7 @@
 
   /* ============ TOAST ============ */
   .toast-container { position: fixed; top: 70px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
-  .toast { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 10px; min-width: 260px; max-width: 350px; border-left: 3px solid var(--accent); }
+  .toast { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 10px 14px; box-shadow: var(--shadow-overlay); display: flex; align-items: center; gap: 10px; min-width: 260px; max-width: 350px; }
 
   /* ============ FOOTER ============ */
   footer { background: var(--bg-elev); border-top: 1px solid var(--border); margin-top: 48px; width: 100%; }
@@ -571,14 +571,6 @@
 </head>
 <body>
 
-<!-- ============ 30-DAY PRO TRIAL BANNER ============ -->
-<div id="hrTrialBanner" style="display: none; background: var(--brand); color: #ffffff; padding: 8px 24px; font-size: 0.8125rem; font-weight: 500; text-align: center; position: sticky; top: 0; z-index: 1001;">
-  <div style="max-width: 1440px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
-    <span id="hrTrialBannerText"><strong>30-Day Pro Reverse Trial Active:</strong> You have full access to all Pro features including whistleblower isolation &amp; clinical routing.</span>
-    <a href="/index.html#pricing" target="_blank" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); border-radius: 99px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">View Plans &rarr;</a>
-  </div>
-</div>
-
 <div class="app-shell">
   <!-- Mobile Sidebar Backdrop -->
   <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
@@ -621,6 +613,13 @@
 
   <!-- Main Content Wrapper -->
   <div class="app-main">
+    <!-- 30-DAY PRO TRIAL BANNER -->
+    <div id="hrTrialBanner" style="display: none; background: var(--brand); color: #ffffff; padding: 8px 24px; font-size: 0.8125rem; font-weight: 500; text-align: center; width: 100%;">
+      <div style="max-width: 1440px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+        <span id="hrTrialBannerText"><strong>30-Day Pro Reverse Trial Active:</strong> You have full access to all Pro features including whistleblower isolation &amp; clinical routing.</span>
+        <a href="/index.html#pricing" target="_blank" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); border-radius: 99px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">View Plans &rarr;</a>
+      </div>
+    </div>
     <!-- App Topbar with Hamburger Toggle & Header Actions -->
     <header class="app-topbar" role="banner">
       <div class="topbar-left">
@@ -666,14 +665,6 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0 1.51 1z"/></svg>
               Settings
               <span class="dropdown-item-shortcut">⌘,</span>
-            </button>
-            <button class="dropdown-item" onclick="App.navigate('employee')" role="menuitem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              My Wellness
-            </button>
-            <button class="dropdown-item" onclick="App.navigate('hr')" role="menuitem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-              HR Analytics
             </button>
             <div class="dropdown-divider"></div>
             <div class="dropdown-section-label">Help</div>
@@ -753,13 +744,6 @@
       <label for="deptFilter" class="form-label" style="margin-bottom: 0; font-size: var(--text-xs); color: var(--text-subtle);">Department</label>
       <select class="form-select form-select-sm" id="deptFilter" onchange="App.applyFilters()">
         <option value="all">All departments</option>
-        <option value="Engineering">Engineering</option>
-        <option value="Sales">Sales</option>
-        <option value="Operations">Operations</option>
-        <option value="Human Resources">Human Resources</option>
-        <option value="Finance">Finance</option>
-        <option value="Marketing">Marketing</option>
-        <option value="Customer Success">Customer Success</option>
       </select>
     </div>
     <div class="filter-group" style="display: flex; align-items: center; gap: var(--space-2);">
@@ -2127,12 +2111,7 @@ const App = (() => {
     phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
     file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
   };
-  const alertItems = [
-    { icon: 'critical', title: 'Sales team • Severe stress spike', desc: 'PSS-10 moderate+ up 18% in 14 days. Recommend pulse check-in.', time: '2 hours ago' },
-    { icon: 'moderate', title: 'Engineering • Fatigue above threshold', desc: 'FAS-10 scores shifted from healthy to adjusting after release week.', time: 'Yesterday' },
-    { icon: 'info', title: 'Quarterly COPSOQ III (Middle) window opens', desc: 'Scheduled deployment to 1,842 employees on Monday.', time: '2 days ago' },
-    { icon: 'moderate', title: 'Operations night-shift cohort', desc: '28% response drop. Consider schedule-aware reminders.', time: '3 days ago' }
-  ];
+  const alertItems = [];
 
   /* ---------- HELPERS ---------- */
   function $(s) { return document.querySelector(s); }
@@ -2197,28 +2176,18 @@ const App = (() => {
 
   /* ---------- COMMAND PALETTE ---------- */
   const cmdIndex = [
-    { group: 'Navigate', items: [
-      { title: 'Go to Platform', desc: 'Landing page', icon: 'home', action: () => navigate('landing') },
-      { title: 'Go to My Wellness', desc: 'Employee dashboard', icon: 'heart', action: () => navigate('employee') },
-      { title: 'Go to HR Analytics', desc: 'Admin dashboard', icon: 'chart', action: () => navigate('hr') }
-    ]},
-    { group: 'Surveys', items: [
-      { title: 'Start PHQ-9', desc: 'Depression self-check · 3 min', icon: 'clipboard', action: () => { navigate('employee'); setTimeout(() => openSurvey('phq9'), 300); } },
-      { title: 'Start GAD-7', desc: 'Anxiety self-check · 2 min', icon: 'clipboard', action: () => { navigate('employee'); setTimeout(() => openSurvey('gad7'), 300); } },
-      { title: 'Start PSS-10', desc: 'Perceived stress · 4 min', icon: 'clipboard', action: () => { navigate('employee'); setTimeout(() => openSurvey('pss10'), 300); } },
-      { title: 'Start FAS-10', desc: 'Fatigue assessment · 4 min', icon: 'clipboard', action: () => { navigate('employee'); setTimeout(() => openSurvey('fas10'), 300); } },
-      { title: 'Start COPSOQ III (Core)', desc: 'Work environment · 5 min', icon: 'clipboard', action: () => { navigate('employee'); setTimeout(() => openSurvey('copsoq3_core'), 300); } },
-      { title: 'Start COPSOQ III (Middle)', desc: 'Work environment · 10 min', icon: 'clipboard', action: () => { navigate('employee'); setTimeout(() => openSurvey('copsoq3_middle'), 300); } },
-      { title: 'Start COPSOQ III (Long)', desc: 'Work environment · 15 min', icon: 'clipboard', action: () => { navigate('employee'); setTimeout(() => openSurvey('copsoq3_long'), 300); } }
+    { group: 'HR Views', items: [
+      { title: 'Overview & KPIs', desc: 'Active headcount & composite score', icon: 'chart', action: () => { const el = document.getElementById('kpiGrid'); if (el) el.scrollIntoView({ behavior: 'smooth' }); } },
+      { title: 'Longitudinal Trends', desc: 'ISO 45003 risk distributions', icon: 'chart', action: () => { const el = document.getElementById('risk-trends-container'); if (el) el.scrollIntoView({ behavior: 'smooth' }); } },
+      { title: 'Wellness Dimensions Radar', desc: '5-factor org-wide balance', icon: 'heart', action: () => { const el = document.getElementById('radar-container'); if (el) el.scrollIntoView({ behavior: 'smooth' }); } },
+      { title: 'Active Risk Alerts', desc: 'Predictive cohort thresholds', icon: 'bell', action: () => { const el = document.getElementById('alertsList'); if (el) el.scrollIntoView({ behavior: 'smooth' }); } }
     ]},
     { group: 'Actions', items: [
-      { title: 'Open Resources', desc: 'Self-care library', icon: 'book', action: () => openResources() },
-      { title: 'View Notifications', desc: state.notifications.filter(n => !n.read).length + ' unread', icon: 'bell', action: () => openNotifications() },
-      { title: 'Open Settings', desc: 'Preferences & privacy', icon: 'gear', action: () => openSettings() },
-      { title: 'Export HR Report', desc: 'CSV / PDF download', icon: 'download', action: () => { navigate('hr'); setTimeout(() => openExport(), 300); } },
-      { title: 'Launch Pulse Survey', desc: 'Send to employees', icon: 'send', action: () => { navigate('hr'); setTimeout(() => openPulseBuilder(), 300); } },
-      { title: 'Book a Demo', desc: 'Schedule with specialist', icon: 'play', action: () => bookDemo() },
-      { title: 'Start Free Trial', desc: 'Set up workspace', icon: 'rocket', action: () => startTrial() }
+      { title: 'Launch Pulse Survey', desc: 'Configure and dispatch survey', icon: 'send', action: () => openPulseBuilder() },
+      { title: 'Export HR Report', desc: 'Board-ready CSV / PDF export', icon: 'download', action: () => openExport() },
+      { title: 'Invite Employees', desc: 'Manage organization roster', icon: 'home', action: () => { window.location.href = '/invites.html'; } },
+      { title: 'Open Settings', desc: 'Workspace preferences & privacy', icon: 'gear', action: () => openSettings() },
+      { title: 'Help & Knowledge Base', desc: 'Guides and documentation', icon: 'book', action: () => openHelp() }
     ]}
   ];
 
@@ -2738,24 +2707,22 @@ const App = (() => {
     const cacheKey = `${state.hrFilters.metric}_${state.hrFilters.department}_${days}`;
     if (!state._severityCache || state._severityCacheKey !== cacheKey) {
       const base = [
-        [62, 64, 63, 65, 66, 67, 68, 70], // healthy
-        [24, 22, 24, 22, 21, 20, 19, 18], // mild
-        [10, 10, 9, 9, 9, 9, 9, 8],       // moderate
+        [65, 65, 66, 67, 68, 68, 69, 70], // healthy
+        [22, 22, 21, 20, 20, 19, 19, 18], // mild
+        [9, 9, 9, 9, 8, 9, 8, 8],          // moderate
         [4, 4, 4, 4, 4, 4, 4, 4]           // severe
       ];
-      const factor = parseInt(days || 30) / 30;
       const matrix = [[], [], [], []];
 
       for (let w = 0; w < 8; w++) {
-        let h = base[0][w] + (Math.random() - 0.5) * 4 * factor;
-        let mi = base[1][w] + (Math.random() - 0.5) * 3 * factor;
-        let mo = base[2][w] + (Math.random() - 0.5) * 2 * factor;
-        let s = base[3][w] + (Math.random() - 0.5) * 1 * factor;
+        let h = base[0][w];
+        let mi = base[1][w];
+        let mo = base[2][w];
+        let s = base[3][w];
 
         if (state.hrFilters.metric === 'gad7') { h -= 2; mi += 1; mo += 1; }
         if (state.hrFilters.metric === 'pss10') { mo += 2; s += 1; h -= 3; }
         if (state.hrFilters.metric === 'fas10') { mi += 2; h -= 2; }
-        if (state.hrFilters.department !== 'all') { h += (Math.random() - 0.5) * 4; }
 
         h = Math.max(5, h);
         mi = Math.max(3, mi);
@@ -2779,32 +2746,55 @@ const App = (() => {
     return state._severityCache[datasetIdx];
   }
 
-  function generateRadarData(dept) {
-    // Exactly 5 dimensions: Mood, Calm, Stress, Energy, Work-Fit
-    const base = [74, 66, 48, 55, 77];
-    if (dept === 'Sales') return base.map(v => Math.max(35, v - 12 + Math.floor(Math.random() * 4)));
-    if (dept === 'Engineering') return base.map(v => Math.max(45, v + 3 + Math.floor(Math.random() * 4)));
-    if (dept === 'Human Resources') return base.map(v => Math.min(95, v + 7 + Math.floor(Math.random() * 4)));
-    return base.map(v => v + Math.floor((Math.random() - 0.5) * 4));
+  function getRadarData() {
+    if (state.analytics && state.analytics.meets_n_threshold && state.analytics.averages) {
+      const a = state.analytics.averages;
+      return [a.mood || 70, a.calm || 70, a.stress || 40, a.energy || 70, a.work_fit || 70];
+    }
+    return [70, 70, 40, 70, 70];
   }
 
   function renderKPIs() {
     const grid = document.getElementById('kpiGrid');
     if (!grid) return;
 
-    const isColdStart = !state.analytics || state.analytics.is_empty || state.analytics.total_responses === 0;
+    const isColdStart = !state.analytics || state.analytics.is_empty || (state.analytics.total_responses || 0) === 0;
     const usedSeats = state.analytics ? (state.analytics.used_seats || 0) : 0;
+    const totalResponses = state.analytics ? (state.analytics.total_responses || 0) : 0;
+    const meetsThreshold = state.analytics ? Boolean(state.analytics.meets_n_threshold) : false;
+    const avgObj = (state.analytics && state.analytics.averages) ? state.analytics.averages : null;
 
-    const kpis = isColdStart ? [
-      { label: 'Total participants', value: String(usedSeats), trend: 'Cold Start Baseline', dir: 'up', icon: 'teal', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
-      { label: 'Avg wellbeing index', value: '--', trend: 'Awaiting data', dir: 'up', icon: 'blue', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' },
-      { label: 'Response rate', value: '0%', trend: '0 responses', dir: 'up', icon: 'purple', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' },
-      { label: 'At-risk employees', value: '0', trend: 'Baseline clear', dir: 'up', icon: 'critical', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' }
-    ] : [
-      { label: 'Total participants', value: (state.analytics.total_responses || 0).toLocaleString(), trend: '+12% vs last period', dir: 'up', icon: 'teal', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
-      { label: 'Avg wellbeing index', value: String(state.analytics.averages ? state.analytics.averages.mood : '74.2'), trend: '+3.1 pts', dir: 'up', icon: 'blue', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' },
-      { label: 'Response rate', value: '91%', trend: '+5.0 pts', dir: 'up', icon: 'purple', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' },
-      { label: 'At-risk employees', value: '0', trend: '0 critical', dir: 'up', icon: 'critical', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' }
+    let avgIndex = '--';
+    let avgHint = 'Requires N ≥ 5 responses';
+    if (meetsThreshold && avgObj) {
+      const composite = Math.round(((avgObj.mood || 70) + (avgObj.calm || 70) + (100 - (avgObj.stress || 40)) + (avgObj.energy || 70) + (avgObj.work_fit || 70)) / 5);
+      avgIndex = String(composite);
+      avgHint = 'Aggregated across 5 dimensions';
+    }
+
+    const criticalAlertsCount = (state.alertsList || []).filter(a => a.severity === 'CRITICAL' || a.icon === 'critical').length;
+
+    const kpis = [
+      {
+        label: 'Total participants',
+        value: usedSeats.toLocaleString(),
+        trend: isColdStart ? 'Cold Start Baseline' : `${totalResponses.toLocaleString()} check-in submissions`
+      },
+      {
+        label: 'Avg wellbeing index',
+        value: avgIndex,
+        trend: avgHint
+      },
+      {
+        label: 'Response rate',
+        value: totalResponses > 0 ? totalResponses.toLocaleString() : '0%',
+        trend: totalResponses > 0 ? 'Total submissions across org' : '0 responses'
+      },
+      {
+        label: 'Active risk alerts',
+        value: String(criticalAlertsCount),
+        trend: 'Anonymity threshold enforced (N ≥ 5)'
+      }
     ];
 
     grid.innerHTML = '';
@@ -2882,8 +2872,8 @@ const App = (() => {
       data: {
         labels: ['Mood', 'Calm', 'Stress', 'Energy', 'Work-Fit'],
         datasets: [
-          { label: 'Current', data: generateRadarData('all'), backgroundColor: 'rgba(0, 183, 195, 0.18)', borderColor: '#00B7C3', borderWidth: 2.5, pointBackgroundColor: '#00B7C3', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4 },
-          { label: 'Target', data: [80, 78, 75, 78, 80], backgroundColor: 'rgba(112, 0, 255, 0.05)', borderColor: 'rgba(112, 0, 255, 0.6)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0 }
+          { label: 'Current Org Average', data: getRadarData(), backgroundColor: 'rgba(0, 183, 195, 0.18)', borderColor: '#00B7C3', borderWidth: 2.5, pointBackgroundColor: '#00B7C3', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4 },
+          { label: 'Target', data: [80, 78, 30, 78, 80], backgroundColor: 'rgba(112, 0, 255, 0.05)', borderColor: 'rgba(112, 0, 255, 0.6)', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0 }
         ]
       },
       options: {
@@ -2912,16 +2902,32 @@ const App = (() => {
         }
         const subEl = document.getElementById('hrSubtitle');
         if (subEl) {
-        if (res.is_empty || res.total_responses === 0) {
+          if (res.is_empty || res.total_responses === 0) {
             subEl.textContent = `Aggregated across ${res.used_seats || 0} active workers · Baseline State (Awaiting pulse submissions)`;
           } else {
             subEl.textContent = `Aggregated across ${res.total_responses} pulse responses · Last refresh just now`;
           }
         }
         renderKPIs();
+        if (state.charts.radar && res.meets_n_threshold && res.averages) {
+          state.charts.radar.data.datasets[0].data = [res.averages.mood || 70, res.averages.calm || 70, res.averages.stress || 40, res.averages.energy || 70, res.averages.work_fit || 70];
+          state.charts.radar.update();
+        } else {
+          initRadarChart();
+        }
+        initSeverityChart();
         renderHeatmap();
+        renderDeptList();
         renderAlerts();
         fetchAlerts();
+
+        const deptSelect = document.getElementById('deptFilter');
+        if (deptSelect && res.departments && Array.isArray(res.departments)) {
+          const cur = deptSelect.value || 'all';
+          deptSelect.innerHTML = '<option value="all">All departments</option>' +
+            res.departments.map(d => `<option value="${d}">${d}</option>`).join('');
+          if (res.departments.includes(cur)) deptSelect.value = cur;
+        }
       }
     } catch (e) {
       console.warn('[Analytics] Load notice:', e.message);
@@ -3043,42 +3049,29 @@ const App = (() => {
       if (!container) return;
       container.innerHTML = '';
 
-      const nThreshold = (state.settings && state.settings.nSizeThreshold) || 5;
-
-      const mockData = [
-        { department: 'Engineering', count: 48, meetsNSize: true, scores: { mood: 22, calm: 28, stress: 35, energy: 40, workFit: 18 } },
-        { department: 'Sales', count: 32, meetsNSize: true, scores: { mood: 45, calm: 52, stress: 68, energy: 58, workFit: 38 } },
-        { department: 'Operations', count: 24, meetsNSize: true, scores: { mood: 38, calm: 42, stress: 48, energy: 44, workFit: 32 } },
-        { department: 'Human Resources', count: 12, meetsNSize: true, scores: { mood: 28, calm: 30, stress: 32, energy: 35, workFit: 22 } },
-        { department: 'Finance', count: 18, meetsNSize: true, scores: { mood: 32, calm: 36, stress: 40, energy: 42, workFit: 28 } },
-        { department: 'Marketing', count: 15, meetsNSize: true, scores: { mood: 25, calm: 30, stress: 38, energy: 36, workFit: 24 } },
-        { department: 'Customer Success', count: 3, meetsNSize: 3 >= nThreshold, scores: { mood: 42, calm: 48, stress: 55, energy: 50, workFit: 35 } }
-      ];
+      const rawDepts = (state.analytics && state.analytics.departments && state.analytics.departments.length > 0)
+        ? state.analytics.departments
+        : [];
+      if (rawDepts.length === 0) {
+        container.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-subtle); font-size: var(--text-xs);">No department data available.</td></tr>`;
+        return;
+      }
 
       const activeDept = state.hrFilters ? state.hrFilters.department : 'all';
-      const dataToRender = activeDept === 'all' ? mockData : mockData.filter(d => d.department === activeDept);
+      const deptsToRender = activeDept === 'all' ? rawDepts : rawDepts.filter(d => d === activeDept);
 
-      dataToRender.forEach(dept => {
+      deptsToRender.forEach(deptName => {
         let rowHtml = `
           <tr style="height: 44px;">
-            <td style="padding-right: 12px; font-weight: 600; color: #1A1B1E; font-size: 0.8125rem; vertical-align: middle; white-space: nowrap;">${dept.department}</td>
+            <td style="padding-right: 12px; font-weight: 600; color: #1A1B1E; font-size: 0.8125rem; vertical-align: middle; white-space: nowrap;">${deptName}</td>
         `;
 
-        const trackedDimensions = ['mood', 'calm', 'stress', 'energy', 'workFit'];
+        const trackedDimensions = ['Mood', 'Calm', 'Stress', 'Energy', 'Work-Fit'];
 
         trackedDimensions.forEach(dim => {
-          let content, styleStr, tooltip;
-          
-          if (dept.meetsNSize === false) {
-            content = '<span style="font-size: 11px; font-weight: 600;">N &lt; 5</span>';
-            styleStr = 'background-color: var(--bg); color: var(--text-subtle); border: 1px solid var(--border); cursor: help; height: 38px;';
-            tooltip = 'title="Section Protected (N < 5 responses)"';
-          } else {
-            const score = dept.scores[dim] || 0;
-            content = score;
-            styleStr = getRiskBrickStyle(score) + ' height: 38px;';
-            tooltip = '';
-          }
+          let content = '<span style="font-size: 11px; font-weight: 600;">N &lt; 5</span>';
+          let styleStr = 'background-color: var(--bg); color: var(--text-subtle); border: 1px solid var(--border); cursor: help; height: 38px;';
+          let tooltip = 'title="Protected cohort (N < 5 responses)"';
 
           rowHtml += `
             <td style="padding: 0; text-align: center; vertical-align: middle;">
@@ -3112,13 +3105,18 @@ const App = (() => {
     const container = document.getElementById('deptList');
     if (!container) return;
     container.innerHTML = '';
-    const data = state.hrFilters.department === 'all' ? deptData : deptData.filter(d => d.name === state.hrFilters.department);
-    data.forEach(d => {
-      const isUp = d.trend.startsWith('+');
+    const rawDepts = (state.analytics && state.analytics.departments && state.analytics.departments.length > 0)
+      ? state.analytics.departments
+      : [];
+    if (rawDepts.length === 0) {
+      container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-subtle); font-size: var(--text-xs);">No active department cohorts meeting N ≥ 5 threshold.</div>`;
+      return;
+    }
+    rawDepts.forEach(deptName => {
       const row = el('div', 'dept-row');
-      row.innerHTML = `<div class="dept-name"><span class="dept-dot" style="background: ${d.color};"></span>${d.name}</div><div class="dept-bar"><div class="dept-bar-fill" style="width: ${d.score}%; background: ${d.color};"></div></div><div class="dept-score">${d.score}</div><div class="dept-trend ${isUp ? 'up' : 'down'}">${d.trend}</div>`;
+      row.innerHTML = `<div class="dept-name"><span class="dept-dot" style="background: var(--text-subtle);"></span>${deptName}</div><div class="dept-bar"><div class="dept-bar-fill" style="width: 0%; background: var(--border);"></div></div><div class="dept-score" style="font-size: 11px; color: var(--text-subtle);">N &lt; 5</div><div class="dept-trend down" style="color: var(--text-subtle);">Protected</div>`;
       row.addEventListener('click', () => {
-        toast('Department detail', `${d.name} - ${d.count} employees · Index ${d.score} · Trend ${d.trend}`, 'info');
+        toast('Department status', `${deptName} · Privacy threshold enforced (N < 5)`, 'info');
       });
       container.appendChild(row);
     });
@@ -3147,7 +3145,7 @@ const App = (() => {
       if (data.success && Array.isArray(data.alerts)) {
         state.alertsList = data.alerts;
         state.notifications = data.alerts.map(a => ({
-          id: a._id || a.id || Math.random(),
+          id: a._id || a.id || (Date.now() + Math.floor(performance.now())),
           icon: (a.icon || (a.severity === 'CRITICAL' ? 'critical' : a.severity === 'WARNING' ? 'moderate' : 'info')).toLowerCase(),
           title: a.title || a.headline || 'System Notification',
           desc: a.desc || a.message || '',
@@ -3319,7 +3317,7 @@ const App = (() => {
         </div>
         <div class="form-group">
           <label class="form-label">Employee ID</label>
-          <input type="text" class="form-input" value="WF-00142" readonly style="opacity: 0.6;" />
+          <input type="text" class="form-input" value="${state.user?.employee_id || state.user?.id || 'HR-ADMIN'}" readonly style="opacity: 0.6;" />
         </div>
       </div>
     `;
@@ -3384,13 +3382,16 @@ const App = (() => {
     closeGeneric();
     toast('Report generating', `${exportFormat.toUpperCase()} export with ${checked} sections - download will begin automatically.`, 'success');
     setTimeout(() => {
-      const depts = [
-        { name: 'Engineering', score: 74, trend: '+3.1%', count: 412 },
-        { name: 'Sales', score: 62, trend: '-2.4%', count: 774 },
-        { name: 'Operations', score: 70, trend: '+1.5%', count: 298 },
-        { name: 'Human Resources', score: 81, trend: '+4.2%', count: 24 }
-      ];
-      const csv = 'Department,Wellbeing Index,Trend,Employees\n' + depts.map(d => `${d.name},${d.score},${d.trend},${d.count}`).join('\n');
+      const orgName = (state.analytics && state.analytics.company_name) || state.companyName || 'Organization';
+      const usedSeats = (state.analytics && state.analytics.used_seats) || 0;
+      const totalResponses = (state.analytics && state.analytics.total_responses) || 0;
+      const depts = (state.analytics && state.analytics.departments) ? state.analytics.departments : [];
+      let csv = `Organization,${orgName}\nEnrolled Employees,${usedSeats}\nTotal Check-in Responses,${totalResponses}\nExport Date,${new Date().toISOString()}\n\nDepartment,Status\n`;
+      if (depts.length > 0) {
+        csv += depts.map(d => `${d},Protected (N < 5 threshold)`).join('\n');
+      } else {
+        csv += 'All Departments,Aggregated Baseline Active\n';
+      }
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -3450,7 +3451,7 @@ const App = (() => {
           </div>
         `).join('')}
       </div>
-      <p style="color: var(--text-3); font-size: 0.75rem; margin-top: 20px;">Last incident: 47 days ago · 99.98% uptime over 90 days</p>
+      <p style="color: var(--text-subtle); font-size: 0.75rem; margin-top: 20px;">All services operational · Enterprise SLA Active · Zero degraded systems</p>
     `;
     openGeneric('STATUS', 'System status', body, `<button class="btn btn-primary btn-sm" onclick="App.closeGeneric()">Close</button>`);
   }
@@ -3934,6 +3935,10 @@ async function closeAssessmentCycle(cycleId) {
 }
 
   function openPulseBuilder(targetDept = '', targetFocus = '') {
+    const depts = (state.analytics && state.analytics.departments) ? state.analytics.departments : [];
+    const deptOptions = ['<option value="all">All enrolled employees</option>']
+      .concat(depts.map(d => `<option value="${d}" ${targetDept === d ? 'selected' : ''}>${d}</option>`))
+      .join('');
     const body = `
       <p style="color: var(--text-2); margin-bottom: 16px; font-size: 0.8125rem;">Configure a pulse survey and send it to a targeted cohort. Responses map automatically to your ISO 45003 risk model.</p>
       
@@ -3975,11 +3980,7 @@ async function closeAssessmentCycle(cycleId) {
         <div class="form-group">
           <label class="form-label">Target Cohort</label>
           <select class="form-select" id="pulseAudience" aria-label="Pulse target audience">
-            <option value="all" ${targetDept === 'all' || !targetDept ? 'selected' : ''}>All employees (1,842)</option>
-            <option value="engineering" ${targetDept === 'Engineering' ? 'selected' : ''}>Engineering only (412)</option>
-            <option value="sales" ${targetDept === 'Sales' ? 'selected' : ''}>Sales only (774)</option>
-            <option value="ops" ${targetDept === 'Operations' ? 'selected' : ''}>Operations only (298)</option>
-            <option value="hr" ${targetDept === 'Human Resources' ? 'selected' : ''}>Human Resources (24)</option>
+            ${deptOptions}
           </select>
         </div>
         <div class="form-group">

@@ -466,9 +466,6 @@
     display: inline-flex; align-items: center; gap: 4px;
     background: rgba(232, 163, 61, 0.1); padding: 3px 8px; border-radius: 5px;
   }
-  .survey-card.daily-pulse {
-    border-left: 3px solid var(--accent);
-  }
   .daily-pulse-label {
     font-size: 0.6875rem; font-weight: 600; color: var(--accent-deep);
     display: inline-flex; align-items: center; gap: 4px;
@@ -487,8 +484,6 @@
   .survey-arrow, .take-checkin-btn { width: auto; height: 32px; padding: 0 12px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-deep); display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.75rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.3s var(--ease-out); text-decoration: none; }
   .survey-card:hover .survey-arrow, .survey-card:hover .take-checkin-btn, .take-checkin-btn:hover { background: var(--accent); color: white; transform: translateX(2px); }
   .survey-arrow svg, .take-checkin-btn svg { width: 13px; height: 13px; }
-  .survey-card.locked { opacity: 0.55; cursor: default; pointer-events: none !important; background: repeating-linear-gradient(135deg, var(--bg-elev), var(--bg-elev) 10px, rgba(0,0,0,0.015) 10px, rgba(0,0,0,0.015) 20px); border-style: dashed; }
-  .survey-card.locked * { pointer-events: none !important; }
   .insights-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 32px; width: 100%; max-width: 100%; box-sizing: border-box; }
   .insight-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box; position: relative; overflow: visible; }
   .insight-card h3 { margin-bottom: 16px; font-size: 1.0625rem; display: flex; align-items: center; gap: 10px; }
@@ -789,10 +784,7 @@
 
   /* ============ TOAST ============ */
   .toast-container { position: fixed; top: 80px; right: 24px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
-  .toast { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 12px; min-width: 280px; max-width: 380px; animation: toastSlide 0.4s var(--ease-spring); border-left: 3px solid var(--accent); }
-  .toast.success { border-left-color: var(--healthy); }
-  .toast.warning { border-left-color: var(--moderate); }
-  .toast.error { border-left-color: var(--critical); }
+  .toast { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 12px 16px; box-shadow: var(--shadow-overlay); display: flex; align-items: center; gap: 12px; min-width: 280px; max-width: 380px; animation: toastSlide 0.4s var(--ease-spring); }
   @keyframes toastSlide { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   .toast-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-deep); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .toast.success .toast-icon { background: rgba(79,178,134,0.12); color: var(--healthy); }
@@ -986,8 +978,8 @@
           <div class="dropdown-header">
             <div class="avatar">AD</div>
             <div>
-              <div class="dropdown-header-name">Amara Okafor</div>
-              <div class="dropdown-header-email">amara.okafor@havilah.io</div>
+              <div class="dropdown-header-name">Team Member</div>
+              <div class="dropdown-header-email">member@havilah.io</div>
             </div>
           </div>
           <button class="dropdown-item" onclick="App.openProfileSettings()" role="menuitem">
@@ -998,10 +990,6 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Settings
             <span class="dropdown-item-shortcut">⌘,</span>
-          </button>
-          <button class="dropdown-item" onclick="App.navigate('employee')" role="menuitem">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            My Wellness
           </button>
           <div class="dropdown-divider"></div>
           <div class="dropdown-section-label">Help</div>
@@ -1310,26 +1298,26 @@
         <h3 style="font-size: 0.875rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Personal Participation Summary</h3>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
           <div style="padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 12px; text-align: center;">
-            <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-deep);" id="profCheckinCount">42</div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-deep);" id="profCheckinCount">0</div>
             <div style="font-size: 0.71875rem; color: var(--text-3); font-weight: 600; margin-top: 2px;">Daily Micro Check-ins</div>
           </div>
           <div style="padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 12px; text-align: center;">
-            <div style="font-size: 1.5rem; font-weight: 800; color: var(--purple);" id="profFormalCount">2</div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--purple);" id="profFormalCount">0</div>
             <div style="font-size: 0.71875rem; color: var(--text-3); font-weight: 600; margin-top: 2px;">Formal Cycles Done</div>
           </div>
           <div style="padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 12px; text-align: center;">
-            <div style="font-size: 1.5rem; font-weight: 800; color: #f59e0b;" id="profStreakCount">🔥 5-Day</div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: #f59e0b;" id="profStreakCount">--</div>
             <div style="font-size: 0.71875rem; color: var(--text-3); font-weight: 600; margin-top: 2px;">Current Streak</div>
           </div>
         </div>
 
         <h3 style="font-size: 0.875rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Personal Wellness Baseline</h3>
         <div style="display: flex; justify-content: space-between; gap: 8px; padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 12px;">
-          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Mood</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimMood">74</div></div>
-          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Calm</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimCalm">66</div></div>
-          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Stress</div><div style="font-weight: 700; font-size: 1rem; color: var(--moderate);" id="profDimStress">48</div></div>
-          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Energy</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimEnergy">55</div></div>
-          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Work-Fit</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimWorkFit">77</div></div>
+          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Mood</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimMood">--</div></div>
+          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Calm</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimCalm">--</div></div>
+          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Stress</div><div style="font-weight: 700; font-size: 1rem; color: var(--moderate);" id="profDimStress">--</div></div>
+          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Energy</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimEnergy">--</div></div>
+          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Work-Fit</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimWorkFit">--</div></div>
         </div>
       </div>
 
@@ -1615,8 +1603,8 @@
   </div>
 </div>
 
-<!-- ============ GENERIC MODAL ============ -->
-<div class="panel-backdrop" id="genericBackdrop"></div>
+<!-- ============ GENERIC SLIDE-OVER PANEL ============ -->
+<div class="panel-backdrop" id="genericPanelBackdrop"></div>
 <aside class="panel" id="genericPanel" role="dialog" aria-label="Information">
   <div class="panel-head">
     <div class="panel-title" id="genericPanelTitle">Document</div>
@@ -3173,14 +3161,7 @@ const App = (() => {
       weeklyDigest: true,
       darkMode: false
     },
-    notifications: [
-      { id: 1, icon: 'critical', title: 'Sales team - severe stress spike', desc: 'PSS-10 moderate+ up 18% in 14 days. Recommend pulse check-in.', time: '2 hours ago', read: false },
-      { id: 2, icon: 'moderate', title: 'Engineering fatigue above threshold', desc: 'FAS-10 scores shifted from healthy to adjusting after release week.', time: 'Yesterday', read: false },
-      { id: 3, icon: 'info', title: 'Quarterly COPSOQ III (Middle) opens Monday', desc: 'Scheduled deployment to 1,842 employees on Monday 09:00.', time: '2 days ago', read: false },
-      { id: 4, icon: 'moderate', title: 'Operations night-shift cohort', desc: '28% response drop. Consider schedule-aware reminders.', time: '3 days ago', read: true },
-      { id: 5, icon: 'info', title: 'New: FAS-10 fatigue module available', desc: 'Add fatigue tracking to your quarterly pulse.', time: '5 days ago', read: true },
-      { id: 6, icon: 'info', title: 'Board report ready for download', desc: 'Q3 wellness summary is available in HR Analytics → Export.', time: '1 week ago', read: true }
-    ],
+    notifications: [],
     userCompletedList: [],
     surveyProgress: {
       phq9: { completed: false },
@@ -3192,14 +3173,15 @@ const App = (() => {
       copsoq3_long: { completed: false }
     },
     wellbeing: {
-      score: 74,
-      marker: 22,
+      score: 0,
+      composite_score: 0,
+      marker: 0,
       dimensions: [
-        { label: 'Mood', value: 74, status: 'healthy' },
-        { label: 'Calm', value: 66, status: 'healthy' },
-        { label: 'Stress', value: 48, status: 'moderate' },
-        { label: 'Energy', value: 55, status: 'moderate' },
-        { label: 'Work-fit', value: 77, status: 'healthy' }
+        { label: 'Mood', value: 0, status: 'healthy' },
+        { label: 'Calm', value: 0, status: 'healthy' },
+        { label: 'Stress', value: 0, status: 'healthy' },
+        { label: 'Energy', value: 0, status: 'healthy' },
+        { label: 'Work-fit', value: 0, status: 'healthy' }
       ]
     },
     hrFilters: {
@@ -3435,7 +3417,7 @@ const App = (() => {
         .replace(/^### (.*$)/gim, '<h3 style="color: var(--text-1); font-size: 1.15rem; font-weight: 700; margin: 20px 0 10px;">$1</h3>')
         .replace(/^## (.*$)/gim, '<h2 style="color: var(--text-1); font-size: 1.35rem; font-weight: 800; margin: 24px 0 12px;">$1</h2>')
         .replace(/^# (.*$)/gim, '<h1 style="color: var(--text-1); font-size: 1.6rem; font-weight: 800; margin: 24px 0 14px;">$1</h1>')
-        .replace(/^\> (.*$)/gim, '<blockquote style="border-left: 4px solid var(--accent); background: rgba(0,183,195,0.06); padding: 12px 18px; border-radius: 4px; margin: 16px 0; color: var(--text-1); font-style: italic;">$1</blockquote>')
+        .replace(/^\> (.*$)/gim, '<blockquote style="border: 1px solid var(--border); background: var(--bg); padding: 12px 18px; border-radius: var(--radius-card); margin: 16px 0; color: var(--text); font-style: italic;">$1</blockquote>')
         .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
         .replace(/\*(.*)\*/gim, '<em>$1</em>')
         .replace(/\`([^\`]+)\`/gim, '<code style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; font-family: monospace;">$1</code>')
@@ -5121,13 +5103,13 @@ const App = (() => {
           
           <h3 style="margin-top: 24px;">The Caffeine Timing Curve</h3>
           <p>Drinking caffeine during the first 90 minutes of waking up can crash your adenosine system later in the afternoon. This causes anxiety spikes that feel exactly like a workload panic attack.</p>
-          <div style="background: #f4f5f7; padding: 12px; border-radius: 8px; border-left: 4px solid var(--accent); margin: 16px 0;">
+          <div style="background: var(--bg); padding: 12px; border-radius: var(--radius-card); border: 1px solid var(--border); margin: 16px 0;">
             <strong>Actionable Tip:</strong> Wait 90-120 minutes after waking before your first cup of coffee to allow natural cortisol to clear adenosine naturally.
           </div>
 
           <h3 style="margin-top: 24px;">The Blue-Light Sleep Anchor</h3>
           <p>Monitor color temperatures heavily suppress melatonin, leading to fragmented sleep patterns and direct morning exhaustion.</p>
-          <div style="background: #f4f5f7; padding: 12px; border-radius: 8px; border-left: 4px solid var(--blue); margin: 16px 0;">
+          <div style="background: var(--bg); padding: 12px; border-radius: var(--radius-card); border: 1px solid var(--border); margin: 16px 0;">
             <strong>Actionable Tip:</strong> Enable "Night Shift" or "f.lux" on all devices exactly 2 hours before bed. Keep bedroom temperature between 65-68°F (18-20°C).
           </div>
         </div>
@@ -5285,22 +5267,28 @@ const App = (() => {
     closeResources: () => { closeModal('resBackdrop'); document.getElementById('resPanel').classList.remove('open'); },
     openProfileSettings: () => {
       // Sync user identity details
-      const activeName = localStorage.getItem('wf_user_name') || 'Amara Okafor';
-      const activeEmail = localStorage.getItem('wf_user_email') || 'amara.okafor@havilah.io';
-      const initials = activeName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      const activeName = (state.user && state.user.name) || localStorage.getItem('wf_user_name') || 'Team Member';
+      const activeEmail = (state.user && state.user.email) || localStorage.getItem('wf_user_email') || '';
+      const initials = (activeName || 'TM').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
       
       const avatarEl = document.getElementById('profAvatar');
       const nameEl = document.getElementById('profName');
       const emailEl = document.getElementById('profEmail');
       if (avatarEl) avatarEl.textContent = initials;
       if (nameEl) nameEl.textContent = activeName;
-      if (emailEl) emailEl.textContent = activeEmail;
+      if (emailEl) emailEl.textContent = activeEmail || 'Active Member';
 
       // Sync activity counts
+      const history = Array.isArray(state.employeeHistoryPayload) ? state.employeeHistoryPayload : [];
+      const microCount = history.filter(h => h.survey_type === 'pulse' || h.type === 'pulse' || !h.survey_type).length;
+      const formalCount = history.filter(h => h.survey_type && h.survey_type !== 'pulse' && h.type !== 'pulse').length;
+      
       const checkinCountEl = document.getElementById('profCheckinCount');
-      if (checkinCountEl && state.employeeHistoryPayload) {
-        checkinCountEl.textContent = state.employeeHistoryPayload.length || '42';
-      }
+      if (checkinCountEl) checkinCountEl.textContent = String(microCount);
+      const formalCountEl = document.getElementById('profFormalCount');
+      if (formalCountEl) formalCountEl.textContent = String(formalCount);
+      const streakEl = document.getElementById('profStreakCount');
+      if (streakEl) streakEl.textContent = microCount > 0 ? `${Math.min(microCount, 5)}-Day` : '--';
 
       // Sync baseline dimension values
       const dims = state.wellbeing ? state.wellbeing.dimensions : [];
@@ -5310,11 +5298,11 @@ const App = (() => {
       const energyDim = dims.find(d => d.label === 'Energy');
       const workFitDim = dims.find(d => d.label === 'Work-fit');
 
-      if (moodDim && document.getElementById('profDimMood')) document.getElementById('profDimMood').textContent = moodDim.value;
-      if (calmDim && document.getElementById('profDimCalm')) document.getElementById('profDimCalm').textContent = calmDim.value;
-      if (stressDim && document.getElementById('profDimStress')) document.getElementById('profDimStress').textContent = stressDim.value;
-      if (energyDim && document.getElementById('profDimEnergy')) document.getElementById('profDimEnergy').textContent = energyDim.value;
-      if (workFitDim && document.getElementById('profDimWorkFit')) document.getElementById('profDimWorkFit').textContent = workFitDim.value;
+      if (document.getElementById('profDimMood')) document.getElementById('profDimMood').textContent = (moodDim && moodDim.value > 0) ? moodDim.value : '--';
+      if (document.getElementById('profDimCalm')) document.getElementById('profDimCalm').textContent = (calmDim && calmDim.value > 0) ? calmDim.value : '--';
+      if (document.getElementById('profDimStress')) document.getElementById('profDimStress').textContent = (stressDim && stressDim.value > 0) ? stressDim.value : '--';
+      if (document.getElementById('profDimEnergy')) document.getElementById('profDimEnergy').textContent = (energyDim && energyDim.value > 0) ? energyDim.value : '--';
+      if (document.getElementById('profDimWorkFit')) document.getElementById('profDimWorkFit').textContent = (workFitDim && workFitDim.value > 0) ? workFitDim.value : '--';
 
       openModal('profileSettingsModalBackdrop');
     },
@@ -5481,6 +5469,16 @@ const App = (() => {
     },
     openKeyboardShortcuts: () => {},
     signOut: () => {
+      const dropdown = document.getElementById('profileDropdown');
+      if (dropdown) dropdown.classList.remove('open');
+      const email = (state.user && state.user.email) || localStorage.getItem('wf_user_email') || 'your account';
+      const safeEmail = String(email).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const body = `<p style="color: var(--text-2); font-size: 0.875rem; margin: 0 0 16px 0;">Are you sure you want to sign out? You are currently signed in as <strong>${safeEmail}</strong>. You will be returned to the sign-in screen.</p>`;
+      const foot = `<button class="btn btn-ghost btn-sm" onclick="App.closeGeneric()">Cancel</button><button class="btn btn-primary btn-sm" onclick="App.confirmSignOut()">Sign out</button>`;
+      App.openGeneric('SIGN OUT', 'Sign out of Havilah', body, foot);
+    },
+    confirmSignOut: () => {
+      App.closeGeneric();
       if (typeof window.Auth !== 'undefined' && typeof window.Auth.logout === 'function') {
         window.Auth.logout();
       } else if (typeof Auth !== 'undefined' && typeof Auth.logout === 'function') {
@@ -5492,6 +5490,23 @@ const App = (() => {
         document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         window.location.href = '/login.html';
       }
+    },
+    openGeneric: (eyebrow, title, bodyHtml, footHtml) => {
+      const eb = document.getElementById('genericEyebrow');
+      const ti = document.getElementById('genericTitle');
+      const bo = document.getElementById('genericBody');
+      const fo = document.getElementById('genericFoot');
+      if (eb) eb.textContent = eyebrow || 'HAVILAH';
+      if (ti) ti.textContent = title || '';
+      if (bo) bo.innerHTML = bodyHtml || '';
+      if (fo) {
+        fo.innerHTML = footHtml || '';
+        fo.style.display = footHtml ? 'flex' : 'none';
+      }
+      openModal('genericBackdrop');
+    },
+    closeGeneric: () => {
+      closeModal('genericBackdrop');
     },
     closeNotifications: () => {
       document.getElementById('notifPanel').classList.remove('open');
@@ -5525,9 +5540,13 @@ const App = (() => {
       document.getElementById('cmdPalette').classList.remove('open');
       closeModal('cmdBackdrop');
     },
-    toggleProfileDropdown: () => {
+    toggleProfileDropdown: (event) => {
+      if (event && event.stopPropagation) event.stopPropagation();
       const dropdown = document.getElementById('profileDropdown');
-      if(dropdown) dropdown.classList.toggle('open');
+      const btn = document.getElementById('profileBtn');
+      if (!dropdown) return;
+      const isOpen = dropdown.classList.toggle('open');
+      if (btn) btn.setAttribute('aria-expanded', String(isOpen));
     },
     markAllRead: () => {},
     
@@ -5583,7 +5602,7 @@ const App = (() => {
 
       titleEl.innerText = title;
       bodyEl.innerHTML = content;
-      openModal('genericBackdrop');
+      openModal('genericPanelBackdrop');
       document.getElementById('genericPanel').classList.add('open');
     },
     openContact: () => {
@@ -5602,7 +5621,7 @@ const App = (() => {
         <h3>Response Window Assurances</h3>
         <p>Our support engineering team typically responds to enterprise dashboard tickets within 24 operational business hours.</p>
       `;
-      openModal('genericBackdrop');
+      openModal('genericPanelBackdrop');
       document.getElementById('genericPanel').classList.add('open');
     },
     openStatus: () => {
@@ -5622,12 +5641,14 @@ const App = (() => {
           <li><strong>ISO 45003 Compliance Core:</strong> 100% Verified</li>
         </ul>
       `;
-      openModal('genericBackdrop');
+      openModal('genericPanelBackdrop');
       document.getElementById('genericPanel').classList.add('open');
     },
     closeGeneric: () => {
       closeModal('genericBackdrop');
-      document.getElementById('genericPanel').classList.remove('open');
+      closeModal('genericPanelBackdrop');
+      const panel = document.getElementById('genericPanel');
+      if (panel) panel.classList.remove('open');
     },
     openResource,
     backToResources,
@@ -6197,6 +6218,28 @@ window.App = App;
         ]
       });
     }, 800);
+  });
+
+  // Global Outside-Click & Escape Dismissal for Profile Dropdown
+  document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('profileDropdown');
+    const btn = document.getElementById('profileBtn');
+    if (dropdown && dropdown.classList.contains('open')) {
+      if (!dropdown.contains(e.target) && !btn?.contains(e.target)) {
+        dropdown.classList.remove('open');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
+    }
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const dropdown = document.getElementById('profileDropdown');
+      const btn = document.getElementById('profileBtn');
+      if (dropdown && dropdown.classList.contains('open')) {
+        dropdown.classList.remove('open');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
+    }
   });
 </script>
 </body>

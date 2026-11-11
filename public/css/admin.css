@@ -547,10 +547,10 @@
 
 .audit-entry {
   padding: 16px;
-  border-left: 3px solid rgba(0, 183, 195, 0.3);
+  border: 1px solid var(--border);
   margin-bottom: 8px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 0 8px 8px 0;
+  background: var(--surface);
+  border-radius: var(--radius-card);
   transition: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 

@@ -507,7 +507,7 @@
         departments.forEach(d => {
             html += `<tr><td class="p-2 text-left font-medium border-b border-gray-100">${d}</td>`;
             factors.forEach(f => {
-                const val = Math.floor(Math.random() * 100);
+                const val = (d.length * 17 + factors.indexOf(f) * 23) % 45 + 50;
                 let colorClass = 'bg-green-100 text-green-800';
                 if (val > 50) colorClass = 'bg-yellow-100 text-yellow-800';
                 if (val > 80) colorClass = 'bg-red-100 text-red-800';

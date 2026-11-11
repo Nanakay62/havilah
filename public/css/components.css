@@ -395,8 +395,16 @@ button, select, input, textarea, a, [role="button"], [tabindex="0"] {
     stroke: currentColor;
   }
 
-  .app-main.has-bottom-nav {
+  .app-main.has-bottom-nav,
+  main.has-bottom-nav {
     padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Keep floating action buttons clear of mobile bottom tab bar */
+  .tour-fab,
+  .fab,
+  [class*="-fab"] {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 

@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Havilah - Occupational Health & Wellness Platform</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/Roboto.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/tokens.css">
+<link rel="stylesheet" href="/css/components.css">
+<script src="/js/icons.js"></script>
 <script src="/js/vendor/chart.umd.min.js"></script>
 <script src="/js/vendor/jspdf.umd.min.js"></script>
 <script src="/js/data.js"></script>
@@ -20,33 +21,33 @@
   to { opacity: 1; transform: translateY(0); }
 }
   :root {
-    --accent: #00B7C3;
-    --accent-deep: #0094A0;
-    --accent-soft: rgba(0, 183, 195, 0.10);
-    --blue: #0078D4;
-    --purple: #7000FF;
-    --critical: #E5646E;
-    --moderate: #E8A33D;
-    --healthy: #4FB286;
-    --bg-base: #F4F5F8;
-    --bg-elev: #FFFFFF;
-    --bg-acrylic: rgba(255, 255, 255, 0.62);
-    --bg-acrylic-strong: rgba(255, 255, 255, 0.78);
-    --text-1: #1A1B1E;
-    --text-2: #5A5C63;
-    --text-3: #8A8D94;
+    --accent: var(--brand);
+    --accent-deep: var(--brand-hover);
+    --accent-soft: rgba(15, 118, 110, 0.08);
+    --blue: var(--info);
+    --purple: var(--brand);
+    --critical: var(--danger);
+    --moderate: var(--warning);
+    --healthy: var(--success);
+    --bg-base: var(--bg);
+    --bg-elev: var(--surface);
+    --bg-acrylic: var(--surface);
+    --bg-acrylic-strong: var(--surface);
+    --text-1: var(--text);
+    --text-2: var(--text-muted);
+    --text-3: var(--text-subtle);
     --text-on-accent: #FFFFFF;
-    --border: rgba(20, 22, 28, 0.07);
-    --border-strong: rgba(20, 22, 28, 0.12);
-    --radius-sm: 10px;
-    --radius: 14px;
-    --radius-lg: 18px;
-    --radius-xl: 24px;
-    --shadow-xs: 0 1px 2px rgba(15, 20, 35, 0.04);
-    --shadow-sm: 0 2px 8px rgba(15, 20, 35, 0.04), 0 1px 2px rgba(15, 20, 35, 0.03);
-    --shadow-md: 0 8px 28px rgba(15, 20, 35, 0.06), 0 2px 6px rgba(15, 20, 35, 0.03);
-    --shadow-lg: 0 18px 48px rgba(15, 20, 35, 0.08), 0 4px 10px rgba(15, 20, 35, 0.04);
-    --shadow-accent: 0 12px 32px rgba(0, 183, 195, 0.22);
+    --border: #E2E8F0;
+    --border-strong: #CBD5E1;
+    --radius-sm: var(--radius-control);
+    --radius: var(--radius-card);
+    --radius-lg: var(--radius-card);
+    --radius-xl: var(--radius-modal);
+    --shadow-xs: var(--shadow-card);
+    --shadow-sm: var(--shadow-card);
+    --shadow-md: var(--shadow-card);
+    --shadow-lg: var(--shadow-overlay);
+    --shadow-accent: var(--shadow-card);
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
@@ -72,9 +73,13 @@
       grid-template-columns: 1fr !important;
     }
   }
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
   body, button, input, select, textarea {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -83,34 +88,16 @@
     font-feature-settings: "tnum";
   }
   body {
-    background: var(--bg-base);
-    color: var(--text-1);
-    line-height: 1.6;
-    font-size: 15px;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    font-size: 14px;
     overflow-x: hidden;
     min-height: 100vh;
     position: relative;
   }
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    background:
-      radial-gradient(ellipse 80% 60% at 12% 8%, rgba(0, 183, 195, 0.10) 0%, transparent 55%),
-      radial-gradient(ellipse 70% 50% at 88% 18%, rgba(112, 0, 255, 0.06) 0%, transparent 55%),
-      radial-gradient(ellipse 60% 50% at 50% 95%, rgba(0, 120, 212, 0.07) 0%, transparent 55%),
-      linear-gradient(180deg, #F4F5F8 0%, #EEF0F4 100%);
-    pointer-events: none;
-  }
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    opacity: 0.4;
-    pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  body::before, body::after {
+    display: none !important;
   }
   h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; line-height: 1.18; color: var(--text-1); }
   .display { font-size: clamp(2.4rem, 5.2vw, 4.2rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; }
@@ -436,15 +423,35 @@
   .section-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
   .section-bar h2 { font-size: 1.25rem; }
   .surveys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-  .survey-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; cursor: pointer; transition: all 0.3s var(--ease-out); position: relative; overflow: hidden; }
-  .survey-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--border-strong); }
-  .survey-card.completed { background: linear-gradient(180deg, rgba(79, 178, 134, 0.04) 0%, var(--bg-elev) 60%); }
-  .survey-card.locked {
-    opacity: 0.55; cursor: default; pointer-events: none;
-    background: repeating-linear-gradient(135deg, var(--bg-elev), var(--bg-elev) 10px, rgba(0,0,0,0.015) 10px, rgba(0,0,0,0.015) 20px);
-    border-style: dashed;
+  .survey-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    box-shadow: var(--shadow-card);
+    transition: border-color 0.15s ease;
+    position: relative;
   }
-  .survey-card.locked:hover { transform: none; box-shadow: none; }
+  .survey-card:hover {
+    border-color: var(--text-subtle);
+  }
+  .survey-card.completed {
+    background: var(--surface);
+  }
+  .survey-card.locked {
+    opacity: 0.7;
+    cursor: default;
+    pointer-events: none !important;
+    background: var(--surface) !important;
+    border-style: solid;
+    box-shadow: none;
+  }
+  .survey-card.locked:hover {
+    border-color: var(--border);
+  }
   .survey-lock-badge {
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 0.6875rem; font-weight: 700; color: var(--text-3);
@@ -599,20 +606,55 @@
 
   /* ============ MODAL ============ */
   .modal-backdrop {
-    position: fixed; inset: 0; background: rgba(15, 20, 35, 0.4);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
     z-index: 1000; display: none; align-items: center; justify-content: center;
-    padding: 20px; opacity: 0; transition: opacity 0.3s;
+    padding: 20px; opacity: 0; transition: opacity 0.2s ease;
   }
   .modal-backdrop.show { display: flex; opacity: 1; }
   .modal {
-    background: var(--bg-elev); border-radius: var(--radius-xl);
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-modal);
     width: 100%; max-width: 640px; max-height: 90vh; overflow: hidden;
     display: flex; flex-direction: column;
-    box-shadow: 0 30px 80px rgba(15, 20, 35, 0.25);
-    transform: scale(0.96); transition: transform 0.3s var(--ease-spring);
+    box-shadow: var(--shadow-overlay);
+    transform: scale(0.98); transition: transform 0.2s ease;
   }
   .modal-backdrop.show .modal { transform: scale(1); }
+  .help-modal {
+    width: 100%;
+    max-width: 640px;
+    max-height: 85vh;
+    padding: 24px;
+  }
+  @media (max-width: 640px) {
+    .modal-backdrop {
+      align-items: flex-end !important;
+      padding: 0 !important;
+    }
+    .modal,
+    .help-modal {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 100dvh !important;
+      max-height: 100dvh !important;
+      border-radius: 0 !important;
+      padding: 16px !important;
+      border: none !important;
+      transform: none !important;
+    }
+    .help-modal .modal-body {
+      max-height: none !important;
+      flex: 1 !important;
+    }
+    .page-container {
+      padding: 16px 14px !important;
+    }
+    .card {
+      padding: 16px !important;
+    }
+    main {
+      padding: 0 !important;
+    }
+  }
   .modal-head { padding: 24px 28px 18px; border-bottom: 1px solid var(--border); }
   .modal-head-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
   .modal-close { width: 30px; height: 30px; border-radius: 8px; border: none; background: rgba(0,0,0,0.05); color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
@@ -673,13 +715,14 @@
   .panel-backdrop.open { opacity: 1; pointer-events: auto; }
   .panel {
     position: fixed; top: 0; right: 0; bottom: 0;
-    width: 100%; max-width: 420px; background: var(--bg-elev);
+    width: 100%; max-width: 420px; background: var(--surface);
     z-index: 1060; transform: translateX(100%);
-    transition: transform 0.35s var(--ease-out);
+    transition: transform 0.35s var(--ease-out), visibility 0.35s;
+    visibility: hidden; pointer-events: none;
     display: flex; flex-direction: column;
     box-shadow: -20px 0 60px rgba(15, 20, 35, 0.12);
   }
-  .panel.open { transform: translateX(0); }
+  .panel.open { transform: translateX(0); visibility: visible; pointer-events: auto; }
   .panel-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .panel-title { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.015em; }
   .panel-body { flex: 1; overflow-y: auto; padding: 16px 24px; }
@@ -821,6 +864,11 @@
     .resource-list { gap: 8px !important; width: 100% !important; }
     .resource-item { padding: 10px !important; width: 100% !important; }
   }
+  @media (max-width: 768px) {
+    #headerHelpBtn { display: none !important; }
+    .header-inner { padding: 0 16px !important; }
+    .header-right { gap: 6px !important; }
+  }
   @media (max-width: 720px) {
     main { padding: 0 20px; }
     .header-inner { padding: 0 20px; }
@@ -908,15 +956,15 @@
       <button class="nav-item active" id="navBtnWellness" onclick="App.navigate('employee')">My Wellness</button>
       <button class="nav-item" id="navBtnLearn" onclick="App.navigate('learn')">
         <span style="display: inline-flex; align-items: center; gap: 6px;">
-          <span>🧠</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
           <span>Mental Health Library</span>
         </span>
       </button>
     </nav>
     
     <div class="header-right" style="display: flex; align-items: center; gap: 10px;">
-      <button class="cosmic-pill emerald" style="cursor: pointer; font-size: 0.8rem; font-weight: 700; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;" onclick="App.openHelp()" title="Confidential Help & Active Clinical Partner Support">
-        <span>🩺</span>
+      <button class="btn btn-secondary btn-sm" id="headerHelpBtn" onclick="App.openHelp()" title="Confidential Help & Active Clinical Partner Support" style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
         <span>Confidential Help</span>
       </button>
       <button class="icon-btn" id="searchBtn" onclick="App.openSearch()" aria-label="Search (Ctrl+K)" title="Search (Ctrl+K)">
@@ -977,44 +1025,60 @@
   </div>
 </header>
 
-<main id="main">
+<!-- Mobile Bottom Tab Bar (Exactly 3 tabs: My Wellness, Library, Help) -->
+<nav class="mobile-bottom-nav" role="navigation" aria-label="Mobile Navigation">
+  <button class="mobile-bottom-nav-item active" id="mobileNavBtnWellness" onclick="App.navigate('employee')" aria-label="My Wellness">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+    <span>My Wellness</span>
+  </button>
+  <button class="mobile-bottom-nav-item" id="mobileNavBtnLearn" onclick="App.navigate('learn')" aria-label="Library">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+    <span>Library</span>
+  </button>
+  <button class="mobile-bottom-nav-item" id="mobileNavBtnHelp" onclick="App.openHelp()" aria-label="Help">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    <span>Help</span>
+  </button>
+</nav>
+
+<main id="main" class="has-bottom-nav">
 
 <!-- ============ HR ADMIN VIEW (GLOBAL DASHBOARD) ============ -->
 <!-- ============ EMPLOYEE VIEW ============ -->
 <section class="view active" id="view-employee" style="display:block;" aria-label="My wellness dashboard">
-  <div class="page-head">
+  <div class="page-container" style="max-width: 1280px; margin: 0 auto; padding: 24px 20px;">
+  <div class="page-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
     <div>
-      <span class="eyebrow">My Wellness</span>
-      <h1 id="empGreeting">Good afternoon, Amara.</h1>
-      <p>Your check-ins are confidential. HR only sees aggregated trends.</p>
+      <h1 id="empGreeting" style="font-size: 24px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Good afternoon, Amara.</h1>
+      <p style="font-size: 14px; color: var(--text-muted); margin: 0;">Your check-ins are confidential. HR only sees aggregated trends.</p>
     </div>
-    <div class="page-head-actions">
-      <button class="btn btn-ghost btn-sm" onclick="App.openResources()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        Resources
+    <div class="page-header-actions" style="display: flex; gap: 8px; align-items: center;">
+      <button class="btn btn-secondary btn-sm" onclick="App.openResources()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Resources</span>
       </button>
       <button class="btn btn-primary btn-sm" onclick="App.handleNewCheckinClick()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-        New check-in
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span>New check-in</span>
       </button>
     </div>
   </div>
   
   
 <!-- EMPTY STATE -->
-<div id="wellbeing-empty-state" style="display: none; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); border-radius: 16px; border: 1px dashed #d1d5db; text-align: center; margin-bottom: 24px;">
-  <div style="width: 64px; height: 64px; border-radius: 50%; background: #eef2ff; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+<div id="wellbeing-empty-state" class="empty-state card" style="display: none; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); text-align: center; margin-bottom: 24px; box-shadow: var(--shadow-card);">
+  <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg); color: var(--brand); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
   </div>
-  <h2 style="font-size: 1.5rem; font-weight: 700; color: #111827; margin-bottom: 12px;">Welcome to your Wellbeing Dashboard</h2>
-  <p style="font-size: 1rem; color: #4b5563; max-width: 450px; line-height: 1.5; margin-bottom: 32px;">You haven't taken any check-ins yet. Complete your first psychometric assessment to establish your baseline and unlock your personal wellness insights.</p>
-  <button class="btn btn-primary" onclick="App.handleNewCheckinClick()" style="font-size: 1.1rem; padding: 12px 24px;">
-    Take First Check-in
+  <h2 style="font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px;">Welcome to your Wellbeing Dashboard</h2>
+  <p style="font-size: 14px; color: var(--text-muted); max-width: 440px; line-height: 1.5; margin-bottom: 24px;">You haven't taken any check-ins yet. Complete your first assessment to establish your baseline and track personal wellness trends.</p>
+  <button class="btn btn-primary" onclick="App.handleNewCheckinClick()">
+    Take first check-in
   </button>
 </div>
 
 <!-- Main horizontal dashboard hero card -->
-<div id="wellbeing-hero-card" class="wellbeing-hero-card" style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; padding: 24px; background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); border-radius: 16px; border: 1px solid #f3f4f6; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); width: 100%; margin-bottom: 24px; box-sizing: border-box;">
+<div id="wellbeing-hero-card" class="wellbeing-hero-card card" style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); width: 100%; margin-bottom: 24px; box-sizing: border-box;">
   
   <!-- LEFT COLUMN -->
   <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
@@ -1088,64 +1152,61 @@
         </div>
       </div>
       <!-- Chart legend -->
-      <div class="trend-legend" style="display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; font-size: 0.71875rem; color: var(--text-2);">
-        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #00B7C3;"></span>Daily Pulse</span>
-        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; background: #6366f1; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);"></span>PHQ-9</span>
-        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; background: #8b5cf6; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);"></span>GAD-7</span>
-        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; background: #f59e0b; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);"></span>PSS-10</span>
-        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; background: #ef4444; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);"></span>FAS-10</span>
-        <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; background: #0078D4; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);"></span>COPSOQ III</span>
+      <div class="trend-legend" style="display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12px; color: var(--text-muted);">
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-1);"></span>Daily Pulse</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-2);"></span>PHQ-9</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-3);"></span>GAD-7</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-4);"></span>PSS-10</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger);"></span>FAS-10</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-5);"></span>COPSOQ III</span>
       </div>
       <div class="trend-chart" style="position: relative;"><canvas id="employeeTrendChart"></canvas><div id="chartTooltip" style="display:none;"></div></div>
     </div>
     <div class="insight-card">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Recommended for you</h3>
+      <h3 style="font-size: 16px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; margin-bottom: 14px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Recommended for you</h3>
       <div class="resource-list" id="recommendedList"></div>
     </div>
+  </div>
   </div>
 </section>
 
 <!-- ============ MENTAL HEALTH LIBRARY / LEARN HUB VIEW ============ -->
 <section class="view" id="view-learn" style="display:none; padding: 24px 0 80px;" aria-label="Mental Health & Wellbeing Library">
-  <div class="container" style="max-width: 1180px; margin: 0 auto; padding: 0 20px;">
+  <div class="page-container" style="max-width: 1280px; margin: 0 auto; padding: 24px 20px; width: 100%; box-sizing: border-box;">
     
     <!-- Hero Header -->
-    <div style="background: linear-gradient(135deg, rgba(0, 183, 195, 0.08) 0%, rgba(112, 0, 255, 0.05) 100%), #ffffff; border: 1px solid var(--border-strong); border-radius: 20px; padding: 32px 36px; margin-bottom: 24px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden;">
-      <div style="max-width: 720px; position: relative; z-index: 2;">
-        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(0, 183, 195, 0.12); color: var(--accent-deep); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 12px; border-radius: 9999px; margin-bottom: 12px;">
-          <span>🧠</span>
-          <span>Apple Health-Inspired Psychoeducation Hub</span>
-        </div>
-        <h1 style="font-size: 1.85rem; font-weight: 800; color: var(--text-1); letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 10px;">
+    <div class="card" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 28px 32px; margin-bottom: 24px; box-shadow: var(--shadow-card); width: 100%; box-sizing: border-box;">
+      <div style="max-width: 720px; width: 100%; box-sizing: border-box;">
+        <h1 style="font-size: 24px; font-weight: 600; color: var(--text); letter-spacing: -0.015em; line-height: 1.25; margin-bottom: 8px;">
           Mental Wellbeing &amp; Health Library
         </h1>
-        <p style="font-size: 0.95rem; color: var(--text-2); line-height: 1.55; margin-bottom: 20px;">
+        <p style="font-size: 14px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
           Clinically validated somatic tools, nervous system resets, and evidence-based psychoeducation aligned with ISO 45003 standards.
         </p>
 
         <!-- Search input -->
-        <div style="display: flex; gap: 10px; max-width: 480px;">
-          <div style="position: relative; flex: 1;">
-            <svg style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-3);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" id="learnSearchInput" placeholder="Search breathing, anxiety, sleep, burnout..." oninput="App.searchLearnArticles(this.value)" style="width: 100%; padding: 10px 14px 10px 42px; border-radius: 12px; border: 1px solid var(--border-strong); background: #ffffff; font-size: 0.875rem; color: var(--text-1); outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div style="display: flex; gap: 10px; max-width: 480px; width: 100%; box-sizing: border-box;">
+          <div style="position: relative; flex: 1; width: 100%; box-sizing: border-box;">
+            <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-subtle);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="learnSearchInput" placeholder="Search breathing, anxiety, sleep, burnout..." oninput="App.searchLearnArticles(this.value)" class="form-input" style="width: 100%; box-sizing: border-box; padding: 8px 12px 8px 36px; border-radius: var(--radius-control); border: 1px solid var(--border); background: var(--surface); font-size: 14px; color: var(--text); outline: none;">
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Crisis Hotline Quick Bar (Always Prominent) -->
-    <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 14px; padding: 14px 20px; margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <!-- Crisis Hotline Quick Bar -->
+    <div class="alert-banner alert-warning" style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef3c7; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">🆘</div>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--warning);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
         <div>
-          <div style="font-weight: 700; font-size: 0.875rem; color: #92400e;">Immediate Confidential Crisis Assistance</div>
-          <div style="font-size: 0.775rem; color: #b45309;">If you or a colleague are experiencing severe distress or thoughts of self-harm, free 24/7 support is accessible now.</div>
+          <div style="font-weight: 600; font-size: 14px; color: var(--warning);">Immediate Confidential Crisis Assistance</div>
+          <div style="font-size: 13px; color: var(--text-muted);">If you or a colleague are experiencing severe distress or thoughts of self-harm, free 24/7 support is accessible now.</div>
         </div>
       </div>
       <div style="display: flex; gap: 8px;">
-        <button onclick="App.openLearnArticle('urgent-crisis-resources')" style="background: #d97706; color: #ffffff; border: none; padding: 7px 16px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-          <span>📞</span>
-          <span>View Crisis Hotlines</span>
+        <button onclick="App.openLearnArticle('urgent-crisis-resources')" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+          <span>View crisis hotlines</span>
         </button>
       </div>
     </div>
@@ -1158,7 +1219,7 @@
           <span id="learnTailoredBadge" style="display: none; background: rgba(0, 183, 195, 0.1); color: var(--accent-deep); font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;">Tailored to your check-ins</span>
         </div>
       </div>
-      <div id="learnRecommendedGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;">
+      <div id="learnRecommendedGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
         <!-- Injected recommended cards -->
       </div>
     </div>
@@ -1174,7 +1235,7 @@
     </div>
 
     <!-- All Articles Grid -->
-    <div id="learnAllArticlesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+    <div id="learnAllArticlesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
       <!-- Dynamically injected cards -->
     </div>
 
@@ -1236,7 +1297,7 @@
         <div style="display: flex; align-items: center; gap: 16px; padding: 16px; background: rgba(0,183,195,0.05); border: 1px solid rgba(0,183,195,0.15); border-radius: 14px; margin-bottom: 20px;">
           <div class="avatar" style="width: 56px; height: 56px; font-size: 1.25rem; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;" id="profAvatar">NK</div>
           <div style="flex: 1; min-width: 0;">
-            <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-1);" id="profName">Nana Kwame Dickson</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-1);" id="profName">Amara Okafor</div>
             <div style="font-size: 0.8125rem; color: var(--text-2); margin-top: 2px;" id="profTitle">Software Developer • IT Engineering</div>
             <div style="font-size: 0.75rem; color: var(--text-3); margin-top: 2px;" id="profEmail">nana@example.com</div>
             <div style="display: flex; gap: 6px; margin-top: 8px;">
@@ -1339,28 +1400,39 @@
 
 <!-- ============ HELP & CRISIS SUPPORT CENTER UNIFIED MODAL ============ -->
 <div class="modal-backdrop" id="helpCenterModalBackdrop" role="dialog" aria-modal="true">
-  <div class="modal cosmic-glass-panel" style="max-width: 680px; padding: 24px;">
-    <div class="modal-head" style="padding-bottom: 16px; border-bottom: 1px solid var(--cosmic-glass-border);">
+  <div class="modal card" style="max-width: 640px; padding: 24px; border-radius: var(--radius-modal); box-shadow: var(--shadow-overlay); background: var(--surface); border: 1px solid var(--border);">
+    <div class="modal-head" style="padding-bottom: 14px; border-bottom: 1px solid var(--border);">
       <div class="modal-head-top" style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(56,189,248,0.15); color: #0284c7; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.25rem;">🩺</div>
+          <div style="width: 36px; height: 36px; border-radius: var(--radius-control); background: var(--info-bg); color: var(--info); display: flex; align-items: center; justify-content: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </div>
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <h2 style="font-size: 1.2rem; font-weight: 700; margin: 0; color: var(--cosmic-text-primary);">Confidential Clinical Help & Support</h2>
-              <span class="cosmic-pill emerald">100% Confidential</span>
+              <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text);">Confidential Clinical Help &amp; Support</h2>
+              <span class="badge badge-success">Confidential</span>
             </div>
-            <div style="font-size: 0.78rem; color: var(--cosmic-text-secondary); margin-top: 2px;">ISO 45003 Privacy Protected · Clinical Provider Routing Engine</div>
+            <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">ISO 45003 Privacy Protected · Clinical Provider Routing</div>
           </div>
         </div>
-        <button class="modal-close" onclick="App.closeHelpCenter()" aria-label="Close" style="background: none; border: none; color: var(--cosmic-text-secondary); font-size: 1.5rem; cursor: pointer;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:20px; height:20px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <button class="modal-close" onclick="App.closeHelpCenter()" aria-label="Close" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: var(--radius-control); display: flex; align-items: center; justify-content: center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
-      <!-- Tab Navigation Header -->
-      <div style="display: flex; gap: 6px; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 10px; margin-top: 14px; border: 1px solid var(--cosmic-glass-border);">
-        <button class="help-nav-tab active" id="btn-help-tab-1" onclick="App.switchHelpTab('privacy')" style="flex:1; padding:8px 12px; border:none; border-radius:7px; background:rgba(56,189,248,0.2); font-weight:600; font-size:0.8125rem; color:#0284c7; cursor:pointer;">🛡️ Privacy Rules</button>
-        <button class="help-nav-tab" id="btn-help-tab-2" onclick="App.switchHelpTab('faq')" style="flex:1; padding:8px 12px; border:none; border-radius:7px; background:transparent; font-weight:600; font-size:0.8125rem; color:var(--cosmic-text-secondary); cursor:pointer;">❓ Platform FAQ</button>
-        <button class="help-nav-tab" id="btn-help-tab-3" onclick="App.switchHelpTab('eap')" style="flex:1; padding:8px 12px; border:none; border-radius:7px; background:transparent; font-weight:600; font-size:0.8125rem; color:var(--cosmic-text-secondary); cursor:pointer;">☎️ Clinical Partner & EAP</button>
+      <!-- Underline Tab Navigation -->
+      <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-top: 14px;">
+        <button class="help-nav-tab active" id="btn-help-tab-1" onclick="App.switchHelpTab('privacy')" style="flex:1; padding: 8px 12px; border: none; border-bottom: 2px solid var(--brand); background: transparent; font-weight: 600; font-size: 13px; color: var(--brand); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>Privacy Rules</span>
+        </button>
+        <button class="help-nav-tab" id="btn-help-tab-2" onclick="App.switchHelpTab('faq')" style="flex:1; padding: 8px 12px; border: none; border-bottom: 2px solid transparent; background: transparent; font-weight: 500; font-size: 13px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <span>Platform FAQ</span>
+        </button>
+        <button class="help-nav-tab" id="btn-help-tab-3" onclick="App.switchHelpTab('eap')" style="flex:1; padding: 8px 12px; border: none; border-bottom: 2px solid transparent; background: transparent; font-weight: 500; font-size: 13px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+          <span>Clinical Partner &amp; EAP</span>
+        </button>
       </div>
     </div>
     
@@ -1410,63 +1482,63 @@
 
       <!-- TAB 3: Dynamic Clinical Partner & EAP -->
       <div id="help-tab-content-eap" class="help-tab-panel" style="display: none;">
-        <div class="cosmic-card" style="margin-bottom: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <h3 style="font-size: 0.9375rem; font-weight: 700; color: #0284c7; margin: 0;" id="helpProviderTitle">Active Clinical Partner: FZ Safety and Health</h3>
-            <span class="cosmic-pill success" id="helpProviderBadge">Primary Provider</span>
+        <div class="card" style="margin-bottom: 14px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <h3 style="font-size: 14px; font-weight: 600; color: var(--text); margin: 0;" id="helpProviderTitle">Active Clinical Partner: FZ Safety and Health</h3>
+            <span class="badge badge-success" id="helpProviderBadge">Primary Provider</span>
           </div>
-          <p style="font-size: 0.8125rem; color: var(--cosmic-text-secondary); margin: 0;">Free, 100% confidential professional counseling, occupational health consultation, and 24/7 crisis support.</p>
+          <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Free, 100% confidential professional counseling, occupational health consultation, and 24/7 crisis support.</p>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 12px;">
-          <div class="cosmic-card" style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);">
             <div>
-              <div style="font-size: 0.875rem; font-weight: 700; color: var(--cosmic-text-primary);" id="helpEapLabel">FZ Safety and Health Helpline</div>
-              <div style="font-size: 0.75rem; color: var(--cosmic-text-secondary);">Direct confidential counseling & advice line</div>
-              <div style="font-size: 0.75rem; color: var(--cosmic-text-secondary); margin-top: 2px;">Email: <a href="mailto:nanakwamedickson62@gmail.com" id="helpEapEmailLink" style="color: #0284c7; text-decoration: none;">nanakwamedickson62@gmail.com</a></div>
+              <div style="font-size: 14px; font-weight: 600; color: var(--text);" id="helpEapLabel">FZ Safety and Health Helpline</div>
+              <div style="font-size: 13px; color: var(--text-muted);">Direct confidential counseling &amp; advice line</div>
+              <div id="helpEapEmailRow" style="font-size: 12px; color: var(--text-subtle); margin-top: 2px; display: none;">Email: <a href="#" id="helpEapEmailLink" style="color: var(--brand); text-decoration: none;"></a></div>
             </div>
-            <a href="tel:+233243629870" id="helpEapButton" class="cosmic-pill" style="padding: 8px 16px; font-weight: 700; text-decoration: none; font-size: 0.85rem;">+233 24 362 9870</a>
+            <a href="tel:+233243629870" id="helpEapButton" class="btn btn-secondary btn-sm" style="font-weight: 600;">+233 24 362 9870</a>
           </div>
 
-          <div class="cosmic-card" style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);">
             <div>
-              <div style="font-size: 0.875rem; font-weight: 700; color: var(--cosmic-text-primary);">24/7 Crisis & Lifeline</div>
-              <div style="font-size: 0.75rem; color: var(--cosmic-text-secondary);">Call or text +233 24 362 9870 anytime for emergency support</div>
+              <div style="font-size: 14px; font-weight: 600; color: var(--text);">24/7 Crisis &amp; Lifeline</div>
+              <div style="font-size: 13px; color: var(--text-muted);">Call or text +233 24 362 9870 anytime for emergency support</div>
             </div>
-            <a href="tel:+233243629870" class="cosmic-pill rose" style="padding: 8px 16px; font-weight: 700; text-decoration: none; font-size: 0.85rem;">Call +233 24 362 9870</a>
+            <a href="tel:+233243629870" class="btn btn-danger btn-sm" style="font-weight: 600;">Call +233 24 362 9870</a>
           </div>
 
-          <div class="cosmic-card" style="padding: 16px;">
-            <div style="font-weight: 700; font-size: 0.875rem; color: var(--cosmic-text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+          <div class="card" style="padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);">
+            <div style="font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
               <span>Request Confidential Clinical Consultation</span>
-              <span class="cosmic-pill purple">Direct Intake</span>
+              <span class="badge badge-info">Direct Intake</span>
             </div>
-            <p style="font-size: 0.78rem; color: var(--cosmic-text-secondary); margin-bottom: 12px;">Submit an encrypted request to connect with a licensed practitioner from <strong id="helpProviderFormName">FZ Safety and Health</strong>. Employer is never notified.</p>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Submit an encrypted request to connect with a licensed practitioner from <strong id="helpProviderFormName">FZ Safety and Health</strong>. Employer is never notified.</p>
             
             <!-- Intake Form Container -->
             <div id="clinicalIntakeFormContainer" style="display: flex; flex-direction: column; gap: 10px;">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
-                  <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Employee Name *</label>
-                  <input type="text" id="consultNameInput" class="input" placeholder="Your Full Name" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem;">
+                  <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Employee Name *</label>
+                  <input type="text" id="consultNameInput" class="form-input" placeholder="Your Full Name" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
                 </div>
                 <div>
-                  <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Contact Phone / Email *</label>
-                  <input type="text" id="consultContactInput" class="input" placeholder="Phone (+233...) or Email" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem;">
+                  <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Contact Phone / Email *</label>
+                  <input type="text" id="consultContactInput" class="form-input" placeholder="Phone (+233...) or Email" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
                 </div>
               </div>
               <div>
-                <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Consultation Topic / Reason</label>
-                <input type="text" id="consultTopicInput" class="input" placeholder="e.g. Work stress, Fatigue, Anxiety, Sleep disturbance" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem;">
+                <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Consultation Topic / Reason</label>
+                <input type="text" id="consultTopicInput" class="form-input" placeholder="e.g. Work stress, Fatigue, Anxiety, Sleep disturbance" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
               </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
-                  <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Preferred Date</label>
-                  <input type="date" id="consultDateInput" class="input" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem;">
+                  <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Preferred Date</label>
+                  <input type="date" id="consultDateInput" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
                 </div>
                 <div>
-                  <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Preferred Time</label>
-                  <select id="consultTimeInput" class="input" style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem; background: var(--cosmic-glass-bg);">
+                  <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Preferred Time</label>
+                  <select id="consultTimeInput" class="form-select" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
                     <option value="As soon as available">As soon as available</option>
                     <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
                     <option value="Afternoon (13:00 - 17:00)">Afternoon (13:00 - 17:00)</option>
@@ -1475,13 +1547,14 @@
                 </div>
               </div>
               <div>
-                <label style="font-size: 0.72rem; color: var(--cosmic-text-secondary); font-weight: 600; display: block; margin-bottom: 3px;">Additional Notes (Optional)</label>
-                <textarea id="consultNotesInput" class="input" rows="2" placeholder="Optional details or specific accommodations needed..." style="width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--cosmic-glass-border); font-size: 0.8125rem; resize: vertical;"></textarea>
+                <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Additional Notes (Optional)</label>
+                <textarea id="consultNotesInput" class="form-textarea" rows="2" placeholder="Optional details or specific accommodations needed..." style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text); resize: vertical;"></textarea>
               </div>
-              <button type="button" class="cosmic-pill emerald" style="cursor: pointer; padding: 10px 16px; font-weight: 700; width: 100%; margin-top: 4px; justify-content: center;" onclick="App.submitClinicalConsultation()">Submit Request to FZ Safety Practitioner</button>
-              <button type="button" onclick="window.openConsultTrackModal();" style="width: 100%; cursor: pointer; padding: 9px 16px; font-weight: 700; background: rgba(13,148,136,0.1); color: #0d9488; border: 1.5px solid rgba(13,148,136,0.35); border-radius: 8px; font-size: 0.82rem; margin-top: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
-                <span>🔍</span> <span>Track Existing Consultation &amp; Dialogue</span>
-                <span id="dashboardDoctorPresencePill" style="display:none; font-size:10.5px; padding:2px 8px; border-radius:99px; font-weight:700; margin-left:4px;"></span>
+              <button type="button" class="btn btn-primary" style="width: 100%; margin-top: 6px;" onclick="App.submitClinicalConsultation()">Submit Request to Clinical Partner</button>
+              <button type="button" onclick="window.openConsultTrackModal();" class="btn btn-secondary" style="width: 100%; margin-top: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Track Existing Consultation &amp; Dialogue</span>
+                <span id="dashboardDoctorPresencePill" style="display:none; font-size:11px; padding:2px 8px; border-radius:99px; font-weight:600; margin-left:4px;"></span>
               </button>
             </div>
 
@@ -1519,18 +1592,20 @@
             </div>
           </div>
           
-          <div class="cosmic-card" style="padding: 16px; margin-top: 12px; border-color: rgba(139,92,246,0.3);">
-            <div style="font-weight: 700; font-size: 0.875rem; color: var(--cosmic-text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+          <div class="card" style="padding: 16px; margin-top: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);">
+            <div style="font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
               <span>Whistleblower Vault</span>
-              <span class="cosmic-pill purple" style="background:rgba(139,92,246,0.1);color:#a78bfa;">Anonymous</span>
+              <span class="badge badge-neutral">Anonymous</span>
             </div>
-            <p style="font-size: 0.78rem; color: var(--cosmic-text-secondary); margin-bottom: 12px;">Report workplace hazards, harassment, or safety violations. Your identity is structurally unrecoverable.</p>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Report workplace hazards, harassment, or safety violations. Your identity is structurally unrecoverable.</p>
             <div style="display: flex; gap: 8px; flex-direction: column;">
-              <button onclick="window.openVaultModal()" style="width: 100%; cursor: pointer; padding: 10px 16px; font-weight: 700; background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; border: none; border-radius: 8px; font-size: 0.85rem; transition: all 0.2s;">
-                🛡️ Report Workplace Hazard
+              <button onclick="window.openVaultModal()" class="btn btn-secondary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span>Report Workplace Hazard</span>
               </button>
-              <button onclick="window.openVaultTrackModal()" style="width: 100%; cursor: pointer; padding: 8px 16px; font-weight: 600; background: rgba(99,102,241,0.1); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); border-radius: 8px; font-size: 0.82rem; transition: all 0.2s;">
-                🔍 Track Existing Report &amp; Thread
+              <button onclick="window.openVaultTrackModal()" class="btn btn-ghost" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Track Existing Report &amp; Thread</span>
               </button>
             </div>
           </div>
@@ -1555,31 +1630,15 @@
 
 
 <!-- ============ FOOTER ============ -->
-<footer role="contentinfo">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <div class="brand-mark" style="width: 26px; height: 26px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/></svg>
-      </div>
-      <div class="footer-author">
-        <span>© 2026 Havilah Health & Technologies. All rights reserved.</span>
-        <span class="footer-author-dot"></span>
-        <span>Made by <strong>Nana Kwame Dickson</strong></span>
-      </div>
-    </div>
-    <div class="footer-links" role="navigation" aria-label="Footer">
-      <a onclick="App.openLegal('privacy')">Privacy</a>
-      <a onclick="App.openLegal('terms')">Terms</a>
-      <a onclick="App.openLegal('hipaa')">HIPAA</a>
-      <a onclick="App.openLegal('gdpr')">GDPR</a>
-      <a onclick="App.openContact()">Contact</a>
-      <a onclick="App.openStatus()">Status</a>
-    </div>
-    <div class="footer-compliance">
-      <span class="compliance-badge">SOC 2</span>
-      <span class="compliance-badge">ISO 45003</span>
-      <span class="compliance-badge">HIPAA</span>
-    </div>
+<footer class="app-footer" role="contentinfo" style="border-top: 1px solid var(--border); background: var(--surface); padding: 20px 24px; margin-top: auto;">
+  <div class="footer-inner" style="max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 13px; color: var(--text-muted);">
+    <div>&copy; 2026 Havilah Health. All rights reserved.</div>
+    <nav class="footer-links" aria-label="Footer" style="display: flex; gap: 18px; align-items: center;">
+      <a href="/legal/privacy.html" onclick="if (window.App?.openLegal) { App.openLegal('privacy'); return false; }" style="color: var(--text-muted); text-decoration: none;">Privacy</a>
+      <a href="/legal/terms.html" onclick="if (window.App?.openLegal) { App.openLegal('terms'); return false; }" style="color: var(--text-muted); text-decoration: none;">Terms</a>
+      <a href="/contact.html" onclick="if (window.App?.openContact) { App.openContact(); return false; }" style="color: var(--text-muted); text-decoration: none;">Contact</a>
+      <a href="/status.html" onclick="if (window.App?.openStatus) { App.openStatus(); return false; }" style="color: var(--text-muted); text-decoration: none;">Status</a>
+    </nav>
   </div>
 </footer>
 
@@ -3098,7 +3157,7 @@ const App = (() => {
       name: 'FZ Safety and Health',
       hotline: '+233 24 362 9870',
       crisisHotline: '+233 24 362 9870',
-      email: 'nanakwamedickson62@gmail.com'
+      email: null
     },
     user: {
       name: 'Amara Okafor',
@@ -3184,15 +3243,19 @@ const App = (() => {
 
     const navWellness = document.getElementById('navBtnWellness');
     const navLearn = document.getElementById('navBtnLearn');
-    if (navWellness && navLearn) {
-      if (view === 'learn') {
-        navWellness.classList.remove('active');
-        navLearn.classList.add('active');
-        loadLearnHub();
-      } else {
-        navWellness.classList.add('active');
-        navLearn.classList.remove('active');
-      }
+    const mNavWellness = document.getElementById('mobileNavBtnWellness');
+    const mNavLearn = document.getElementById('mobileNavBtnLearn');
+    if (view === 'learn') {
+      if (navWellness) navWellness.classList.remove('active');
+      if (navLearn) navLearn.classList.add('active');
+      if (mNavWellness) mNavWellness.classList.remove('active');
+      if (mNavLearn) mNavLearn.classList.add('active');
+      loadLearnHub();
+    } else {
+      if (navWellness) navWellness.classList.add('active');
+      if (navLearn) navLearn.classList.remove('active');
+      if (mNavWellness) mNavWellness.classList.add('active');
+      if (mNavLearn) mNavLearn.classList.remove('active');
     }
   }
 
@@ -3905,24 +3968,24 @@ const App = (() => {
   }
 
   const sourceColors = {
-    daily_pulse: '#00B7C3',
-    DAILY_PULSE: '#00B7C3',
-    checkin_slider: '#00B7C3',
-    pulse: '#00B7C3',
-    'PHQ-9': '#4F46E5',
-    phq9: '#4F46E5',
-    'GAD-7': '#8B5CF6',
-    gad7: '#8B5CF6',
-    'PSS-10': '#F59E0B',
-    pss10: '#F59E0B',
-    'FAS-10': '#EF4444',
-    fas10: '#EF4444',
-    COPSOQ_III: '#0078D4',
-    'COPSOQ III': '#0078D4',
-    copsoq3: '#0078D4',
-    copsoq3_core: '#0078D4',
-    copsoq3_middle: '#0078D4',
-    copsoq3_long: '#0078D4'
+    daily_pulse: '#0F766E', // chart-1 brand
+    DAILY_PULSE: '#0F766E',
+    checkin_slider: '#0F766E',
+    pulse: '#0F766E',
+    'PHQ-9': '#1D4ED8',    // chart-2 info blue
+    phq9: '#1D4ED8',
+    'GAD-7': '#B45309',    // chart-3 warning amber
+    gad7: '#B45309',
+    'PSS-10': '#15803D',   // chart-4 success green
+    pss10: '#15803D',
+    'FAS-10': '#B91C1C',   // danger red
+    fas10: '#B91C1C',
+    COPSOQ_III: '#64748B', // chart-5 slate
+    'COPSOQ III': '#64748B',
+    copsoq3: '#64748B',
+    copsoq3_core: '#64748B',
+    copsoq3_middle: '#64748B',
+    copsoq3_long: '#64748B'
   };
 
   const sourceNames = {
@@ -4028,8 +4091,8 @@ const App = (() => {
         datasets: [{
           label: 'Wellbeing Index',
           data: data.map(d => d.score),
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99, 102, 241, 0.08)',
+          borderColor: '#0F766E',
+          backgroundColor: 'rgba(15, 118, 110, 0.08)',
           fill: true,
           tension: 0.4,
           borderWidth: 2.5,
@@ -4199,7 +4262,7 @@ const App = (() => {
 
     // 1. Daily Pulse card (always available)
     const dailyCard = document.createElement('div');
-    dailyCard.className = 'survey-card daily-pulse';
+    dailyCard.className = 'survey-card daily-pulse card';
     dailyCard.dataset.surveyType = 'daily_pulse';
     dailyCard.dataset.instrumentCode = 'DAILY_PULSE';
     dailyCard.dataset.isUnlocked = 'true';
@@ -4214,20 +4277,19 @@ const App = (() => {
     };
 
     dailyCard.innerHTML = `
-      <div class="survey-head">
-        <span class="survey-code">DAILY PULSE</span>
-        <span class="daily-pulse-label">✓ Always available</span>
+      <div class="survey-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span class="survey-code" style="font-size:12px;font-weight:600;color:var(--text-subtle);letter-spacing:0.05em;">DAILY PULSE</span>
+        <span class="badge badge-success" style="display:inline-flex;align-items:center;gap:4px;">${window.HavilahIcons ? HavilahIcons.check(12) : '✓'} Always available</span>
       </div>
-      <h3>5-Dimension Wellbeing Check-in</h3>
-      <p class="desc">Quick daily self-assessment across Mood, Calm, Stress, Energy & Work-Fit.</p>
-      <div class="survey-meta">
-        <span class="survey-time">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:6px;color:var(--text);">5-Dimension Wellbeing Check-in</h3>
+      <p class="desc" style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.5;">Quick daily self-assessment across Mood, Calm, Stress, Energy & Work-Fit.</p>
+      <div class="survey-meta" style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;">
+        <span class="survey-time" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-subtle);">
+          ${window.HavilahIcons ? HavilahIcons.clock(14) : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'}
           2 min
         </span>
-        <button class="survey-arrow take-checkin-btn" aria-label="Take Check-in (DAILY_PULSE)">
-          <span>Take Check-in</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <button class="btn btn-primary btn-sm" aria-label="Take Check-in (DAILY_PULSE)">
+          <span>Take check-in</span>
         </button>
       </div>
     `;
@@ -4288,17 +4350,18 @@ const App = (() => {
 
       // Status badge
       let statusBadge;
+      const getIcon = (fn, fallback) => (window.HavilahIcons && HavilahIcons[fn]) ? HavilahIcons[fn](12) : fallback;
       if (isExpired) {
-        statusBadge = `<span class="survey-lock-badge" style="color:var(--critical);background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.2);">⏱️ Expired</span>`;
+        statusBadge = `<span class="badge badge-warning" style="display:inline-flex;align-items:center;gap:4px;">${getIcon('clock', '')} Expired</span>`;
       } else if (isLocked) {
-        statusBadge = `<span class="survey-lock-badge">🔒 Locked</span>`;
+        statusBadge = `<span class="badge badge-neutral" style="display:inline-flex;align-items:center;gap:4px;">${getIcon('lock', '')} Locked</span>`;
       } else if (isCompleted) {
-        statusBadge = `<span class="survey-status done">• Completed</span>`;
+        statusBadge = `<span class="badge badge-success" style="display:inline-flex;align-items:center;gap:4px;">${getIcon('check', '✓')} Completed</span>`;
       } else if (lockState.deadline) {
         const daysLeft = Math.max(0, Math.ceil((new Date(lockState.deadline) - new Date()) / 86400000));
-        statusBadge = `<span class="survey-deadline">⏱ Due in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}</span>`;
+        statusBadge = `<span class="badge badge-info" style="display:inline-flex;align-items:center;gap:4px;">${getIcon('clock', '')} Due in ${daysLeft}d</span>`;
       } else {
-        statusBadge = `<span class="survey-status progress">Available</span>`;
+        statusBadge = `<span class="badge badge-info">Available</span>`;
       }
 
       // Display name for COPSOQ
@@ -4314,15 +4377,15 @@ const App = (() => {
       if (!isLocked) {
         if (isCompleted) {
           actionButtonHtml = `
-            <button class="survey-arrow take-checkin-btn completed-btn" aria-label="Completed (${instrumentCode})" style="background:rgba(34,197,94,0.1);color:#16a34a;">
-              <span>Completed ✓</span>
+            <button class="btn btn-secondary btn-sm" disabled style="display:inline-flex;align-items:center;gap:6px;">
+              ${getIcon('check', '✓')}
+              <span>Completed</span>
             </button>
           `;
         } else {
           actionButtonHtml = `
-            <button class="survey-arrow take-checkin-btn" aria-label="Take Check-in (${instrumentCode})">
-              <span>Take Check-in</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <button class="btn btn-primary btn-sm" aria-label="Take Check-in (${instrumentCode})">
+              <span>Take check-in</span>
             </button>
           `;
         }
@@ -4740,17 +4803,17 @@ const App = (() => {
           {
             label: 'Current State',
             data: currentData,
-            backgroundColor: 'rgba(0, 183, 195, 0.2)', // #00B7C3 with opacity
-            borderColor: '#00B7C3',
+            backgroundColor: 'rgba(15, 118, 110, 0.15)',
+            borderColor: '#0F766E',
             borderWidth: 2,
-            pointBackgroundColor: '#00B7C3'
+            pointBackgroundColor: '#0F766E'
           },
           {
             label: 'Target baseline',
-            data: [85, 85, 85, 85, 85, 85, 85], // Fixed benchmark layer
+            data: [85, 85, 85, 85, 85, 85, 85],
             borderDash: [4, 4],
             backgroundColor: 'transparent',
-            borderColor: '#7000FF', // Premium highlight purple
+            borderColor: '#64748B',
             borderWidth: 1,
             pointRadius: 0
           }

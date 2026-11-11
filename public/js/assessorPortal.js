@@ -846,7 +846,7 @@
 
     tableBody.innerHTML = '';
     if (pageItems.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:36px; color:var(--text-muted);">No clinical referrals found matching current filters.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:36px; color:var(--text-muted);">No clinical referrals found matching current filters.</td></tr>';
       return;
     }
 
@@ -882,37 +882,36 @@
       let clinicianHtml = '';
       if (r.assignedDoctorId) {
         const docName = r.assignedDoctorId.fullName || 'Attending Clinician';
-        const docSpec = r.assignedDoctorId.specialty ? `<div style="font-size:0.7rem; color:var(--text-muted);">${r.assignedDoctorId.specialty}</div>` : '';
+        const docSpec = r.assignedDoctorId.specialty ? `<span style="font-size:0.7rem; color:var(--text-muted); margin-left:4px;">· ${r.assignedDoctorId.specialty}</span>` : '';
         clinicianHtml = `
-          <div>
-            <span class="badge badge-clinician">${docName}</span>
-            ${docSpec}
+          <div style="margin-top:3px;">
+            <span class="badge badge-clinician">${docName}</span>${docSpec}
           </div>
         `;
       } else {
         if (isClinicAdmin && r.status !== 'completed' && r.status !== 'archived') {
           clinicianHtml = `
-            <div style="display:flex; align-items:center; gap:4px;">
+            <div style="display:inline-flex; align-items:center; gap:4px; margin-top:3px;">
               <span class="badge badge-unassigned">Unassigned</span>
-              <button class="btn btn-outline btn-sm" onclick="openCaseDetail('${r._id}')" style="padding:2px 6px; font-size:0.7rem;" title="Triage & Delegate">Assign</button>
+              <button class="btn btn-outline btn-sm" onclick="openCaseDetail('${r._id}')" style="padding:1px 6px; font-size:0.68rem;" title="Triage & Delegate">Assign</button>
             </div>
           `;
         } else {
-          clinicianHtml = '<span class="badge badge-unassigned">Unassigned</span>';
+          clinicianHtml = '<div style="margin-top:3px;"><span class="badge badge-unassigned">Unassigned</span></div>';
         }
       }
 
       // Appointment date badge
-      let appointmentStr = '<span style="color:var(--text-muted); font-size:0.78rem;">Not set</span>';
+      let appointmentStr = '<span style="color:var(--text-muted); font-size:0.78rem;">Appt: Not set</span>';
       if (r.scheduledAt) {
-        appointmentStr = `<span style="font-weight:600; color:var(--brand); font-size:0.8rem;">${new Date(r.scheduledAt).toLocaleDateString()}</span>`;
+        appointmentStr = `<span style="font-weight:700; color:var(--brand); font-size:0.8rem;">Appt: ${new Date(r.scheduledAt).toLocaleDateString()}</span>`;
       }
 
       // Billing Amount
       const currency = r.billing?.currency || state.assessor?.billingSettings?.defaultCurrency || 'GHS';
       const amountStr = r.billing?.isBilled
-        ? `<strong>${currency} ${(r.billing.amount || 0).toFixed(2)}</strong>`
-        : '<span style="color:var(--text-muted);">Unbilled</span>';
+        ? `<strong class="tabular-nums" style="font-size:0.84rem; color:var(--text-1);">${currency} ${(r.billing.amount || 0).toFixed(2)}</strong>`
+        : '<span style="color:var(--text-muted); font-size:0.78rem;">Unbilled</span>';
 
       // Settlement Status Pill
       let settlementPill = '';
@@ -928,56 +927,118 @@
       // Action links for contact
       const isEmail = patientContact.includes('@');
       const isPhone = !isEmail && patientContact.length >= 7;
-      let contactHtml = `<span style="color:var(--text-1); font-size:0.82rem;">${patientContact}</span>`;
+      let contactHtml = `<span style="color:var(--text-2); font-size:0.76rem;">${patientContact}</span>`;
       if (isPhone) {
-        contactHtml = `<a href="tel:${patientContact.replace(/\s+/g, '')}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.82rem; display:inline-flex; align-items:center; gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${patientContact}</a>`;
+        contactHtml = `<a href="tel:${patientContact.replace(/\s+/g, '')}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.76rem; display:inline-flex; align-items:center; gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${patientContact}</a>`;
       } else if (isEmail) {
         const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${r.referenceCode}]`);
-        contactHtml = `<a href="mailto:${patientContact}?subject=${mailtoSubj}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.82rem; display:inline-flex; align-items:center; gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>${patientContact}</a>`;
+        contactHtml = `<a href="mailto:${patientContact}?subject=${mailtoSubj}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.76rem; display:inline-flex; align-items:center; gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>${patientContact}</a>`;
       }
 
       const isCompleted = r.status === 'completed';
       const isOnline = window.HavilahCall ? window.HavilahCall.isPeerOnline(r.referenceCode) : false;
       const dotColor = isOnline ? 'var(--success)' : 'var(--border-strong)';
       const dotTitle = isOnline ? 'Patient is Online now' : 'Patient is Offline';
+      const safePatientName = (patientName || 'Patient').replace(/'/g, "\\'");
 
       tr.innerHTML = `
-        <td style="font-family:monospace; font-weight:700; color:var(--accent); font-size:0.86rem; white-space:nowrap;">
-          <span id="presence-dot-${r.referenceCode}" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${dotColor}; margin-right:6px; vertical-align:middle; transition:background 0.3s;" title="${dotTitle}"></span>
-          ${r.referenceCode}
+        <td data-label="Reference & Client">
+          <div>
+            <div style="font-family:monospace; font-weight:700; color:var(--accent); font-size:0.84rem; white-space:nowrap;">
+              <span id="presence-dot-${r.referenceCode}" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${dotColor}; margin-right:5px; vertical-align:middle; transition:background 0.3s;" title="${dotTitle}"></span>${r.referenceCode}
+            </div>
+            <div class="cell-sub" style="font-weight:600; color:var(--text-1);">${companyName}</div>
+          </div>
         </td>
-        <td style="font-weight:700; color:var(--text-1); font-size:0.84rem;">${companyName}</td>
-        <td style="font-weight:700; color:var(--text-1);">${patientName}</td>
-        <td>${contactHtml}</td>
-        <td style="color:var(--text-2);">${deptName}</td>
-        <td>${clinicianHtml}</td>
-        <td>${appointmentStr}</td>
-        <td style="color:var(--text-muted); font-size:0.8rem;">${dateStr}</td>
-        <td>
-          <div style="display:flex; gap:4px; align-items:center;">
+        <td data-label="Patient & Contact">
+          <div>
+            <div class="cell-primary">${patientName}</div>
+            <div class="cell-sub">${contactHtml}</div>
+          </div>
+        </td>
+        <td data-label="Dept & Clinician">
+          <div>
+            <div style="font-size:0.8rem; font-weight:600; color:var(--text-2);">${deptName}</div>
+            ${clinicianHtml}
+          </div>
+        </td>
+        <td data-label="Schedule & Intake">
+          <div>
+            <div>${appointmentStr}</div>
+            <div class="cell-sub">Intake: ${dateStr}</div>
+          </div>
+        </td>
+        <td data-label="Status">
+          <div style="display:inline-flex; flex-wrap:wrap; gap:4px; align-items:center;">
             ${statusBadge}
             ${staleBadge}
           </div>
         </td>
-        <td>${amountStr}</td>
-        <td>${settlementPill}</td>
-        <td>
-          <div style="display:flex; gap:4px; align-items:center;">
-            <button class="btn btn-ghost btn-sm" onclick="openCaseDetail('${r._id}')">View</button>
-            ${!isCompleted && st !== 'archived' ? `<button class="btn btn-outline btn-sm" onclick="quickCallCase('${r.referenceCode}', '${(patientName || 'Patient').replace(/'/g, "\\'")}')" style="padding:4px 8px; font-size:0.75rem; color:var(--brand); border-color:var(--border);" title="Call Patient Direct"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>` : ''}
-            ${!isCompleted && st !== 'archived' ? `<button class="btn btn-primary btn-sm" onclick="openCompleteModal('${r._id}')">Complete</button>` : ''}
-            <button class="btn btn-ghost btn-sm" onclick="quickArchiveCase('${r._id}', ${st === 'archived'})" title="${st === 'archived' ? 'Restore Case' : 'Archive Case'}" style="padding:4px 6px; font-size:0.82rem;">
-              ${st === 'archived' ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>' : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>'}
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="quickDeleteCase('${r._id}', '${r.referenceCode}')" title="Delete Case" style="padding:4px 6px; font-size:0.82rem; color:var(--danger);">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
+        <td data-label="Billing & Settlement">
+          <div>
+            <div>${amountStr}</div>
+            <div style="margin-top:3px;">${settlementPill}</div>
+          </div>
+        </td>
+        <td data-label="Actions" style="text-align:right; white-space:nowrap;">
+          <div class="row-actions-group">
+            <button class="btn btn-outline btn-sm" onclick="openCaseDetail('${r._id}')" style="padding:4px 9px; font-size:0.75rem;">View</button>
+            ${!isCompleted && st !== 'archived' ? `<button class="btn btn-primary btn-sm" onclick="openCompleteModal('${r._id}')" style="padding:4px 9px; font-size:0.75rem;">Complete</button>` : ''}
+            <div class="row-menu-wrap">
+              <button type="button" class="row-menu-trigger" onclick="toggleRowActionMenu(event, 'row-menu-${r._id}')" title="More actions" aria-label="More actions">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+              <div class="row-action-dropdown" id="row-menu-${r._id}">
+                ${!isCompleted && st !== 'archived' ? `
+                <button type="button" class="row-action-item" onclick="closeAllRowActionMenus(); quickCallCase('${r.referenceCode}', '${safePatientName}')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  Call Patient
+                </button>` : ''}
+                <button type="button" class="row-action-item" onclick="closeAllRowActionMenus(); quickArchiveCase('${r._id}', ${st === 'archived'})">
+                  ${st === 'archived'
+                    ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> Restore Case'
+                    : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> Archive Case'}
+                </button>
+                <button type="button" class="row-action-item danger" onclick="closeAllRowActionMenus(); quickDeleteCase('${r._id}', '${r.referenceCode}')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  Delete Case
+                </button>
+              </div>
+            </div>
           </div>
         </td>
       `;
       tableBody.appendChild(tr);
     });
   }
+
+  // --- Row Action Menu Helpers ---
+  window.closeAllRowActionMenus = () => {
+    document.querySelectorAll('.row-action-dropdown.open').forEach((el) => {
+      el.classList.remove('open');
+      const td = el.closest('td');
+      if (td) td.classList.remove('menu-open-cell');
+    });
+  };
+
+  window.toggleRowActionMenu = (event, menuId) => {
+    if (event) event.stopPropagation();
+    const targetMenu = document.getElementById(menuId);
+    if (!targetMenu) return;
+    const isOpen = targetMenu.classList.contains('open');
+    window.closeAllRowActionMenus();
+    if (!isOpen) {
+      targetMenu.classList.add('open');
+      const td = targetMenu.closest('td');
+      if (td) td.classList.add('menu-open-cell');
+    }
+  };
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.row-menu-wrap')) {
+      window.closeAllRowActionMenus();
+    }
+  });
 
   // --- Settlement Status Toggle ---
   window.toggleSettlementStatus = async (referralId, currentStatus) => {

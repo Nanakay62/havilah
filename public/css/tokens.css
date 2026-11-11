@@ -1,0 +1,92 @@
+/* ==========================================================================
+   Havilah Design Tokens (tokens.css)
+   B2B Health & Compliance Design Tokens (IBM Carbon / Stripe / Linear style)
+   Source of Truth for Colors, Typography, Spacing, Radius, and Shadows.
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../fonts/Roboto.woff2') format('woff2');
+}
+
+:root {
+  /* ------------------------------------------------------------------------
+     1. COLOR PALETTE
+     One brand color (teal). No purple/indigo, no second accent.
+     Status colors meet WCAG AA contrast (4.5:1 minimum on tinted backgrounds).
+     ------------------------------------------------------------------------ */
+  --bg: #F8FAFC;
+  --surface: #FFFFFF;
+  --border: #E2E8F0;
+  --text: #0F172A;
+  --text-muted: #475569;
+  --text-subtle: #64748B;
+  --brand: #0F766E;
+  --brand-hover: #115E59;
+  --success: #15803D;
+  --success-bg: #F0FDF4;
+  --warning: #B45309;
+  --warning-bg: #FFFBEB;
+  --danger: #B91C1C;
+  --danger-bg: #FEF2F2;
+  --info: #1D4ED8;
+  --info-bg: #EFF6FF;
+
+  /* Restrained 5-color chart data series palette */
+  --chart-1: #0F766E;
+  --chart-2: #1D4ED8;
+  --chart-3: #B45309;
+  --chart-4: #15803D;
+  --chart-5: #64748B;
+
+  /* ------------------------------------------------------------------------
+     2. SPACING SCALE (4px base)
+     Values: 4, 8, 12, 16, 24, 32, 48
+     ------------------------------------------------------------------------ */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* ------------------------------------------------------------------------
+     3. RADIUS SCALE
+     6px controls, 8px cards, 12px modals.
+     Nothing rounder except avatars and status dots (full/circle).
+     ------------------------------------------------------------------------ */
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --radius-modal: 12px;
+  --radius-full: 9999px;
+
+  /* ------------------------------------------------------------------------
+     4. SHADOWS
+     One card shadow, one overlay shadow for modals/menus. No colored shadows.
+     ------------------------------------------------------------------------ */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-overlay: 0 12px 24px -4px rgba(16, 24, 40, 0.12), 0 4px 8px -2px rgba(16, 24, 40, 0.06);
+
+  /* ------------------------------------------------------------------------
+     5. TYPOGRAPHY
+     Stack: "Segoe UI Variable", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif
+     Scale: 12 / 13 / 14 / 16 / 20 / 24 / 30.
+     Weights: 400 / 500 / 600 only. Body 14px minimum; nothing < 12px.
+     ------------------------------------------------------------------------ */
+  --font-sans: "Segoe UI Variable", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 30px;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+}

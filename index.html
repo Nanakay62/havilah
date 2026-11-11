@@ -1,1225 +1,1920 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Havilah - Occupational Health & Wellness Platform</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
-  :root {
-    --accent: #0d9488;
-    --accent-deep: #0f766e;
-    --accent-soft: rgba(13, 148, 136, 0.08);
-    --blue: #0284c7;
-    --indigo: #4f46e5;
-    --purple: #7c3aed;
-    --critical: #e11d48;
-    --moderate: #d97706;
-    --healthy: #059669;
-    --bg-base: #FFFFFF;
-    --bg-elev: #FFFFFF;
-    --bg-acrylic: rgba(255, 255, 255, 0.88);
-    --bg-acrylic-strong: rgba(255, 255, 255, 0.96);
-    --text-1: #0f172a;
-    --text-2: #334155;
-    --text-3: #64748b;
-    --text-on-accent: #FFFFFF;
-    --border: rgba(15, 23, 42, 0.08);
-    --border-strong: rgba(15, 23, 42, 0.14);
-    --radius-sm: 10px;
-    --radius: 14px;
-    --radius-lg: 18px;
-    --radius-xl: 24px;
-    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-    --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.03);
-    --shadow-md: 0 8px 28px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.03);
-    --shadow-lg: 0 18px 48px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04);
-    --shadow-accent: 0 12px 32px rgba(13, 148, 136, 0.22);
-    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body, button, input, select, textarea {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-  .metric-value, .score-display, .chart-value, .tabular-nums, .tooltip-bar-value, .kpi-value, .stat-value {
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum";
-  }
-  body {
-    background: #FFFFFF;
-    color: var(--text-1);
-    line-height: 1.6;
-    font-size: 15px;
-    overflow-x: hidden;
-    min-height: 100vh;
-    position: relative;
-  }
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    background:
-      radial-gradient(ellipse 80% 60% at 12% 8%, rgba(13, 148, 136, 0.06) 0%, transparent 55%),
-      radial-gradient(ellipse 70% 50% at 88% 18%, rgba(79, 70, 229, 0.05) 0%, transparent 55%),
-      radial-gradient(ellipse 60% 50% at 50% 95%, rgba(2, 132, 199, 0.05) 0%, transparent 55%),
-      #FFFFFF;
-    pointer-events: none;
-  }
-  h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; line-height: 1.18; color: var(--text-1); }
-  .display { font-size: clamp(2.4rem, 5.2vw, 4.2rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; }
-  .h1 { font-size: clamp(2rem, 3.6vw, 2.8rem); font-weight: 700; letter-spacing: -0.03em; }
-  .h2 { font-size: clamp(1.5rem, 2.4vw, 2rem); font-weight: 600; letter-spacing: -0.025em; }
-  .h3 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.015em; }
-  .h4 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
-  .lead { font-size: 1.125rem; color: var(--text-2); line-height: 1.55; }
-  .eyebrow { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-deep); }
-  .meta { font-size: 0.8125rem; color: var(--text-3); }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Havilah - Workplace Wellbeing &amp; Psychosocial Health</title>
+  <meta name="description" content="Confidential check-ins for your employees. Anonymous, group-level insight for your HR team. Designed with the Ghana Data Protection Act, 2012 (Act 843) in mind.">
+  <meta property="og:title" content="Havilah - Workplace Wellbeing">
+  <meta property="og:description" content="Confidential check-ins for your employees. Anonymous, group-level insight for your HR team.">
+  <meta property="og:type" content="website">
 
-  /* ============ HEADER ============ */
-  .header {
-    position: sticky; top: 0; z-index: 100;
-    background: var(--bg-acrylic);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
-    border-bottom: 1px solid var(--border);
-  }
-  .header-inner {
-    max-width: 1440px; margin: 0 auto; padding: 0 32px;
-    height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px;
-  }
-  .brand {
-    display: flex; align-items: center; gap: 10px;
-    text-decoration: none; color: var(--text-1);
-    font-weight: 700; font-size: 1.0625rem; letter-spacing: -0.02em;
-    background: none; border: none; cursor: pointer; font-family: inherit;
-  }
-  .brand-mark {
-    width: 30px; height: 30px; border-radius: 9px;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--indigo) 100%);
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
-  }
-  .brand-mark svg { width: 16px; height: 16px; }
-  .nav {
-    display: flex; align-items: center; gap: 4px;
-    background: rgba(241, 245, 249, 0.8);
-    padding: 4px; border-radius: 12px; border: 1px solid var(--border);
-  }
-  .nav-item {
-    padding: 8px 16px; border-radius: 9px;
-    font-size: 0.875rem; font-weight: 500; color: var(--text-2);
-    cursor: pointer; border: none; background: transparent; font-family: inherit;
-    transition: all 0.2s var(--ease-out); white-space: nowrap;
-  }
-  .nav-item:hover { color: var(--text-1); background: #ffffff; }
-  .nav-item.active { background: var(--bg-elev); color: var(--text-1); box-shadow: var(--shadow-xs); }
-  .header-right { display: flex; align-items: center; gap: 12px; justify-content: flex-end; }
+  <!-- Core Design Tokens & Component Library -->
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/components.css">
 
-  /* ============ BUTTONS ============ */
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 12px 22px; border-radius: 12px; font-family: inherit;
-    font-size: 0.9rem; font-weight: 600; cursor: pointer;
-    border: 1px solid transparent; transition: all 0.25s var(--ease-out);
-    text-decoration: none; letter-spacing: -0.01em; white-space: nowrap;
-  }
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
-    color: white; box-shadow: var(--shadow-accent), inset 0 1px 0 rgba(255,255,255,0.25);
-  }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(13, 148, 136, 0.32), inset 0 1px 0 rgba(255,255,255,0.25); }
-  .btn-primary:active { transform: translateY(0); }
-  .btn-ghost {
-    background: var(--bg-acrylic-strong); color: var(--text-1);
-    border-color: var(--border-strong); backdrop-filter: blur(20px);
-  }
-  .btn-ghost:hover { background: var(--bg-elev); transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--accent); }
-  .btn-ghost:active { transform: translateY(0); }
-  .btn-sm { padding: 8px 16px; font-size: 0.8125rem; border-radius: 10px; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-  .btn svg { width: 16px; height: 16px; }
+  <style>
+    /* ------------------------------------------------------------------------
+       Havilah Landing Page Styles
+       Built strictly with tokens.css variables and accessible components.
+       ------------------------------------------------------------------------ */
 
-  /* ============ HERO ============ */
-  .hero { padding: 80px 0 60px; display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
-  .hero-content { max-width: 580px; }
-  .hero-tag {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 6px 14px 6px 6px; border-radius: 100px;
-    background: rgba(13, 148, 136, 0.06); border: 1px solid rgba(13, 148, 136, 0.18);
-    font-size: 0.75rem; font-weight: 600; color: var(--text-2); margin-bottom: 28px;
-    backdrop-filter: blur(20px);
-  }
-  .hero-tag-pill {
-    background: var(--accent-soft); color: var(--accent-deep);
-    padding: 3px 10px; border-radius: 100px;
-    font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em;
-  }
-  .hero h1 { margin-bottom: 20px; }
-  .hero h1 .accent {
-    background: linear-gradient(135deg, #0f766e 0%, #0d9488 40%, #4f46e5 100%);
-    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-  }
-  .hero-lead { margin-bottom: 36px; max-width: 520px; }
-  .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
-  .hero-trust { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
-  .hero-trust-item { display: flex; flex-direction: column; gap: 2px; }
-  .hero-trust-num { font-size: 1.5rem; font-weight: 700; color: var(--text-1); letter-spacing: -0.025em; }
-  .hero-trust-label { font-size: 0.75rem; color: var(--text-3); }
-
-  /* ============ DEVICE FRAME ============ */
-  .device-frame {
-    position: relative; padding: 14px;
-    background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
-    border-radius: 22px;
-    border: 1px solid var(--border-strong);
-    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12), 0 8px 20px rgba(15, 23, 42, 0.05);
-  }
-  .device-screen {
-    background: #ffffff; border-radius: 12px; overflow: hidden;
-    aspect-ratio: 16 / 11; position: relative;
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
-  }
-  .device-stand {
-    width: 38%; height: 36px; margin: 0 auto;
-    background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
-    clip-path: polygon(15% 0, 85% 0, 100% 100%, 0% 100%);
-    margin-top: -1px; position: relative; z-index: -1;
-  }
-  .mini-dash { padding: 14px 16px; height: 100%; display: flex; flex-direction: column; gap: 10px; font-size: 9px; }
-  .mini-dash-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-  .mini-dash-title { font-weight: 700; font-size: 11px; letter-spacing: -0.01em; color: var(--text-1); }
-  .mini-dash-pills { display: flex; gap: 4px; }
-  .mini-pill { padding: 2px 7px; border-radius: 5px; background: rgba(0,0,0,0.05); font-size: 8px; font-weight: 600; color: var(--text-2); }
-  .mini-pill.active { background: var(--accent); color: white; }
-  .mini-dash-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .mini-kpi { background: white; border-radius: 7px; padding: 7px 8px; border: 1px solid var(--border); }
-  .mini-kpi-label { font-size: 7px; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-  .mini-kpi-value { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; margin-top: 1px; color: var(--text-1); }
-  .mini-kpi-trend { font-size: 7px; color: var(--healthy); font-weight: 600; }
-  .mini-kpi-trend.down { color: var(--critical); }
-  .mini-dash-charts { display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; flex: 1; min-height: 0; }
-  .mini-chart-card { background: white; border-radius: 8px; padding: 9px; border: 1px solid var(--border); display: flex; flex-direction: column; }
-  .mini-chart-title { font-size: 8px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; }
-  .mini-bars { display: flex; align-items: flex-end; gap: 3px; height: 100%; padding-top: 4px; }
-  .mini-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 4px; }
-  .mini-radar { width: 100%; aspect-ratio: 1; max-height: 100%; }
-  .float-card {
-    position: absolute; background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid var(--border-strong); border-radius: 14px; padding: 12px 14px;
-    box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px;
-    animation: floatCard 4s ease-in-out infinite;
-  }
-  @keyframes floatCard { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-  .float-card-1 { top: 8%; left: -32px; animation-delay: 0s; }
-  .float-card-2 { bottom: 12%; right: -28px; animation-delay: 1.5s; }
-  .float-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .float-icon-teal { background: var(--accent-soft); color: var(--accent-deep); }
-  .float-icon-purple { background: rgba(124, 58, 237, 0.1); color: var(--purple); }
-  .float-icon svg { width: 17px; height: 17px; }
-  .float-label { font-size: 0.6875rem; color: var(--text-3); font-weight: 600; }
-  .float-value { font-size: 0.9375rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-1); }
-
-  /* ============ SECTIONS ============ */
-  .section { padding: 80px 0; position: relative; z-index: 10; }
-  .section-header {
-    text-align: center;
-    max-width: 720px;
-    margin: 0 auto 56px;
-    background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    padding: 28px 36px;
-    border-radius: var(--radius-xl);
-    border: 1px solid rgba(226, 232, 240, 0.85);
-    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.04);
-  }
-  .section-header .eyebrow { display: inline-block; margin-bottom: 14px; }
-  .section-header h2 { margin-bottom: 14px; }
-  .section-header p { color: var(--text-2); font-size: 1.0625rem; }
-  .trust-strip {
-    display: flex; align-items: center; justify-content: center; gap: 48px;
-    padding: 32px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-    flex-wrap: wrap; opacity: 0.85;
-  }
-  .trust-strip-item { font-weight: 700; font-size: 1.0625rem; letter-spacing: -0.02em; color: var(--text-2); display: flex; align-items: center; gap: 8px; }
-  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  .feature {
-    background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px);
-    border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px;
-    transition: all 0.4s var(--ease-out); position: relative; overflow: hidden;
-    box-shadow: var(--shadow-xs);
-  }
-  .feature::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, var(--accent), var(--indigo));
-    transform: scaleX(0); transform-origin: left; transition: transform 0.4s var(--ease-out);
-  }
-  .feature:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--border-strong); }
-  .feature:hover::before { transform: scaleX(1); }
-  .feature-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-deep); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
-  .feature-icon svg { width: 22px; height: 22px; }
-  .feature h3 { margin-bottom: 8px; font-size: 1.0625rem; }
-  .feature p { color: var(--text-2); font-size: 0.9rem; line-height: 1.55; }
-  
-  .experiences { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .experience-card {
-    background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-xl);
-    padding: 36px; position: relative; overflow: hidden; transition: all 0.4s var(--ease-out);
-    box-shadow: var(--shadow-sm);
-  }
-  .experience-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-  .experience-tag { display: inline-block; padding: 5px 12px; border-radius: 100px; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 18px; }
-  .experience-card.employee .experience-tag { background: var(--accent-soft); color: var(--accent-deep); }
-  .experience-card.hr .experience-tag { background: rgba(124, 58, 237, 0.1); color: var(--purple); }
-  .experience-card h3 { font-size: 1.5rem; margin-bottom: 12px; }
-  .experience-card p { color: var(--text-2); margin-bottom: 24px; }
-  .experience-list { list-style: none; margin-bottom: 28px; }
-  .experience-list li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 0.9rem; color: var(--text-1); }
-  .experience-list svg { width: 18px; height: 18px; color: var(--accent-deep); flex-shrink: 0; margin-top: 1px; }
-  .experience-card.hr .experience-list svg { color: var(--purple); }
-
-  .stats-band {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    border-radius: var(--radius-xl); padding: 56px 48px; color: white;
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; position: relative; overflow: hidden;
-    box-shadow: var(--shadow-lg);
-  }
-  .stats-band::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse 50% 80% at 10% 50%, rgba(13, 148, 136, 0.25) 0%, transparent 60%), radial-gradient(ellipse 40% 70% at 90% 50%, rgba(79, 70, 229, 0.20) 0%, transparent 60%);
-    pointer-events: none;
-  }
-  .stat { position: relative; }
-  .stat-num { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.035em; background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; line-height: 1; }
-  .stat-label { color: rgba(255,255,255,0.75); font-size: 0.875rem; }
-
-  /* ============ MAIN ============ */
-  main { max-width: 1440px; margin: 0 auto; padding: 0 32px; }
-
-  .mobile-menu-btn {
-    display: none;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 10px;
-    color: var(--text-1);
-    cursor: pointer;
-  }
-  .mobile-menu-btn svg { width: 20px; height: 20px; }
-  .mobile-menu-drawer {
-    display: none;
-    flex-direction: column;
-    gap: 10px;
-    padding: 16px 20px;
-    background: var(--bg-acrylic-strong);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    transition: all 0.3s var(--ease-out);
-  }
-  .mobile-menu-drawer.open { display: flex; }
-  .mobile-nav-item {
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-1);
-    background: rgba(0,0,0,0.03);
-    border: 1px solid var(--border);
-    text-align: left;
-    cursor: pointer;
-  }
-  .mobile-drawer-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  /* ============ RESPONSIVE ============ */
-  @media (max-width: 1100px) {
-    .hero { grid-template-columns: 1fr; gap: 40px; }
-    .features { grid-template-columns: repeat(2, 1fr); }
-    .experiences { grid-template-columns: 1fr; }
-    .stats-band { grid-template-columns: repeat(2, 1fr); padding: 40px 32px; }
-  }
-  @media (max-width: 768px) {
-    .nav, .header-right { display: none !important; }
-    .mobile-menu-btn { display: flex !important; align-items: center; justify-content: center; }
-    
-    /* Contrast & Accessibility for Hero Text */
-    #particle-brain-container { opacity: 0.25 !important; }
-    .hero-content { position: relative; z-index: 10; }
-    .display, .hero h1 { text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9); }
-    .lead, .hero-lead { color: #1e293b !important; font-weight: 500 !important; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9); }
-
-    /* ISO Badge Vertical Stacking */
-    .hero-tag {
-      flex-direction: column !important;
-      align-items: flex-start !important;
-      border-radius: 14px !important;
-      padding: 10px 14px !important;
-      gap: 6px !important;
-      max-width: 100% !important;
-      box-sizing: border-box !important;
-      white-space: normal !important;
+    /* Skip link for keyboard accessibility */
+    .skip-link {
+      position: absolute;
+      top: -48px;
+      left: var(--space-4);
+      background-color: var(--brand);
+      color: #FFFFFF;
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-control);
+      font-size: var(--text-sm);
+      font-weight: var(--weight-medium);
+      text-decoration: none;
+      z-index: 9999;
+      transition: top 0.2s ease;
     }
-    .hero-tag-pill {
-      align-self: flex-start !important;
-      white-space: nowrap !important;
+    .skip-link:focus {
+      top: var(--space-4);
+      outline: 2px solid #FFFFFF;
+      outline-offset: 2px;
     }
-  }
-  @media (max-width: 720px) {
-    main { padding: 0 20px; }
-    .header-inner { padding: 0 20px; }
-    .hero { padding: 48px 0 40px; }
-    .section { padding: 56px 0; }
-    .features { grid-template-columns: 1fr; }
-    .stats-band { grid-template-columns: 1fr 1fr; gap: 24px; padding: 32px 24px; }
-    .stat-num { font-size: 2rem; }
-    .float-card-1, .float-card-2 { display: none; }
-  }
 
-  /* ============ PRICING ============ */
-  .pricing-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    max-width: 1200px;
-    margin: 0 auto;
-    align-items: stretch;
-  }
-  @media (max-width: 960px) {
-    .pricing-grid { grid-template-columns: 1fr; max-width: 460px; }
-  }
-  .pricing-card {
-    background: #FFFFFF;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    padding: 36px 28px;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s var(--ease-out);
-  }
-  .pricing-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--border-strong);
-  }
-  .pricing-card.popular {
-    border: 2px solid var(--accent);
-    box-shadow: 0 12px 36px rgba(13, 148, 136, 0.15);
-  }
-  .pricing-badge {
-    position: absolute;
-    top: -14px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, var(--accent) 0%, var(--indigo) 100%);
-    color: white;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 4px 14px;
-    border-radius: 99px;
-    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
-    white-space: nowrap;
-  }
-  .pricing-tier-name { font-size: 1.25rem; font-weight: 700; color: var(--text-1); margin-bottom: 6px; }
-  .pricing-desc { font-size: 0.875rem; color: var(--text-2); min-height: 42px; margin-bottom: 20px; line-height: 1.45; }
-  .pricing-price-wrap { display: flex; align-items: baseline; gap: 8px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-  .pricing-price-main { font-size: 2.2rem; font-weight: 800; color: var(--text-1); letter-spacing: -0.03em; }
-  .pricing-price-alt { font-size: 0.95rem; color: var(--text-3); font-weight: 500; }
-  .pricing-features { list-style: none; padding: 0; margin: 0 0 32px 0; flex: 1; display: flex; flex-direction: column; gap: 12px; }
-  .pricing-feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 0.875rem; color: var(--text-2); line-height: 1.4; }
-  .pricing-feature-item svg { width: 18px; height: 18px; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
-</style>
-  <link rel="stylesheet" href="/css/tour.css">
+    /* Sticky Top Bar (1px bottom border, solid surface, no blur or shadow) */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: 56px;
+      background-color: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .site-header-inner {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+    }
+
+    .site-brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--text);
+      font-size: var(--text-md);
+      font-weight: var(--weight-semibold);
+      text-decoration: none;
+      letter-spacing: -0.015em;
+    }
+
+    .site-brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-control);
+      background-color: var(--brand);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .site-brand-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+    }
+
+    .site-nav {
+      display: none;
+      align-items: center;
+      gap: var(--space-6);
+    }
+
+    .site-nav-link {
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+      font-weight: var(--weight-medium);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .site-nav-link:hover {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .site-header-actions {
+      display: none;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .mobile-nav-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background-color: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-control);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    @media (min-width: 1024px) {
+      .site-nav {
+        display: flex;
+      }
+      .site-header-actions {
+        display: flex;
+      }
+      .mobile-nav-toggle {
+        display: none;
+      }
+    }
+
+    /* Off-Canvas Mobile Drawer */
+    .mobile-drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(15, 23, 42, 0.4);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .mobile-drawer-backdrop.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .mobile-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(320px, 85vw);
+      background-color: var(--surface);
+      border-left: 1px solid var(--border);
+      z-index: 101;
+      transform: translateX(100%);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-4);
+      gap: var(--space-4);
+      overflow-y: auto;
+    }
+
+    .mobile-drawer.is-open {
+      transform: translateX(0);
+    }
+
+    .mobile-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: var(--space-3);
+    }
+
+    .mobile-drawer-links {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+
+    .mobile-drawer-link {
+      display: flex;
+      align-items: center;
+      height: 44px;
+      padding: 0 var(--space-3);
+      border-radius: var(--radius-control);
+      color: var(--text);
+      font-size: var(--text-base);
+      font-weight: var(--weight-medium);
+      text-decoration: none;
+    }
+
+    .mobile-drawer-link:hover {
+      background-color: var(--bg);
+      text-decoration: none;
+    }
+
+    /* Section Layouts */
+    .landing-section {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    @media (min-width: 1024px) {
+      .landing-section {
+        padding: 64px 0;
+      }
+    }
+
+    .section-header {
+      max-width: 720px;
+      margin: 0 auto var(--space-8) auto;
+      text-align: center;
+    }
+
+    .section-title {
+      font-size: clamp(22px, 3vw, 32px);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-2);
+    }
+
+    .section-subtitle {
+      font-size: var(--text-base);
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Hero Section */
+    .hero-section {
+      padding: 48px 0 32px 0;
+      text-align: center;
+      background-color: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    @media (min-width: 1024px) {
+      .hero-section {
+        padding: 64px 0 48px 0;
+      }
+    }
+
+    .hero-content {
+      max-width: 820px;
+      margin: 0 auto var(--space-8) auto;
+    }
+
+    .hero-title {
+      font-size: clamp(30px, 4.8vw, 48px);
+      font-weight: var(--weight-semibold);
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: var(--space-4);
+    }
+
+    .hero-subtitle {
+      font-size: clamp(16px, 2vw, 18px);
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 680px;
+      margin: 0 auto var(--space-6) auto;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    .hero-screenshot-frame {
+      max-width: 1120px;
+      margin: 0 auto;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .hero-screenshot-img {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      background-color: var(--bg);
+    }
+
+    .hero-screenshot-caption {
+      padding: var(--space-3) var(--space-4);
+      background-color: var(--surface);
+      border-top: 1px solid var(--border);
+      font-size: var(--text-xs);
+      color: var(--text-subtle);
+      text-align: center;
+    }
+
+    /* Product Summary Row */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+
+    @media (min-width: 768px) {
+      .summary-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .summary-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--space-4);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .summary-card-title {
+      font-size: var(--text-base);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+    }
+
+    .summary-card-desc {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+
+    @media (min-width: 768px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .features-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-6);
+      }
+    }
+
+    .feature-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--space-4);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .feature-icon-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--brand);
+    }
+
+    .feature-icon-row svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+    }
+
+    .feature-title {
+      font-size: var(--text-md);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+    }
+
+    .feature-desc {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* How It Works Steps */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+
+    @media (min-width: 768px) {
+      .steps-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .step-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--space-6) var(--space-4);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      position: relative;
+    }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-control);
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--brand);
+      font-size: var(--text-sm);
+      font-weight: var(--weight-semibold);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .step-title {
+      font-size: var(--text-base);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+    }
+
+    .step-desc {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Privacy Statement Box */
+    .privacy-box {
+      max-width: 820px;
+      margin: 0 auto;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .privacy-point {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+    }
+
+    .privacy-point-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--brand);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .privacy-point-text {
+      font-size: var(--text-sm);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .privacy-point-text strong {
+      display: block;
+      color: var(--text);
+      font-weight: var(--weight-semibold);
+      margin-bottom: 2px;
+    }
+
+    /* Pricing Section */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    @media (min-width: 1024px) {
+      .pricing-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-6);
+        align-items: stretch;
+      }
+    }
+
+    .pricing-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: var(--space-6);
+      position: relative;
+    }
+
+    /* On mobile, order the recommended Pro card first */
+    @media (max-width: 1023px) {
+      .pricing-card.is-recommended {
+        order: -1;
+      }
+    }
+
+    .pricing-card.is-recommended {
+      border: 2px solid var(--brand);
+    }
+
+    .pricing-header {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .pricing-tier-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .pricing-tier-name {
+      font-size: var(--text-md);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+    }
+
+    .pricing-price {
+      font-size: 28px;
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+
+    .pricing-period {
+      font-size: var(--text-sm);
+      font-weight: var(--weight-regular);
+      color: var(--text-subtle);
+    }
+
+    .pricing-summary {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .pricing-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      padding: 0;
+      margin: 0;
+      border-top: 1px solid var(--border);
+      padding-top: var(--space-4);
+      flex: 1;
+    }
+
+    .pricing-feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .pricing-feature-item svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--brand);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Invoice Banner Card */
+    .invoice-banner {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--space-4) var(--space-6);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: var(--space-8);
+    }
+
+    @media (min-width: 768px) {
+      .invoice-banner {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    .invoice-banner-text strong {
+      display: block;
+      font-size: var(--text-base);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .invoice-banner-text p {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* Billing Process Steps */
+    .billing-steps-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+
+    @media (min-width: 768px) {
+      .billing-steps-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .billing-step-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .billing-step-number {
+      font-size: var(--text-xs);
+      font-weight: var(--weight-semibold);
+      color: var(--brand);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .billing-step-title {
+      font-size: var(--text-sm);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+    }
+
+    .billing-step-desc {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* FAQ Accordion */
+    .faq-container {
+      max-width: 760px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .faq-item {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      transition: border-color 0.15s ease;
+    }
+
+    .faq-item[open] {
+      border-color: var(--text-subtle);
+    }
+
+    .faq-summary {
+      padding: var(--space-4);
+      font-size: var(--text-base);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+
+    .faq-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq-summary svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--text-subtle);
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .faq-item[open] .faq-summary svg {
+      transform: rotate(180deg);
+    }
+
+    .faq-content {
+      padding: 0 var(--space-4) var(--space-4) var(--space-4);
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Closing CTA */
+    .closing-cta-box {
+      max-width: 820px;
+      margin: 0 auto;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--space-8) var(--space-4);
+      box-shadow: var(--shadow-card);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      align-items: center;
+    }
+
+    /* Site Footer (Single Line) */
+    .site-footer {
+      background-color: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: var(--space-6) 0;
+    }
+
+    .site-footer-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      font-size: var(--text-sm);
+    }
+
+    @media (min-width: 768px) {
+      .site-footer-inner {
+        flex-direction: row;
+      }
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+
+    .footer-btn-link {
+      background: none;
+      border: none;
+      padding: 0;
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+      font-weight: var(--weight-medium);
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .footer-btn-link:hover {
+      color: var(--text);
+      text-decoration: underline;
+    }
+
+    .footer-copy {
+      color: var(--text-subtle);
+      font-size: var(--text-xs);
+    }
+
+    /* Reduced Motion Preference */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
 <body>
+  <!-- Accessible skip link -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-<div id="particle-brain-container" style="position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: #FFFFFF;">
-  <canvas id="brainCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
-</div>
+  <!-- Top Sticky Navigation Bar -->
+  <header class="site-header" role="banner">
+    <div class="page-container site-header-inner">
+      <!-- Logo + Wordmark -->
+      <a href="#hero" class="site-brand" aria-label="Havilah Home">
+        <div class="site-brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/>
+          </svg>
+        </div>
+        <span>Havilah</span>
+      </a>
 
-<!-- ============ HEADER ============ -->
-<header class="header" role="banner">
-  <div class="header-inner">
-    <button class="brand" onclick="window.location.href='/'" aria-label="Havilah home">
-      <div class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/></svg>
+      <!-- Desktop Nav Links -->
+      <nav class="site-nav" aria-label="Main Navigation">
+        <a href="#product" class="site-nav-link">Product</a>
+        <a href="#how-it-works" class="site-nav-link">How it works</a>
+        <a href="#privacy" class="site-nav-link">Privacy</a>
+        <a href="#pricing" class="site-nav-link">Pricing</a>
+        <a href="#faq" class="site-nav-link">FAQ</a>
+      </nav>
+
+      <!-- Desktop Header Actions (Single primary button per viewport) -->
+      <div class="site-header-actions">
+        <a href="/login.html" class="btn btn-ghost">Login</a>
+        <button type="button" class="btn btn-primary" onclick="App.bookDemo()">Book a demo</button>
       </div>
-      Havilah
-    </button>
-    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
-      <svg class="hamburger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      <svg class="close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <nav class="nav" role="navigation" aria-label="Primary">
-      <button class="nav-item active" onclick="window.scrollTo({top:0, behavior:'smooth'})">Platform Overview</button>
-      <a href="#pricing" class="nav-item" style="text-decoration:none;">Pricing</a>
-    </nav>
-    <div class="header-right">
-      <button class="btn btn-ghost btn-sm" onclick="App.bookDemo()">Book Demo</button>
-      <button class="btn btn-primary btn-sm" onclick="App.openRegisterModal('pro')">Start Pro Trial</button>
-      <a href="/login.html" class="btn btn-ghost btn-sm" style="text-decoration:none;">Login</a>
+
+      <!-- Mobile Hamburger Button (< 1024px) -->
+      <button type="button" class="mobile-nav-toggle" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu" aria-expanded="false" id="mobileNavBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;" aria-hidden="true">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
     </div>
-  </div>
-  <!-- Mobile Collapsible Menu Drawer -->
-  <div class="mobile-menu-drawer" id="mobileMenuDrawer">
-    <button class="mobile-nav-item active" onclick="toggleMobileMenu(); window.scrollTo({top:0, behavior:'smooth'});">Platform Overview</button>
-    <a href="#pricing" class="mobile-nav-item" onclick="toggleMobileMenu();" style="text-decoration:none;">Pricing</a>
-    <button class="btn btn-primary btn-sm mobile-drawer-btn" onclick="toggleMobileMenu(); App.openRegisterModal('pro');">Start Pro Trial</button>
-    <button class="btn btn-ghost btn-sm mobile-drawer-btn" onclick="toggleMobileMenu(); App.bookDemo();">Book Demo</button>
-    <a href="/login.html" class="btn btn-ghost btn-sm mobile-drawer-btn" style="text-decoration:none;">Login</a>
-  </div>
-</header>
+  </header>
 
-<main id="main" style="position: relative; z-index: 10;">
-
-<!-- ============ LANDING VIEW ============ -->
-<section class="view active" id="view-landing" aria-label="Platform overview">
-  <div class="hero">
-    <div class="hero-content">
-      <div class="hero-tag">
-        <span class="hero-tag-pill">✓ ISO 45003 COMPLIANT</span>
-        Clinical Psychosocial Risk & Wellbeing Platform
+  <!-- Mobile Off-Canvas Drawer Backdrop & Container -->
+  <div class="mobile-drawer-backdrop" id="mobileDrawerBackdrop" onclick="toggleMobileMenu()"></div>
+  <aside class="mobile-drawer" id="mobileDrawer" aria-label="Mobile Navigation" aria-hidden="true">
+    <div class="mobile-drawer-header">
+      <div class="site-brand">
+        <div class="site-brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/>
+          </svg>
+        </div>
+        <span>Havilah</span>
       </div>
-      <h1 class="display">Workplace wellbeing,<br><span class="accent">measured with care.</span></h1>
-        <p class="lead">Havilah gives your people a confidential space to check in on their mental health, and gives your HR team aggregated, actionable insight - without ever compromising privacy.</p>
-      <div class="hero-cta">
-        <button class="btn btn-primary" onclick="App.startTrial()">
-          Start Free Trial
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
-        <button class="btn btn-ghost" onclick="App.bookDemo()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Book Enterprise Demo
-        </button>
-      </div>
-      <div class="hero-trust">
-        <div class="hero-trust-item"><div class="hero-trust-num">98%</div><div class="hero-trust-label">Survey completion</div></div>
-        <div class="hero-trust-item"><div class="hero-trust-num">240+</div><div class="hero-trust-label">Enterprises served</div></div>
-        <div class="hero-trust-item"><div class="hero-trust-num">ISO 45003</div><div class="hero-trust-label">Certified &amp; HIPAA</div></div>
-      </div>
+      <button type="button" class="modal-close-btn" onclick="toggleMobileMenu()" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
     </div>
-    <div style="position: relative;">
-      <div class="device-frame">
-        <div class="device-screen">
-          <div class="mini-dash">
-            <div class="mini-dash-header">
-              <div class="mini-dash-title">Havilah · Analytics</div>
-              <div class="mini-dash-pills"><span class="mini-pill active">30d</span><span class="mini-pill">90d</span><span class="mini-pill">1y</span></div>
+    <div class="mobile-drawer-links">
+      <a href="#product" class="mobile-drawer-link" onclick="toggleMobileMenu()">Product</a>
+      <a href="#how-it-works" class="mobile-drawer-link" onclick="toggleMobileMenu()">How it works</a>
+      <a href="#privacy" class="mobile-drawer-link" onclick="toggleMobileMenu()">Privacy</a>
+      <a href="#pricing" class="mobile-drawer-link" onclick="toggleMobileMenu()">Pricing</a>
+      <a href="#faq" class="mobile-drawer-link" onclick="toggleMobileMenu()">FAQ</a>
+    </div>
+    <div style="border-top: 1px solid var(--border); padding-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2);">
+      <a href="/login.html" class="btn btn-secondary" style="width: 100%;">Login</a>
+      <button type="button" class="btn btn-primary" style="width: 100%;" onclick="toggleMobileMenu(); App.bookDemo();">Book a demo</button>
+    </div>
+  </aside>
+
+  <!-- Main Content Landmark -->
+  <main id="main-content">
+    <!-- Hero Section -->
+    <section class="hero-section" id="hero" aria-labelledby="hero-heading">
+      <div class="page-container">
+        <div class="hero-content">
+          <h1 id="hero-heading" class="hero-title">Workplace wellbeing, measured with care.</h1>
+          <p class="hero-subtitle">Confidential check-ins for your employees. Anonymous, group-level insight for your HR team.</p>
+          <div class="hero-cta-group">
+            <button type="button" class="btn btn-primary" onclick="App.bookDemo()">Book a demo</button>
+            <button type="button" class="btn btn-secondary" onclick="App.startTrial()">Start 30-day trial</button>
+          </div>
+        </div>
+
+        <!-- Product Screenshot Frame -->
+        <div class="hero-screenshot-frame">
+          <picture>
+            <source srcset="/assets/hero-hr-analytics.webp" type="image/webp">
+            <img src="/assets/hero-hr-analytics.png" alt="Havilah HR Analytics Console showing aggregated organizational wellbeing indicators" width="1440" height="900" class="hero-screenshot-img">
+          </picture>
+          <div class="hero-screenshot-caption">
+            Sample organization data shown for illustration. Individual employee responses are never visible to HR.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Product Summary Row (Replaces fake stats bar with 3 truthful facts) -->
+    <section class="landing-section" style="background-color: var(--bg);" aria-label="Product Highlights">
+      <div class="page-container">
+        <div class="summary-grid">
+          <div class="summary-card">
+            <h2 class="summary-card-title">Anonymous by design</h2>
+            <p class="summary-card-desc">HR sees results only for groups of 5 or more.</p>
+          </div>
+          <div class="summary-card">
+            <h2 class="summary-card-title">Validated screening tools</h2>
+            <p class="summary-card-desc">PHQ-9, GAD-7, PSS-10, FAS-10, and COPSOQ-III check-ins.</p>
+          </div>
+          <div class="summary-card">
+            <h2 class="summary-card-title">Confidential medical assessor access</h2>
+            <p class="summary-card-desc">Direct referrals and secure chat with a clinician.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section (#product - 3 cols desktop, 1 col mobile, 6 items) -->
+    <section class="landing-section" id="product" aria-labelledby="features-heading" style="background-color: var(--surface);">
+      <div class="page-container">
+        <div class="section-header">
+          <h2 id="features-heading" class="section-title">Core capabilities</h2>
+          <p class="section-subtitle">A balanced workplace wellbeing platform built for confidential care and aggregate risk intelligence.</p>
+        </div>
+
+        <div class="features-grid">
+          <!-- Item 1: Validated instruments -->
+          <div class="feature-card">
+            <div class="feature-icon-row" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
             </div>
-            <div class="mini-dash-kpis">
-              <div class="mini-kpi"><div class="mini-kpi-label">Participants</div><div class="mini-kpi-value">1,842</div><div class="mini-kpi-trend">+12.4%</div></div>
-              <div class="mini-kpi"><div class="mini-kpi-label">Avg Score</div><div class="mini-kpi-value">74</div><div class="mini-kpi-trend">+3.1%</div></div>
-              <div class="mini-kpi"><div class="mini-kpi-label">At Risk</div><div class="mini-kpi-value">8.2%</div><div class="mini-kpi-trend down">+0.4%</div></div>
-              <div class="mini-kpi"><div class="mini-kpi-label">Response</div><div class="mini-kpi-value">91%</div><div class="mini-kpi-trend">+5.0%</div></div>
+            <h3 class="feature-title">Validated instruments</h3>
+            <p class="feature-desc">Standardized PHQ-9, GAD-7, PSS-10, FAS-10, and COPSOQ-III questionnaires scored objectively.</p>
+          </div>
+
+          <!-- Item 2: Anonymous group reporting -->
+          <div class="feature-card">
+            <div class="feature-icon-row" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
             </div>
-            <div class="mini-dash-charts">
-              <div class="mini-chart-card">
-                <div class="mini-chart-title">Risk distribution · 8 weeks</div>
-                <div class="mini-bars">
-                  <div class="mini-bar" style="height: 35%; background: linear-gradient(180deg, #059669, #047857);"></div>
-                  <div class="mini-bar" style="height: 45%; background: linear-gradient(180deg, #059669, #047857);"></div>
-                  <div class="mini-bar" style="height: 40%; background: linear-gradient(180deg, #059669, #047857);"></div>
-                  <div class="mini-bar" style="height: 55%; background: linear-gradient(180deg, #d97706, #b45309);"></div>
-                  <div class="mini-bar" style="height: 50%; background: linear-gradient(180deg, #d97706, #b45309);"></div>
-                  <div class="mini-bar" style="height: 60%; background: linear-gradient(180deg, #d97706, #b45309);"></div>
-                  <div class="mini-bar" style="height: 38%; background: linear-gradient(180deg, #059669, #047857);"></div>
-                  <div class="mini-bar" style="height: 30%; background: linear-gradient(180deg, #059669, #047857);"></div>
+            <h3 class="feature-title">Anonymous group reporting</h3>
+            <p class="feature-desc">HR dashboards display aggregated wellbeing distributions only when at least 5 employees respond.</p>
+          </div>
+
+          <!-- Item 3: Medical assessor referrals and chat -->
+          <div class="feature-card">
+            <div class="feature-icon-row" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
+            <h3 class="feature-title">Medical assessor referrals and chat</h3>
+            <p class="feature-desc">Employees connect directly with licensed medical assessors through confidential triage and secure messaging.</p>
+          </div>
+
+          <!-- Item 4: Pulse check-ins on a schedule -->
+          <div class="feature-card">
+            <div class="feature-icon-row" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+            <h3 class="feature-title">Pulse check-ins on a schedule</h3>
+            <p class="feature-desc">Automated check-in cadences allow organizations to track wellbeing trends over time.</p>
+          </div>
+
+          <!-- Item 5: Ethics and hazard reporting -->
+          <div class="feature-card">
+            <div class="feature-icon-row" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <h3 class="feature-title">Ethics and hazard reporting</h3>
+            <p class="feature-desc">Safe reporting channels for workplace psychosocial hazards and confidential concerns.</p>
+          </div>
+
+          <!-- Item 6: Role-based access -->
+          <div class="feature-card">
+            <div class="feature-icon-row" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <h3 class="feature-title">Role-based access</h3>
+            <p class="feature-desc">Strict data partitions protect employee privacy, HR administrative controls, and clinical documentation.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section (#how-it-works - 3 Numbered Steps) -->
+    <section class="landing-section" id="how-it-works" aria-labelledby="how-it-works-heading" style="background-color: var(--bg);">
+      <div class="page-container">
+        <div class="section-header">
+          <h2 id="how-it-works-heading" class="section-title">How it works</h2>
+          <p class="section-subtitle">Three straightforward steps to establish confidential, measured wellbeing in your organization.</p>
+        </div>
+
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-badge">1</div>
+            <h3 class="step-title">HR invites employees</h3>
+            <p class="step-desc">Administrators set up departments and send secure onboarding links or email invites to employees.</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-badge">2</div>
+            <h3 class="step-title">Employees complete confidential check-ins</h3>
+            <p class="step-desc">Employees complete validated check-ins from any device. Individual answers are strictly private.</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-badge">3</div>
+            <h3 class="step-title">HR sees anonymous group results and can refer employees to a medical assessor</h3>
+            <p class="step-desc">Leadership monitors group-level wellbeing indicators and employees can access confidential clinical consultations.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy and Data Protection Section (#privacy) -->
+    <section class="landing-section" id="privacy" aria-labelledby="privacy-heading" style="background-color: var(--surface);">
+      <div class="page-container">
+        <div class="section-header">
+          <h2 id="privacy-heading" class="section-title">Privacy and data protection</h2>
+          <p class="section-subtitle">Built around confidentiality, statutory data rights, and strict organizational boundaries.</p>
+        </div>
+
+        <div class="privacy-box">
+          <div class="privacy-point">
+            <svg class="privacy-point-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <div class="privacy-point-text">
+              <strong>Designed with the Ghana Data Protection Act, 2012 (Act 843) in mind.</strong>
+              All processing activities, storage architectures, and consent workflows respect statutory principles for personal and special category data.
+            </div>
+          </div>
+
+          <div class="privacy-point">
+            <svg class="privacy-point-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <div class="privacy-point-text">
+              <strong>Anonymous by design: HR sees results only for groups of 5 or more.</strong>
+              Individual check-in responses are never visible to company administrators, preventing identification in small teams.
+            </div>
+          </div>
+
+          <div class="privacy-point">
+            <svg class="privacy-point-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <div class="privacy-point-text">
+              <strong>Confidential clinical partition.</strong>
+              Medical assessor consultations and direct chats are maintained exclusively between the employee and qualified clinicians.
+            </div>
+          </div>
+
+          <div style="padding-top: var(--space-2); text-align: center;">
+            <button type="button" class="btn btn-secondary" onclick="App.openPrivacyModal()">Read our Privacy Policy</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section (#pricing - GHS currency throughout) -->
+    <section class="landing-section" id="pricing" aria-labelledby="pricing-heading" style="background-color: var(--bg);">
+      <div class="page-container">
+        <div class="section-header">
+          <h2 id="pricing-heading" class="section-title">Transparent pricing for every organization</h2>
+          <p class="section-subtitle">All prices in Ghana Cedis (GHS). 30-day Pro trial. No card required. When the trial ends you can pay, request an invoice, or request an extension.</p>
+        </div>
+
+        <div class="pricing-grid">
+          <!-- Card 1: Free (Community) -->
+          <div class="pricing-card">
+            <div>
+              <div class="pricing-header">
+                <div class="pricing-tier-row">
+                  <span class="pricing-tier-name">Free</span>
+                  <span class="badge badge-neutral">Community</span>
                 </div>
+                <div>
+                  <span class="pricing-price">GHS 0</span>
+                  <span class="pricing-period">/ month</span>
+                </div>
+                <p class="pricing-summary">Essential tools for small teams and community organizations.</p>
               </div>
-              <div class="mini-chart-card">
-                <div class="mini-chart-title">5-Dimension radar</div>
-                <svg viewBox="0 0 100 100" class="mini-radar">
-                  <polygon points="50,8 88,30 88,70 50,92 12,70 12,30" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="0.5"/>
-                  <polygon points="50,18 78,35 78,65 50,82 22,65 22,35" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="0.5"/>
-                  <polygon points="50,28 68,40 68,60 50,72 32,60 32,40" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="0.5"/>
-                  <polygon points="50,15 82,32 80,68 50,85 18,65 20,38" fill="rgba(13,148,136,0.25)" stroke="#0d9488" stroke-width="1.2"/>
-                  <circle cx="50" cy="15" r="1.6" fill="#0d9488"/><circle cx="82" cy="32" r="1.6" fill="#0d9488"/>
-                  <circle cx="80" cy="68" r="1.6" fill="#0d9488"/><circle cx="50" cy="85" r="1.6" fill="#0d9488"/>
-                  <circle cx="18" cy="65" r="1.6" fill="#0d9488"/><circle cx="20" cy="38" r="1.6" fill="#0d9488"/>
-                </svg>
+
+              <ul class="pricing-features">
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Up to 10 employees</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>1 HR administrator account</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Workplace hazard reporting</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Core screening questionnaires</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Anonymous group reporting (groups of 5 or more)</span>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="App.openRegisterModal('free')">Choose Free</button>
+            </div>
+          </div>
+
+          <!-- Card 2: Starter -->
+          <div class="pricing-card">
+            <div>
+              <div class="pricing-header">
+                <div class="pricing-tier-row">
+                  <span class="pricing-tier-name">Starter</span>
+                </div>
+                <div>
+                  <span class="pricing-price">GHS 5,500</span>
+                  <span class="pricing-period">/ month</span>
+                </div>
+                <p class="pricing-summary">Structured wellbeing monitoring for growing companies.</p>
               </div>
+
+              <ul class="pricing-features">
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Up to 100 employees</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Clinical referral routing</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Dedicated medical assessor link</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>HR analytics and heatmaps (groups of 5 or more)</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Scheduled pulse check-ins</span>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="App.openRegisterModal('starter')">Choose Starter</button>
+            </div>
+          </div>
+
+          <!-- Card 3: Pro (Recommended) - Highlighted with 2px brand border, no gradient, no glow -->
+          <div class="pricing-card is-recommended">
+            <div>
+              <div class="pricing-header">
+                <div class="pricing-tier-row">
+                  <span class="pricing-tier-name">Pro</span>
+                  <span class="badge badge-success">Recommended</span>
+                </div>
+                <div>
+                  <span class="pricing-price">GHS 15,450</span>
+                  <span class="pricing-period">/ month</span>
+                </div>
+                <p class="pricing-summary">Complete psychosocial risk intelligence and assessor access.</p>
+              </div>
+
+              <ul class="pricing-features">
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Unlimited employees</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Whistleblower conflict guard</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Medical assessor chat</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Board-ready CSV and PDF reports</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Multi-dimensional psychosocial risk reporting</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Priority support during business hours</span>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <button type="button" class="btn btn-primary" style="width: 100%;" onclick="App.openRegisterModal('pro')">Start 30-day trial</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoice Row & Enterprise card -->
+        <div class="invoice-banner">
+          <div class="invoice-banner-text">
+            <strong>Prefer to pay by bank transfer, mobile money or cheque? Request an invoice.</strong>
+            <p>Custom pricing, purchase orders, and annual invoicing available for enterprise organizations.</p>
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="App.openQuoteModal()">Request a quote</button>
+        </div>
+
+        <!-- How Billing Works Sub-section (4 Steps) -->
+        <div style="margin-top: var(--space-8);">
+          <h3 class="section-title" style="font-size: var(--text-lg); text-align: center; margin-bottom: var(--space-4);">How billing works</h3>
+          <div class="billing-steps-grid">
+            <div class="billing-step-card">
+              <span class="billing-step-number">Step 1</span>
+              <h4 class="billing-step-title">Request a quote</h4>
+              <p class="billing-step-desc">Tell us your organization name, preferred plan, and estimated employee count.</p>
+            </div>
+            <div class="billing-step-card">
+              <span class="billing-step-number">Step 2</span>
+              <h4 class="billing-step-title">Receive an invoice</h4>
+              <p class="billing-step-desc">We issue an official GHS invoice for your finance or procurement team.</p>
+            </div>
+            <div class="billing-step-card">
+              <span class="billing-step-number">Step 3</span>
+              <h4 class="billing-step-title">Pay by transfer, MoMo or cheque</h4>
+              <p class="billing-step-desc">Complete payment using the invoice number as your reference.</p>
+            </div>
+            <div class="billing-step-card">
+              <span class="billing-step-number">Step 4</span>
+              <h4 class="billing-step-title">Account is activated</h4>
+              <p class="billing-step-desc">Your workspace plan is activated as soon as payment is confirmed.</p>
             </div>
           </div>
         </div>
       </div>
-      <div class="device-stand"></div>
-      <div class="float-card float-card-1">
-        <div class="float-icon float-icon-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
-        <div><div class="float-label">Wellbeing Index</div><div class="float-value">74 · Healthy</div></div>
-      </div>
-      <div class="float-card float-card-2">
-        <div class="float-icon float-icon-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
-        <div><div class="float-label">Engagement trend</div><div class="float-value">+18% MoM</div></div>
-      </div>
-    </div>
-  </div>
-  
-  <div class="trust-strip">
-    <div class="trust-strip-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>HIPAA Compliant</div>
-    <div class="trust-strip-item">SOC 2 Type II</div>
-    <div class="trust-strip-item">GDPR Ready</div>
-    <div class="trust-strip-item">ISO 27001</div>
-    <div class="trust-strip-item">ISO 45003</div>
-  </div>
-  
-  <section class="section" aria-label="Features">
-    <div class="section-header">
-      <span class="eyebrow">Platform Capabilities</span>
-      <h2 class="h1">Everything your people need.<br>Nothing they don't.</h2>
-      <p>A unified workspace for clinical-grade assessments, organizational insight, and confidential self-care - built on validated psychometric instruments.</p>
-    </div>
-    <div class="features">
-      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H1l8-8 8 8h-8v8a8 8 0 0 0 8-8"/></svg></div><h3>Validated instruments</h3><p>PHQ-9, GAD-7, PSS-10, FAS-10, and the full COPSOQ-II battery - administered and scored to clinical standards.</p></article>
-      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></div><h3>Multi-tenant architecture</h3><p>Department, role, and location segmentation with role-based access control. Your data, partitioned by design.</p></article>
-      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>Privacy-first by design</h3><p>Individual responses are encrypted and never exposed. HR sees aggregated distributions only - never individual scores.</p></article>
-      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div><h3>Predictive heatmaps</h3><p>Spot burnout hotspots before they become turnover. Spatial risk mapping across teams, roles, and time windows.</p></article>
-      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><h3>Pulse cadencing</h3><p>Schedule quarterly deep assessments or weekly pulse check-ins. Adaptive reminders respect each employee's rhythm.</p></article>
-      <article class="feature"><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></div><h3>Care pathway routing</h3><p>When results indicate risk, the platform privately surfaces EAP resources, counseling, or occupational health referrals.</p></article>
-    </div>
-  </section>
-  
-  <section class="section" aria-label="Two experiences">
-    <div class="section-header">
-      <span class="eyebrow">One platform, two experiences</span>
-      <h2 class="h1">Designed for both sides<br>of the wellbeing conversation.</h2>
-    </div>
-    <div class="experiences">
-      <article class="experience-card employee">
-        <span class="experience-tag">For Employees</span>
-        <h3>A private space to check in.</h3>
-        <p>Complete validated self-assessments in a calm, judgment-free interface. Your results stay yours - visualized as a gentle balance, never a frightening clinical score.</p>
-        <ul class="experience-list">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Five validated surveys, 3–7 minutes each</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Personal trends over weeks and months</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Curated self-care resources</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Direct, confidential EAP routing</li>
-        </ul>
-      </article>
-      <article class="experience-card hr">
-        <span class="experience-tag">For HR &amp; Leaders</span>
-        <h3>The pulse of your organization.</h3>
-        <p>A dense, filterable analytics workspace. Heatmaps, radar profiles, severity distributions - all aggregated to prevent re-identification, all actionable.</p>
-        <ul class="experience-list">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 12-column masonry analytics grid</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Filter by department, role, tenure, time</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Predictive risk heatmaps</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Exportable board-ready reports</li>
-        </ul>
-      </article>
-    </div>
-  </section>
-  
-  <section class="section" aria-label="Impact">
-    <div class="stats-band">
-      <div class="stat"><div class="stat-num">38%</div><div class="stat-label">Reduction in self-reported burnout within 6 months</div></div>
-      <div class="stat"><div class="stat-num">4.2x</div><div class="stat-label">Faster identification of high-risk departments</div></div>
-      <div class="stat"><div class="stat-num">91%</div><div class="stat-label">Average pulse-survey response rate</div></div>
-      <div class="stat"><div class="stat-num">$2.7M</div><div class="stat-label">Average annual turnover cost avoided per 1,000 employees</div></div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ============ PRICING SECTION ============ -->
-  <section class="section" id="pricing" aria-label="Transparent Pricing Tiers">
-    <div class="section-header">
-      <span class="eyebrow">Predictable Pricing</span>
-      <h2 class="h1">Transparent plans for organizations<br>of every size.</h2>
-      <p>Start with our full-access 30-day Pro reverse trial. No credit card required, instant automated setup.</p>
-    </div>
+    <!-- FAQ Section (#faq - Keyboard-accessible accordion) -->
+    <section class="landing-section" id="faq" aria-labelledby="faq-heading" style="background-color: var(--surface);">
+      <div class="page-container">
+        <div class="section-header">
+          <h2 id="faq-heading" class="section-title">Frequently asked questions</h2>
+          <p class="section-subtitle">Common questions about confidentiality, data protection, and platform billing.</p>
+        </div>
 
-    <!-- 30-Day Pro Reverse Trial Banner -->
-    <div style="max-width: 1200px; margin: 0 auto 40px; background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(79, 70, 229, 0.08) 100%); border: 1.5px solid rgba(13, 148, 136, 0.25); border-radius: 20px; padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; box-shadow: 0 4px 20px rgba(13, 148, 136, 0.08);">
-      <div style="display: flex; align-items: center; gap: 14px;">
-        <div style="width: 42px; height: 42px; border-radius: 12px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);">⚡</div>
-        <div>
-          <div style="font-weight: 700; color: var(--text-1); font-size: 1.05rem;">All new accounts start with a full-access 30-day Pro trial</div>
-          <div style="font-size: 0.875rem; color: var(--text-2); margin-top: 2px;">Experience complete clinical assessment batteries, whistleblower guard &amp; analytics. No credit card required.</div>
+        <div class="faq-container">
+          <details class="faq-item">
+            <summary class="faq-summary">
+              <span>Who can see my answers?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </summary>
+            <div class="faq-content">
+              Individual responses are strictly confidential. HR administrators and employers only see aggregated group metrics when at least 5 employees have completed an assessment. Individual screening answers are never revealed.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">
+              <span>Where is data stored?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </summary>
+            <div class="faq-content">
+              All organizational and wellbeing data is stored in secure regional data facilities with strict encryption in transit and at rest, designed with Ghana Data Protection Act, 2012 (Act 843) principles in mind.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">
+              <span>How does payment work?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </summary>
+            <div class="faq-content">
+              Organizations receive an official proforma or commercial invoice in Ghana Cedis (GHS). We accept direct bank wire transfers, mobile money, and company cheques. Payment reference numbers match your invoice number.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">
+              <span>What happens after the free trial?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </summary>
+            <div class="faq-content">
+              At the end of your 30-day Pro trial, you can choose to activate Starter or Pro, request an invoice, or request an extension. If no action is taken, your account automatically transitions to the Free plan rather than locking you out.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">
+              <span>Can we change plans?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </summary>
+            <div class="faq-content">
+              Yes. Organizations can upgrade, adjust employee tiers, or switch billing schedules at any time. Contact our team to adjust your organization workspace.
+            </div>
+          </details>
         </div>
       </div>
-      <button class="btn btn-primary" onclick="App.openRegisterModal('pro')">
-        Start 30-Day Pro Trial
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </button>
-    </div>
+    </section>
 
-    <!-- 3 Pricing Cards -->
-    <div class="pricing-grid">
-      <!-- Tier 1: Free (Community) -->
-      <article class="pricing-card">
-        <div class="pricing-tier-name">Free (Community)</div>
-        <p class="pricing-desc">Standard psychosocial hazard logging and baseline metrics for micro teams.</p>
-        <div class="pricing-price-wrap">
-          <div class="pricing-price-main">GHS 0</div>
-          <div class="pricing-price-alt">/ month</div>
-        </div>
-        <ul class="pricing-features">
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Standard Hazard Reporting</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 1 HR Administrator Account</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Max 10 Employees</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Hardcoded Privacy Shield ($N \ge 5$)</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Core COPSOQ-III Screening</li>
-        </ul>
-        <button class="btn btn-ghost" onclick="App.openRegisterModal('free')" style="width: 100%;">Get Started Free</button>
-      </article>
-
-      <!-- Tier 2: Starter -->
-      <article class="pricing-card">
-        <div class="pricing-tier-name">Starter</div>
-        <p class="pricing-desc">Clinical EAP intakes and structured reporting for growing organizations.</p>
-        <div class="pricing-price-wrap">
-          <div class="pricing-price-main">GHS 5,500</div>
-          <div class="pricing-price-alt">/ month</div>
-        </div>
-        <ul class="pricing-features">
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 100 Employees</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Clinical EAP Intake Routing</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Dedicated Medical Assessor Link</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> HR Analytics Ledger &amp; Heatmaps</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Automated Department Pulse Cycles</li>
-        </ul>
-        <button class="btn btn-primary" onclick="App.openRegisterModal('starter')" style="width: 100%;">Start 30-Day Pro Trial</button>
-      </article>
-
-      <!-- Tier 3: Pro (Recommended) -->
-      <article class="pricing-card popular">
-        <div class="pricing-badge">RECOMMENDED • 30-DAY FREE TRIAL</div>
-        <div class="pricing-tier-name">Pro</div>
-        <p class="pricing-desc">Full psychological safety, conflict guard, assessor dialogue &amp; board reports.</p>
-        <div class="pricing-price-wrap">
-          <div class="pricing-price-main">GHS 15,450</div>
-          <div class="pricing-price-alt">/ month</div>
-        </div>
-        <ul class="pricing-features">
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> <strong>Unlimited Employees &amp; Seats</strong></li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Full Whistleblower Conflict Guard</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Assessor Dialogue &amp; Video Links</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Board-Ready CSV &amp; PDF Audits</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ISO 45003 Psychosocial Risk Engine</li>
-          <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Priority 24/7 Support SLA</li>
-        </ul>
-        <button class="btn btn-primary" onclick="App.openRegisterModal('pro')" style="width: 100%; box-shadow: var(--shadow-accent);">Start 30-Day Pro Trial</button>
-      </article>
-    </div>
-  </section>
-  
-  <section class="section" style="text-align: center;">
-    <h2 class="h1" style="margin-bottom: 16px;">Begin the conversation.</h2>
-    <p class="lead" style="max-width: 540px; margin: 0 auto 32px;">Set up your workspace in under fifteen minutes. Your first 50 employees are always free.</p>
-    <div class="hero-cta" style="justify-content: center;">
-      <button class="btn btn-primary" onclick="App.openRegisterModal('pro')">Start Free Trial<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
-      <button class="btn btn-ghost" onclick="App.bookDemo()">Book Enterprise Demo</button>
-    </div>
-  </section>
-</section>
-
-</main>
-
-<!-- Self-Serve HR Tenant Registration Modal -->
-<div id="registerModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
-  <div style="background: #ffffff; border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 24px; width: 100%; max-width: 520px; box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2); overflow: hidden; max-height: 92vh; display: flex; flex-direction: column;">
-    <div style="padding: 24px 28px 16px; border-bottom: 1px solid rgba(15, 23, 42, 0.08); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-      <div>
-        <div style="font-size: 0.75rem; font-weight: 700; color: #0d9488; letter-spacing: 0.08em; text-transform: uppercase;">Instant Self-Serve Onboarding</div>
-        <h3 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-top: 2px;">Start Your 30-Day Pro Trial</h3>
-      </div>
-      <button onclick="App.closeRegisterModal()" style="width: 32px; height: 32px; border-radius: 8px; border: none; background: rgba(15, 23, 42, 0.05); color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div style="padding: 24px 28px; overflow-y: auto; flex: 1;">
-      <p style="font-size: 0.875rem; color: #475569; margin-bottom: 20px; line-height: 1.5;">Create your organization's compliance workspace. Full access to all Pro features with zero credit card commitment.</p>
-      
-      <div id="registerErrorMsg" style="display: none; padding: 12px 16px; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; border-radius: 12px; font-size: 0.875rem; margin-bottom: 18px; font-weight: 500;"></div>
-
-      <form id="registerTenantForm" onsubmit="event.preventDefault(); App.submitRegister();">
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Organization / Company Name *</label>
-          <input type="text" id="regCompanyName" required placeholder="e.g. Acme Health Corp" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
-        </div>
-
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">HR Admin Full Name *</label>
-          <input type="text" id="regFullName" required placeholder="e.g. Jane Doe" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
-        </div>
-
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Work Email Address *</label>
-          <input type="email" id="regEmail" required placeholder="you@company.com" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
-        </div>
-
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Create Secure Password *</label>
-          <div style="position: relative;">
-            <input type="password" id="regPassword" required minlength="6" placeholder="At least 6 characters" style="width: 100%; padding: 12px 42px 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
-            <button type="button" onclick="const p=document.getElementById('regPassword'); if(p.type==='password'){p.type='text';this.textContent='🙈';}else{p.type='password';this.textContent='👁️';}" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 16px; cursor: pointer; opacity: 0.7;">👁️</button>
+    <!-- Closing CTA Section -->
+    <section class="landing-section" style="background-color: var(--bg);" aria-labelledby="cta-heading">
+      <div class="page-container">
+        <div class="closing-cta-box">
+          <h2 id="cta-heading" class="section-title" style="margin-bottom: 0;">Talk to us about your organization.</h2>
+          <p class="section-subtitle" style="margin: 0; max-width: 580px;">Schedule a personal walkthrough with our team or request an official quote for your workplace.</p>
+          <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center; margin-top: var(--space-2);">
+            <button type="button" class="btn btn-primary" onclick="App.bookDemo()">Book a demo</button>
+            <button type="button" class="btn btn-secondary" onclick="App.openQuoteModal()">Request a quote</button>
           </div>
         </div>
+      </div>
+    </section>
+  </main>
 
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Industry (Optional)</label>
-          <select id="regIndustry" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; background: white;">
-            <option value="Technology">Technology &amp; Software</option>
-            <option value="Healthcare">Healthcare &amp; Pharmaceuticals</option>
-            <option value="Financial Services">Financial Services &amp; Banking</option>
-            <option value="Manufacturing">Manufacturing &amp; Industrial</option>
-            <option value="Mining & Energy">Mining, Energy &amp; Oil</option>
-            <option value="Education">Education &amp; Academic</option>
-            <option value="Public Sector">Government &amp; Public Sector</option>
-            <option value="Professional Services">Professional &amp; Legal Services</option>
+  <!-- Single-Line Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="page-container site-footer-inner">
+      <div class="footer-links">
+        <button type="button" class="footer-btn-link" onclick="App.openPrivacyModal()">Privacy Policy</button>
+        <button type="button" class="footer-btn-link" onclick="App.openTermsModal()">Terms of Service</button>
+        <button type="button" class="footer-btn-link" onclick="App.openContactModal()">Contact</button>
+        <a href="/health" class="footer-btn-link" target="_blank" rel="noopener">Status</a>
+      </div>
+      <div class="footer-copy">
+        &copy; 2026 Havilah. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- ======================================================================
+       MODALS & DIALOGS
+       ====================================================================== -->
+
+  <!-- 1. Demo / Quote Request Modal -->
+  <div class="modal-backdrop" id="demoModal" role="dialog" aria-modal="true" aria-labelledby="demoModalTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="demoModalTitle">Book a demo</h3>
+        <button type="button" class="modal-close-btn" onclick="App.closeDemo()" aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <form id="demoForm" onsubmit="App.submitDemo(event)" class="modal-body">
+        <p style="font-size: var(--text-sm); color: var(--text-muted); margin-bottom: var(--space-4);">
+          Connect with our team for a guided walkthrough of our confidential check-ins and anonymous HR reporting.
+        </p>
+
+        <div class="form-field">
+          <label class="form-label" for="demoEmail">Work email address *</label>
+          <input type="email" id="demoEmail" class="input" placeholder="you@company.com" required>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="demoCompanyName">Organization name</label>
+          <input type="text" id="demoCompanyName" class="input" placeholder="e.g. Acme Corporation">
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="demoPlan">Interested plan</label>
+          <select id="demoPlan" class="select">
+            <option value="Pro">Pro (Recommended)</option>
+            <option value="Starter">Starter</option>
+            <option value="Free">Free (Community)</option>
+            <option value="Enterprise">Enterprise / Custom Invoice</option>
+          </select>
+        </div>
+
+        <div id="demoFeedbackMsg" class="form-error" style="display: none; margin-bottom: var(--space-3);"></div>
+
+        <p style="font-size: var(--text-xs); color: var(--text-subtle); line-height: 1.5; margin-top: var(--space-2);">
+          Prefer direct email? Reach us directly at <a id="demoContactLink" href="mailto:nanakwamedickson553@gmail.com">nanakwamedickson553@gmail.com</a>.
+        </p>
+
+        <div class="modal-footer" style="padding-left: 0; padding-right: 0; padding-bottom: 0;">
+          <button type="button" class="btn btn-secondary" onclick="App.closeDemo()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitDemo">Submit request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Self-Serve Registration / Trial Modal -->
+  <div class="modal-backdrop" id="registerModal" role="dialog" aria-modal="true" aria-labelledby="registerModalTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="registerModalTitle">Start 30-day trial</h3>
+        <button type="button" class="modal-close-btn" onclick="App.closeRegisterModal()" aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <form id="registerForm" onsubmit="App.submitRegister(event)" class="modal-body">
+        <p style="font-size: var(--text-sm); color: var(--text-muted); margin-bottom: var(--space-4);">
+          Set up your organization workspace. No credit card required.
+        </p>
+
+        <div class="form-field">
+          <label class="form-label" for="regCompanyName">Organization name *</label>
+          <input type="text" id="regCompanyName" class="input" placeholder="e.g. Acme Corporation" required>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="regFullName">Full name *</label>
+          <input type="text" id="regFullName" class="input" placeholder="e.g. Jane Doe" required>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="regEmail">Work email *</label>
+          <input type="email" id="regEmail" class="input" placeholder="you@company.com" required>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="regPassword">Password *</label>
+          <input type="password" id="regPassword" class="input" placeholder="At least 8 characters" required minlength="8">
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="regIndustry">Industry</label>
+          <select id="regIndustry" class="select">
+            <option value="Healthcare">Healthcare</option>
+            <option value="Financial Services">Financial Services</option>
+            <option value="Technology">Technology</option>
+            <option value="Manufacturing">Manufacturing</option>
+            <option value="Education">Education</option>
             <option value="Other">Other</option>
           </select>
         </div>
 
-        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 24px; padding: 12px 16px; background: rgba(13, 148, 136, 0.06); border-radius: 12px; border: 1px solid rgba(13, 148, 136, 0.15);">
-          <div style="width: 22px; height: 22px; border-radius: 6px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0;">✓</div>
-          <div style="font-size: 0.78125rem; color: #0f766e; font-weight: 600;">Includes 30 days of full Pro access with automated assessment cadencing &amp; analytics.</div>
-        </div>
+        <div id="registerErrorMsg" class="form-error" style="display: none; margin-bottom: var(--space-3);"></div>
 
-        <button type="submit" id="btnSubmitRegister" class="btn btn-primary" style="width: 100%; padding: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; background: linear-gradient(135deg, #0d9488, #0078D4); color: white; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);">
-          Create Organization &amp; Start Trial
-        </button>
+        <div class="modal-footer" style="padding-left: 0; padding-right: 0; padding-bottom: 0;">
+          <button type="button" class="btn btn-secondary" onclick="App.closeRegisterModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitRegister">Create workspace</button>
+        </div>
       </form>
     </div>
   </div>
-</div>
 
-<!-- Light Mode Working Demo Modal -->
-<div id="demoModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
-  <div style="background: #ffffff; border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 24px; width: 100%; max-width: 480px; box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2); overflow: hidden; transform: scale(1);">
-    <div style="padding: 24px 28px 16px; border-bottom: 1px solid rgba(15, 23, 42, 0.08); display: flex; justify-content: space-between; align-items: center;">
-      <div>
-        <div style="font-size: 0.75rem; font-weight: 700; color: #0d9488; letter-spacing: 0.08em; text-transform: uppercase;">Enterprise Demo</div>
-        <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-top: 2px;">Book a Personal Guided Demo</h3>
+  <!-- 3. Privacy Policy Modal (Names Ghana Data Protection Act, 2012 (Act 843), retention, anonymity) -->
+  <div class="modal-backdrop" id="privacyModal" role="dialog" aria-modal="true" aria-labelledby="privacyModalTitle">
+    <div class="modal-dialog" style="max-width: 640px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="privacyModalTitle">Privacy Policy</h3>
+        <button type="button" class="modal-close-btn" onclick="App.closePrivacyModal()" aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
-      <button onclick="App.closeDemo()" style="width: 32px; height: 32px; border-radius: 8px; border: none; background: rgba(15, 23, 42, 0.05); color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div style="padding: 24px 28px;">
-      <p style="font-size: 0.875rem; color: #475569; margin-bottom: 20px; line-height: 1.5;">See how Havilah's ISO 45003 assessment engine and anonymized risk heatmaps protect your organization.</p>
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Work Email Address</label>
-        <input type="email" id="demoEmail" placeholder="you@company.com" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid rgba(15, 23, 42, 0.15); font-family: inherit; font-size: 0.9375rem; color: #0f172a; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#0d9488'" onblur="this.style.borderColor='rgba(15, 23, 42, 0.15)'" />
+      <div class="modal-body" style="font-size: var(--text-sm); line-height: 1.6; color: var(--text-muted);">
+        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">1. Statutory Alignment</h4>
+        <p style="margin-bottom: var(--space-3);">
+          Havilah is designed with the Ghana Data Protection Act, 2012 (Act 843) in mind. We operate under strict principles of lawfulness, data minimization, purpose specification, and security safeguards.
+        </p>
+
+        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">2. What We Collect</h4>
+        <p style="margin-bottom: var(--space-3);">
+          We collect organization contact details (name, work email, organization name), employee assessment responses (validated psychometric screening scores), and voluntary clinical referral requests initiated by employees.
+        </p>
+
+        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">3. Why We Collect It</h4>
+        <p style="margin-bottom: var(--space-3);">
+          Data is processed solely to provide confidential personal wellbeing evaluations for employees and anonymized, aggregated psychosocial risk indicators for organizational leaders.
+        </p>
+
+        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">4. Anonymity Threshold</h4>
+        <p style="margin-bottom: var(--space-3);">
+          HR administrators and managers are never shown individual survey responses. Aggregate results are only displayed for groups or departments of 5 or more respondents. If fewer than 5 responses exist for a segment, data is withheld.
+        </p>
+
+        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">5. Data Retention</h4>
+        <p style="margin-bottom: var(--space-3);">
+          Organizational check-in data is retained for the duration of the active subscription agreement. Upon account termination or contract expiry, data is archived or deleted in accordance with statutory requirements.
+        </p>
+
+        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">6. Contacting the Privacy Officer</h4>
+        <p style="margin-bottom: 0;">
+          For inquiries or data subject requests, please contact our privacy desk at <a href="mailto:nanakwamedickson553@gmail.com">nanakwamedickson553@gmail.com</a>.
+        </p>
       </div>
-      <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 24px; padding: 12px; background: rgba(13, 148, 136, 0.06); border-radius: 12px; border: 1px solid rgba(13, 148, 136, 0.15);">
-        <div style="width: 24px; height: 24px; border-radius: 6px; background: #0d9488; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">✓</div>
-        <div style="font-size: 0.75rem; color: #0f766e; font-weight: 600;">Includes 14-day full enterprise trial with pre-loaded ISO 45003 benchmarks.</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="App.closePrivacyModal()">Close</button>
       </div>
-      <button class="btn btn-primary" onclick="App.submitDemo()" style="width: 100%; padding: 14px; border-radius: 12px; font-size: 0.9375rem; font-weight: 600; background: linear-gradient(135deg, #0d9488, #0078D4); color: white; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);">
-        Submit Demo Request
-      </button>
     </div>
   </div>
-</div>
 
-<!-- Enterprise B2B Footer -->
-<footer style="background: #ffffff; border-top: 1px solid rgba(15, 23, 42, 0.08); padding: 48px 32px 32px; color: #475569; font-size: 0.875rem; position: relative; z-index: 10;">
-  <div style="max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px; margin-bottom: 40px;">
-    <div>
-      <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #0f172a; font-size: 1.2rem; margin-bottom: 10px;">
-        <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #0d9488, #0284c7); display: flex; align-items: center; justify-content: center;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" style="width: 16px; height: 16px;"><path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/></svg>
+  <!-- 4. Terms of Service Modal -->
+  <div class="modal-backdrop" id="termsModal" role="dialog" aria-modal="true" aria-labelledby="termsModalTitle">
+    <div class="modal-dialog" style="max-width: 640px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="termsModalTitle">Terms of Service</h3>
+        <button type="button" class="modal-close-btn" onclick="App.closeTermsModal()" aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" style="font-size: var(--text-sm); line-height: 1.6; color: var(--text-muted);">
+        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">1. Service Overview</h4>
+        <p style="margin-bottom: var(--space-3);">
+          Havilah provides software tools for workplace wellbeing check-ins, aggregated HR reporting, and confidential medical assessor triage.
+        </p>
+
+        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">2. Not an Emergency Crisis Service</h4>
+        <p style="margin-bottom: var(--space-3);">
+          The platform does not provide acute psychiatric emergency intervention. Individuals in immediate crisis should contact emergency medical services or national helpline resources directly.
+        </p>
+
+        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">3. Organizational Responsibilities</h4>
+        <p style="margin-bottom: var(--space-3);">
+          Subscribing organizations agree not to attempt to deanonymize employee check-in submissions or compel staff to disclose private assessment scores.
+        </p>
+
+        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: 0;">4. Governing Law</h4>
+        <p style="margin-bottom: 0;">
+          These terms are governed by the laws of the Republic of Ghana.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="App.closeTermsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Contact Modal -->
+  <div class="modal-backdrop" id="contactModal" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="contactModalTitle">Contact us</h3>
+        <button type="button" class="modal-close-btn" onclick="App.closeContactModal()" aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" style="font-size: var(--text-sm); line-height: 1.6; color: var(--text-muted);">
+        <p style="margin-bottom: var(--space-4);">
+          We are available during regular business hours to assist with product inquiries, billing questions, and technical onboarding.
+        </p>
+
+        <div class="stat-card" style="margin-bottom: var(--space-4);">
+          <span class="stat-label">Support and Inquiries</span>
+          <span class="stat-value" style="font-size: var(--text-md); margin-top: 4px;">
+            <a href="mailto:nanakwamedickson553@gmail.com" style="color: var(--brand);">nanakwamedickson553@gmail.com</a>
+          </span>
+          <span class="stat-hint" style="margin-top: 4px;">Business hours: Monday to Friday, 8:00 AM – 5:00 PM GMT</span>
         </div>
-        Havilah
+
+        <p style="font-size: var(--text-xs); color: var(--text-subtle); margin-bottom: 0;">
+          For invoice requests, you can also use our <button type="button" class="footer-btn-link" style="color: var(--brand);" onclick="App.closeContactModal(); App.openQuoteModal();">quote request form</button>.
+        </p>
       </div>
-      <p style="font-size: 0.8125rem; line-height: 1.6; color: #64748b; margin-bottom: 10px;">Clinical-grade occupational health & psychometrics platform aligned with ISO 45003 and global wellbeing standards.</p>
-      <div style="font-size: 0.8125rem; font-weight: 600; color: #0d9488; display: flex; align-items: center; gap: 6px;">
-        Occupational Health & Psychological Safety
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="App.closeContactModal()">Close</button>
+        <a href="mailto:nanakwamedickson553@gmail.com?subject=Havilah%20Inquiry" class="btn btn-primary">Send email</a>
       </div>
-    </div>
-
-    <div>
-      <h4 style="color: #0f172a; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Platform</h4>
-      <ul style="list-style: none; padding: 0; line-height: 2;">
-        <li><a href="#" style="color: #475569; text-decoration: none;">5-Dimension Check-in</a></li>
-        <li><a href="#" style="color: #475569; text-decoration: none;">ISO 45003 Assessment Engine</a></li>
-        <li><a href="#" style="color: #475569; text-decoration: none;">Anonymized HR Heatmaps</a></li>
-        <li><a href="#" style="color: #475569; text-decoration: none;">Predictive Risk Alerts</a></li>
-      </ul>
-    </div>
-
-    <div>
-      <h4 style="color: #0f172a; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Compliance & Governance</h4>
-      <ul style="list-style: none; padding: 0; line-height: 2;">
-        <li><span style="color: #0d9488; font-weight: 600;">✓ ISO 45003 Certified</span></li>
-        <li><span style="color: #0d9488; font-weight: 600;">✓ N ≥ 5 Privacy Enforcement</span></li>
-        <li><span style="color: #475569;">HIPAA & GDPR Article 9</span></li>
-        <li><span style="color: #475569;">SOC 2 Type II Audited</span></li>
-      </ul>
-    </div>
-
-    <div>
-      <h4 style="color: #0f172a; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Access Portals</h4>
-      <ul style="list-style: none; padding: 0; line-height: 2;">
-        <li><a href="/login.html?redirect=employee" style="color: #475569; text-decoration: none;">Employee Hub</a></li>
-        <li><a href="/login.html?redirect=hr" style="color: #475569; text-decoration: none;">HR Analytics Console</a></li>
-        <li><a href="/register.html" style="color: #0d9488; text-decoration: none; font-weight: 600;">Redeem Magic Link</a></li>
-      </ul>
     </div>
   </div>
 
-  <div style="max-width: 1440px; margin: 0 auto; padding-top: 24px; border-top: 1px solid rgba(15, 23, 42, 0.08); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; font-size: 0.75rem; color: #64748b;">
-      <div>© 2026 Havilah Health & Technologies. All rights reserved. Strictly confidential & anonymized.</div>
-    <div style="display: flex; gap: 16px;">
-      <a href="#" style="color: #64748b; text-decoration: none;">Privacy Policy</a>
-      <a href="#" style="color: #64748b; text-decoration: none;">Terms of Service</a>
-      <a href="#" style="color: #64748b; text-decoration: none;">Security & Trust</a>
-    </div>
-  </div>
-</footer>
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/assessmentReportPdf.js"></script>
-<script>
-  function handleCta(role) {
-    if (typeof Auth !== 'undefined' && Auth.parseToken) {
-      const tokenPayload = Auth.parseToken();
-      if (!tokenPayload) { window.location.href = "/login.html?redirect=" + role; return; }
-      if (role === "employee" && tokenPayload.role === "employee") window.location.href = "/app/dashboard.html";
-      else if (role === "hr_admin" && (tokenPayload.role === "hr_admin" || tokenPayload.role === "tenant_admin")) window.location.href = "/portal/hr.html";
-      else if (tokenPayload.isSystemSuperAdmin) window.location.href = "/super-admin.html";
-      else window.location.href = "/login.html?redirect=" + role;
-    } else {
-      window.location.href = "/login.html?redirect=" + role;
+  <!-- Page Scripts (No external CDN dependencies) -->
+  <script>
+    'use strict';
+
+    // Single source of truth for support and inquiry routing
+    const CONTACT_EMAIL = 'nanakwamedickson553@gmail.com';
+
+    // Accessible Toast Notification Helper
+    function showToast(title, message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-' + (type === 'error' ? 'danger' : type);
+      toast.setAttribute('role', 'alert');
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'toast-title';
+      titleEl.textContent = title;
+      toast.appendChild(titleEl);
+
+      if (message) {
+        const descEl = document.createElement('div');
+        descEl.className = 'toast-desc';
+        descEl.textContent = message;
+        toast.appendChild(descEl);
+      }
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.2s ease';
+        setTimeout(() => toast.remove(), 250);
+      }, 4000);
     }
-  }
 
-  window.App = { 
-    navigate: function(view) { if(view==="employee") handleCta("employee"); if(view==="hr") handleCta("hr_admin"); }, 
-    startTrial: function() { App.openRegisterModal('pro'); }, 
-    openRegisterModal: function(tier = 'pro') {
-      const modal = document.getElementById('registerModal');
-      const errBox = document.getElementById('registerErrorMsg');
-      if (errBox) { errBox.style.display = 'none'; errBox.innerText = ''; }
-      if (modal) modal.style.display = 'flex';
-      const nameInput = document.getElementById('regCompanyName');
-      if (nameInput) setTimeout(() => nameInput.focus(), 100);
-    },
-    closeRegisterModal: function() {
-      const modal = document.getElementById('registerModal');
-      if (modal) modal.style.display = 'none';
-    },
-    submitRegister: async function() {
-      const companyName = document.getElementById('regCompanyName')?.value.trim();
-      const fullName = document.getElementById('regFullName')?.value.trim();
-      const email = document.getElementById('regEmail')?.value.trim();
-      const password = document.getElementById('regPassword')?.value;
-      const industry = document.getElementById('regIndustry')?.value;
-      const errBox = document.getElementById('registerErrorMsg');
-      const btn = document.getElementById('btnSubmitRegister');
+    // Mobile Drawer Navigation
+    function toggleMobileMenu() {
+      const backdrop = document.getElementById('mobileDrawerBackdrop');
+      const drawer = document.getElementById('mobileDrawer');
+      const btn = document.getElementById('mobileNavBtn');
+      if (!drawer || !backdrop) return;
 
-      if (!companyName || !fullName || !email || !password) {
-        if (errBox) {
-          errBox.innerText = 'Please complete all required fields.';
-          errBox.style.display = 'block';
-        }
-        return;
+      const drawerActive = drawer.classList.contains('is-open');
+      if (drawerActive) {
+        drawer.classList.remove('is-open');
+        backdrop.classList.remove('is-open');
+        drawer.setAttribute('aria-hidden', 'true');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      } else {
+        drawer.classList.add('is-open');
+        backdrop.classList.add('is-open');
+        drawer.setAttribute('aria-hidden', 'false');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
       }
+    }
+    window.toggleMobileMenu = toggleMobileMenu;
 
-      if (errBox) errBox.style.display = 'none';
-      if (btn) {
-        btn.disabled = true;
-        btn.innerText = 'Creating Organization...';
-      }
+    // Platform Application Handlers
+    window.App = {
+      // Demo / Quote Modal
+      bookDemo: function() {
+        const modal = document.getElementById('demoModal');
+        const title = document.getElementById('demoModalTitle');
+        const planSelect = document.getElementById('demoPlan');
+        if (title) title.textContent = 'Book a demo';
+        if (planSelect) planSelect.value = 'Pro';
+        if (modal) modal.classList.add('is-open');
+        const emailInput = document.getElementById('demoEmail');
+        if (emailInput) setTimeout(() => emailInput.focus(), 100);
+      },
 
-      try {
-        const res = await fetch('/api/v1/auth/register-tenant', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ companyName, fullName, email, password, industry })
-        });
-        const data = await res.json();
+      openQuoteModal: function() {
+        const modal = document.getElementById('demoModal');
+        const title = document.getElementById('demoModalTitle');
+        const planSelect = document.getElementById('demoPlan');
+        if (title) title.textContent = 'Request an invoice quote';
+        if (planSelect) planSelect.value = 'Enterprise';
+        if (modal) modal.classList.add('is-open');
+        const emailInput = document.getElementById('demoEmail');
+        if (emailInput) setTimeout(() => emailInput.focus(), 100);
+      },
 
-        if (res.ok && data.success) {
-          if (data.token) {
-            localStorage.setItem('havilah_token', data.token);
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('session_token', data.token);
-            document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
-            if (data.user) {
-              localStorage.setItem('havilah_user', JSON.stringify(data.user));
-              localStorage.setItem('wf_user', JSON.stringify(data.user));
-              if (data.user.full_name) localStorage.setItem('wf_user_name', data.user.full_name);
-            }
-            if (email) localStorage.setItem('wf_user_email', email);
-          }
-          window.location.href = data.redirectUrl || '/portal/hr.html';
-        } else {
+      closeDemo: function() {
+        const modal = document.getElementById('demoModal');
+        if (modal) modal.classList.remove('is-open');
+        const errBox = document.getElementById('demoFeedbackMsg');
+        if (errBox) { errBox.style.display = 'none'; errBox.textContent = ''; }
+      },
+
+      submitDemo: async function(event) {
+        if (event && event.preventDefault) event.preventDefault();
+        const emailInput = document.getElementById('demoEmail');
+        const companyInput = document.getElementById('demoCompanyName');
+        const planSelect = document.getElementById('demoPlan');
+        const errBox = document.getElementById('demoFeedbackMsg');
+        const submitBtn = document.getElementById('btnSubmitDemo');
+
+        const email = emailInput ? emailInput.value.trim() : '';
+        const companyName = companyInput ? companyInput.value.trim() : '';
+        const plan = planSelect ? planSelect.value : '';
+
+        if (!email || !email.includes('@')) {
           if (errBox) {
-            errBox.innerText = data.error || data.message || 'Registration failed. Please check your details.';
-            errBox.style.display = 'block';
+            errBox.textContent = 'Please enter a valid work email address.';
+            errBox.style.display = 'flex';
+          }
+          return;
+        }
+
+        if (errBox) errBox.style.display = 'none';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Submitting...';
+        }
+
+        try {
+          const res = await fetch('/api/v1/demo-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, companyName, plan })
+          });
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+            showToast('Request Received', data.message || 'Thank you. We will contact you shortly.', 'success');
+            if (emailInput) emailInput.value = '';
+            if (companyInput) companyInput.value = '';
+            App.closeDemo();
+          } else {
+            if (errBox) {
+              errBox.textContent = data.error || 'Failed to submit request. Please try again.';
+              errBox.style.display = 'flex';
+            }
+          }
+        } catch (err) {
+          if (errBox) {
+            errBox.textContent = 'Network error submitting request. Please try again or email us directly.';
+            errBox.style.display = 'flex';
+          }
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit request';
           }
         }
-      } catch (err) {
-        if (errBox) {
-          errBox.innerText = 'Network error during registration. Please try again.';
-          errBox.style.display = 'block';
+      },
+
+      // Trial / Self-Serve Registration Modal
+      startTrial: function() {
+        App.openRegisterModal('pro');
+      },
+
+      openRegisterModal: function(tier = 'pro') {
+        const modal = document.getElementById('registerModal');
+        const title = document.getElementById('registerModalTitle');
+        const errBox = document.getElementById('registerErrorMsg');
+
+        if (title) {
+          if (tier === 'free') title.textContent = 'Choose Free plan';
+          else if (tier === 'starter') title.textContent = 'Choose Starter plan';
+          else title.textContent = 'Start 30-day trial';
         }
-      } finally {
+
+        if (errBox) { errBox.style.display = 'none'; errBox.textContent = ''; }
+        if (modal) modal.classList.add('is-open');
+
+        const nameInput = document.getElementById('regCompanyName');
+        if (nameInput) setTimeout(() => nameInput.focus(), 100);
+      },
+
+      closeRegisterModal: function() {
+        const modal = document.getElementById('registerModal');
+        if (modal) modal.classList.remove('is-open');
+      },
+
+      submitRegister: async function(event) {
+        if (event && event.preventDefault) event.preventDefault();
+
+        const companyName = document.getElementById('regCompanyName')?.value.trim();
+        const fullName = document.getElementById('regFullName')?.value.trim();
+        const email = document.getElementById('regEmail')?.value.trim();
+        const password = document.getElementById('regPassword')?.value;
+        const industry = document.getElementById('regIndustry')?.value;
+        const errBox = document.getElementById('registerErrorMsg');
+        const btn = document.getElementById('btnSubmitRegister');
+
+        if (!companyName || !fullName || !email || !password) {
+          if (errBox) {
+            errBox.textContent = 'Please complete all required fields.';
+            errBox.style.display = 'flex';
+          }
+          return;
+        }
+
+        if (errBox) errBox.style.display = 'none';
         if (btn) {
-          btn.disabled = false;
-          btn.innerText = 'Create Organization & Start Trial';
+          btn.disabled = true;
+          btn.textContent = 'Creating workspace...';
+        }
+
+        try {
+          const res = await fetch('/api/v1/auth/register-tenant', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ companyName, fullName, email, password, industry })
+          });
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+            if (data.token) {
+              localStorage.setItem('havilah_token', data.token);
+              localStorage.setItem('token', data.token);
+              localStorage.setItem('session_token', data.token);
+              document.cookie = 'token=' + data.token + '; path=/; max-age=86400; SameSite=Lax';
+              if (data.user) {
+                localStorage.setItem('havilah_user', JSON.stringify(data.user));
+                localStorage.setItem('wf_user', JSON.stringify(data.user));
+                if (data.user.full_name) localStorage.setItem('wf_user_name', data.user.full_name);
+              }
+              if (email) localStorage.setItem('wf_user_email', email);
+            }
+            window.location.href = data.redirectUrl || '/portal/hr.html';
+          } else {
+            if (errBox) {
+              errBox.textContent = data.error || data.message || 'Registration failed. Please check your details.';
+              errBox.style.display = 'flex';
+            }
+          }
+        } catch (err) {
+          if (errBox) {
+            errBox.textContent = 'Network error during registration. Please try again.';
+            errBox.style.display = 'flex';
+          }
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Create workspace';
+          }
+        }
+      },
+
+      // Policy & Info Modals
+      openPrivacyModal: function() {
+        const modal = document.getElementById('privacyModal');
+        if (modal) modal.classList.add('is-open');
+      },
+      closePrivacyModal: function() {
+        const modal = document.getElementById('privacyModal');
+        if (modal) modal.classList.remove('is-open');
+      },
+
+      openTermsModal: function() {
+        const modal = document.getElementById('termsModal');
+        if (modal) modal.classList.add('is-open');
+      },
+      closeTermsModal: function() {
+        const modal = document.getElementById('termsModal');
+        if (modal) modal.classList.remove('is-open');
+      },
+
+      openContactModal: function() {
+        const modal = document.getElementById('contactModal');
+        if (modal) modal.classList.add('is-open');
+      },
+      closeContactModal: function() {
+        const modal = document.getElementById('contactModal');
+        if (modal) modal.classList.remove('is-open');
+      }
+    };
+
+    // Close modals on Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        const openModal = document.querySelector('.modal-backdrop.is-open');
+        if (openModal) {
+          openModal.classList.remove('is-open');
+        }
+        const openDrawer = document.querySelector('.mobile-drawer.is-open');
+        if (openDrawer) {
+          toggleMobileMenu();
         }
       }
-    },
-    bookDemo: function() { document.getElementById('demoModal').style.display = 'flex'; },
-    closeDemo: function() { document.getElementById('demoModal').style.display = 'none'; },
-    submitDemo: async function() { 
-      const emailInput = document.getElementById('demoEmail');
-      const email = emailInput ? emailInput.value.trim() : '';
-      if (!email || !email.includes('@')) {
-        if (typeof showToast === 'function') showToast('Invalid Email', 'Please enter a valid work email.', 'warning');
-        return;
-      }
+    });
 
-      const submitBtn = document.querySelector('#demoModal button.btn-primary');
-      if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Submitting...'; }
-
-      try {
-        const res = await fetch('/api/v1/demo-request', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          if (typeof showToast === 'function') showToast('Demo Requested', data.message || "Thank you! We'll reach out shortly.", 'success');
-          if (emailInput) emailInput.value = '';
-          App.closeDemo();
-        } else {
-          if (typeof showToast === 'function') showToast('Submission Failed', data.error || 'Failed to submit demo request.', 'error');
+    // Close modals on backdrop click
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.addEventListener('click', function(event) {
+        if (event.target === backdrop) {
+          backdrop.classList.remove('is-open');
         }
-      } catch (err) {
-        if (typeof showToast === 'function') showToast('Network Error', 'Network error submitting request. Please try again.', 'error');
-      } finally {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Submit Demo Request'; }
-      }
-    }
-  };
-
-  // ----------------------------------------------------
-  // 3D Three.js Particle Brain Neural Network Canvas
-  // ----------------------------------------------------
-  (function initThreeBrainCanvas() {
-    const container = document.getElementById('particle-brain-container');
-    const canvas = document.getElementById('brainCanvas');
-    if (!container || !canvas || typeof THREE === 'undefined') return;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 22;
-
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    // Create Particle Brain Mesh (1,400 points)
-    const particleCount = 1400;
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-    const scales = new Float32Array(particleCount);
-
-    for (let i = 0; i < particleCount; i++) {
-      const u = Math.random();
-      const v = Math.random();
-      const theta = u * 2.0 * Math.PI;
-      const phi = Math.acos(2.0 * v - 1.0);
-      const r = 7.5 + (Math.random() - 0.5) * 1.8;
-
-      let x = r * Math.sin(phi) * Math.cos(theta);
-      let y = r * Math.sin(phi) * Math.sin(theta) * 0.72;
-      let z = r * Math.cos(phi);
-
-      if (x > 0) x += 0.4;
-      else x -= 0.4;
-
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-
-      scales[i] = Math.random() * 0.14 + 0.06;
-    }
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-    // Vibrant, high-visibility teal particle texture
-    const canvasTexture = document.createElement('canvas');
-    canvasTexture.width = 64;
-    canvasTexture.height = 64;
-    const ctx = canvasTexture.getContext('2d');
-    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-    gradient.addColorStop(0, 'rgba(13, 148, 136, 1)');       // Rich vibrant teal (#0d9488)
-    gradient.addColorStop(0.35, 'rgba(13, 148, 136, 0.85)');
-    gradient.addColorStop(0.7, 'rgba(13, 148, 136, 0.35)');
-    gradient.addColorStop(1, 'rgba(13, 148, 136, 0)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 64, 64);
-
-    const texture = new THREE.CanvasTexture(canvasTexture);
-    const material = new THREE.PointsMaterial({
-      color: 0x0d9488,
-      size: 0.38,
-      map: texture,
-      transparent: true,
-      opacity: 0.85,
-      blending: THREE.NormalBlending,
-      depthWrite: false
+      });
     });
-
-    const brainPoints = new THREE.Points(geometry, material);
-    scene.add(brainPoints);
-
-    // Keep particles vibrantly visible across the platform while gently adjusting on scroll
-    window.addEventListener('scroll', () => {
-      const scrollY = window.scrollY || window.pageYOffset;
-      const heroThreshold = window.innerHeight * 1.5;
-      const factor = Math.max(0.4, 1 - (scrollY / heroThreshold) * 0.6);
-      if (brainPoints && brainPoints.material) {
-        brainPoints.material.opacity = 0.85 * factor;
-      }
-    }, { passive: true });
-
-    // Mouse Parallax & Magnetism
-    let mouseX = 0;
-    let mouseY = 0;
-    let targetRotationX = 0;
-    let targetRotationY = 0;
-
-    window.addEventListener('mousemove', (e) => {
-      mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
-      mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
-    });
-
-    // Resize Handler
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    // Animation Loop (60 FPS)
-    function animate() {
-      requestAnimationFrame(animate);
-
-      // Continuous Idle Orbital Drift (0.002 rad/frame)
-      brainPoints.rotation.y += 0.002;
-
-      // Smooth Mouse Parallax Magnetism (lerp factor 0.05)
-      targetRotationY = mouseX * 0.45;
-      targetRotationX = mouseY * 0.35;
-
-      brainPoints.rotation.y += (targetRotationY - brainPoints.rotation.y) * 0.05;
-      brainPoints.rotation.x += (targetRotationX - brainPoints.rotation.x) * 0.05;
-
-      renderer.render(scene, camera);
-    }
-
-    animate();
-  })();
-
-  function toggleMobileMenu() {
-    const drawer = document.getElementById('mobileMenuDrawer');
-    const btn = document.querySelector('.mobile-menu-btn');
-    if (!drawer) return;
-    const isOpen = drawer.classList.toggle('open');
-    if (btn) {
-      const hamburger = btn.querySelector('.hamburger-icon');
-      const closeIcon = btn.querySelector('.close-icon');
-      if (hamburger && closeIcon) {
-        hamburger.style.display = isOpen ? 'none' : 'block';
-        closeIcon.style.display = isOpen ? 'block' : 'none';
-      }
-    }
-  }
-  window.toggleMobileMenu = toggleMobileMenu;
-</script>
-<script src="/js/tour.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    HavilahTour.init({
-      tourId: 'landing-page',
-      welcomeTitle: 'Welcome to Havilah!',
-      welcomeDesc: 'Take a quick tour to see how our workplace wellbeing platform helps your organization thrive.',
-      autoStart: false,
-      steps: [
-        {
-          target: '.brand',
-          title: 'Havilah Platform',
-          description: 'This is your home base. Click the Havilah logo anytime to return to the platform overview.',
-          placement: 'bottom'
-        },
-        {
-          target: '.nav',
-          title: 'Navigation',
-          description: 'Switch between the Platform Overview and Pricing sections. Simple, focused navigation.',
-          placement: 'bottom'
-        },
-        {
-          target: '.header-right',
-          title: 'Quick Actions',
-          description: 'Book a demo, start your free Pro trial, or log in to your existing account from here.',
-          placement: 'bottom'
-        },
-        {
-          target: '.hero-content',
-          title: 'Platform Overview',
-          description: 'Havilah is a clinical-grade psychosocial risk and wellbeing platform, ISO 45003 compliant. Employees check in confidentially, HR gets aggregated insights.',
-          placement: 'right'
-        },
-        {
-          target: '.device-frame',
-          title: 'Live Dashboard Preview',
-          description: 'This is a preview of the HR analytics dashboard — showing KPIs, risk distribution charts, and a 5-dimension radar view of organizational wellbeing.',
-          placement: 'left'
-        },
-        {
-          target: '.trust-strip',
-          title: 'Trust & Compliance',
-          description: 'Havilah is HIPAA compliant, SOC 2 Type II audited, GDPR-ready, and certified under ISO 27001 and ISO 45003 standards.',
-          placement: 'bottom'
-        },
-        {
-          target: '.features',
-          title: 'Platform Capabilities',
-          description: 'Six core capabilities: validated clinical instruments (PHQ-9, GAD-7, etc.), multi-tenant architecture, privacy-first design, predictive heatmaps, pulse cadencing, and care pathway routing.',
-          placement: 'top'
-        },
-        {
-          target: '.experiences',
-          title: 'Two Experiences, One Platform',
-          description: 'Employees get a private, judgment-free space to check in. HR leaders get a dense analytics workspace with heatmaps, radar profiles, and severity distributions.',
-          placement: 'top'
-        },
-        {
-          target: '.stats-band',
-          title: 'Proven Impact',
-          description: '38% reduction in burnout, 4.2x faster risk identification, 91% survey response rate, and $2.7M average annual turnover cost avoided per 1,000 employees.',
-          placement: 'top'
-        },
-        {
-          target: '#pricing',
-          title: 'Transparent Pricing',
-          description: 'Three clear tiers: Free (up to 10 employees), Starter (up to 100), and Pro (unlimited) with a 30-day full-access trial. No credit card required.',
-          placement: 'top'
-        }
-      ]
-    });
-  });
-</script>
+  </script>
 </body>
 </html>

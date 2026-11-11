@@ -742,13 +742,13 @@ const App = (() => {
           
           <h3 style="margin-top: 24px;">☕ The Caffeine Timing Curve</h3>
           <p>Drinking caffeine during the first 90 minutes of waking up can crash your adenosine system later in the afternoon. This causes anxiety spikes that feel exactly like a workload panic attack.</p>
-          <div style="background: #f4f5f7; padding: 12px; border-radius: 8px; border-left: 4px solid var(--accent); margin: 16px 0;">
+          <div style="background: #f4f5f7; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin: 16px 0;">
             <strong>Actionable Tip:</strong> Wait 90-120 minutes after waking before your first cup of coffee to allow natural cortisol to clear adenosine naturally.
           </div>
 
           <h3 style="margin-top: 24px;">🌙 The Blue-Light Sleep Anchor</h3>
           <p>Monitor color temperatures heavily suppress melatonin, leading to fragmented sleep patterns and direct morning exhaustion.</p>
-          <div style="background: #f4f5f7; padding: 12px; border-radius: 8px; border-left: 4px solid var(--blue); margin: 16px 0;">
+          <div style="background: #f4f5f7; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin: 16px 0;">
             <strong>Actionable Tip:</strong> Enable "Night Shift" or "f.lux" on all devices exactly 2 hours before bed. Keep bedroom temperature between 65-68°F (18-20°C).
           </div>
         </div>

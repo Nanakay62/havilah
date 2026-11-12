@@ -867,18 +867,8 @@
     }
 
     .privacy-layout-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: var(--space-8);
-      align-items: center;
-      max-width: 960px;
+      max-width: 760px;
       margin: 0 auto;
-    }
-
-    @media (min-width: 768px) {
-      .privacy-layout-grid {
-        grid-template-columns: 1fr 220px;
-      }
     }
 
     .privacy-content-card {
@@ -917,48 +907,6 @@
       color: var(--text);
       font-weight: var(--weight-semibold);
       margin-bottom: 2px;
-    }
-
-    /* Breathing Circle (Pure CSS, 120px, pauses offscreen, static with reduced motion) */
-    .breathing-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: var(--space-3);
-      text-align: center;
-    }
-
-    .breathing-circle-shell {
-      width: 120px;
-      height: 120px;
-      border: 2px solid var(--brand);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: rgba(15, 118, 110, 0.04);
-      animation: breathe 8s ease-in-out infinite alternate;
-      transform-origin: center;
-    }
-
-    @keyframes breathe {
-      0% {
-        transform: scale(0.9);
-        opacity: 0.8;
-      }
-      100% {
-        transform: scale(1.0);
-        opacity: 1;
-      }
-    }
-
-    .breathing-caption {
-      font-size: var(--text-sm);
-      font-weight: var(--weight-medium);
-      color: var(--brand);
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
     }
 
     /* Pricing Section (Background: --bg) */
@@ -1324,10 +1272,6 @@
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
       }
-      .breathing-circle-shell {
-        animation: none !important;
-        transform: scale(1.0) !important;
-      }
       .reveal-on-scroll {
         opacity: 1 !important;
         transform: none !important;
@@ -1671,16 +1615,15 @@
       </div>
     </section>
 
-    <!-- Privacy and Data Protection Section (#privacy - Background: --brand-subtle #F0FDFA with Breathing Circle) -->
+    <!-- Privacy and Data Protection Section (#privacy - Background: --brand-subtle #F0FDFA) -->
     <section class="privacy-section-wrapper" id="privacy" aria-labelledby="privacy-heading">
       <div class="page-container">
         <div class="section-header reveal-on-scroll">
           <h2 id="privacy-heading" class="section-title">Privacy and data protection</h2>
-          <p class="section-subtitle">Built around confidentiality, statutory data rights, and strict organizational boundaries.</p>
+          <p class="section-subtitle">Built around employee confidentiality and clear role boundaries.</p>
         </div>
 
         <div class="privacy-layout-grid reveal-on-scroll">
-          <!-- Left: Statutory Alignment & Points -->
           <div class="privacy-content-card">
             <div class="privacy-point">
               <svg class="privacy-point-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1688,7 +1631,7 @@
               </svg>
               <div class="privacy-point-text">
                 <strong>Designed with the Ghana Data Protection Act, 2012 (Act 843) in mind.</strong>
-                All processing activities, storage architectures, and consent workflows respect statutory principles for personal and special category data.
+                Built with the principles of the Act in mind: data minimisation, purpose limitation and security.
               </div>
             </div>
 
@@ -1698,7 +1641,7 @@
               </svg>
               <div class="privacy-point-text">
                 <strong>Anonymous by design: HR sees results only for groups of 5 or more.</strong>
-                Individual check-in responses are never visible to company administrators, preventing identification in small teams.
+                Individual check-in responses are never visible to HR, preventing identification in small teams.
               </div>
             </div>
 
@@ -1708,24 +1651,13 @@
               </svg>
               <div class="privacy-point-text">
                 <strong>Confidential clinical partition.</strong>
-                Medical assessor consultations and direct chats are maintained exclusively between the employee and qualified clinicians.
+                Medical assessor consultations are confidential and not shared with HR or the employer.
               </div>
             </div>
 
             <div style="padding-top: var(--space-2); text-align: left;">
               <button type="button" class="btn btn-secondary" onclick="App.openPrivacyModal()">Read our Privacy Policy</button>
             </div>
-          </div>
-
-          <!-- Right: Pure CSS Breathing Circle (Calm Anchor, never behind text) -->
-          <div class="breathing-box" aria-hidden="true">
-            <div class="breathing-circle-shell">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width: 28px; height: 28px;">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 6v6l4 2"></path>
-              </svg>
-            </div>
-            <span class="breathing-caption">Take a moment.</span>
           </div>
         </div>
       </div>
@@ -2133,9 +2065,9 @@
         </button>
       </div>
       <div class="modal-body" style="font-size: var(--text-sm); line-height: 1.6; color: var(--text-muted);">
-        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">1. Statutory Alignment</h4>
+        <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">1. Data Protection Principles</h4>
         <p style="margin-bottom: var(--space-3);">
-          Havilah is designed with the Ghana Data Protection Act, 2012 (Act 843) in mind. We operate under strict principles of lawfulness, data minimization, purpose specification, and security safeguards.
+          Havilah is designed with the Ghana Data Protection Act, 2012 (Act 843) in mind. Built with the principles of the Act in mind: data minimisation, purpose limitation and security.
         </p>
 
         <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">2. What We Collect</h4>
@@ -2155,7 +2087,7 @@
 
         <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">5. Data Retention</h4>
         <p style="margin-bottom: var(--space-3);">
-          Organizational check-in data is retained for the duration of the active subscription agreement. Upon account termination or contract expiry, data is archived or deleted in accordance with statutory requirements.
+          Organizational check-in data is retained for the duration of the active subscription agreement. Upon account termination or contract expiry, data is archived or deleted upon request when a subscription ends.
         </p>
 
         <h4 style="color: var(--text); font-size: var(--text-base); margin-bottom: var(--space-2);">6. Contacting the Privacy Officer</h4>

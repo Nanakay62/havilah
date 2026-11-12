@@ -9,6 +9,10 @@ const User = require('../models/User');
 const AnonHazardLog = require('../models/AnonHazardLog');
 
 async function seedDemoData() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: seedDemoData cannot run in production.');
+    process.exit(1);
+  }
   let connectedHere = false;
   if (mongoose.connection.readyState !== 1) {
     const mongoURI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/wellframe';

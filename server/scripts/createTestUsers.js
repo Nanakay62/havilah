@@ -24,6 +24,10 @@ const testUsers = [
 ];
 
 const seedTestUsers = async (skipConnection = false) => {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: createTestUsers cannot run in production.');
+    process.exit(1);
+  }
   try {
     if (!skipConnection) {
       await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/wellframe');

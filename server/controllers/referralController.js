@@ -104,7 +104,9 @@ router.post(
       }
 
       if (!tenant.activeAssessorId) {
-        const defaultAssessor = await Assessor.findOne({ email: 'dr.clarke@fzsafety.com', active: true }) ||
+        const preferredAssessorEmail = process.env.CLINICAL_INTAKE_EMAIL || process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'clarke.edith@gmail.com';
+        const defaultAssessor = await Assessor.findOne({ email: preferredAssessorEmail, active: true }) ||
+                                await Assessor.findOne({ email: 'dr.clarke@fzsafety.com', active: true }) ||
                                 await Assessor.findOne({ active: true, email: { $not: /@clinic\.com$|\.test@/ } });
         if (defaultAssessor) {
           tenant.activeAssessorId = defaultAssessor._id;
@@ -186,7 +188,7 @@ router.post(
           const assessor = await Assessor.findById(tenant.activeAssessorId).lean();
           let targetEmail = assessor?.notificationEmail || assessor?.email;
           if (!targetEmail || targetEmail.includes('@clinic.com') || targetEmail.includes('.test@')) {
-            targetEmail = process.env.CLINICAL_INTAKE_EMAIL || process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'clinical@havilah.app';
+            targetEmail = process.env.CLINICAL_INTAKE_EMAIL || process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'clarke.edith@gmail.com';
           }
 
           const result = await sendClinicalDispatch({

@@ -346,17 +346,7 @@ router.get('/me', validateSession, async (req, res, next) => {
     }
 
     let user = await User.findOne({ user_id: userId }).select('-passwordHash');
-    if (!user && (userId === 'usr-demo-employee' || String(userId).startsWith('usr-demo-'))) {
-      user = {
-        user_id: userId,
-        full_name: req.sessionData?.role === 'hr_admin' ? 'Demo HR Manager' : req.sessionData?.role === 'super_admin' ? 'Demo Super Admin' : 'Alex Mercer (Employee)',
-        role: req.sessionData?.role || 'employee',
-        company_id: req.sessionData?.company_id || 'b8ecbd7c-7993-48f9-babe-20c8001c345b',
-        department_id: 'dept-engineering',
-        status: 'active',
-        isSystemSuperAdmin: req.sessionData?.role === 'super_admin',
-      };
-    } else if (!user) {
+    if (!user) {
       return res.status(401).json({ success: false, error: 'User not found' });
     }
 

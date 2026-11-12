@@ -40,6 +40,10 @@ const HealthArticle = require('../models/HealthArticle');
 const Report = require('../models/Report');
 
 async function seedDemoTenant(customUri) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: seedDemoTenant cannot run in production.');
+    process.exit(1);
+  }
   const uri = customUri || process.env.DEMO_MONGO_URI || process.env.MONGO_URI || process.env.MONGODB_URI;
 
   // STRICT LOCALHOST GUARD

@@ -1008,18 +1008,18 @@
       </button>
       <div style="position: relative;">
         <button class="profile" id="profileBtn" onclick="App.toggleProfileDropdown()" aria-haspopup="true" aria-expanded="false">
-          <div class="avatar">AD</div>
+          <div class="avatar" id="topbarAvatar">--</div>
           <div>
-            <div class="profile-name">Amara Okafor</div>
-            <div class="profile-role">HR Director</div>
+            <div class="profile-name" id="topbarProfileName">Team Member</div>
+            <div class="profile-role" id="topbarProfileRole">Employee</div>
           </div>
         </button>
         <div class="dropdown" id="profileDropdown" role="menu">
           <div class="dropdown-header">
-            <div class="avatar">AD</div>
+            <div class="avatar">--</div>
             <div>
               <div class="dropdown-header-name">Team Member</div>
-              <div class="dropdown-header-email">member@havilah.io</div>
+              <div class="dropdown-header-email">—</div>
             </div>
           </div>
           <button class="dropdown-item" onclick="App.openProfileSettings()" role="menuitem">
@@ -1077,7 +1077,7 @@
   <div class="page-container" style="max-width: 1280px; margin: 0 auto; padding: 24px 20px;">
   <div class="page-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
     <div>
-      <h1 id="empGreeting" style="font-size: 24px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Good afternoon, Amara.</h1>
+      <h1 id="empGreeting" style="font-size: 24px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Welcome back.</h1>
       <p style="font-size: 14px; color: var(--text-muted); margin: 0;">Your check-ins are confidential. HR only sees aggregated trends.</p>
     </div>
     <div class="page-header-actions" style="display: flex; gap: 8px; align-items: center;">
@@ -1322,11 +1322,11 @@
       <!-- TAB 1: Profile & Activity -->
       <div id="prof-tab-content-profile" class="prof-tab-panel">
         <div style="display: flex; align-items: center; gap: 16px; padding: 16px; background: rgba(0,183,195,0.05); border: 1px solid rgba(0,183,195,0.15); border-radius: 14px; margin-bottom: 20px;">
-          <div class="avatar" style="width: 56px; height: 56px; font-size: 1.25rem; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;" id="profAvatar">NK</div>
+          <div class="avatar" style="width: 56px; height: 56px; font-size: 1.25rem; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;" id="profAvatar">--</div>
           <div style="flex: 1; min-width: 0;">
-            <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-1);" id="profName">Amara Okafor</div>
-            <div style="font-size: 0.8125rem; color: var(--text-2); margin-top: 2px;" id="profTitle">Software Developer • IT Engineering</div>
-            <div style="font-size: 0.75rem; color: var(--text-3); margin-top: 2px;" id="profEmail">nana@example.com</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-1);" id="profName">Team Member</div>
+            <div style="font-size: 0.8125rem; color: var(--text-2); margin-top: 2px;" id="profTitle">—</div>
+            <div style="font-size: 0.75rem; color: var(--text-3); margin-top: 2px;" id="profEmail">—</div>
             <div style="display: flex; gap: 6px; margin-top: 8px;">
               <span style="font-size: 0.6875rem; font-weight: 600; padding: 2px 8px; border-radius: 5px; background: rgba(79,178,134,0.15); color: #2e7d5b;">🟢 Active Account</span>
               <span style="font-size: 0.6875rem; font-weight: 600; padding: 2px 8px; border-radius: 5px; background: rgba(0,120,212,0.12); color: #0078D4;">🔒 SSO Enabled</span>
@@ -3187,10 +3187,10 @@ const App = (() => {
       email: null
     },
     user: {
-      name: 'Amara Okafor',
-      role: 'Senior Software Engineer',
-      department: 'Product & Engineering',
-      email: 'amara.okafor@havilah.io'
+      name: '',
+      role: '',
+      department: '',
+      email: ''
     },
     settings: {
       emailNotifications: true,
@@ -4615,6 +4615,115 @@ const App = (() => {
     }
   };
 
+  function applyUserProfile(profile) {
+    if (!profile) return;
+    const name = profile.name || '';
+    const email = profile.email || '';
+    const role = profile.role || 'employee';
+    const dept = profile.department || 'General Staff';
+
+    state.user = {
+      name,
+      email,
+      role,
+      department: dept
+    };
+
+    const displayName = name || 'Team Member';
+    const displayEmail = email || '—';
+    const roleLabel = role === 'hr_admin' ? 'HR Administrator' : role === 'super_admin' ? 'Super Administrator' : 'Employee';
+    const displayTitle = `${roleLabel} • ${dept}`;
+
+    let initials = 'TM';
+    if (displayName && displayName !== 'Team Member') {
+      const parts = displayName.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      } else if (parts[0].length >= 2) {
+        initials = parts[0].slice(0, 2).toUpperCase();
+      } else {
+        initials = parts[0][0].toUpperCase();
+      }
+    } else if (displayEmail && displayEmail.includes('@') && displayEmail !== '—') {
+      initials = displayEmail.split('@')[0].slice(0, 2).toUpperCase();
+    }
+
+    // Topbar & dropdown
+    document.querySelectorAll('.avatar').forEach(el => el.textContent = initials);
+    document.querySelectorAll('.profile-name').forEach(el => el.textContent = displayName);
+    document.querySelectorAll('.profile-role').forEach(el => el.textContent = roleLabel);
+    document.querySelectorAll('.dropdown-header-name').forEach(el => el.textContent = displayName);
+    document.querySelectorAll('.dropdown-header-email').forEach(el => el.textContent = displayEmail);
+
+    // Main Greeting
+    const greetingEl = document.getElementById('empGreeting');
+    if (greetingEl) {
+      const firstName = (displayName !== 'Team Member') ? displayName.split(' ')[0] : 'there';
+      const hr = new Date().getHours();
+      const greeting = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
+      greetingEl.textContent = `${greeting}, ${firstName}.`;
+    }
+
+    // Profile Settings modal
+    const profAvatar = document.getElementById('profAvatar');
+    const profName = document.getElementById('profName');
+    const profTitle = document.getElementById('profTitle');
+    const profEmail = document.getElementById('profEmail');
+    if (profAvatar) profAvatar.textContent = initials;
+    if (profName) profName.textContent = displayName;
+    if (profTitle) profTitle.textContent = displayTitle;
+    if (profEmail) profEmail.textContent = displayEmail;
+  }
+
+  async function loadEmployeeUserProfile() {
+    const token = localStorage.getItem('token') || localStorage.getItem('havilah_token') || localStorage.getItem('session_token') || '';
+
+    // Step 1: Immediate local hydration from localStorage
+    let storedName = localStorage.getItem('wf_user_name') || '';
+    let storedEmail = localStorage.getItem('wf_user_email') || '';
+    let userMeta = {};
+    try {
+      userMeta = JSON.parse(localStorage.getItem('havilah_user') || localStorage.getItem('wf_user') || '{}');
+    } catch (e) {}
+
+    const initialProfile = {
+      name: storedName || userMeta.full_name || userMeta.name || '',
+      email: storedEmail || userMeta.email || '',
+      role: userMeta.role || 'employee',
+      department: userMeta.department_name || userMeta.department || 'General Staff'
+    };
+    applyUserProfile(initialProfile);
+
+    // Step 2: Authoritative live hydration from GET /api/v1/auth/me
+    if (token) {
+      try {
+        const res = await apiFetch('/api/v1/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success && data.user) {
+            const u = data.user;
+            const updatedProfile = {
+              name: u.full_name || initialProfile.name,
+              email: u.email || initialProfile.email,
+              role: u.role || initialProfile.role,
+              department: u.department_name || initialProfile.department || 'General Staff'
+            };
+
+            // Sync back to local storage
+            if (updatedProfile.name) localStorage.setItem('wf_user_name', updatedProfile.name);
+            if (updatedProfile.email) localStorage.setItem('wf_user_email', updatedProfile.email);
+            localStorage.setItem('havilah_user', JSON.stringify(u));
+            localStorage.setItem('wf_user', JSON.stringify(u));
+
+            applyUserProfile(updatedProfile);
+          }
+        }
+      } catch (err) {
+        console.warn('[Dashboard] /api/v1/auth/me sync notice:', err.message);
+      }
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', async () => {
     // Check authentication
     if (!localStorage.getItem('token')) {
@@ -4622,38 +4731,8 @@ const App = (() => {
       return;
     }
 
-    // Set user profile info from localStorage
-    const activeUser = localStorage.getItem('wf_user_name');
-    if (activeUser) {
-      document.querySelectorAll('.dropdown-header-name').forEach(el => {
-        el.textContent = activeUser;
-      });
-      
-      const firstName = activeUser.split(' ')[0];
-      const hr = new Date().getHours();
-      const greeting = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
-      
-      const greetingEl = document.getElementById('empGreeting');
-      if (greetingEl) greetingEl.textContent = `${greeting}, ${firstName}.`;
-      
-      // Update profile names
-      document.querySelectorAll('.profile-name').forEach(el => {
-        el.textContent = activeUser;
-      });
-      
-      // Update avatars
-      const initials = activeUser.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-      document.querySelectorAll('.avatar').forEach(el => {
-        el.textContent = initials;
-      });
-    }
-    
-    const activeEmail = localStorage.getItem('wf_user_email');
-    if (activeEmail) {
-      document.querySelectorAll('.dropdown-header-email').forEach(el => {
-        el.textContent = activeEmail;
-      });
-    }
+    // Set user profile info from localStorage & live session endpoint
+    await loadEmployeeUserProfile();
 
     // Auto-initialize WebRTC Call signaling and online presence for employee
     (async () => {
@@ -5308,13 +5387,25 @@ const App = (() => {
       // Sync user identity details
       const activeName = (state.user && state.user.name) || localStorage.getItem('wf_user_name') || 'Team Member';
       const activeEmail = (state.user && state.user.email) || localStorage.getItem('wf_user_email') || '';
-      const initials = (activeName || 'TM').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      const activeRole = (state.user && (state.user.role === 'hr_admin' ? 'HR Administrator' : state.user.role === 'super_admin' ? 'Super Administrator' : 'Employee')) || 'Employee';
+      const activeDept = (state.user && state.user.department) || 'General Staff';
+      const activeTitle = `${activeRole} • ${activeDept}`;
+
+      let initials = 'TM';
+      if (activeName && activeName !== 'Team Member') {
+        const parts = activeName.trim().split(/\s+/);
+        initials = parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+      } else if (activeEmail && activeEmail.includes('@')) {
+        initials = activeEmail.split('@')[0].slice(0, 2).toUpperCase();
+      }
       
       const avatarEl = document.getElementById('profAvatar');
       const nameEl = document.getElementById('profName');
+      const titleEl = document.getElementById('profTitle');
       const emailEl = document.getElementById('profEmail');
       if (avatarEl) avatarEl.textContent = initials;
       if (nameEl) nameEl.textContent = activeName;
+      if (titleEl) titleEl.textContent = activeTitle;
       if (emailEl) emailEl.textContent = activeEmail || 'Active Member';
 
       // Sync activity counts
@@ -5370,8 +5461,8 @@ const App = (() => {
     exportMyData: () => {
       const payload = {
         user: {
-          name: localStorage.getItem('wf_user_name') || 'Amara Okafor',
-          email: localStorage.getItem('wf_user_email') || 'amara.okafor@havilah.io'
+          name: (state.user && state.user.name) || localStorage.getItem('wf_user_name') || 'Employee',
+          email: (state.user && state.user.email) || localStorage.getItem('wf_user_email') || ''
         },
         wellbeing: state.wellbeing,
         checkin_history: state.employeeHistoryPayload || [],
@@ -5395,8 +5486,8 @@ const App = (() => {
       try {
         let userMeta = {};
         try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || localStorage.getItem('wf_user') || '{}'); } catch(e) {}
-        const storedName = localStorage.getItem('wf_user_name') || userMeta.name || userMeta.full_name || (state.user?.name !== 'Amara Okafor' ? state.user?.name : '') || '';
-        const storedEmail = localStorage.getItem('wf_user_email') || userMeta.email || (state.user?.email !== 'amara.okafor@havilah.io' ? state.user?.email : '') || '';
+        const storedName = localStorage.getItem('wf_user_name') || userMeta.name || userMeta.full_name || state.user?.name || '';
+        const storedEmail = localStorage.getItem('wf_user_email') || userMeta.email || state.user?.email || '';
         const nameInput = document.getElementById('consultNameInput');
         const contactInput = document.getElementById('consultContactInput');
         const dateInput = document.getElementById('consultDateInput');

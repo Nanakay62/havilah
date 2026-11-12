@@ -53,9 +53,9 @@ async function registerTenant(req, res, next) {
     // 3. Find default active Assessor (prefer designated clinical partner or FZ Safety)
     let defaultAssessor = null;
     try {
-      const preferredEmail = process.env.CLINICAL_INTAKE_EMAIL || process.env.DEFAULT_CLINICAL_PARTNER_EMAIL;
-      defaultAssessor = await Assessor.findOne({ email: 'dr.clarke@fzsafety.com', active: true }) ||
-                        (preferredEmail ? await Assessor.findOne({ email: preferredEmail, active: true }) : null) ||
+      const preferredEmail = process.env.CLINICAL_INTAKE_EMAIL || process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'clarke.edith@gmail.com';
+      defaultAssessor = await Assessor.findOne({ email: preferredEmail, active: true }) ||
+                        await Assessor.findOne({ email: 'dr.clarke@fzsafety.com', active: true }) ||
                         await Assessor.findOne({ active: true, email: { $not: /@clinic\.com$|\.test@/ } }) ||
                         await Assessor.findOne({ active: true });
     } catch (e) {

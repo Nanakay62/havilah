@@ -13,9 +13,12 @@ server/scripts/*
 !server/scripts/relinkTenantData.js
 !server/scripts/sync_static_root.js
 !server/scripts/seedDemoTenant.js
+!server/scripts/cleanDemoData.js
 dev-tools/
 .env.demo
 tools/node_modules/
 tools/out/
 .vscode/
 .cursor/
+backups/
+server/backups/

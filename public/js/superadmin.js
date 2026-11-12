@@ -1687,7 +1687,7 @@ function renderConflictReports() {
 
   tbody.innerHTML = reports.map(r => {
     const orgName = r.tenantId?.company_name || r.tenantId?.companyName || 'Organization';
-    const orgSlug = r.tenantId?.slug ? `${r.tenantId.slug}.havilah.io` : 'Tenant Workspace';
+    const orgSlug = r.tenantId?.slug || 'Tenant Workspace';
 
     let urgencyBadge = '<span class="badge badge-state-pending">Standard</span>';
     if (r.urgency === 'Critical') {

@@ -966,6 +966,352 @@
   position: absolute !important;
 }
 
+/* ============ SETTINGS VIEW REDESIGN (HAVILAH SPEC) ============ */
+.settings-page-header {
+  margin-bottom: 24px;
+}
+.settings-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-1);
+}
+.settings-mobile-subhead {
+  display: none;
+}
+.settings-layout {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  width: 100%;
+}
+.settings-nav {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.settings-nav-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--text-1);
+}
+.settings-nav-item.active {
+  background: var(--accent-soft, rgba(15, 118, 110, 0.08));
+  color: var(--accent-deep, #0f766e);
+  font-weight: 600;
+}
+.settings-nav-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.settings-nav-label {
+  flex: 1;
+}
+.settings-mobile-chevron {
+  display: none;
+}
+.settings-content-card {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 32px;
+  box-sizing: border-box;
+}
+.settings-section-panel {
+  display: none;
+}
+.settings-section-panel.active {
+  display: block;
+}
+.settings-section-heading {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-1);
+  margin: 0 0 20px 0;
+  letter-spacing: -0.015em;
+  outline: none;
+}
+.settings-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.settings-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.settings-profile-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-1);
+}
+.settings-profile-email {
+  font-size: 0.8125rem;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+.settings-group-header {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-top: 20px;
+  margin-bottom: 4px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  min-height: 44px;
+  border-bottom: 1px solid var(--border);
+  box-sizing: border-box;
+}
+.settings-row-info {
+  flex: 1;
+  min-width: 0;
+}
+.settings-row-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-1);
+  line-height: 1.35;
+}
+.settings-row-desc {
+  font-size: 13px;
+  color: var(--text-3);
+  margin-top: 2px;
+  line-height: 1.35;
+}
+.settings-row-value {
+  font-size: 14px;
+  color: var(--text-1);
+  text-align: right;
+  flex-shrink: 0;
+}
+.settings-row-control {
+  flex-shrink: 0;
+}
+.settings-subnote {
+  font-size: 13px;
+  color: var(--text-3);
+  margin-top: 10px;
+  line-height: 1.4;
+}
+.settings-toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #CBD5E1;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.settings-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.settings-toggle[aria-checked="true"] {
+  background: var(--accent);
+}
+.settings-toggle-knob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+  pointer-events: none;
+  transform: translateX(0);
+}
+.settings-toggle[aria-checked="true"] .settings-toggle-knob {
+  transform: translateX(18px);
+}
+.settings-time-input, .settings-select-input {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 13.5px;
+}
+.settings-time-input:focus, .settings-select-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.settings-notice-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(15, 118, 110, 0.06);
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  color: var(--text-1);
+  line-height: 1.45;
+  margin-bottom: 20px;
+}
+.settings-notice-banner svg {
+  flex-shrink: 0;
+  color: var(--accent-deep);
+  margin-top: 1px;
+}
+.btn-outline-danger {
+  background: transparent;
+  color: var(--critical, #dc2626);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-outline-danger:hover {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: var(--critical, #dc2626);
+}
+
+/* Mobile Screens (< 1024px) */
+@media (max-width: 1023px) {
+  .settings-layout {
+    flex-direction: column;
+    gap: 0;
+  }
+  .settings-nav {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    overflow: hidden;
+  }
+  .settings-nav-item {
+    height: 52px;
+    padding: 0 16px;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border);
+    justify-content: space-between;
+  }
+  .settings-nav-item:last-child {
+    border-bottom: none;
+  }
+  .settings-mobile-chevron {
+    display: block;
+    color: var(--text-3);
+  }
+  .settings-content-card {
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    margin-top: 0;
+  }
+  .settings-row {
+    min-height: 52px;
+    padding: 16px 0;
+  }
+  .settings-time-input, .settings-select-input {
+    height: 44px;
+    font-size: 16px;
+  }
+
+  /* When on mobile root list (#settings or #settings/) */
+  .settings-mobile-root .settings-page-header {
+    display: block;
+  }
+  .settings-mobile-root .settings-mobile-subhead {
+    display: none !important;
+  }
+  .settings-mobile-root .settings-nav {
+    display: flex;
+  }
+  .settings-mobile-root .settings-content-card {
+    display: none !important;
+  }
+
+  /* When inside a mobile section screen (#settings/profile etc.) */
+  .settings-mobile-screen .settings-page-header {
+    display: none !important;
+  }
+  .settings-mobile-screen .settings-mobile-subhead {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    padding: 0 4px;
+    margin-bottom: 12px;
+  }
+  .settings-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--accent-deep, #0f766e);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+  }
+  .settings-back-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+  .settings-mobile-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+  .settings-mobile-screen .settings-nav {
+    display: none !important;
+  }
+  .settings-mobile-screen .settings-content-card {
+    display: block !important;
+    width: 100%;
+    box-sizing: border-box;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+
 </style>
   <link rel="stylesheet" href="/css/tour.css">
   <script src="/js/data.js?v=1784217446485"></script>
@@ -1292,138 +1638,215 @@
   </div>
 </div>
 
-</main>
-
-<!-- ============ PROFILE & SETTINGS UNIFIED MODAL ============ -->
-<div class="modal-backdrop" id="profileSettingsModalBackdrop" role="dialog" aria-modal="true">
-  <div class="modal" style="max-width: 680px;">
-    <div class="modal-head" style="padding-bottom: 12px;">
-      <div class="modal-head-top">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(0,183,195,0.12); color: var(--accent-deep); display: flex; align-items: center; justify-content: center; font-weight: 700;">👤</div>
-          <div>
-            <h2 style="font-size: 1.125rem; font-weight: 700; margin: 0;">Employee Profile & Settings</h2>
-            <div style="font-size: 0.75rem; color: var(--text-3);">Manage identity, notification alerts & data portability</div>
-          </div>
-        </div>
-        <button class="modal-close" onclick="App.closeProfileSettings()" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <!-- Tab Navigation Header -->
-      <div style="display: flex; gap: 6px; background: rgba(0,0,0,0.04); padding: 4px; border-radius: 10px; margin-top: 10px;">
-        <button class="profile-nav-tab active" id="btn-prof-tab-1" onclick="App.switchProfileTab('profile')" style="flex:1; padding:7px 12px; border:none; border-radius:7px; background:var(--bg-elev); font-weight:600; font-size:0.8125rem; color:var(--text-1); cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.08);">👤 Profile & Stats</button>
-        <button class="profile-nav-tab" id="btn-prof-tab-2" onclick="App.switchProfileTab('notif')" style="flex:1; padding:7px 12px; border:none; border-radius:7px; background:transparent; font-weight:600; font-size:0.8125rem; color:var(--text-3); cursor:pointer;">🔔 Reminders</button>
-        <button class="profile-nav-tab" id="btn-prof-tab-3" onclick="App.switchProfileTab('privacy')" style="flex:1; padding:7px 12px; border:none; border-radius:7px; background:transparent; font-weight:600; font-size:0.8125rem; color:var(--text-3); cursor:pointer;">🛡️ Privacy & Export</button>
-      </div>
-    </div>
+<!-- ============ SETTINGS VIEW ============ -->
+<section class="view settings-mobile-root" id="view-settings" style="display:none; padding: 24px 0 80px;" aria-label="Account Settings">
+  <div class="page-container" style="max-width: 1280px; margin: 0 auto; padding: 0 20px; width: 100%; box-sizing: border-box;">
     
-    <div class="modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto;">
-      <!-- TAB 1: Profile & Activity -->
-      <div id="prof-tab-content-profile" class="prof-tab-panel">
-        <div style="display: flex; align-items: center; gap: 16px; padding: 16px; background: rgba(0,183,195,0.05); border: 1px solid rgba(0,183,195,0.15); border-radius: 14px; margin-bottom: 20px;">
-          <div class="avatar" style="width: 56px; height: 56px; font-size: 1.25rem; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;" id="profAvatar">--</div>
-          <div style="flex: 1; min-width: 0;">
-            <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-1);" id="profName">Team Member</div>
-            <div style="font-size: 0.8125rem; color: var(--text-2); margin-top: 2px;" id="profTitle">—</div>
-            <div style="font-size: 0.75rem; color: var(--text-3); margin-top: 2px;" id="profEmail">—</div>
-            <div style="display: flex; gap: 6px; margin-top: 8px;">
-              <span style="font-size: 0.6875rem; font-weight: 600; padding: 2px 8px; border-radius: 5px; background: rgba(79,178,134,0.15); color: #2e7d5b;">🟢 Active Account</span>
-              <span style="font-size: 0.6875rem; font-weight: 600; padding: 2px 8px; border-radius: 5px; background: rgba(0,120,212,0.12); color: #0078D4;">🔒 SSO Enabled</span>
+    <!-- Page Header (Desktop & Mobile Root) -->
+    <div class="settings-page-header">
+      <h1 class="settings-page-title">Settings</h1>
+    </div>
+
+    <!-- Mobile Sub-Screen Top Bar (visible when inside a section on mobile) -->
+    <div class="settings-mobile-subhead" id="settingsMobileSubhead">
+      <button type="button" class="settings-back-btn" onclick="App.navigateSettingsBack()" aria-label="Back to settings list">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <span>Settings</span>
+      </button>
+      <span class="settings-mobile-section-title" id="settingsMobileSectionTitle">Profile</span>
+    </div>
+
+    <div class="settings-layout">
+      <!-- Left Navigation Menu (Desktop: 200px sidebar; Mobile: 52px full-width rows) -->
+      <nav class="settings-nav" id="settingsNav" aria-label="Settings sections">
+        <button type="button" class="settings-nav-item active" id="settingsTabBtn-profile" onclick="App.selectSettingsSection('profile')" role="tab" aria-selected="true" aria-controls="settingsPanel-profile">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <span class="settings-nav-label">Profile</span>
+          <svg class="settings-mobile-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+
+        <button type="button" class="settings-nav-item" id="settingsTabBtn-notifications" onclick="App.selectSettingsSection('notifications')" role="tab" aria-selected="false" aria-controls="settingsPanel-notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span class="settings-nav-label">Notifications</span>
+          <svg class="settings-mobile-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+
+        <button type="button" class="settings-nav-item" id="settingsTabBtn-privacy" onclick="App.selectSettingsSection('privacy')" role="tab" aria-selected="false" aria-controls="settingsPanel-privacy">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span class="settings-nav-label">Privacy and data</span>
+          <svg class="settings-mobile-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+
+        <button type="button" class="settings-nav-item" id="settingsTabBtn-security" onclick="App.selectSettingsSection('security')" role="tab" aria-selected="false" aria-controls="settingsPanel-security">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <span class="settings-nav-label">Security</span>
+          <svg class="settings-mobile-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </nav>
+
+      <!-- Right Content Card -->
+      <div class="settings-content-card" id="settingsContentCard">
+        
+        <!-- SECTION 1: PROFILE -->
+        <section class="settings-section-panel active" id="settingsPanel-profile" role="tabpanel" aria-labelledby="settingsTabBtn-profile" tabindex="-1">
+          <h2 class="settings-section-heading" tabindex="-1">Profile</h2>
+          
+          <div class="settings-profile-header">
+            <div class="settings-avatar" id="settingsProfileAvatar">--</div>
+            <div class="settings-profile-meta">
+              <div class="settings-profile-name" id="settingsProfileName">Team Member</div>
+              <div class="settings-profile-email" id="settingsProfileEmail">—</div>
             </div>
           </div>
-        </div>
 
-        <h3 style="font-size: 0.875rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Personal Participation Summary</h3>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
-          <div style="padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 12px; text-align: center;">
-            <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-deep);" id="profCheckinCount">0</div>
-            <div style="font-size: 0.71875rem; color: var(--text-3); font-weight: 600; margin-top: 2px;">Daily Micro Check-ins</div>
+          <div class="settings-group-header">Work details</div>
+          <div class="settings-row" id="settingsRowDepartment">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Department</div>
+              <div class="settings-row-desc">Your assigned organizational department.</div>
+            </div>
+            <div class="settings-row-value" id="settingsValDepartment">—</div>
           </div>
-          <div style="padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 12px; text-align: center;">
-            <div style="font-size: 1.5rem; font-weight: 800; color: var(--purple);" id="profFormalCount">0</div>
-            <div style="font-size: 0.71875rem; color: var(--text-3); font-weight: 600; margin-top: 2px;">Formal Cycles Done</div>
+          <div class="settings-row" id="settingsRowRole">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Role</div>
+              <div class="settings-row-desc">Your platform account permission level.</div>
+            </div>
+            <div class="settings-row-value" id="settingsValRole">—</div>
           </div>
-          <div style="padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 12px; text-align: center;">
-            <div style="font-size: 1.5rem; font-weight: 800; color: #f59e0b;" id="profStreakCount">--</div>
-            <div style="font-size: 0.71875rem; color: var(--text-3); font-weight: 600; margin-top: 2px;">Current Streak</div>
-          </div>
-        </div>
+          <p class="settings-subnote">Managed by your organization. Contact HR to change these.</p>
 
-        <h3 style="font-size: 0.875rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Personal Wellness Baseline</h3>
-        <div style="display: flex; justify-content: space-between; gap: 8px; padding: 14px; background: var(--bg-base); border: 1px solid var(--border); border-radius: 12px;">
-          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Mood</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimMood">--</div></div>
-          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Calm</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimCalm">--</div></div>
-          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Stress</div><div style="font-weight: 700; font-size: 1rem; color: var(--moderate);" id="profDimStress">--</div></div>
-          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Energy</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimEnergy">--</div></div>
-          <div style="text-align: center; flex: 1;"><div style="font-size: 0.71875rem; color: var(--text-3);">Work-Fit</div><div style="font-weight: 700; font-size: 1rem; color: var(--healthy);" id="profDimWorkFit">--</div></div>
-        </div>
-      </div>
-
-      <!-- TAB 2: Notifications & Reminders -->
-      <div id="prof-tab-content-notif" class="prof-tab-panel" style="display: none;">
-        <div style="margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <label style="font-size: 0.9375rem; font-weight: 700; color: var(--text-1);">Daily Micro Check-In Reminder</label>
-            <input type="checkbox" id="prefDailyReminder" aria-label="Daily micro check-in reminder toggle" checked style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;" onchange="App.savePreferences()">
+          <div class="settings-group-header" style="margin-top: 28px;">Your activity</div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Check-ins completed</div>
+              <div class="settings-row-desc">Total daily 2-minute wellbeing check-ins submitted.</div>
+            </div>
+            <div class="settings-row-value" id="settingsValCheckins">No data yet</div>
           </div>
-          <p style="font-size: 0.8125rem; color: var(--text-2); margin-bottom: 10px;">Receive a subtle daily prompt for your 2-minute micro check-in.</p>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 0.8125rem; font-weight: 600; color: var(--text-2);">Preferred Time:</span>
-            <input type="time" id="prefReminderTime" aria-label="Preferred daily reminder time" value="09:00" style="padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.875rem;" onchange="App.savePreferences()">
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Current streak</div>
+              <div class="settings-row-desc">Consecutive days you completed a wellness check-in.</div>
+            </div>
+            <div class="settings-row-value" id="settingsValStreak">No data yet</div>
           </div>
-        </div>
+        </section>
 
-        <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <label style="font-size: 0.9375rem; font-weight: 700; color: var(--text-1);">Assessment Cycle Alerts</label>
-            <input type="checkbox" id="prefCycleAlerts" aria-label="Assessment cycle alerts toggle" checked style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;" onchange="App.savePreferences()">
-          </div>
-          <p style="font-size: 0.8125rem; color: var(--text-2);">Email alerts when HR opens scheduled assessment cycles (COPSOQ III, PSS-10, PHQ-9).</p>
-        </div>
-
-        <div style="border-top: 1px solid var(--border); padding-top: 16px;">
-          <label style="font-size: 0.9375rem; font-weight: 700; color: var(--text-1); display: block; margin-bottom: 6px;">Weekly Wellness Digest</label>
-          <p style="font-size: 0.8125rem; color: var(--text-2); margin-bottom: 10px;">Personalized summary email of your progress and trends.</p>
-          <select id="prefDigestFrequency" aria-label="Personalized progress summary digest frequency" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.875rem; width: 100%; max-width: 260px;" onchange="App.savePreferences()">
-            <option value="weekly">Weekly Digest (Mondays)</option>
-            <option value="monthly">Monthly Summary</option>
-            <option value="none">Disabled</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- TAB 3: Privacy & Security -->
-      <div id="prof-tab-content-privacy" class="prof-tab-panel" style="display: none;">
-        <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: rgba(79,178,134,0.08); border: 1px solid rgba(79,178,134,0.2); border-radius: 10px; margin-bottom: 20px;">
+        <!-- SECTION 2: NOTIFICATIONS -->
+        <section class="settings-section-panel" id="settingsPanel-notifications" role="tabpanel" aria-labelledby="settingsTabBtn-notifications" tabindex="-1">
+          <h2 class="settings-section-heading" tabindex="-1">Notifications</h2>
           
-          <div>
-            <div style="font-size: 0.8125rem; font-weight: 700; color: #2e7d5b;">Privacy Protection Guaranteed</div>
-            <div style="font-size: 0.75rem; color: var(--text-2);">Your check-ins are strictly confidential. HR only sees group trends when N ≥ 5.</div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Daily check-in reminder</div>
+              <div class="settings-row-desc">Receive a subtle daily prompt for your 2-minute micro check-in.</div>
+              <div class="settings-row-subfield" id="settingsDailyTimeWrapper" style="display:none; margin-top: 10px; align-items: center;">
+                <label for="settingsReminderTime" style="font-size: 13px; color: var(--text-2); margin-right: 8px;">Preferred time:</label>
+                <input type="time" id="settingsReminderTime" class="settings-time-input" value="09:00" onchange="App.handlePreferenceChange()">
+              </div>
+            </div>
+            <div class="settings-row-control">
+              <button type="button" class="settings-toggle" id="toggleDailyReminder" role="switch" aria-checked="false" aria-label="Daily check-in reminder" onclick="App.toggleSetting('dailyReminder')">
+                <span class="settings-toggle-knob"></span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <h3 style="font-size: 0.875rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Data Portability & Management</h3>
-        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-          <button class="btn btn-outline" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px;" onclick="App.exportMyData()">
-            <span>Export My Check-In History (JSON)</span>
-            <span style="font-size: 0.75rem; font-weight: 600; color: var(--accent-deep);">Download</span>
-          </button>
-          <button class="btn btn-outline" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px;" onclick="App.clearLocalCache()">
-            <span>🧹 Clear Stored Preferences & Cache</span>
-            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-3);">Reset</span>
-          </button>
-        </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Assessment cycle alerts</div>
+              <div class="settings-row-desc">Email when HR opens an assessment cycle (COPSOQ III, PSS-10, PHQ-9).</div>
+            </div>
+            <div class="settings-row-control">
+              <button type="button" class="settings-toggle" id="toggleCycleAlerts" role="switch" aria-checked="false" aria-label="Assessment cycle alerts" onclick="App.toggleSetting('cycleAlerts')">
+                <span class="settings-toggle-knob"></span>
+              </button>
+            </div>
+          </div>
 
-        <div style="border-top: 1px solid var(--border); padding-top: 16px;">
-          <button class="btn" style="background: rgba(229,100,110,0.1); color: var(--critical); border: 1px solid rgba(229,100,110,0.3); font-weight: 600; width: 100%; padding: 12px;" onclick="App.signOut()">
-            🚪 Sign Out of All Active Devices
-          </button>
-        </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Weekly digest</div>
+              <div class="settings-row-desc">Personalized summary email of your progress and trends.</div>
+              <div class="settings-row-subfield" id="settingsDigestFreqWrapper" style="display:none; margin-top: 10px; align-items: center;">
+                <label for="settingsDigestFreq" style="font-size: 13px; color: var(--text-2); margin-right: 8px;">Frequency:</label>
+                <select id="settingsDigestFreq" class="settings-select-input" onchange="App.handlePreferenceChange()">
+                  <option value="weekly">Weekly digest (Mondays)</option>
+                  <option value="monthly">Monthly summary</option>
+                  <option value="none">Disabled</option>
+                </select>
+              </div>
+            </div>
+            <div class="settings-row-control">
+              <button type="button" class="settings-toggle" id="toggleWeeklyDigest" role="switch" aria-checked="false" aria-label="Weekly digest" onclick="App.toggleSetting('weeklyDigest')">
+                <span class="settings-toggle-knob"></span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: PRIVACY AND DATA -->
+        <section class="settings-section-panel" id="settingsPanel-privacy" role="tabpanel" aria-labelledby="settingsTabBtn-privacy" tabindex="-1">
+          <h2 class="settings-section-heading" tabindex="-1">Privacy and data</h2>
+
+          <div class="settings-notice-banner">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <span>HR sees results only for groups of 5 or more. HR never sees your individual answers.</span>
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Export my check-in history</div>
+              <div class="settings-row-desc">Download your complete individual wellness check-in logs as JSON.</div>
+            </div>
+            <div class="settings-row-control">
+              <button type="button" class="btn btn-outline btn-sm" onclick="App.exportMyData()">Download</button>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Reset reminder settings</div>
+              <div class="settings-row-desc">Restore notification prompts and reminder schedule to factory defaults.</div>
+            </div>
+            <div class="settings-row-control">
+              <button type="button" class="btn btn-outline btn-sm" onclick="App.resetReminderSettings()">Reset</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: SECURITY -->
+        <section class="settings-section-panel" id="settingsPanel-security" role="tabpanel" aria-labelledby="settingsTabBtn-security" tabindex="-1">
+          <h2 class="settings-section-heading" tabindex="-1">Security</h2>
+
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Sign out of all devices</div>
+              <div class="settings-row-desc">You will need to sign in again on every device.</div>
+            </div>
+            <div class="settings-row-control">
+              <button type="button" class="btn-outline-danger" onclick="App.promptSignOutAllDevices()">Sign out everywhere</button>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Sign out</div>
+              <div class="settings-row-desc">End your active session on this browser device.</div>
+            </div>
+            <div class="settings-row-control">
+              <button type="button" class="btn btn-outline btn-sm" onclick="App.signOut()">Sign out</button>
+            </div>
+          </div>
+        </section>
+
       </div>
     </div>
   </div>
-</div>
+</section>
+
+</main>
 
 <!-- ============ HELP & CRISIS SUPPORT CENTER UNIFIED MODAL ============ -->
 <div class="modal-backdrop" id="helpCenterModalBackdrop" role="dialog" aria-modal="true">
@@ -3272,11 +3695,22 @@ const App = (() => {
       if (mNavWellness) mNavWellness.classList.remove('active');
       if (mNavLearn) mNavLearn.classList.add('active');
       loadLearnHub();
+      if (window.location.hash.startsWith('#settings')) {
+        history.replaceState(null, '', '#learn');
+      }
+    } else if (view === 'settings') {
+      if (navWellness) navWellness.classList.remove('active');
+      if (navLearn) navLearn.classList.remove('active');
+      if (mNavWellness) mNavWellness.classList.remove('active');
+      if (mNavLearn) mNavLearn.classList.remove('active');
     } else {
       if (navWellness) navWellness.classList.add('active');
       if (navLearn) navLearn.classList.remove('active');
       if (mNavWellness) mNavWellness.classList.add('active');
       if (mNavLearn) mNavLearn.classList.remove('active');
+      if (window.location.hash.startsWith('#settings')) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
     }
   }
 
@@ -4608,19 +5042,23 @@ const App = (() => {
       }
       updateTrendChart();
       renderEmployeeDashboard();
+      populateSettingsProfile();
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
       updateTrendChart();
       renderEmployeeDashboard();
+      populateSettingsProfile();
     }
   };
 
   function applyUserProfile(profile) {
     if (!profile) return;
-    const name = profile.name || '';
-    const email = profile.email || '';
-    const role = profile.role || 'employee';
-    const dept = profile.department || 'General Staff';
+    let name = profile.name || '';
+    if (name === 'undefined' || name === 'null') name = '';
+    let email = profile.email || '';
+    if (email === 'undefined' || email === 'null') email = '';
+    const role = profile.role || '';
+    const dept = profile.department || '';
 
     state.user = {
       name,
@@ -4631,8 +5069,8 @@ const App = (() => {
 
     const displayName = name || 'Team Member';
     const displayEmail = email || '—';
-    const roleLabel = role === 'hr_admin' ? 'HR Administrator' : role === 'super_admin' ? 'Super Administrator' : 'Employee';
-    const displayTitle = `${roleLabel} • ${dept}`;
+    const roleLabel = role === 'hr_admin' ? 'HR Administrator' : role === 'super_admin' ? 'Super Administrator' : role === 'assessor' ? 'Clinical Assessor' : (role ? (role.charAt(0).toUpperCase() + role.slice(1)) : 'Employee');
+    const displayTitle = dept ? `${roleLabel} • ${dept}` : roleLabel;
 
     let initials = 'TM';
     if (displayName && displayName !== 'Team Member') {
@@ -4664,15 +5102,7 @@ const App = (() => {
       greetingEl.textContent = `${greeting}, ${firstName}.`;
     }
 
-    // Profile Settings modal
-    const profAvatar = document.getElementById('profAvatar');
-    const profName = document.getElementById('profName');
-    const profTitle = document.getElementById('profTitle');
-    const profEmail = document.getElementById('profEmail');
-    if (profAvatar) profAvatar.textContent = initials;
-    if (profName) profName.textContent = displayName;
-    if (profTitle) profTitle.textContent = displayTitle;
-    if (profEmail) profEmail.textContent = displayEmail;
+    populateSettingsProfile();
   }
 
   async function loadEmployeeUserProfile() {
@@ -4689,8 +5119,8 @@ const App = (() => {
     const initialProfile = {
       name: storedName || userMeta.full_name || userMeta.name || '',
       email: storedEmail || userMeta.email || '',
-      role: userMeta.role || 'employee',
-      department: userMeta.department_name || userMeta.department || 'General Staff'
+      role: userMeta.role || '',
+      department: userMeta.department_name || userMeta.department || ''
     };
     applyUserProfile(initialProfile);
 
@@ -4703,10 +5133,10 @@ const App = (() => {
           if (data && data.success && data.user) {
             const u = data.user;
             const updatedProfile = {
-              name: u.full_name || initialProfile.name,
+              name: u.full_name || u.name || initialProfile.name,
               email: u.email || initialProfile.email,
               role: u.role || initialProfile.role,
-              department: u.department_name || initialProfile.department || 'General Staff'
+              department: u.department_name || u.department || initialProfile.department || ''
             };
 
             // Sync back to local storage
@@ -4794,6 +5224,18 @@ const App = (() => {
     fetchActiveCycles();
     fetchWorkerCompletedStatus();
     initAvailabilityStream();
+
+    setupSettingsKeyboardNav();
+    window.addEventListener('hashchange', handleHashRoute);
+    window.addEventListener('resize', () => {
+      if (state.currentView === 'settings') {
+        handleHashRoute();
+      }
+    });
+
+    if (window.location.hash && window.location.hash.startsWith('#settings')) {
+      handleHashRoute();
+    }
   });
 
   let availabilityEvtSource = null;
@@ -5361,6 +5803,365 @@ const App = (() => {
   };
   window.showToast = showToast;
   
+  /* ============ SETTINGS MODULE ============ */
+  const DEFAULT_NOTIFICATION_PREFS = {
+    dailyReminder: false,
+    reminderTime: '09:00',
+    cycleAlerts: true,
+    weeklyDigest: false,
+    digestFrequency: 'weekly'
+  };
+
+  function getStoredPreferences() {
+    try {
+      const raw = localStorage.getItem('wf_notification_prefs');
+      if (raw) return { ...DEFAULT_NOTIFICATION_PREFS, ...JSON.parse(raw) };
+    } catch (e) {}
+    return { ...DEFAULT_NOTIFICATION_PREFS };
+  }
+
+  function setStoredPreferences(prefs) {
+    try {
+      localStorage.setItem('wf_notification_prefs', JSON.stringify(prefs));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function loadNotificationPreferences() {
+    const prefs = getStoredPreferences();
+    
+    // Daily reminder
+    const toggleDaily = document.getElementById('toggleDailyReminder');
+    const wrapDailyTime = document.getElementById('settingsDailyTimeWrapper');
+    const inputDailyTime = document.getElementById('settingsReminderTime');
+    if (toggleDaily) toggleDaily.setAttribute('aria-checked', String(!!prefs.dailyReminder));
+    if (wrapDailyTime) wrapDailyTime.style.display = prefs.dailyReminder ? 'flex' : 'none';
+    if (inputDailyTime && prefs.reminderTime) inputDailyTime.value = prefs.reminderTime;
+
+    // Cycle alerts
+    const toggleCycle = document.getElementById('toggleCycleAlerts');
+    if (toggleCycle) toggleCycle.setAttribute('aria-checked', String(!!prefs.cycleAlerts));
+
+    // Weekly digest
+    const toggleDigest = document.getElementById('toggleWeeklyDigest');
+    const wrapDigestFreq = document.getElementById('settingsDigestFreqWrapper');
+    const selectDigestFreq = document.getElementById('settingsDigestFreq');
+    if (toggleDigest) toggleDigest.setAttribute('aria-checked', String(!!prefs.weeklyDigest));
+    if (wrapDigestFreq) wrapDigestFreq.style.display = prefs.weeklyDigest ? 'flex' : 'none';
+    if (selectDigestFreq && prefs.digestFrequency) selectDigestFreq.value = prefs.digestFrequency;
+  }
+
+  function toggleSetting(key) {
+    const prefs = getStoredPreferences();
+    const oldVal = !!prefs[key];
+    const newVal = !oldVal;
+    prefs[key] = newVal;
+
+    const btnIdMap = {
+      dailyReminder: 'toggleDailyReminder',
+      cycleAlerts: 'toggleCycleAlerts',
+      weeklyDigest: 'toggleWeeklyDigest'
+    };
+    const btn = document.getElementById(btnIdMap[key]);
+    if (btn) btn.setAttribute('aria-checked', String(newVal));
+
+    if (key === 'dailyReminder') {
+      const wrap = document.getElementById('settingsDailyTimeWrapper');
+      if (wrap) wrap.style.display = newVal ? 'flex' : 'none';
+    } else if (key === 'weeklyDigest') {
+      const wrap = document.getElementById('settingsDigestFreqWrapper');
+      if (wrap) wrap.style.display = newVal ? 'flex' : 'none';
+    }
+
+    const saved = setStoredPreferences(prefs);
+    if (saved) {
+      showToast('Saved', '', 'success');
+    } else {
+      prefs[key] = oldVal;
+      if (btn) btn.setAttribute('aria-checked', String(oldVal));
+      if (key === 'dailyReminder') {
+        const wrap = document.getElementById('settingsDailyTimeWrapper');
+        if (wrap) wrap.style.display = oldVal ? 'flex' : 'none';
+      } else if (key === 'weeklyDigest') {
+        const wrap = document.getElementById('settingsDigestFreqWrapper');
+        if (wrap) wrap.style.display = oldVal ? 'flex' : 'none';
+      }
+      showToast("Couldn't save. Try again.", '', 'error');
+    }
+  }
+
+  function handlePreferenceChange() {
+    const prefs = getStoredPreferences();
+    const inputDailyTime = document.getElementById('settingsReminderTime');
+    const selectDigestFreq = document.getElementById('settingsDigestFreq');
+    if (inputDailyTime && inputDailyTime.value) prefs.reminderTime = inputDailyTime.value;
+    if (selectDigestFreq && selectDigestFreq.value) prefs.digestFrequency = selectDigestFreq.value;
+
+    const saved = setStoredPreferences(prefs);
+    if (saved) {
+      showToast('Saved', '', 'success');
+    } else {
+      showToast("Couldn't save. Try again.", '', 'error');
+    }
+  }
+
+  function resetReminderSettings() {
+    const saved = setStoredPreferences(DEFAULT_NOTIFICATION_PREFS);
+    if (saved) {
+      loadNotificationPreferences();
+      showToast('Saved', 'Reminder settings have been reset.', 'success');
+    } else {
+      showToast("Couldn't save. Try again.", '', 'error');
+    }
+  }
+
+  function promptSignOutAllDevices() {
+    const body = `<p style="color: var(--text-2); font-size: 0.875rem; margin: 0 0 16px 0; line-height: 1.5;">Are you sure you want to sign out of all devices? You will be signed out on your computer, phone, and any other browser you use with this account.</p>`;
+    const foot = `<button class="btn btn-ghost btn-sm" onclick="App.closeGeneric()">Cancel</button><button class="btn btn-sm" style="background: var(--critical, #dc2626); color: #fff; border: 1px solid var(--critical, #dc2626);" onclick="App.confirmSignOutAllDevices()">Sign out everywhere</button>`;
+    App.openGeneric('SECURITY', 'Sign out of all devices', body, foot);
+  }
+
+  function confirmSignOutAllDevices() {
+    App.closeGeneric();
+    App.confirmSignOut();
+  }
+
+  function calculateStreak(history) {
+    if (!history || history.length === 0) return 0;
+    const dates = history
+      .map(h => h.date ? new Date(h.date) : h.createdAt ? new Date(h.createdAt) : null)
+      .filter(d => d && !isNaN(d.getTime()))
+      .map(d => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      });
+    const uniqueDates = Array.from(new Set(dates)).sort().reverse();
+    if (uniqueDates.length === 0) return 0;
+
+    const today = new Date();
+    const yToday = today.getFullYear();
+    const mToday = String(today.getMonth() + 1).padStart(2, '0');
+    const dToday = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yToday}-${mToday}-${dToday}`;
+
+    const yesterday = new Date(Date.now() - 86400000);
+    const yYest = yesterday.getFullYear();
+    const mYest = String(yesterday.getMonth() + 1).padStart(2, '0');
+    const dYest = String(yesterday.getDate()).padStart(2, '0');
+    const yestStr = `${yYest}-${mYest}-${dYest}`;
+
+    if (uniqueDates[0] !== todayStr && uniqueDates[0] !== yestStr) {
+      return 0;
+    }
+
+    let streak = 1;
+    let curr = new Date(uniqueDates[0]);
+    for (let i = 1; i < uniqueDates.length; i++) {
+      const prev = new Date(uniqueDates[i]);
+      const diffMs = curr.getTime() - prev.getTime();
+      const diffDays = Math.round(diffMs / 86400000);
+      if (diffDays === 1) {
+        streak++;
+        curr = prev;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  function populateSettingsProfile() {
+    const user = state.user || {};
+    let name = (user.name || localStorage.getItem('wf_user_name') || '').trim();
+    if (name === 'undefined' || name === 'null') name = '';
+    let email = (user.email || localStorage.getItem('wf_user_email') || '').trim();
+    if (email === 'undefined' || email === 'null') email = '';
+    const role = user.role || '';
+    const dept = user.department || '';
+
+    // Initials
+    let initials = '--';
+    if (name) {
+      const parts = name.split(/\s+/);
+      initials = parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+    } else if (email && email.includes('@')) {
+      initials = email.split('@')[0].slice(0, 2).toUpperCase();
+    }
+
+    const avatarEl = document.getElementById('settingsProfileAvatar');
+    const nameEl = document.getElementById('settingsProfileName');
+    const emailEl = document.getElementById('settingsProfileEmail');
+    if (avatarEl) avatarEl.textContent = initials;
+    if (nameEl) nameEl.textContent = name || 'Team Member';
+    if (emailEl) emailEl.textContent = email || '—';
+
+    // Work details rows: Department & Role
+    const rowDept = document.getElementById('settingsRowDepartment');
+    const valDept = document.getElementById('settingsValDepartment');
+    if (dept && dept !== 'General Staff') {
+      if (rowDept) rowDept.style.display = 'flex';
+      if (valDept) valDept.textContent = dept;
+    } else {
+      if (rowDept) rowDept.style.display = 'none';
+    }
+
+    const rowRole = document.getElementById('settingsRowRole');
+    const valRole = document.getElementById('settingsValRole');
+    if (role) {
+      if (rowRole) rowRole.style.display = 'flex';
+      const roleMap = {
+        employee: 'Employee',
+        hr_admin: 'HR Administrator',
+        super_admin: 'Super Administrator',
+        assessor: 'Clinical Assessor'
+      };
+      if (valRole) valRole.textContent = roleMap[role] || (role.charAt(0).toUpperCase() + role.slice(1));
+    } else {
+      if (rowRole) rowRole.style.display = 'none';
+    }
+
+    // Activity: check-ins & streak
+    const history = Array.isArray(state.employeeHistoryPayload) ? state.employeeHistoryPayload : [];
+    const checkinCount = history.length;
+    const valCheckins = document.getElementById('settingsValCheckins');
+    if (valCheckins) {
+      valCheckins.textContent = checkinCount > 0 ? `${checkinCount} check-in${checkinCount > 1 ? 's' : ''}` : 'No data yet';
+    }
+
+    const valStreak = document.getElementById('settingsValStreak');
+    if (valStreak) {
+      const streak = calculateStreak(history);
+      valStreak.textContent = streak > 0 ? `${streak} day${streak > 1 ? 's' : ''}` : 'No data yet';
+    }
+  }
+
+  function applyActiveSettingsSection(sec, focusHeading = false) {
+    const validSections = ['profile', 'notifications', 'privacy', 'security'];
+    if (!validSections.includes(sec)) sec = 'profile';
+
+    document.querySelectorAll('.settings-section-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById('settingsPanel-' + sec);
+    if (panel) panel.classList.add('active');
+
+    document.querySelectorAll('.settings-nav-item').forEach(btn => {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-selected', 'false');
+    });
+    const tabBtn = document.getElementById('settingsTabBtn-' + sec);
+    if (tabBtn) {
+      tabBtn.classList.add('active');
+      tabBtn.setAttribute('aria-selected', 'true');
+    }
+
+    const titleMap = {
+      profile: 'Profile',
+      notifications: 'Notifications',
+      privacy: 'Privacy and data',
+      security: 'Security'
+    };
+    const titleEl = document.getElementById('settingsMobileSectionTitle');
+    if (titleEl) titleEl.textContent = titleMap[sec] || 'Settings';
+
+    if (focusHeading && panel) {
+      const heading = panel.querySelector('.settings-section-heading');
+      if (heading) heading.focus();
+    }
+  }
+
+  function selectSettingsSection(sec) {
+    window.location.hash = '#settings/' + sec;
+  }
+
+  function navigateSettingsBack() {
+    window.location.hash = '#settings';
+  }
+
+  function handleHashRoute() {
+    const rawHash = (window.location.hash || '').replace(/^#\/?/, '').trim();
+    if (!rawHash) {
+      if (state.currentView === 'settings') {
+        navigate('employee');
+      }
+      return;
+    }
+    const parts = rawHash.split('/');
+    const rootRoute = parts[0];
+    const subRoute = parts[1] || '';
+
+    if (rootRoute === 'settings') {
+      navigate('settings');
+      populateSettingsProfile();
+      loadNotificationPreferences();
+
+      const isMobile = window.innerWidth < 1024;
+      const settingsView = document.getElementById('view-settings');
+
+      if (isMobile) {
+        if (!subRoute) {
+          if (settingsView) {
+            settingsView.classList.add('settings-mobile-root');
+            settingsView.classList.remove('settings-mobile-screen');
+          }
+        } else {
+          if (settingsView) {
+            settingsView.classList.remove('settings-mobile-root');
+            settingsView.classList.add('settings-mobile-screen');
+          }
+          applyActiveSettingsSection(subRoute, true);
+        }
+      } else {
+        if (settingsView) {
+          settingsView.classList.remove('settings-mobile-screen');
+          settingsView.classList.add('settings-mobile-root');
+        }
+        applyActiveSettingsSection(subRoute || 'profile', false);
+      }
+    } else if (rootRoute === 'learn') {
+      navigate('learn');
+    } else if (rootRoute === 'employee' || rootRoute === 'wellness') {
+      navigate('employee');
+    }
+  }
+
+  function setupSettingsKeyboardNav() {
+    const nav = document.getElementById('settingsNav');
+    if (!nav || nav.dataset.kbdInit) return;
+    nav.dataset.kbdInit = 'true';
+
+    nav.addEventListener('keydown', (e) => {
+      const items = Array.from(nav.querySelectorAll('.settings-nav-item'));
+      const activeIdx = items.indexOf(document.activeElement);
+      if (activeIdx === -1) return;
+
+      let targetIdx = null;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        targetIdx = (activeIdx + 1) % items.length;
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        targetIdx = (activeIdx - 1 + items.length) % items.length;
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        targetIdx = 0;
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        targetIdx = items.length - 1;
+      }
+
+      if (targetIdx !== null) {
+        const nextItem = items[targetIdx];
+        nextItem.focus();
+        if (window.innerWidth >= 1024) {
+          nextItem.click();
+        }
+      }
+    });
+  }
+
   return {
     navigate,
     openSurvey,
@@ -5383,81 +6184,17 @@ const App = (() => {
     fetchDashboardData: window.fetchDashboardData,
     openResources: () => { openModal('resBackdrop'); document.getElementById('resPanel').classList.add('open'); },
     closeResources: () => { closeModal('resBackdrop'); document.getElementById('resPanel').classList.remove('open'); },
-    openProfileSettings: () => {
-      // Sync user identity details
-      const activeName = (state.user && state.user.name) || localStorage.getItem('wf_user_name') || 'Team Member';
-      const activeEmail = (state.user && state.user.email) || localStorage.getItem('wf_user_email') || '';
-      const activeRole = (state.user && (state.user.role === 'hr_admin' ? 'HR Administrator' : state.user.role === 'super_admin' ? 'Super Administrator' : 'Employee')) || 'Employee';
-      const activeDept = (state.user && state.user.department) || 'General Staff';
-      const activeTitle = `${activeRole} • ${activeDept}`;
-
-      let initials = 'TM';
-      if (activeName && activeName !== 'Team Member') {
-        const parts = activeName.trim().split(/\s+/);
-        initials = parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
-      } else if (activeEmail && activeEmail.includes('@')) {
-        initials = activeEmail.split('@')[0].slice(0, 2).toUpperCase();
-      }
-      
-      const avatarEl = document.getElementById('profAvatar');
-      const nameEl = document.getElementById('profName');
-      const titleEl = document.getElementById('profTitle');
-      const emailEl = document.getElementById('profEmail');
-      if (avatarEl) avatarEl.textContent = initials;
-      if (nameEl) nameEl.textContent = activeName;
-      if (titleEl) titleEl.textContent = activeTitle;
-      if (emailEl) emailEl.textContent = activeEmail || 'Active Member';
-
-      // Sync activity counts
-      const history = Array.isArray(state.employeeHistoryPayload) ? state.employeeHistoryPayload : [];
-      const microCount = history.filter(h => h.survey_type === 'pulse' || h.type === 'pulse' || !h.survey_type).length;
-      const formalCount = history.filter(h => h.survey_type && h.survey_type !== 'pulse' && h.type !== 'pulse').length;
-      
-      const checkinCountEl = document.getElementById('profCheckinCount');
-      if (checkinCountEl) checkinCountEl.textContent = String(microCount);
-      const formalCountEl = document.getElementById('profFormalCount');
-      if (formalCountEl) formalCountEl.textContent = String(formalCount);
-      const streakEl = document.getElementById('profStreakCount');
-      if (streakEl) streakEl.textContent = microCount > 0 ? `${Math.min(microCount, 5)}-Day` : '--';
-
-      // Sync baseline dimension values
-      const dims = state.wellbeing ? state.wellbeing.dimensions : [];
-      const moodDim = dims.find(d => d.label === 'Mood');
-      const calmDim = dims.find(d => d.label === 'Calm');
-      const stressDim = dims.find(d => d.label === 'Stress');
-      const energyDim = dims.find(d => d.label === 'Energy');
-      const workFitDim = dims.find(d => d.label === 'Work-fit');
-
-      if (document.getElementById('profDimMood')) document.getElementById('profDimMood').textContent = (moodDim && moodDim.value > 0) ? moodDim.value : '--';
-      if (document.getElementById('profDimCalm')) document.getElementById('profDimCalm').textContent = (calmDim && calmDim.value > 0) ? calmDim.value : '--';
-      if (document.getElementById('profDimStress')) document.getElementById('profDimStress').textContent = (stressDim && stressDim.value > 0) ? stressDim.value : '--';
-      if (document.getElementById('profDimEnergy')) document.getElementById('profDimEnergy').textContent = (energyDim && energyDim.value > 0) ? energyDim.value : '--';
-      if (document.getElementById('profDimWorkFit')) document.getElementById('profDimWorkFit').textContent = (workFitDim && workFitDim.value > 0) ? workFitDim.value : '--';
-
-      openModal('profileSettingsModalBackdrop');
-    },
-    openSettings: () => { App.openProfileSettings(); App.switchProfileTab('notif'); },
-    closeProfileSettings: () => { closeModal('profileSettingsModalBackdrop'); },
-    switchProfileTab: (tabName) => {
-      document.querySelectorAll('.prof-tab-panel').forEach(el => el.style.display = 'none');
-      const target = document.getElementById('prof-tab-content-' + tabName);
-      if (target) target.style.display = 'block';
-
-      document.querySelectorAll('.profile-nav-tab').forEach(btn => {
-        btn.style.background = 'transparent';
-        btn.style.color = 'var(--text-3)';
-        btn.style.boxShadow = 'none';
-      });
-      const activeBtn = document.getElementById('btn-prof-tab-' + (tabName === 'profile' ? '1' : tabName === 'notif' ? '2' : '3'));
-      if (activeBtn) {
-        activeBtn.style.background = 'var(--bg-elev)';
-        activeBtn.style.color = 'var(--text-1)';
-        activeBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
-      }
-    },
-    savePreferences: () => {
-      showToast('Preferences Saved', 'Your reminder and notification settings have been updated.', 'success');
-    },
+    openProfileSettings: () => { window.location.hash = '#settings/profile'; },
+    openSettings: () => { window.location.hash = '#settings'; },
+    selectSettingsSection: (sec) => { selectSettingsSection(sec); },
+    navigateSettingsBack: () => { navigateSettingsBack(); },
+    toggleSetting: (key) => { toggleSetting(key); },
+    handlePreferenceChange: () => { handlePreferenceChange(); },
+    resetReminderSettings: () => { resetReminderSettings(); },
+    promptSignOutAllDevices: () => { promptSignOutAllDevices(); },
+    confirmSignOutAllDevices: () => { confirmSignOutAllDevices(); },
+    populateSettingsProfile: () => { populateSettingsProfile(); },
+    loadNotificationPreferences: () => { loadNotificationPreferences(); },
     exportMyData: () => {
       const payload = {
         user: {
@@ -5476,9 +6213,6 @@ const App = (() => {
       downloadAnchor.click();
       downloadAnchor.remove();
       showToast('Export Complete', 'Your check-in history has been exported as JSON.', 'success');
-    },
-    clearLocalCache: () => {
-      showToast('Cache Cleared', 'Stored preferences and cached tokens cleared.', 'info');
     },
     openHelp: () => {
       openModal('helpCenterModalBackdrop');
@@ -5707,7 +6441,7 @@ const App = (() => {
           <p>Havilah is protected from legal exposure if an organization misinterprets aggregate workplace stress trends or implements flawed internal policies based on system dashboards.</p>
           <div style="padding: 16px; background: rgba(0,0,0,0.02); border-radius: 10px; border: 1px solid var(--border);">
             <div style="font-weight: 700; font-size: 0.875rem; margin-bottom: 4px;">Data Protection Officer Contact</div>
-            <p>Contact our designated data security authority at privacy@havilah.io for complex compliance inquiries.</p>
+            <p>Contact our designated data security authority at nanakwamedickson553@gmail.com for complex compliance inquiries.</p>
           </div>
         `;
       } else if (type === 'hipaa') {
@@ -5715,7 +6449,7 @@ const App = (() => {
         content = `
           <h3>Health Data Protection Statement</h3>
           <p>Havilah operates with rigorous health data security controls. We implement administrative, physical, and technical safeguards for all personal wellness information.</p>
-          <h3>Individual Privacy Guarantee</h3>
+          <h3>Individual Privacy Protection</h3>
           <p>Individual check-in responses remain private and confidential. HR sees results only in aggregated groups of 5 or more. Designed with the Ghana Data Protection Act, 2012 (Act 843) in mind.</p>
         `;
       } else if (type === 'gdpr') {
@@ -5726,7 +6460,7 @@ const App = (() => {
           <h3>Data Subject Rights (DSR)</h3>
           <p>Employees can exercise their Right to Be Forgotten (data deletion), Right to Access, or Right to Portability. Our system fulfills these requests while keeping anonymous aggregate records intact to preserve historical benchmarking.</p>
           <h3>Data Protection Officer (DPO)</h3>
-          <p>Contact our designated data security authority at privacy@havilah.io for complex compliance inquiries.</p>
+          <p>Contact our designated data security authority at nanakwamedickson553@gmail.com for complex compliance inquiries.</p>
         `;
       }
 

@@ -14,6 +14,7 @@ server/scripts/*
 !server/scripts/sync_static_root.js
 !server/scripts/seedDemoTenant.js
 !server/scripts/cleanDemoData.js
+!server/scripts/createSuperAdmin.js
 dev-tools/
 .env.demo
 tools/node_modules/

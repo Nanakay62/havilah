@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Havilah Overview Video (1920x1080, 30fps)</title>
+  <style>
+    /* Design Tokens strictly from public/css/tokens.css */
+    :root {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --border: #E2E8F0;
+      --text: #0F172A;
+      --text-muted: #475569;
+      --text-subtle: #64748B;
+      --brand: #0F766E;
+      --brand-hover: #115E59;
+      --brand-subtle: #F0FDFA;
+      --brand-deep: #134E4A;
+      --success: #15803D;
+      --success-bg: #F0FDF4;
+      --warning: #B45309;
+      --warning-bg: #FFFBEB;
+      --danger: #B91C1C;
+      --danger-bg: #FEF2F2;
+      --info: #1D4ED8;
+      --info-bg: #EFF6FF;
+      --font-sans: "Segoe UI Variable", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background-color: var(--bg);
+      font-family: var(--font-sans);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    /* Stage Container */
+    #videoStage {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 80px;
+    }
+
+    /* Permanent Header / Badge during product preview */
+    .stage-sample-badge {
+      position: absolute;
+      top: 40px;
+      right: 60px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 16px;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-subtle);
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 100;
+    }
+
+    /* Scene Wrappers */
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 100px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .scene-headline {
+      font-size: 46px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 40px;
+      line-height: 1.2;
+      max-width: 1400px;
+    }
+
+    .scene-subheadline {
+      font-size: 26px;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: -24px;
+      margin-bottom: 40px;
+    }
+
+    /* =========================================================================
+       SCENE 1: BEFORE (0.0s - 4.0s)
+       ========================================================================= */
+    .before-cards-grid {
+      display: flex;
+      gap: 36px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .before-card {
+      width: 380px;
+      height: 320px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(16, 24, 40, 0.05);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .before-card-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-subtle);
+      margin-bottom: 8px;
+    }
+
+    .before-card-title {
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .before-card-desc {
+      font-size: 20px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* =========================================================================
+       SCENE 2: EMPLOYEE CHECK-IN (4.0s - 10.0s)
+       ========================================================================= */
+    .employee-checkin-frame {
+      width: 880px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(16, 24, 40, 0.08);
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      position: relative;
+    }
+
+    .checkin-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .checkin-badge-private {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      color: var(--brand);
+      background-color: var(--brand-subtle);
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .checkin-progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background-color: var(--border);
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .checkin-progress-bar-fill {
+      width: 33%;
+      height: 100%;
+      background-color: var(--brand);
+      border-radius: 5px;
+    }
+
+    .checkin-question-text {
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .checkin-options-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .checkin-option {
+      height: 64px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background-color: var(--surface);
+      color: var(--text);
+      font-size: 22px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .checkin-option.is-selected {
+      border-color: var(--brand);
+      background-color: var(--brand-subtle);
+      color: var(--brand-deep);
+      font-weight: 600;
+    }
+
+    .checkin-footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .checkin-btn {
+      height: 52px;
+      padding: 0 32px;
+      background-color: var(--brand);
+      color: #FFFFFF;
+      font-size: 22px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Virtual Cursor & Ripple for Scene 2 */
+    .virtual-cursor {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      pointer-events: none;
+      z-index: 50;
+      opacity: 0;
+    }
+
+    .click-ripple {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 3px solid var(--brand);
+      opacity: 0;
+      transform: scale(0.2);
+      pointer-events: none;
+      z-index: 49;
+    }
+
+    /* =========================================================================
+       SCENE 3: REFERRAL & ASSESSOR CHAT (10.0s - 17.0s)
+       ========================================================================= */
+    .assessor-split-frame {
+      width: 1240px;
+      height: 620px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(16, 24, 40, 0.08);
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      overflow: hidden;
+    }
+
+    .assessor-queue-column {
+      background-color: var(--bg);
+      border-right: 1px solid var(--border);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .queue-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .queue-card.active {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 1px var(--brand);
+    }
+
+    .queue-code-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .assessor-chat-column {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--surface);
+    }
+
+    .chat-top-header {
+      height: 72px;
+      padding: 0 32px;
+      background-color: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chat-bubbles-stage {
+      flex: 1;
+      padding: 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .chat-bubble-row {
+      display: flex;
+      flex-direction: column;
+      max-width: 82%;
+      padding: 16px 22px;
+      border-radius: 12px;
+      font-size: 22px;
+      line-height: 1.45;
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    .chat-bubble-row.in {
+      align-self: flex-start;
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 2px;
+    }
+
+    .chat-bubble-row.out {
+      align-self: flex-end;
+      background-color: var(--brand-subtle);
+      border: 1px solid rgba(15, 118, 110, 0.25);
+      color: var(--brand-deep);
+      border-bottom-right-radius: 2px;
+    }
+
+    /* =========================================================================
+       SCENE 4: HR GROUP INSIGHT (17.0s - 25.0s)
+       ========================================================================= */
+    .hr-dots-stage {
+      width: 1200px;
+      height: 140px;
+      position: relative;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dot-anonymity-badge {
+      position: absolute;
+      top: 10px;
+      background-color: var(--brand-subtle);
+      border: 1px solid var(--brand);
+      color: var(--brand-deep);
+      border-radius: 8px;
+      padding: 8px 24px;
+      font-size: 22px;
+      font-weight: 600;
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    .hr-dashboard-frame {
+      width: 1320px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(16, 24, 40, 0.08);
+      padding: 36px 44px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .hr-kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .hr-kpi-card {
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .hr-kpi-val {
+      font-size: 38px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .hr-chart-bars-wrap {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-around;
+      height: 180px;
+      padding: 16px 40px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .hr-bar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      width: 140px;
+      gap: 8px;
+    }
+
+    .hr-bar-slot {
+      flex: 1;
+      width: 48px;
+      background-color: var(--bg);
+      border-radius: 6px 6px 0 0;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .hr-bar-fill {
+      width: 100%;
+      border-radius: 6px 6px 0 0;
+      transform: scaleY(0);
+      transform-origin: bottom;
+    }
+
+    /* =========================================================================
+       SCENE 5: CLOSE (25.0s - 30.0s)
+       ========================================================================= */
+    .close-logo-mark {
+      width: 88px;
+      height: 88px;
+      border-radius: 20px;
+      background-color: var(--brand);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .close-headline {
+      font-size: 54px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .close-subtext {
+      font-size: 28px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .close-btn {
+      height: 64px;
+      padding: 0 44px;
+      background-color: var(--brand);
+      color: #FFFFFF;
+      font-size: 26px;
+      font-weight: 600;
+      border-radius: 10px;
+      border: none;
+      box-shadow: 0 4px 14px rgba(15, 118, 110, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="videoStage">
+    <!-- Top-Right Sample Data Pill (Visible t=4.0 to 25.0) -->
+    <div class="stage-sample-badge" id="sampleDataBadge">Sample data</div>
+
+    <!-- Scene 1: Before (0.0 - 4.0s) -->
+    <div class="scene" id="scene1">
+      <h1 class="scene-headline">Wellbeing data is scattered and hard to trust.</h1>
+      <div class="before-cards-grid">
+        <div class="before-card" id="beforeCard1">
+          <div class="before-card-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div class="before-card-title">Paper Questionnaires</div>
+          <p class="before-card-desc">Printed assessments are slow to collect and impossible to verify with true confidentiality.</p>
+        </div>
+
+        <div class="before-card" id="beforeCard2">
+          <div class="before-card-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="3" x2="21" y1="9"/><line x1="3" x2="21" y1="15"/><line x1="9" x2="9" y1="3" y2="21"/><line x1="15" x2="15" y1="3" y2="21"/></svg>
+          </div>
+          <div class="before-card-title">Spreadsheets</div>
+          <p class="before-card-desc">Sensitive health records sitting unencrypted in shared inboxes with no privacy partitions.</p>
+        </div>
+
+        <div class="before-card" id="beforeCard3">
+          <div class="before-card-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </div>
+          <div class="before-card-title">Uncoordinated Referrals</div>
+          <p class="before-card-desc">Stigma prevents employees from asking for help; referrals happen only after severe burnout.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 2: Employee Check-in (4.0 - 10.0s) -->
+    <div class="scene" id="scene2">
+      <h1 class="scene-headline">Employees check in privately.</h1>
+      <p class="scene-subheadline">Responses stay anonymous.</p>
+      <div class="employee-checkin-frame" id="checkinCard">
+        <div class="checkin-top-row">
+          <span style="font-size: 24px; font-weight: 600; color: var(--text);">Today's Check-in: PSS-10</span>
+          <span id="checkinStepLbl" style="font-size: 20px; color: var(--text-subtle);">Step 1 of 3 · 33% complete</span>
+        </div>
+        <div class="checkin-progress-bar-bg">
+          <div class="checkin-progress-bar-fill" id="checkinProgFill"></div>
+        </div>
+        <p class="checkin-question-text">
+          "In the last month, how often have you felt confident in handling personal problems?"
+        </p>
+        <div class="checkin-options-row">
+          <div class="checkin-option">Never</div>
+          <div class="checkin-option">Rarely</div>
+          <div class="checkin-option" id="optFairlyOften">Fairly often</div>
+          <div class="checkin-option">Very often</div>
+        </div>
+        <div class="checkin-footer-row">
+          <div class="checkin-badge-private">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Responses stay anonymous</span>
+          </div>
+          <button class="checkin-btn" id="checkinBtn">
+            <span id="checkinBtnText">Continue check-in</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Virtual cursor -->
+      <div class="virtual-cursor" id="virtualCursor">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#0F172A" stroke="#FFFFFF" stroke-width="1.5"><path d="m3 3 7 18 3-7 7-3L3 3z"/></svg>
+      </div>
+      <div class="click-ripple" id="clickRipple"></div>
+    </div>
+
+    <!-- Scene 3: Referral & Assessor Chat (10.0 - 17.0s) -->
+    <div class="scene" id="scene3">
+      <h1 class="scene-headline">When support is needed, a medical assessor is one step away.</h1>
+      <div class="assessor-split-frame" id="assessorFrame">
+        <!-- Left Referral Queue -->
+        <div class="assessor-queue-column">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 18px; font-weight: 600; color: var(--text-subtle);">REFERRAL QUEUE</span>
+            <span style="font-size: 16px; color: var(--brand); font-weight: 600;">Anonymous</span>
+          </div>
+          <div class="queue-card active" id="qCard1">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="queue-code-title">REF-8492-K</span>
+              <span style="background-color: var(--warning-bg); color: var(--warning); padding: 4px 10px; border-radius: 4px; font-size: 14px; font-weight: 600;">Active triage</span>
+            </div>
+            <span style="font-size: 16px; color: var(--text-subtle);">Referred 18m ago</span>
+          </div>
+          <div class="queue-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="queue-code-title">REF-3104-M</span>
+              <span style="background-color: var(--info-bg); color: var(--info); padding: 4px 10px; border-radius: 4px; font-size: 14px; font-weight: 600;">New</span>
+            </div>
+            <span style="font-size: 16px; color: var(--text-subtle);">Referred 2h ago</span>
+          </div>
+          <div class="queue-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="queue-code-title">REF-7721-P</span>
+              <span style="background-color: var(--success-bg); color: var(--success); padding: 4px 10px; border-radius: 4px; font-size: 14px; font-weight: 600;">Follow-up</span>
+            </div>
+            <span style="font-size: 16px; color: var(--text-subtle);">Referred 1d ago</span>
+          </div>
+        </div>
+
+        <!-- Right Chat Panel -->
+        <div class="assessor-chat-column">
+          <div class="chat-top-header">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--brand);"></span>
+              <strong style="font-size: 20px; color: var(--text);">Case REF-8492-K · Secure Assessor Chat</strong>
+            </div>
+            <span style="background-color: var(--bg); border: 1px solid var(--border); padding: 4px 12px; border-radius: 6px; font-size: 16px; color: var(--text-subtle);">Encrypted</span>
+          </div>
+          <div class="chat-bubbles-stage">
+            <div class="chat-bubble-row in" id="chatMsg1">
+              <span style="font-size: 16px; font-weight: 600; margin-bottom: 4px; opacity: 0.8;">Employee (REF-8492-K)</span>
+              <span>Hello Doctor. Work stress has made it hard to sleep this week, and I wanted confidential advice.</span>
+              <span style="font-size: 14px; opacity: 0.6; align-self: flex-end; margin-top: 4px;">10:14 AM</span>
+            </div>
+            <div class="chat-bubble-row out" id="chatMsg2">
+              <span style="font-size: 16px; font-weight: 600; margin-bottom: 4px; opacity: 0.8;">Medical Assessor</span>
+              <span>You are in a private space—your employer only sees anonymous group stats. Let's review your check-in together.</span>
+              <span style="font-size: 14px; opacity: 0.6; align-self: flex-end; margin-top: 4px;">10:17 AM</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 4: HR Group Insight (17.0 - 25.0s) -->
+    <div class="scene" id="scene4">
+      <h1 class="scene-headline">HR sees patterns, never individuals.</h1>
+      
+      <!-- Dots Gathering Metaphor (17.0s - 19.5s) -->
+      <div class="hr-dots-stage" id="hrDotsStage">
+        <canvas id="dotsGatherCanvas" width="600" height="120" style="display: block;"></canvas>
+        <div class="dot-anonymity-badge" id="dotAnonymityBadge">
+          Group of 5 · Threshold Active
+        </div>
+      </div>
+
+      <!-- HR Console Cards & Bars -->
+      <div class="hr-dashboard-frame" id="hrDashboardFrame">
+        <div class="hr-kpi-row">
+          <div class="hr-kpi-card">
+            <span style="font-size: 18px; color: var(--text-subtle);">Active check-ins</span>
+            <span class="hr-kpi-val" style="color: var(--brand);">86</span>
+            <span style="font-size: 16px; color: var(--text-muted);">78% response rate</span>
+          </div>
+          <div class="hr-kpi-card">
+            <span style="font-size: 18px; color: var(--text-subtle);">PHQ-9 group mean</span>
+            <span class="hr-kpi-val" style="color: var(--success);">4.1</span>
+            <span style="font-size: 16px; color: var(--text-muted);">Minimal range (0-4)</span>
+          </div>
+          <div class="hr-kpi-card">
+            <span style="font-size: 18px; color: var(--text-subtle);">GAD-7 group mean</span>
+            <span class="hr-kpi-val" style="color: var(--success);">3.8</span>
+            <span style="font-size: 16px; color: var(--text-muted);">Minimal tension</span>
+          </div>
+          <div class="hr-kpi-card">
+            <span style="font-size: 18px; color: var(--text-subtle);">Assessor referrals</span>
+            <span class="hr-kpi-val">5</span>
+            <span style="font-size: 16px; color: var(--text-muted);">Anonymous codes</span>
+          </div>
+        </div>
+
+        <div class="hr-chart-bars-wrap">
+          <div class="hr-bar-col">
+            <span style="font-size: 18px; font-weight: 600;">56%</span>
+            <div class="hr-bar-slot">
+              <div class="hr-bar-fill" id="hrBar1" style="height: 56%; background-color: var(--success);"></div>
+            </div>
+            <span style="font-size: 16px; color: var(--text-subtle);">Minimal</span>
+          </div>
+          <div class="hr-bar-col">
+            <span style="font-size: 18px; font-weight: 600;">26%</span>
+            <div class="hr-bar-slot">
+              <div class="hr-bar-fill" id="hrBar2" style="height: 26%; background-color: var(--text-subtle);"></div>
+            </div>
+            <span style="font-size: 16px; color: var(--text-subtle);">Mild</span>
+          </div>
+          <div class="hr-bar-col">
+            <span style="font-size: 18px; font-weight: 600;">13%</span>
+            <div class="hr-bar-slot">
+              <div class="hr-bar-fill" id="hrBar3" style="height: 13%; background-color: var(--warning);"></div>
+            </div>
+            <span style="font-size: 16px; color: var(--text-subtle);">Moderate</span>
+          </div>
+          <div class="hr-bar-col">
+            <span style="font-size: 18px; font-weight: 600;">5%</span>
+            <div class="hr-bar-slot">
+              <div class="hr-bar-fill" id="hrBar4" style="height: 5%; background-color: var(--danger);"></div>
+            </div>
+            <span style="font-size: 16px; color: var(--text-subtle);">Elevated</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 5: Close (25.0 - 30.0s) -->
+    <div class="scene" id="scene5">
+      <div class="close-logo-mark" id="closeLogo">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <h1 class="close-headline" id="closeHeadline">Havilah. Workplace wellbeing, measured with care.</h1>
+      <p class="close-subtext" id="closeSubtext">Designed with the Ghana Data Protection Act, 2012 (Act 843) in mind.</p>
+      <button class="close-btn" id="closeBtn">
+        <span>Book a demo</span>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    // Helper math functions
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const lin = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+    const easeOut = p => 1 - Math.pow(1 - p, 3);
+    const easeInOut = p => p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+
+    const $ = id => document.getElementById(id);
+
+    // Canvas setup for Scene 4 dots gathering
+    const dotsCanvas = $('dotsGatherCanvas');
+    const ctx = dotsCanvas.getContext('2d');
+
+    // Deterministic dot positions
+    const dotTargets = [
+      { x: 260, y: 60 },
+      { x: 285, y: 40 },
+      { x: 315, y: 45 },
+      { x: 335, y: 70 },
+      { x: 300, y: 80 }
+    ];
+    const dotOrigins = [
+      { x: 100, y: 30 },
+      { x: 160, y: 100 },
+      { x: 440, y: 20 },
+      { x: 500, y: 90 },
+      { x: 300, y: -20 }
+    ];
+
+    /**
+     * Timeline Renderer: deterministic pure function of time t (0.0 to 30.0s)
+     */
+    window.render = function(t) {
+      t = clamp(t, 0.0, 30.0);
+
+      // 1. "Sample data" badge visibility (4.0s to 25.0s)
+      const badge = $('sampleDataBadge');
+      if (t >= 4.0 && t <= 24.8) {
+        badge.style.opacity = '1';
+      } else {
+        badge.style.opacity = '0';
+      }
+
+      // =======================================================================
+      // SCENE 1: BEFORE (0.0 - 4.0s)
+      // =======================================================================
+      const s1 = $('scene1');
+      if (t >= 0.0 && t <= 4.2) {
+        const fadeIn = easeOut(lin(t, 0.0, 0.4));
+        const fadeOut = 1 - lin(t, 3.6, 4.0);
+        s1.style.opacity = Math.min(fadeIn, fadeOut);
+
+        const driftP = easeOut(lin(t, 0.2, 1.2));
+        const fadeGrayP = lin(t, 1.8, 3.0);
+        const cardOpacity = 1 - (fadeGrayP * 0.6); // settles to 40%
+
+        ['beforeCard1', 'beforeCard2', 'beforeCard3'].forEach((id, idx) => {
+          const el = $(id);
+          const yOff = (1 - driftP) * (20 + idx * 8);
+          el.style.transform = `translateY(${yOff}px)`;
+          el.style.opacity = cardOpacity;
+        });
+      } else {
+        s1.style.opacity = '0';
+      }
+
+      // =======================================================================
+      // SCENE 2: EMPLOYEE CHECK-IN (4.0 - 10.0s)
+      // =======================================================================
+      const s2 = $('scene2');
+      if (t >= 3.8 && t <= 10.2) {
+        const fadeIn = easeOut(lin(t, 4.0, 4.4));
+        const fadeOut = 1 - lin(t, 9.6, 10.0);
+        s2.style.opacity = Math.min(fadeIn, fadeOut);
+
+        // Check-in card assemble
+        const cardP = easeOut(lin(t, 4.1, 4.8));
+        $('checkinCard').style.transform = `translateY(${(1 - cardP) * 16}px)`;
+
+        // Option selection at t=6.5s
+        const opt = $('optFairlyOften');
+        if (t >= 6.5) {
+          opt.classList.add('is-selected');
+        } else {
+          opt.classList.remove('is-selected');
+        }
+
+        // Progress bar fill (t=7.0 to 8.2s)
+        const progP = easeInOut(lin(t, 7.0, 8.2));
+        const currentPct = Math.round(33 + progP * 34); // 33% -> 67%
+        $('checkinProgFill').style.width = `${currentPct}%`;
+        $('checkinStepLbl').textContent = `Step ${progP > 0.5 ? 2 : 1} of 3 · ${currentPct}% complete`;
+
+        // Submit button click at t=8.6s
+        const btn = $('checkinBtn');
+        const btnText = $('checkinBtnText');
+        if (t >= 8.8) {
+          btnText.textContent = '✓ Submitted';
+          btn.style.backgroundColor = 'var(--success)';
+        } else {
+          btnText.textContent = 'Continue check-in';
+          btn.style.backgroundColor = 'var(--brand)';
+        }
+
+        // Virtual Cursor movement
+        const cur = $('virtualCursor');
+        const ripple = $('clickRipple');
+
+        if (t >= 5.0 && t <= 9.4) {
+          cur.style.opacity = '1';
+          if (t < 6.5) {
+            // Move cursor to "Fairly often" option
+            const cp = easeInOut(lin(t, 5.2, 6.4));
+            const startX = 400, startY = 700;
+            const targetX = 940, targetY = 570;
+            cur.style.left = `${startX + (targetX - startX) * cp}px`;
+            cur.style.top = `${startY + (targetY - startY) * cp}px`;
+          } else if (t >= 6.5 && t < 7.2) {
+            // Hold and click ripple
+            cur.style.left = '940px';
+            cur.style.top = '570px';
+            const ripP = lin(t, 6.5, 7.0);
+            ripple.style.left = '926px';
+            ripple.style.top = '556px';
+            ripple.style.opacity = `${(1 - ripP) * 0.8}`;
+            ripple.style.transform = `scale(${0.3 + ripP * 1.2})`;
+          } else if (t >= 7.2 && t < 8.6) {
+            // Move cursor to "Continue check-in" button
+            const cp2 = easeInOut(lin(t, 7.4, 8.5));
+            const startX = 940, startY = 570;
+            const targetX = 1320, targetY = 660;
+            cur.style.left = `${startX + (targetX - startX) * cp2}px`;
+            cur.style.top = `${startY + (targetY - startY) * cp2}px`;
+            ripple.style.opacity = '0';
+          } else if (t >= 8.6) {
+            // Click button ripple
+            cur.style.left = '1320px';
+            cur.style.top = '660px';
+            const ripP2 = lin(t, 8.6, 9.1);
+            ripple.style.left = '1306px';
+            ripple.style.top = '646px';
+            ripple.style.opacity = `${(1 - ripP2) * 0.8}`;
+            ripple.style.transform = `scale(${0.3 + ripP2 * 1.2})`;
+          }
+        } else {
+          cur.style.opacity = '0';
+          ripple.style.opacity = '0';
+        }
+      } else {
+        s2.style.opacity = '0';
+      }
+
+      // =======================================================================
+      // SCENE 3: REFERRAL & ASSESSOR CHAT (10.0 - 17.0s)
+      // =======================================================================
+      const s3 = $('scene3');
+      if (t >= 9.8 && t <= 17.2) {
+        const fadeIn = easeOut(lin(t, 10.0, 10.4));
+        const fadeOut = 1 - lin(t, 16.6, 17.0);
+        s3.style.opacity = Math.min(fadeIn, fadeOut);
+
+        const frameP = easeOut(lin(t, 10.1, 10.8));
+        $('assessorFrame').style.transform = `translateY(${(1 - frameP) * 16}px)`;
+
+        // Message 1 (Incoming from REF-8492-K, t=11.6 to 12.3s)
+        const msg1P = easeOut(lin(t, 11.6, 12.3));
+        const msg1 = $('chatMsg1');
+        msg1.style.opacity = `${msg1P}`;
+        msg1.style.transform = `translateY(${(1 - msg1P) * 12}px)`;
+
+        // Message 2 (Outgoing from Assessor, t=14.2 to 15.0s)
+        const msg2P = easeOut(lin(t, 14.2, 15.0));
+        const msg2 = $('chatMsg2');
+        msg2.style.opacity = `${msg2P}`;
+        msg2.style.transform = `translateY(${(1 - msg2P) * 12}px)`;
+      } else {
+        s3.style.opacity = '0';
+      }
+
+      // =======================================================================
+      // SCENE 4: HR GROUP INSIGHT (17.0 - 25.0s)
+      // =======================================================================
+      const s4 = $('scene4');
+      if (t >= 16.8 && t <= 25.2) {
+        const fadeIn = easeOut(lin(t, 17.0, 17.4));
+        const fadeOut = 1 - lin(t, 24.6, 25.0);
+        s4.style.opacity = Math.min(fadeIn, fadeOut);
+
+        // Dots gather animation (t=17.2 to 19.4s)
+        ctx.clearRect(0, 0, 600, 120);
+        const gatherP = easeOut(lin(t, 17.3, 19.0));
+
+        // Draw connections if gathered
+        if (t >= 18.8) {
+          const connAlpha = lin(t, 18.8, 19.3);
+          ctx.strokeStyle = `rgba(15, 118, 110, ${connAlpha * 0.4})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          dotTargets.forEach((p, idx) => {
+            const next = dotTargets[(idx + 1) % dotTargets.length];
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(next.x, next.y);
+          });
+          ctx.stroke();
+        }
+
+        // Draw 5 dots
+        dotTargets.forEach((target, i) => {
+          const origin = dotOrigins[i];
+          const x = origin.x + (target.x - origin.x) * gatherP;
+          const y = origin.y + (target.y - origin.y) * gatherP;
+
+          ctx.beginPath();
+          ctx.arc(x, y, 9, 0, 6.28);
+          if (t >= 19.0) {
+            ctx.fillStyle = '#0F766E'; // teal
+          } else {
+            ctx.fillStyle = '#64748B'; // slate grey
+          }
+          ctx.fill();
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        });
+
+        // "Group of 5 · Threshold Active" badge lights up (t=19.0 to 19.6s)
+        const badgeP = easeOut(lin(t, 19.0, 19.6));
+        const badgeEl = $('dotAnonymityBadge');
+        badgeEl.style.opacity = `${badgeP}`;
+        badgeEl.style.transform = `scale(${0.9 + badgeP * 0.1})`;
+
+        // HR Frame builds in (t=19.4 to 20.2s)
+        const frameP = easeOut(lin(t, 19.4, 20.2));
+        $('hrDashboardFrame').style.transform = `translateY(${(1 - frameP) * 16}px)`;
+
+        // Severity bars grow from baseline (t=20.2 to 21.4s)
+        const barP = easeOut(lin(t, 20.2, 21.4));
+        $('hrBar1').style.transform = `scaleY(${barP})`;
+        $('hrBar2').style.transform = `scaleY(${barP})`;
+        $('hrBar3').style.transform = `scaleY(${barP})`;
+        $('hrBar4').style.transform = `scaleY(${barP})`;
+      } else {
+        s4.style.opacity = '0';
+      }
+
+      // =======================================================================
+      // SCENE 5: CLOSE (25.0 - 30.0s)
+      // =======================================================================
+      const s5 = $('scene5');
+      if (t >= 24.8 && t <= 30.0) {
+        const fadeIn = easeOut(lin(t, 25.0, 25.5));
+        s5.style.opacity = `${fadeIn}`;
+
+        const elemP = easeOut(lin(t, 25.2, 26.0));
+        $('closeLogo').style.transform = `translateY(${(1 - elemP) * 16}px)`;
+        $('closeHeadline').style.transform = `translateY(${(1 - elemP) * 12}px)`;
+        $('closeSubtext').style.transform = `translateY(${(1 - elemP) * 8}px)`;
+        $('closeBtn').style.transform = `translateY(${(1 - elemP) * 6}px)`;
+      } else {
+        s5.style.opacity = '0';
+      }
+    };
+
+    // Render frame 0 at start
+    window.render(0.0);
+  </script>
+</body>
+</html>

@@ -1660,6 +1660,12 @@
             <div class="hero-cta-group">
               <button type="button" class="btn btn-primary" onclick="App.bookDemo()">Book a demo</button>
               <button type="button" class="btn btn-secondary" id="heroStartTrialBtn" onclick="App.startTrial()">Start 30-day trial</button>
+              <button type="button" class="btn btn-secondary" id="heroWatchVideoBtn" onclick="App.openVideoModal()" aria-haspopup="dialog" style="display: inline-flex; align-items: center; gap: 8px;">
+                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width: 16px; height: 16px;" aria-hidden="true">
+                  <polygon points="6 3 20 12 6 21 6 3"></polygon>
+                </svg>
+                <span>Watch 30-second overview</span>
+              </button>
             </div>
           </div>
 
@@ -2703,6 +2709,51 @@
     </div>
   </div>
 
+  <!-- 6. Overview Video Modal -->
+  <div class="modal-backdrop" id="videoModal" role="dialog" aria-modal="true" aria-labelledby="videoModalTitle">
+    <div class="modal-dialog" style="max-width: 840px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="videoModalTitle">Product overview (30 seconds)</h3>
+        <button type="button" class="modal-close-btn" onclick="App.closeVideoModal()" aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4);">
+        <div style="width: 100%; border-radius: var(--radius-card); overflow: hidden; background-color: #000000; aspect-ratio: 16 / 9; box-shadow: 0 4px 16px rgba(0,0,0,0.12);">
+          <video id="overviewVideo" controls preload="none" poster="/assets/video/havilah-overview-poster.webp" playsinline style="width: 100%; height: 100%; display: block; object-fit: contain;">
+            <source data-src="/assets/video/havilah-overview.mp4" type="video/mp4">
+            <source data-src="/assets/video/havilah-overview.webm" type="video/webm">
+            <track src="/assets/video/havilah-overview.vtt" kind="captions" srclang="en" label="English" default>
+            <p style="color: #ffffff; padding: var(--space-4); text-align: center;">
+              Your browser does not support HTML5 video. You can <a href="/assets/video/havilah-overview.mp4" download style="color: var(--brand-subtle); text-decoration: underline;">download the overview MP4 directly</a>.
+            </p>
+          </video>
+        </div>
+
+        <!-- Collapsible Transcript Accordion -->
+        <details class="video-transcript-accordion" style="border: 1px solid var(--border); border-radius: var(--radius-control); background-color: var(--bg); padding: var(--space-3) var(--space-4);">
+          <summary style="font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text); cursor: pointer; user-select: none;">
+            Read text transcript
+          </summary>
+          <div style="margin-top: var(--space-3); font-size: var(--text-sm); color: var(--text-muted); line-height: 1.6; display: flex; flex-direction: column; gap: var(--space-3); border-top: 1px solid var(--border); padding-top: var(--space-3);">
+            <p><strong>[00:00 - 00:04] The Challenge:</strong> Wellbeing data is scattered and hard to trust. Printed questionnaires and unencrypted spreadsheets risk employee privacy and lack trusted clinical oversight.</p>
+            <p><strong>[00:04 - 00:10] Employee Check-in:</strong> Employees check in privately. Using validated clinical screening tools like PSS-10, responses stay completely private. Individual submissions are never shared with HR.</p>
+            <p><strong>[00:10 - 00:17] Medical Assessor Triage:</strong> When support is needed, a medical assessor is one step away. A referral appears in the assessor queue using only an anonymous case reference code (REF-8492-K). Secure two-way text chat provides timely support with complete confidentiality.</p>
+            <p><strong>[00:17 - 00:25] HR Group Insight:</strong> HR sees patterns, never individuals. As employee check-ins accumulate, results appear only when a group reaches five or more people. Aggregate severity bands (minimal, mild, moderate, elevated) reveal department wellbeing while protecting individual anonymity.</p>
+            <p><strong>[00:25 - 00:30] Summary:</strong> Havilah. Workplace wellbeing, measured with care. Designed with the Ghana Data Protection Act, 2012 (Act 843) in mind.</p>
+          </div>
+        </details>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="App.closeVideoModal()">Close</button>
+        <button type="button" class="btn btn-primary" onclick="App.closeVideoModal(); App.bookDemo();">Book a demo</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
@@ -2903,6 +2954,33 @@ window.App = {
       if (btn) { btn.disabled = false; btn.textContent = 'Submit request'; }
     }
   },
+  openVideoModal: () => {
+    const video = $('overviewVideo');
+    if (video) {
+      const sources = video.querySelectorAll('source');
+      sources.forEach(s => {
+        if (!s.src && s.dataset.src) {
+          s.src = s.dataset.src;
+        }
+      });
+      video.load();
+      video.play().catch(() => {});
+    }
+    App.openModal('videoModal');
+    setTimeout(() => {
+      const closeBtn = document.querySelector('#videoModal .modal-close-btn');
+      if (closeBtn) closeBtn.focus();
+    }, 100);
+  },
+  closeVideoModal: () => {
+    const video = $('overviewVideo');
+    if (video) {
+      video.pause();
+    }
+    App.closeModal('videoModal');
+    const trigger = $('heroWatchVideoBtn');
+    if (trigger) trigger.focus();
+  },
   startTrial: () => App.openRegisterModal('pro'),
   openRegisterModal: tier => {
     const title = $('registerModalTitle'), err = $('registerErrorMsg');
@@ -2958,14 +3036,35 @@ window.App = {
 });
 
 document.addEventListener('keydown', e => {
+  const openModal = document.querySelector('.modal-backdrop.is-open');
   if (e.key === 'Escape') {
-    document.querySelector('.modal-backdrop.is-open')?.classList.remove('is-open');
+    if (openModal) {
+      if (openModal.id === 'videoModal') App.closeVideoModal();
+      else openModal.classList.remove('is-open');
+    }
     if (document.querySelector('.mobile-drawer.is-open')) toggleMobileMenu();
+    return;
+  }
+  if (e.key === 'Tab' && openModal) {
+    const focusables = openModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), details, summary');
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   }
 });
 
 document.addEventListener('click', e => {
-  if (e.target.classList.contains('modal-backdrop')) e.target.classList.remove('is-open');
+  if (e.target.classList.contains('modal-backdrop')) {
+    if (e.target.id === 'videoModal') App.closeVideoModal();
+    else e.target.classList.remove('is-open');
+  }
 });
 
   </script>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ISO 45003 Compliance Console - Havilah Super Admin</title>
+<title>Wellbeing Governance Console - Havilah Super Admin</title>
 <link rel="preload" href="/fonts/Roboto.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/tokens.css">
 <link rel="stylesheet" href="/css/components.css">
@@ -647,8 +647,8 @@
 <!-- Left Navigation Sidebar -->
 <aside class="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-brand-badge">ISO 45003</div>
-    <div class="sidebar-title">Compliance Console</div>
+    <div class="sidebar-brand-badge">GOVERNANCE</div>
+    <div class="sidebar-title">Governance Console</div>
   </div>
 
   <nav class="sidebar-nav">
@@ -877,14 +877,14 @@
     <div class="page-header-row">
       <div>
         <h1 class="page-title">Onboarding, Consent & Crisis Fallbacks</h1>
-        <p class="page-subtitle">Manage double opt-in consent terms, ISO 45003 Markdown disclosures, and tenant crisis hotline fallbacks.</p>
+        <p class="page-subtitle">Manage double opt-in consent terms, privacy disclosures, and tenant crisis hotline fallbacks.</p>
       </div>
       <button class="btn-action-primary" onclick="App.saveOnboardingPolicy()">Save Policy Settings</button>
     </div>
 
     <!-- ISO 45003 Double Opt-in Policy Box -->
     <div class="card-box">
-      <h3>ISO 45003 Worker Double Opt-In Policy</h3>
+      <h3>Worker Double Opt-In Policy</h3>
       <p>All active employees must accept the anonymized data processing terms prior to participating in COPSOQ III, PSS-10, PHQ-9, or FAS-10 surveys. Consent is non-coercive and revocable at any time.</p>
       <div style="display: flex; gap: 20px; margin-top: 14px;">
         <label style="font-weight: 600;"><input type="checkbox" id="optin-enforced" checked> Mandatory Worker Double Opt-In Enforced</label>
@@ -894,9 +894,9 @@
 
     <!-- Master Terms & Privacy Disclosure Editor -->
     <div class="card-box">
-      <h3>Master Privacy & Data Processing Disclosure Editor (ISO 45003)</h3>
+      <h3>Master Privacy & Data Processing Disclosure Editor</h3>
       <p>Edit platform-wide privacy disclosures displayed to workers across all client tenants.</p>
-      <textarea id="masterDisclosureText" style="width: 100%; height: 140px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: monospace; font-size: 12px; line-height: 1.5;" placeholder="Enter Markdown disclosure policy..."># ISO 45003 Worker Data Protection Disclosure
+      <textarea id="masterDisclosureText" style="width: 100%; height: 140px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: monospace; font-size: 12px; line-height: 1.5;" placeholder="Enter Markdown disclosure policy..."># Worker Data Protection Disclosure
 Your survey responses are encrypted and stored in your private employee vault.
 Individual scores are NEVER shared with HR, supervisors, or management.
 HR only receives aggregated reports when at least N >= 5 employees participate in a department.</textarea>
@@ -1673,11 +1673,11 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
     }
 
     function saveOnboardingPolicy() {
-      showToast('Policy Saved', 'ISO 45003 double opt-in & onboarding policy updated.', 'success');
+      showToast('Policy Saved', 'Double opt-in & onboarding policy updated.', 'success');
     }
 
     function saveDisclosurePolicy() {
-      showToast('Disclosure Saved', 'Master Privacy & ISO 45003 Markdown Disclosure updated.', 'success');
+      showToast('Disclosure Saved', 'Master Privacy & Markdown Disclosure updated.', 'success');
     }
 
     // Auto load audit log and global defaults on page init
@@ -1713,7 +1713,7 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
       <p style="font-weight:600; color:#f8fafc; margin-top:8px;">Zero Raw Data Exposure to HR</p>
       <p style="margin-bottom:12px;">HR Administrators view aggregate statistical trends only. Individual PHQ-9, GAD-7, and COPSOQ III responses are cryptographically detached from employee accounts and never accessible.</p>
       <p style="font-weight:600; color:#f8fafc; margin-top:8px;">⏳ Data Retention Policy</p>
-      <p style="margin-bottom:0;">Aggregated logs are retained for ISO 45003 compliance audit reporting according to company policies and automatically purged thereafter.</p>
+      <p style="margin-bottom:0;">Aggregated logs are retained for audit reporting according to company policies and automatically purged thereafter.</p>
     </div>
     <div style="margin-top:20px; display:flex; justify-content:flex-end;">
       <button onclick="document.getElementById('privacy-modal').style.display='none'" style="background:rgba(45,212,191,0.2); border:1px solid rgba(45,212,191,0.4); color:#5eead4; font-weight:600; padding:8px 16px; border-radius:8px; cursor:pointer;">Got it</button>

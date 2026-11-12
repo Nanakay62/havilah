@@ -233,7 +233,7 @@
 
     /* Section Solid Color Bands (Strictly per Addendum) */
     .landing-section {
-      padding: 48px 0;
+      padding: 40px 0;
       border-bottom: 1px solid var(--border);
       scroll-margin-top: 64px;
     }
@@ -267,7 +267,7 @@
     /* Hero Section (Two-Column on Desktop, Background: --bg) */
     .hero-section {
       background-color: var(--bg);
-      padding: 48px 0;
+      padding: 40px 0;
       border-bottom: 1px solid var(--border);
     }
 
@@ -296,19 +296,21 @@
     }
 
     .hero-title {
-      font-size: clamp(28px, 4vw, 44px);
-      font-weight: var(--weight-semibold);
+      font-size: clamp(36px, 5.2vw, 58px);
+      font-weight: 600;
       letter-spacing: -0.025em;
-      line-height: 1.15;
+      line-height: 1.12;
       color: var(--text);
       margin-bottom: var(--space-4);
+      max-width: 680px;
     }
 
     .hero-subtitle {
-      font-size: clamp(15px, 1.8vw, 17px);
+      font-size: 18px;
       color: var(--text-muted);
       line-height: 1.6;
       margin-bottom: var(--space-6);
+      max-width: 580px;
     }
 
     .hero-cta-group {
@@ -318,6 +320,33 @@
       flex-wrap: wrap;
     }
 
+    .hero-video-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: 1px solid transparent;
+      padding: 8px 14px;
+      color: var(--brand);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: var(--weight-medium);
+      cursor: pointer;
+      border-radius: var(--radius-control);
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .hero-video-link:hover {
+      background-color: var(--brand-subtle);
+      color: var(--brand-hover);
+    }
+
+    .hero-video-link:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+
     @media (max-width: 639px) {
       .hero-cta-group {
         flex-direction: column;
@@ -325,6 +354,11 @@
       }
       .hero-cta-group .btn {
         width: 100%;
+      }
+      .hero-video-link {
+        justify-content: center;
+        width: 100%;
+        padding: 10px;
       }
     }
 
@@ -359,6 +393,43 @@
       height: 100%;
     }
 
+    .hero-story-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-3);
+      padding: 10px var(--space-4);
+      background-color: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+
+    .hero-story-step-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hero-step-pill {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--border);
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .hero-step-pill.active {
+      background-color: var(--brand);
+      transform: scale(1.25);
+    }
+
+    .hero-story-caption {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      margin: 0;
+      line-height: 1.4;
+    }
+
     .hero-legend-row {
       display: flex;
       align-items: center;
@@ -367,7 +438,7 @@
       padding: var(--space-3) var(--space-4);
       background-color: var(--surface);
       border-top: 1px solid var(--border);
-      font-size: var(--text-xs);
+      font-size: var(--text-sm);
       color: var(--text-muted);
       flex-wrap: wrap;
     }
@@ -393,11 +464,11 @@
       background-color: var(--brand);
     }
 
-    /* Summary Row (Background: --surface) */
+    /* Summary Row (3 Larger Items with Icons, 24px padding, 18px title, 16px body) */
     .summary-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: var(--space-4);
+      gap: var(--space-6);
     }
 
     @media (min-width: 768px) {
@@ -410,26 +481,46 @@
       background-color: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-card);
-      padding: var(--space-4);
+      padding: var(--space-6);
       box-shadow: var(--shadow-card);
       display: flex;
       flex-direction: column;
-      gap: var(--space-2);
+      gap: var(--space-3);
+    }
+
+    .summary-icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-control);
+      background-color: var(--brand-subtle);
+      color: var(--brand);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .summary-icon-wrap svg {
+      width: 22px;
+      height: 22px;
     }
 
     .summary-card-title {
-      font-size: var(--text-base);
+      font-size: 18px;
       font-weight: var(--weight-semibold);
       color: var(--text);
+      letter-spacing: -0.01em;
+      margin: 0;
     }
 
     .summary-card-desc {
-      font-size: var(--text-sm);
+      font-size: 16px;
       color: var(--text-muted);
-      line-height: 1.5;
+      line-height: 1.55;
+      margin: 0;
     }
 
-    /* Features Grid (Background: --surface) */
+    /* Features Grid (6 Capabilities, Uniform, 24px padding, 18px title, 16px body) */
     .features-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -453,16 +544,17 @@
       background-color: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-card);
-      padding: var(--space-4);
+      padding: var(--space-6);
       box-shadow: var(--shadow-card);
       display: flex;
       flex-direction: column;
-      gap: var(--space-2);
-      transition: border-color 0.15s ease;
+      gap: var(--space-3);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .feature-card:hover {
       border-color: var(--text-subtle);
+      box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
     }
 
     .feature-icon-row {
@@ -473,566 +565,238 @@
     }
 
     .feature-icon-row svg {
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
       stroke: currentColor;
     }
 
     .feature-title {
-      font-size: var(--text-md);
+      font-size: 18px;
       font-weight: var(--weight-semibold);
       color: var(--text);
+      letter-spacing: -0.01em;
+      margin: 0;
     }
 
     .feature-desc {
-      font-size: var(--text-sm);
+      font-size: 16px;
       color: var(--text-muted);
-      line-height: 1.5;
+      line-height: 1.55;
+      margin: 0;
     }
 
-    /* Three-Portal Showcase Section (Background: --surface) */
-    .showcase-section {
-      padding: 48px 0;
+    /* Portal Morph Showcase Section (Real UI + Particle Morph) */
+    .portal-showcase-section {
+      padding: var(--space-8) 0;
       background-color: var(--surface);
+      border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
       position: relative;
     }
 
     @media (min-width: 1024px) {
-      .showcase-section {
+      .portal-showcase-section {
         padding: 64px 0;
       }
     }
 
-    .showcase-scroll-track {
+    .portal-stage {
       position: relative;
-    }
-
-    @media (min-width: 1024px) {
-      .showcase-scroll-track {
-        min-height: 200vh;
-      }
-      .showcase-sticky-stage {
-        position: sticky;
-        top: 76px;
-        z-index: 10;
-      }
-    }
-
-    .showcase-grid {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-4);
-    }
-
-    @media (min-width: 1024px) {
-      .showcase-grid {
-        display: grid;
-        grid-template-columns: 280px minmax(0, 1fr);
-        gap: var(--space-6);
-        align-items: start;
-      }
-    }
-
-    .showcase-tabs {
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      gap: var(--space-2);
-      overflow-x: auto;
-    }
-
-    .showcase-tabs .tab-underline-item {
-      height: 44px;
-      min-height: 44px;
-      padding: 0 var(--space-3);
-      font-size: var(--text-sm);
-      font-weight: var(--weight-medium);
-      color: var(--text-muted);
-      background: transparent;
-      border: none;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
-      transition: color 0.15s ease, border-color 0.15s ease;
-    }
-
-    .showcase-tabs .tab-underline-item:hover {
-      color: var(--text);
-    }
-
-    .showcase-tabs .tab-underline-item.active {
-      color: var(--brand);
-      border-bottom-color: var(--brand);
-      font-weight: var(--weight-semibold);
-    }
-
-    .showcase-caption-card {
-      display: none;
-      background-color: var(--bg);
+      max-width: 960px;
+      margin: 0 auto;
+      aspect-ratio: 880 / 500;
+      background-color: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-card);
-      padding: var(--space-4);
-      margin-top: var(--space-4);
       box-shadow: var(--shadow-card);
+      overflow: hidden;
     }
 
-    @media (min-width: 1024px) {
-      .showcase-caption-card {
-        display: block;
-      }
+    .portal-screenshot {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+      display: block;
     }
 
-    .showcase-caption-text {
-      font-size: var(--text-sm);
+    .portal-screenshot.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .portal-morph-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .portal-stage-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 3;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: rgba(15, 23, 42, 0.75);
+      color: #ffffff;
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+    }
+
+    .portal-controls-wrap {
+      max-width: 960px;
+      margin: var(--space-4) auto 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .portal-tabs-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-3);
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .portal-tabs {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg);
+      padding: 4px;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+    }
+
+    .portal-tab {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 44px;
+      padding: 8px 18px;
+      border: none;
+      background: transparent;
       color: var(--text-muted);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: color 0.2s ease, background 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .portal-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .portal-tab:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+
+    .portal-tab.active {
+      color: var(--brand);
+      font-weight: 600;
+      background: var(--surface);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    .portal-tab-progress {
+      position: absolute;
+      bottom: 4px;
+      left: 14px;
+      right: 14px;
+      height: 2px;
+      background: rgba(0, 0, 0, 0.06);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .portal-tab-progress-bar {
+      display: block;
+      width: 0%;
+      height: 100%;
+      background: var(--brand);
+      border-radius: 2px;
+    }
+
+    .portal-tab:not(.active) .portal-tab-progress {
+      display: none;
+    }
+
+    .portal-pause-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .portal-pause-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--brand);
+    }
+
+    .portal-pause-btn:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+
+    .portal-caption {
+      font-size: 15px;
+      color: var(--text-muted);
+      text-align: center;
+      min-height: 24px;
+      margin: 0;
+      max-width: 680px;
       line-height: 1.5;
     }
 
-    .showcase-mobile-caption {
-      display: block;
-      margin-top: var(--space-3);
-      padding: var(--space-3);
-      background-color: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-control);
-      font-size: var(--text-xs);
-      color: var(--text-muted);
-      text-align: center;
-    }
-
-    @media (min-width: 1024px) {
-      .showcase-mobile-caption {
-        display: none;
+    @media (max-width: 640px) {
+      .portal-tab {
+        padding: 6px 12px;
+        font-size: 13px;
       }
-    }
-
-    .showcase-device-frame {
-      background-color: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-card);
-      box-shadow: var(--shadow-card);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 440px;
-    }
-
-    .showcase-frame-topbar {
-      height: 40px;
-      padding: 0 var(--space-4);
-      background-color: var(--bg);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .showcase-frame-brand {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-    }
-
-    .showcase-frame-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: var(--brand);
-    }
-
-    .showcase-frame-title {
-      font-size: var(--text-xs);
-      font-weight: var(--weight-semibold);
-      color: var(--text);
-    }
-
-    .showcase-panels-container {
-      position: relative;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 400px;
-    }
-
-    .showcase-panel {
-      display: none;
-      padding: var(--space-4);
-      flex: 1;
-      flex-direction: column;
-      gap: var(--space-4);
-    }
-
-    .showcase-panel.is-active {
-      display: flex;
-    }
-
-    .showcase-panel[hidden] {
-      display: none !important;
-    }
-
-    .showcase-panel.is-exiting {
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-
-    /* Layouts inside panels */
-    .showcase-hr-layout {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
-
-    @media (min-width: 768px) {
-      .showcase-hr-layout {
-        display: grid;
-        grid-template-columns: 160px minmax(0, 1fr);
-        gap: var(--space-4);
-        align-items: start;
+      .portal-caption {
+        font-size: 14px;
+        padding: 0 var(--space-2);
       }
-    }
-
-    .showcase-sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      padding: var(--space-2);
-      background-color: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-control);
-    }
-
-    .showcase-sidebar-item {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      padding: 6px var(--space-2);
-      border-radius: 4px;
-      font-size: var(--text-xs);
-      color: var(--text-muted);
-      font-weight: var(--weight-medium);
-    }
-
-    .showcase-sidebar-item.active {
-      background-color: var(--success-bg);
-      color: var(--brand);
-      font-weight: var(--weight-semibold);
-    }
-
-    .showcase-hr-content {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
-
-    .showcase-stat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: var(--space-2);
-    }
-
-    @media (min-width: 768px) {
-      .showcase-stat-grid {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-
-    .showcase-split-row {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: var(--space-3);
-    }
-
-    @media (min-width: 640px) {
-      .showcase-split-row {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    .showcase-bar-chart {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-around;
-      height: 110px;
-      padding: var(--space-2) 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .showcase-bar-col {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      height: 100%;
-      justify-content: flex-end;
-      width: 44px;
-    }
-
-    .showcase-bar-track {
-      flex: 1;
-      width: 20px;
-      background-color: var(--bg);
-      border-radius: 3px 3px 0 0;
-      display: flex;
-      align-items: flex-end;
-      overflow: hidden;
-    }
-
-    .showcase-bar {
-      width: 100%;
-      border-radius: 3px 3px 0 0;
-    }
-
-    .showcase-bar-val {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .showcase-bar-lbl {
-      font-size: 9px;
-      color: var(--text-subtle);
-    }
-
-    .showcase-mini-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: var(--text-xs);
-    }
-
-    .showcase-mini-table th {
-      text-align: left;
-      padding: 4px 6px;
-      color: var(--text-subtle);
-      font-size: 10px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .showcase-mini-table td {
-      padding: 6px;
-      border-bottom: 1px solid var(--border);
-      font-size: 11px;
-    }
-
-    /* Employee Portal Layout */
-    .showcase-emp-layout {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
-
-    .showcase-emp-subbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: var(--space-2);
-      padding-bottom: var(--space-2);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .showcase-emp-nav {
-      display: flex;
-      gap: var(--space-1);
-    }
-
-    .showcase-emp-nav-pill {
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: var(--text-xs);
-      color: var(--text-muted);
-    }
-
-    .showcase-emp-nav-pill.active {
-      background-color: var(--bg);
-      color: var(--brand);
-      font-weight: 600;
-    }
-
-    /* Medical Assessor Layout */
-    .showcase-assessor-layout {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
-
-    @media (min-width: 768px) {
-      .showcase-assessor-layout {
-        display: grid;
-        grid-template-columns: 190px minmax(0, 1fr);
-        gap: var(--space-3);
-        align-items: start;
-      }
-    }
-
-    .showcase-queue {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      background-color: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-control);
-      padding: var(--space-2);
-    }
-
-    .showcase-queue-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px;
-      margin-bottom: 2px;
-    }
-
-    .showcase-queue-item {
-      padding: 6px 8px;
-      border-radius: 4px;
-      background-color: var(--surface);
-      border: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .showcase-queue-item.active {
-      border-color: var(--brand);
-      box-shadow: 0 0 0 1px var(--brand);
-    }
-
-    .showcase-chat {
-      background-color: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-card);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .showcase-chat-header {
-      padding: var(--space-2) var(--space-3);
-      background-color: var(--bg);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .showcase-chat-messages {
-      padding: var(--space-3);
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-      background-color: var(--surface);
-      min-height: 180px;
-    }
-
-    .chat-bubble {
-      max-width: 85%;
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-control);
-      font-size: var(--text-xs);
-      line-height: 1.4;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .chat-bubble.incoming {
-      align-self: flex-start;
-      background-color: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-bottom-left-radius: 2px;
-    }
-
-    .chat-bubble.outgoing {
-      align-self: flex-end;
-      background-color: var(--brand-subtle);
-      border: 1px solid rgba(15, 118, 110, 0.2);
-      color: var(--brand-deep);
-      border-bottom-right-radius: 2px;
-    }
-
-    .chat-bubble-sender {
-      font-size: 10px;
-      font-weight: 600;
-      opacity: 0.8;
-    }
-
-    .chat-bubble-time {
-      font-size: 9px;
-      opacity: 0.6;
-      align-self: flex-end;
-    }
-
-    .showcase-chat-input-bar {
-      padding: var(--space-2) var(--space-3);
-      border-top: 1px solid var(--border);
-      display: flex;
-      gap: var(--space-2);
-      background-color: var(--bg);
-    }
-
-    /* Assembly Animations */
-    .anim-sidebar {
-      opacity: 0;
-      transform: translateX(-16px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-    }
-
-    .anim-card {
-      opacity: 0;
-      transform: translateY(12px);
-      transition: opacity 0.22s ease, transform 0.22s ease;
-      transition-delay: calc(100ms + var(--stagger, 0) * 60ms);
-    }
-
-    .anim-bar {
-      transform: scaleY(0);
-      transform-origin: bottom;
-      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      transition-delay: calc(260ms + var(--stagger, 0) * 60ms);
-    }
-
-    .anim-row {
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      transition-delay: calc(100ms + var(--stagger, 0) * 70ms);
-    }
-
-    .showcase-panel.is-assembling .anim-sidebar {
-      opacity: 1;
-      transform: translateX(0);
-    }
-
-    .showcase-panel.is-assembling .anim-card {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .showcase-panel.is-assembling .anim-bar {
-      transform: scaleY(1);
-    }
-
-    .showcase-panel.is-assembling .anim-row {
-      opacity: 1;
-      transform: translateY(0);
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .showcase-scroll-track {
-        min-height: auto !important;
-        height: auto !important;
-      }
-      .showcase-sticky-stage {
-        position: static !important;
-      }
-      .anim-sidebar,
-      .anim-card,
-      .anim-bar,
-      .anim-row {
-        opacity: 1 !important;
-        transform: none !important;
+      .portal-screenshot {
         transition: none !important;
+      }
+      .portal-tab-progress {
+        display: none !important;
+      }
+      .portal-morph-canvas {
+        display: none !important;
       }
     }
 
@@ -1083,9 +847,9 @@
     }
 
     .step-desc {
-      font-size: var(--text-sm);
+      font-size: 16px;
       color: var(--text-muted);
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     /* Privacy Section (Background: --brand-subtle #F0FDFA, with Breathing Circle) */
@@ -1143,9 +907,9 @@
     }
 
     .privacy-point-text {
-      font-size: var(--text-sm);
+      font-size: 16px;
       color: var(--text);
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     .privacy-point-text strong {
@@ -1190,7 +954,7 @@
     }
 
     .breathing-caption {
-      font-size: var(--text-xs);
+      font-size: var(--text-sm);
       font-weight: var(--weight-medium);
       color: var(--brand);
       letter-spacing: 0.03em;
@@ -1363,7 +1127,7 @@
     }
 
     .billing-step-number {
-      font-size: var(--text-xs);
+      font-size: var(--text-sm);
       font-weight: var(--weight-semibold);
       color: var(--brand);
       text-transform: uppercase;
@@ -1377,7 +1141,7 @@
     }
 
     .billing-step-desc {
-      font-size: var(--text-xs);
+      font-size: var(--text-sm);
       color: var(--text-muted);
       line-height: 1.5;
     }
@@ -1549,7 +1313,7 @@
 
     .footer-copy {
       color: var(--text-subtle);
-      font-size: var(--text-xs);
+      font-size: var(--text-sm);
     }
 
     /* Reduced Motion Preference */
@@ -1655,13 +1419,13 @@
         <div class="hero-grid">
           <!-- Left Column: Copy & Actions -->
           <div class="hero-text-col reveal-on-scroll">
-            <h1 id="hero-heading" class="hero-title">Workplace wellbeing, measured with care.</h1>
-            <p class="hero-subtitle">Confidential check-ins for your employees. Anonymous, group-level insight for your HR team.</p>
+            <h1 id="hero-heading" class="hero-title">Know how your people are really doing, without ever seeing who said what.</h1>
+            <p class="hero-subtitle">Confidential check-ins for employees. Anonymous group insight for HR.</p>
             <div class="hero-cta-group">
               <button type="button" class="btn btn-primary" onclick="App.bookDemo()">Book a demo</button>
               <button type="button" class="btn btn-secondary" id="heroStartTrialBtn" onclick="App.startTrial()">Start 30-day trial</button>
-              <button type="button" class="btn btn-secondary" id="heroWatchVideoBtn" onclick="App.openVideoModal()" aria-haspopup="dialog" style="display: inline-flex; align-items: center; gap: 8px;">
-                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width: 16px; height: 16px;" aria-hidden="true">
+              <button type="button" class="hero-video-link" id="heroWatchVideoBtn" onclick="App.openVideoModal()" aria-haspopup="dialog">
+                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width: 15px; height: 15px;" aria-hidden="true">
                   <polygon points="6 3 20 12 6 21 6 3"></polygon>
                 </svg>
                 <span>Watch 30-second overview</span>
@@ -1675,6 +1439,15 @@
               <canvas id="heroAnonymityCanvas" role="img" aria-label="Simulation of employee check-in anonymity. Individual responses stay private; groups of five or more become visible aggregate insight."></canvas>
               <!-- Visually hidden sentence for screen reader users -->
               <p class="sr-only">Individual responses stay private. Groups of five or more become visible insight.</p>
+            </div>
+            <!-- Story Step Advancing Caption -->
+            <div class="hero-story-strip">
+              <div class="hero-story-step-pills" aria-hidden="true">
+                <span class="hero-step-pill active" id="heroStep1"></span>
+                <span class="hero-step-pill" id="heroStep2"></span>
+                <span class="hero-step-pill" id="heroStep3"></span>
+              </div>
+              <p class="hero-story-caption" id="heroStoryCaption" aria-live="polite">Your answer stays private.</p>
             </div>
             <div class="hero-legend-row" aria-hidden="true">
               <div class="hero-legend-item">
@@ -1695,15 +1468,40 @@
     <section class="landing-section" style="background-color: var(--surface);" aria-label="Product Highlights">
       <div class="page-container">
         <div class="summary-grid">
+          <!-- Item 1: Anonymous by design -->
           <div class="summary-card reveal-on-scroll">
+            <div class="summary-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <circle cx="12" cy="11" r="1"></circle>
+                <path d="M12 12v3"></path>
+              </svg>
+            </div>
             <h2 class="summary-card-title">Anonymous by design</h2>
             <p class="summary-card-desc">HR sees results only for groups of 5 or more.</p>
           </div>
+
+          <!-- Item 2: Validated screening tools -->
           <div class="summary-card reveal-on-scroll">
+            <div class="summary-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
+            </div>
             <h2 class="summary-card-title">Validated screening tools</h2>
             <p class="summary-card-desc">PHQ-9, GAD-7, PSS-10, FAS-10, and COPSOQ-III check-ins.</p>
           </div>
+
+          <!-- Item 3: Confidential medical assessor access -->
           <div class="summary-card reveal-on-scroll">
+            <div class="summary-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                <line x1="9" y1="9" x2="15" y2="9"></line>
+                <line x1="9" y1="13" x2="13" y2="13"></line>
+              </svg>
+            </div>
             <h2 class="summary-card-title">Confidential medical assessor access</h2>
             <p class="summary-card-desc">Direct referrals and secure chat with a clinician.</p>
           </div>
@@ -1800,308 +1598,45 @@
       </div>
     </section>
 
-    <!-- Three-Portal Showcase Section (#product-preview - Background: --surface) -->
-    <section class="landing-section showcase-section" id="product-preview" aria-labelledby="preview-heading" style="background-color: var(--surface);">
-      <div class="showcase-scroll-track" id="showcaseTrack">
-        <div class="page-container showcase-sticky-stage">
-          <div class="section-header reveal-on-scroll" style="margin-bottom: var(--space-4);">
-            <h2 id="preview-heading" class="section-title">One platform, three secure portals.</h2>
-            <p class="section-subtitle">Each role sees only what it needs.</p>
-          </div>
+    <!-- Three-Portal Showcase Section (#product-showcase - Background: --surface) -->
+    <section class="landing-section portal-showcase-section" id="product-showcase" aria-labelledby="showcase-heading" style="background-color: var(--surface);">
+      <div class="page-container" style="max-width: 1280px;">
+        <div class="section-header reveal-on-scroll" style="margin-bottom: var(--space-4);">
+          <h2 id="showcase-heading" class="section-title">One platform, three secure portals.</h2>
+          <p class="section-subtitle">Each role sees only what it needs.</p>
+        </div>
 
-          <div class="showcase-grid">
-            <!-- Left Column (Desktop ~35%): Role Tabs & Dynamic Caption -->
-            <div class="showcase-nav-col">
-              <div class="tabs-underline showcase-tabs" role="tablist" aria-label="Platform role experiences">
-                <button type="button" class="tab-underline-item active" role="tab" id="tab-role-hr" aria-selected="true" aria-controls="panel-role-hr" onclick="App.switchShowcase('hr', true)">HR</button>
-                <button type="button" class="tab-underline-item" role="tab" id="tab-role-employee" aria-selected="false" aria-controls="panel-role-employee" onclick="App.switchShowcase('employee', true)">Employee</button>
-                <button type="button" class="tab-underline-item" role="tab" id="tab-role-assessor" aria-selected="false" aria-controls="panel-role-assessor" onclick="App.switchShowcase('assessor', true)">Medical assessor</button>
-              </div>
+        <div class="portal-stage" id="portalStage">
+          <img src="/assets/showcase/hr.webp" alt="Havilah HR Analytics portal showing aggregated wellbeing KPIs, risk trends, and department benchmarks" class="portal-screenshot active" id="portal-img-hr" decoding="async">
+          <img src="/assets/showcase/employee.webp" alt="Havilah Employee portal showing private check-in, wellbeing balance ring, and health library" class="portal-screenshot" id="portal-img-employee" decoding="async">
+          <img src="/assets/showcase/assessor.webp" alt="Havilah Medical Assessor portal showing clinical referral queue with anonymous reference codes" class="portal-screenshot" id="portal-img-assessor" decoding="async">
+          <canvas id="portalMorphCanvas" class="portal-morph-canvas" aria-hidden="true"></canvas>
+          <span class="portal-stage-badge">Sample data</span>
+        </div>
 
-              <!-- Role Caption Card (Desktop Left / Hidden Mobile) -->
-              <div class="showcase-caption-card" id="showcaseCaptionCard" aria-live="polite">
-                <span class="badge badge-info" id="showcaseCaptionBadge" style="width: fit-content; margin-bottom: var(--space-2);">HR Portal</span>
-                <p class="showcase-caption-text" id="showcaseCaptionText">Anonymous group insight. Results appear only for groups of 5 or more.</p>
-              </div>
+        <div class="portal-controls-wrap">
+          <div class="portal-tabs-row">
+            <div class="portal-tabs" role="tablist" aria-label="Platform role experiences">
+              <button type="button" class="portal-tab active" role="tab" id="tab-portal-hr" aria-selected="true" aria-controls="portal-img-hr" data-role="hr">
+                <span class="portal-tab-label">HR</span>
+                <span class="portal-tab-progress"><span class="portal-tab-progress-bar"></span></span>
+              </button>
+              <button type="button" class="portal-tab" role="tab" id="tab-portal-employee" aria-selected="false" aria-controls="portal-img-employee" data-role="employee">
+                <span class="portal-tab-label">Employee</span>
+                <span class="portal-tab-progress"><span class="portal-tab-progress-bar"></span></span>
+              </button>
+              <button type="button" class="portal-tab" role="tab" id="tab-portal-assessor" aria-selected="false" aria-controls="portal-img-assessor" data-role="assessor">
+                <span class="portal-tab-label">Medical assessor</span>
+                <span class="portal-tab-progress"><span class="portal-tab-progress-bar"></span></span>
+              </button>
             </div>
-
-            <!-- Right Column (Desktop ~65%): Persistent Device Frame -->
-            <div class="showcase-frame-col">
-              <div class="showcase-device-frame">
-                <!-- Frame Top Bar (Always Visible, does not animate) -->
-                <div class="showcase-frame-topbar">
-                  <div class="showcase-frame-brand">
-                    <span class="showcase-frame-dot"></span>
-                    <span id="showcaseFrameTitle" class="showcase-frame-title">Havilah · HR Analytics Console</span>
-                  </div>
-                  <div class="showcase-frame-actions">
-                    <span class="badge badge-neutral" style="font-size: var(--text-xs); font-weight: var(--weight-medium);">Sample data</span>
-                  </div>
-                </div>
-
-                <!-- Frame Screen Content Container -->
-                <div class="showcase-panels-container">
-                  <!-- Panel 1: HR -->
-                  <div class="showcase-panel is-active is-assembling" id="panel-role-hr" role="tabpanel" aria-labelledby="tab-role-hr">
-                    <div class="showcase-hr-layout" aria-hidden="true">
-                      <!-- Left Sidebar -->
-                      <aside class="showcase-sidebar anim-sidebar">
-                        <div class="showcase-sidebar-item active">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                          <span>HR Analytics</span>
-                        </div>
-                        <div class="showcase-sidebar-item">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                          <span>Clinical billing</span>
-                        </div>
-                        <div class="showcase-sidebar-item">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                          <span>Ethics and reports</span>
-                        </div>
-                        <div class="showcase-sidebar-item">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
-                          <span>Employee invites</span>
-                        </div>
-                      </aside>
-
-                      <!-- Main HR Analytics Stage -->
-                      <div class="showcase-hr-content">
-                        <!-- Stat Grid (Staggered 60ms) -->
-                        <div class="showcase-stat-grid">
-                          <div class="stat-card anim-card" style="--stagger: 0;">
-                            <span class="stat-label">Active check-ins</span>
-                            <span class="stat-value" style="color: var(--brand);">86</span>
-                            <span class="stat-hint">78% response rate</span>
-                          </div>
-                          <div class="stat-card anim-card" style="--stagger: 1;">
-                            <span class="stat-label">PHQ-9 group mean</span>
-                            <span class="stat-value" style="color: var(--success);">4.1</span>
-                            <span class="stat-hint">Minimal range (0-4)</span>
-                          </div>
-                          <div class="stat-card anim-card" style="--stagger: 2;">
-                            <span class="stat-label">GAD-7 group mean</span>
-                            <span class="stat-value" style="color: var(--success);">3.8</span>
-                            <span class="stat-hint">Minimal tension</span>
-                          </div>
-                          <div class="stat-card anim-card" style="--stagger: 3;">
-                            <span class="stat-label">Assessor referrals</span>
-                            <span class="stat-value">5</span>
-                            <span class="stat-hint">Anonymous codes</span>
-                          </div>
-                        </div>
-
-                        <!-- Split Charts & Cohort Table -->
-                        <div class="showcase-split-row">
-                          <!-- Severity Bar Chart -->
-                          <div class="stat-card anim-card" style="--stagger: 4;">
-                            <span class="stat-label" style="margin-bottom: var(--space-2);">Group Severity Distribution</span>
-                            <div class="showcase-bar-chart">
-                              <div class="showcase-bar-col">
-                                <div class="showcase-bar-track">
-                                  <div class="showcase-bar anim-bar" style="height: 56%; background-color: var(--success); --stagger: 0;"></div>
-                                </div>
-                                <span class="showcase-bar-val">56%</span>
-                                <span class="showcase-bar-lbl">Minimal</span>
-                              </div>
-                              <div class="showcase-bar-col">
-                                <div class="showcase-bar-track">
-                                  <div class="showcase-bar anim-bar" style="height: 26%; background-color: var(--text-subtle); --stagger: 1;"></div>
-                                </div>
-                                <span class="showcase-bar-val">26%</span>
-                                <span class="showcase-bar-lbl">Mild</span>
-                              </div>
-                              <div class="showcase-bar-col">
-                                <div class="showcase-bar-track">
-                                  <div class="showcase-bar anim-bar" style="height: 13%; background-color: var(--warning); --stagger: 2;"></div>
-                                </div>
-                                <span class="showcase-bar-val">13%</span>
-                                <span class="showcase-bar-lbl">Moderate</span>
-                              </div>
-                              <div class="showcase-bar-col">
-                                <div class="showcase-bar-track">
-                                  <div class="showcase-bar anim-bar" style="height: 5%; background-color: var(--danger); --stagger: 3;"></div>
-                                </div>
-                                <span class="showcase-bar-val">5%</span>
-                                <span class="showcase-bar-lbl">Elevated</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <!-- Cohort Privacy Table -->
-                          <div class="stat-card anim-card" style="--stagger: 5;">
-                            <span class="stat-label" style="margin-bottom: var(--space-2);">Anonymous Cohorts</span>
-                            <div class="showcase-table-wrap">
-                              <table class="showcase-mini-table">
-                                <thead>
-                                  <tr>
-                                    <th>Cohort</th>
-                                    <th>Resp.</th>
-                                    <th>Band</th>
-                                    <th>Privacy</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr class="anim-row" style="--stagger: 0;">
-                                    <td><strong>GRP-OPS-04</strong></td>
-                                    <td>24</td>
-                                    <td><span class="badge badge-success" style="font-size: 10px;">Minimal</span></td>
-                                    <td><span style="color: var(--brand); font-size: 11px;">Visible (5+)</span></td>
-                                  </tr>
-                                  <tr class="anim-row" style="--stagger: 1;">
-                                    <td><strong>GRP-ENG-02</strong></td>
-                                    <td>19</td>
-                                    <td><span class="badge badge-neutral" style="font-size: 10px;">Mild</span></td>
-                                    <td><span style="color: var(--brand); font-size: 11px;">Visible (5+)</span></td>
-                                  </tr>
-                                  <tr class="anim-row" style="--stagger: 2;">
-                                    <td><strong>GRP-FIN-01</strong></td>
-                                    <td>11</td>
-                                    <td><span class="badge badge-success" style="font-size: 10px;">Minimal</span></td>
-                                    <td><span style="color: var(--brand); font-size: 11px;">Visible (5+)</span></td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Panel 2: Employee -->
-                  <div class="showcase-panel" id="panel-role-employee" role="tabpanel" aria-labelledby="tab-role-employee" hidden>
-                    <div class="showcase-emp-layout" aria-hidden="true">
-                      <!-- Compact Employee Sub-bar -->
-                      <div class="showcase-emp-subbar anim-sidebar">
-                        <div class="showcase-emp-nav">
-                          <span class="showcase-emp-nav-pill active">Check-in</span>
-                          <span class="showcase-emp-nav-pill">Wellbeing Library</span>
-                          <span class="showcase-emp-nav-pill">Confidential Support</span>
-                        </div>
-                        <span class="badge badge-success" style="font-size: 11px;">Identity hidden from HR</span>
-                      </div>
-
-                      <!-- Primary Check-in Card -->
-                      <div class="stat-card anim-card" style="--stagger: 0; padding: var(--space-4);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
-                          <strong style="font-size: var(--text-sm); color: var(--text);">Today's check-in: Perceived Stress (PSS-10)</strong>
-                          <span style="font-size: var(--text-xs); color: var(--text-subtle);">Step 2 of 3 · 67% complete</span>
-                        </div>
-                        <div style="height: 6px; background-color: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: var(--space-3);">
-                          <div style="width: 67%; height: 100%; background-color: var(--brand); border-radius: 3px;"></div>
-                        </div>
-                        <p style="font-size: var(--text-sm); color: var(--text); margin-bottom: var(--space-3); line-height: 1.4;">
-                          "In the last month, how often have you felt confident in handling personal problems?"
-                        </p>
-                        <div style="display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; justify-content: space-between;">
-                          <div style="display: flex; gap: var(--space-1); flex-wrap: wrap;">
-                            <span class="badge badge-neutral" style="padding: 4px 8px; font-size: 11px;">Never</span>
-                            <span class="badge badge-neutral" style="padding: 4px 8px; font-size: 11px;">Rarely</span>
-                            <span class="badge badge-info" style="padding: 4px 8px; font-size: 11px; font-weight: 600;">Fairly often</span>
-                            <span class="badge badge-neutral" style="padding: 4px 8px; font-size: 11px;">Very often</span>
-                          </div>
-                          <button type="button" class="btn btn-primary btn-sm" tabindex="-1">Continue check-in</button>
-                        </div>
-                      </div>
-
-                      <!-- Split Row: Library & Confidential Help -->
-                      <div class="showcase-split-row">
-                        <div class="stat-card anim-card" style="--stagger: 1;">
-                          <strong style="font-size: var(--text-sm); color: var(--text); margin-bottom: var(--space-2); display: block;">Mental Health Library</strong>
-                          <div style="display: flex; flex-direction: column; gap: var(--space-2);">
-                            <div class="anim-row" style="--stagger: 0; padding: var(--space-2); background-color: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-control); display: flex; align-items: center; justify-content: space-between;">
-                              <span style="font-size: var(--text-xs); color: var(--text); font-weight: 500;">Managing workplace pressure &amp; rest</span>
-                              <span style="font-size: 10px; color: var(--text-subtle);">4 min read</span>
-                            </div>
-                            <div class="anim-row" style="--stagger: 1; padding: var(--space-2); background-color: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-control); display: flex; align-items: center; justify-content: space-between;">
-                              <span style="font-size: var(--text-xs); color: var(--text); font-weight: 500;">Guided breathing &amp; grounding audio</span>
-                              <span style="font-size: 10px; color: var(--text-subtle);">Audio guide</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div class="stat-card anim-card" style="--stagger: 2; justify-content: space-between;">
-                          <div>
-                            <strong style="font-size: var(--text-sm); color: var(--text); margin-bottom: var(--space-1); display: block;">Confidential Clinical Support</strong>
-                            <p style="font-size: var(--text-xs); color: var(--text-muted); line-height: 1.4; margin-bottom: var(--space-3);">
-                              Connect directly with a licensed medical assessor. Triage is routed via an anonymous reference code.
-                            </p>
-                          </div>
-                          <button type="button" class="btn btn-secondary btn-sm" tabindex="-1" style="width: 100%;">Message a medical assessor</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Panel 3: Medical Assessor -->
-                  <div class="showcase-panel" id="panel-role-assessor" role="tabpanel" aria-labelledby="tab-role-assessor" hidden>
-                    <div class="showcase-assessor-layout" aria-hidden="true">
-                      <!-- Referral Queue (Anonymous Codes Only) -->
-                      <div class="showcase-queue anim-sidebar">
-                        <div class="showcase-queue-header">
-                          <span style="font-size: var(--text-xs); font-weight: 600; color: var(--text);">Referral Queue</span>
-                          <span class="badge badge-neutral" style="font-size: 10px;">3 Active</span>
-                        </div>
-                        <div class="showcase-queue-item active anim-row" style="--stagger: 0;">
-                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                            <strong style="font-size: var(--text-xs); color: var(--text);">REF-8492-K</strong>
-                            <span class="badge badge-warning" style="font-size: 9px; height: 18px; padding: 0 4px;">Active triage</span>
-                          </div>
-                          <span style="font-size: 10px; color: var(--text-subtle);">Referred 18m ago</span>
-                        </div>
-                        <div class="showcase-queue-item anim-row" style="--stagger: 1;">
-                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                            <strong style="font-size: var(--text-xs); color: var(--text);">REF-3104-M</strong>
-                            <span class="badge badge-info" style="font-size: 9px; height: 18px; padding: 0 4px;">New</span>
-                          </div>
-                          <span style="font-size: 10px; color: var(--text-subtle);">Referred 2h ago</span>
-                        </div>
-                        <div class="showcase-queue-item anim-row" style="--stagger: 2;">
-                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                            <strong style="font-size: var(--text-xs); color: var(--text);">REF-7721-P</strong>
-                            <span class="badge badge-success" style="font-size: 9px; height: 18px; padding: 0 4px;">Follow-up</span>
-                          </div>
-                          <span style="font-size: 10px; color: var(--text-subtle);">Referred 1d ago</span>
-                        </div>
-                      </div>
-
-                      <!-- Chat Panel (Chat Only, Zero Video) -->
-                      <div class="showcase-chat anim-card" style="--stagger: 1;">
-                        <div class="showcase-chat-header">
-                          <div style="display: flex; align-items: center; gap: var(--space-2);">
-                            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--brand);"></span>
-                            <strong style="font-size: var(--text-xs); color: var(--text);">Case REF-8492-K · Secure Assessor Chat</strong>
-                          </div>
-                          <span class="badge badge-neutral" style="font-size: 10px;">Encrypted</span>
-                        </div>
-                        <div class="showcase-chat-messages">
-                          <div class="chat-bubble incoming anim-row" style="--stagger: 0;">
-                            <div class="chat-bubble-sender">Employee (REF-8492-K)</div>
-                            <div class="chat-bubble-text">Hello Doctor. Work stress has made it hard to sleep this week, and I wanted confidential advice.</div>
-                            <div class="chat-bubble-time">10:14 AM</div>
-                          </div>
-                          <div class="chat-bubble outgoing anim-row" style="--stagger: 1;">
-                            <div class="chat-bubble-sender">Medical Assessor</div>
-                            <div class="chat-bubble-text">You are in a private space—your employer only sees anonymous group stats. Let's review your check-in together.</div>
-                            <div class="chat-bubble-time">10:17 AM</div>
-                          </div>
-                        </div>
-                        <div class="showcase-chat-input-bar">
-                          <input type="text" class="input" style="height: 32px; font-size: var(--text-xs);" placeholder="Type a confidential clinical reply..." disabled tabindex="-1">
-                          <button type="button" class="btn btn-primary btn-sm" style="height: 32px;" disabled tabindex="-1">Send</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Mobile Caption Target (Shown under frame on mobile) -->
-              <div class="showcase-mobile-caption" id="showcaseMobileCaption" aria-hidden="true">
-                <p id="showcaseMobileCaptionText">Anonymous group insight. Results appear only for groups of 5 or more.</p>
-              </div>
-            </div>
+            <button type="button" class="portal-pause-btn" id="portalPauseBtn" aria-label="Pause portal preview autoplay" title="Pause autoplay">
+              <svg class="icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+              <svg class="icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span class="sr-only">Pause</span>
+            </button>
           </div>
+          <p class="portal-caption" id="portalCaption" aria-live="polite">HR sees anonymous group insight, never individual answers.</p>
         </div>
       </div>
     </section>
@@ -2514,7 +2049,7 @@
 
         <div id="demoFeedbackMsg" class="form-error" style="display: none; margin-bottom: var(--space-3);"></div>
 
-        <p style="font-size: var(--text-xs); color: var(--text-subtle); line-height: 1.5; margin-top: var(--space-2);">
+        <p style="font-size: var(--text-sm); color: var(--text-subtle); line-height: 1.5; margin-top: var(--space-2);">
           Prefer direct email? Reach us directly at <a href="mailto:nanakwamedickson553@gmail.com">nanakwamedickson553@gmail.com</a>.
         </p>
 
@@ -2698,7 +2233,7 @@
           <span class="stat-hint" style="margin-top: 4px;">Business hours: Monday to Friday, 8:00 AM – 5:00 PM GMT</span>
         </div>
 
-        <p style="font-size: var(--text-xs); color: var(--text-subtle); margin-bottom: 0;">
+        <p style="font-size: var(--text-sm); color: var(--text-subtle); margin-bottom: 0;">
           For invoice requests, you can also use our <button type="button" class="footer-btn-link" style="color: var(--brand);" onclick="App.closeContactModal(); App.openQuoteModal();">quote request form</button>.
         </p>
       </div>
@@ -2759,6 +2294,7 @@
 
   <!-- Page Scripts (Strictly under 15 KB unminified, zero external dependencies) -->
   <script src="/js/heroViz.js"></script>
+  <script src="/js/portalMorph.js"></script>
   <script>
 'use strict';
 const CONTACT_EMAIL = 'nanakwamedickson553@gmail.com';
@@ -2780,76 +2316,8 @@ function showToast(title, message, type = 'info') {
   }, 4000);
 }
 
-/* Three-Portal Showcase Controller (< 2.5 KB, zero dependencies) */
-const ROLES = {
-  hr: { title: 'Havilah · HR Analytics Console', badge: 'HR Portal', text: 'Anonymous group insight. Results appear only for groups of 5 or more.' },
-  employee: { title: 'Havilah · Employee Wellbeing Space', badge: 'Employee Portal', text: 'Private check-ins, a mental health library, and confidential access to help.' },
-  assessor: { title: 'Havilah · Medical Assessor Console', badge: 'Medical Assessor', text: 'Referrals arrive as anonymous codes. Assessors respond through secure chat.' }
-};
-let currentRole = 'hr', animTimer = null, userTabLocked = false;
-
-function switchShowcase(role, fromUser = false) {
-  if (!ROLES[role] || (role === currentRole && !fromUser)) return;
-  if (fromUser) userTabLocked = true;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    applyRoleInstant(role);
-    return;
-  }
-  clearTimeout(animTimer);
-  const oldPanel = $('panel-role-' + currentRole);
-  const newPanel = $('panel-role-' + role);
-  if (oldPanel) oldPanel.classList.add('is-exiting');
-
-  animTimer = setTimeout(() => {
-    applyRoleInstant(role);
-    if (newPanel) {
-      newPanel.classList.remove('is-exiting', 'is-assembling');
-      void newPanel.offsetWidth;
-      newPanel.classList.add('is-assembling');
-    }
-  }, 150);
-}
-
-function applyRoleInstant(role) {
-  currentRole = role;
-  const meta = ROLES[role];
-  ['hr', 'employee', 'assessor'].forEach(r => {
-    const btn = $('tab-role-' + r);
-    const p = $('panel-role-' + r);
-    const active = r === role;
-    if (btn) {
-      btn.classList.toggle('active', active);
-      btn.setAttribute('aria-selected', active ? 'true' : 'false');
-    }
-    if (p) {
-      p.classList.toggle('is-active', active);
-      if (active) p.removeAttribute('hidden');
-      else p.setAttribute('hidden', '');
-    }
-  });
-  if ($('showcaseFrameTitle')) $('showcaseFrameTitle').textContent = meta.title;
-  if ($('showcaseCaptionBadge')) $('showcaseCaptionBadge').textContent = meta.badge;
-  if ($('showcaseCaptionText')) $('showcaseCaptionText').textContent = meta.text;
-  if ($('showcaseMobileCaptionText')) $('showcaseMobileCaptionText').textContent = meta.text;
-}
-
+/* Scroll Reveal Controller */
 document.addEventListener('DOMContentLoaded', () => {
-  // Accessible Keyboard Tabs
-  document.querySelectorAll('[role="tablist"]').forEach(tl => {
-    tl.addEventListener('keydown', e => {
-      const tabs = Array.from(tl.querySelectorAll('[role="tab"]'));
-      const i = tabs.indexOf(document.activeElement);
-      if (i === -1) return;
-      const map = { ArrowRight: (i + 1) % tabs.length, ArrowLeft: (i - 1 + tabs.length) % tabs.length, Home: 0, End: tabs.length - 1 };
-      if (map[e.key] !== undefined) {
-        e.preventDefault();
-        tabs[map[e.key]].focus();
-        tabs[map[e.key]].click();
-      }
-    });
-  });
-
-  // Scroll reveals
   if ('IntersectionObserver' in window) {
     const obs = new IntersectionObserver((entries, o) => {
       entries.forEach(e => {
@@ -2857,48 +2325,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }, { threshold: 0.1 });
     document.querySelectorAll('.reveal-on-scroll').forEach(el => obs.observe(el));
-
-    // Showcase Initial View Assembly Trigger
-    const showObs = new IntersectionObserver((entries, o) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          const p = $('panel-role-hr');
-          if (p) p.classList.add('is-assembling');
-          o.unobserve(e.target);
-        }
-      });
-    }, { threshold: 0.15 });
-    const trackEl = $('product-preview');
-    if (trackEl) showObs.observe(trackEl);
   } else {
     document.querySelectorAll('.reveal-on-scroll').forEach(el => el.classList.add('is-visible'));
-    const p = $('panel-role-hr');
-    if (p) p.classList.add('is-assembling');
   }
-
-  // Desktop Sticky Scroll Progress (Throttled RAF)
-  let ticking = false;
-  window.addEventListener('scroll', () => {
-    if (ticking || userTabLocked || window.innerWidth < 1024 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      ticking = false;
-      const track = $('showcaseTrack');
-      if (!track) return;
-      const r = track.getBoundingClientRect();
-      const h = r.height - window.innerHeight;
-      if (h <= 0) return;
-      if (r.bottom < 0 || r.top > window.innerHeight) {
-        userTabLocked = false;
-        return;
-      }
-      const p = -r.top / h;
-      if (p >= 0 && p <= 1) {
-        const next = p < 0.33 ? 'hr' : (p < 0.66 ? 'employee' : 'assessor');
-        if (next !== currentRole) switchShowcase(next, false);
-      }
-    });
-  }, { passive: true });
 });
 
 function toggleMobileMenu() {
@@ -2912,7 +2341,7 @@ function toggleMobileMenu() {
 }
 
 window.App = {
-  switchShowcase,
+  switchShowcase: (role) => window.HavilahPortalMorph && window.HavilahPortalMorph.jumpToRole(['hr', 'employee', 'assessor'].indexOf(role)),
   openModal: id => { const m = $(id); if (m) m.classList.add('is-open'); },
   closeModal: id => { const m = $(id); if (m) m.classList.remove('is-open'); },
   openDemoModal: (title, plan) => {

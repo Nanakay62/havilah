@@ -1169,7 +1169,7 @@
           Mental Wellbeing &amp; Health Library
         </h1>
         <p style="font-size: 14px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
-          Clinically validated somatic tools, nervous system resets, and evidence-based psychoeducation aligned with ISO 45003 standards.
+          Clinically validated somatic tools, nervous system resets, and evidence-based psychoeducation.
         </p>
 
         <!-- Search input -->
@@ -1359,7 +1359,7 @@
         <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: rgba(79,178,134,0.08); border: 1px solid rgba(79,178,134,0.2); border-radius: 10px; margin-bottom: 20px;">
           
           <div>
-            <div style="font-size: 0.8125rem; font-weight: 700; color: #2e7d5b;">ISO 45003 Privacy Protection Guaranteed</div>
+            <div style="font-size: 0.8125rem; font-weight: 700; color: #2e7d5b;">Privacy Protection Guaranteed</div>
             <div style="font-size: 0.75rem; color: var(--text-2);">Your check-ins are strictly confidential. HR only sees group trends when N ≥ 5.</div>
           </div>
         </div>
@@ -1400,7 +1400,7 @@
               <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text);">Confidential Clinical Help &amp; Support</h2>
               <span class="badge badge-success">Confidential</span>
             </div>
-            <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">ISO 45003 Privacy Protected · Clinical Provider Routing</div>
+            <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Privacy Protected · Clinical Provider Routing</div>
           </div>
         </div>
         <button class="modal-close" onclick="App.closeHelpCenter()" aria-label="Close" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: var(--radius-control); display: flex; align-items: center; justify-content: center;">
@@ -1430,7 +1430,7 @@
         <div class="cosmic-card" style="margin-bottom: 16px;">
           <h3 style="font-size: 0.9375rem; font-weight: 700; color: #0284c7; margin-bottom: 6px;">How Your Data is Protected</h3>
           <p style="font-size: 0.8125rem; color: var(--cosmic-text-secondary); line-height: 1.5; margin: 0;">
-            Havilah is engineered under the <strong>ISO 45003 standard for Psychological Health & Safety at Work</strong>. Your individual survey responses are encrypted and stored in your private employee vault.
+            Havilah is engineered for psychological health and safety at work. Your individual survey responses are encrypted and stored in your private employee vault.
           </p>
         </div>
 
@@ -3802,7 +3802,7 @@ const App = (() => {
           <div style="width:44px; height:44px; border-radius:12px; background:rgba(0,183,195,0.12); display:flex; align-items:center; justify-content:center; color:var(--accent); font-size:22px; flex-shrink:0;">🛡️</div>
           <div>
             <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-1); margin:0;">Consent for Wellbeing Check-in</h3>
-            <p style="font-size:0.75rem; color:var(--text-3); margin:0;">Under GDPR Article 9 & ISO 45003 workplace standards</p>
+            <p style="font-size:0.75rem; color:var(--text-3); margin:0;">Under GDPR Article 9 & Ghana Data Protection Act (Act 843)</p>
           </div>
         </div>
         <div style="background:var(--bg-base); border:1px solid var(--border); border-radius:12px; padding:14px 16px; font-size:0.85rem; color:var(--text-2); line-height:1.5; margin-bottom:14px;">
@@ -4498,7 +4498,7 @@ const App = (() => {
         <span style="font-size:20px;">🛡️</span>
         <div>
           <strong style="color:var(--text-1); font-size:14px;">Confidential Wellbeing Space</strong>
-          <p style="margin:2px 0 0; font-size:12px; color:var(--text-2);">Your assessments are protected under GDPR Article 9 & ISO 45003. Grant consent to activate your personal scores and trend tracking.</p>
+          <p style="margin:2px 0 0; font-size:12px; color:var(--text-2);">Your assessments are protected with end-to-end privacy safeguards. Grant consent to activate your personal scores and trend tracking.</p>
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
@@ -4894,7 +4894,7 @@ const App = (() => {
     { title: 'Profile Settings', keywords: ['user', 'account', 'profile'], action: () => App.openProfileSettings() },
     { title: 'Privacy Policy', keywords: ['privacy', 'legal', 'policy', 'data'], action: () => App.openLegal('privacy') },
     { title: 'Terms of Service', keywords: ['terms', 'legal', 'tos'], action: () => App.openLegal('terms') },
-    { title: 'HIPAA Compliance', keywords: ['hipaa', 'legal', 'health'], action: () => App.openLegal('hipaa') },
+    { title: 'Health Data Privacy', keywords: ['privacy', 'legal', 'health'], action: () => App.openLegal('hipaa') },
     { title: 'GDPR Compliance', keywords: ['gdpr', 'legal', 'europe'], action: () => App.openLegal('gdpr') },
     { title: 'Contact Support', keywords: ['contact', 'support', 'help', 'email'], action: () => App.openContact() },
     { title: 'Sign Out', keywords: ['logout', 'signout', 'exit'], action: () => App.signOut() }
@@ -5581,18 +5581,18 @@ const App = (() => {
           </div>
         `;
       } else if (type === 'hipaa') {
-        title = 'HIPAA Compliance';
+        title = 'Health Data Privacy';
         content = `
-          <h3>PHI Protected Status Statement</h3>
-          <p>Anonymous survey answers generally do not constitute Protected Health Information (PHI) under HIPAA, but our system treats all psychometric data with PHI-level security.</p>
-          <h3>Business Associate Agreement (BAA)</h3>
-          <p>Our platform acts as a secure data processor (Business Associate) and implements mandatory technical safeguards (like zero-knowledge cryptographic hashes and at-rest storage encryption) to prevent unauthorized healthcare exposure.</p>
+          <h3>Health Data Protection Statement</h3>
+          <p>Havilah operates with rigorous health data security controls. We implement administrative, physical, and technical safeguards for all personal wellness information.</p>
+          <h3>Individual Privacy Guarantee</h3>
+          <p>Individual check-in responses remain private and confidential. HR sees results only in aggregated groups of 5 or more. Designed with the Ghana Data Protection Act, 2012 (Act 843) in mind.</p>
         `;
       } else if (type === 'gdpr') {
         title = 'GDPR Compliance';
         content = `
           <h3>Legal Basis for Processing</h3>
-          <p>Data is processed under the "Consent" of the employee taking the survey, or the "Legitimate Interest" of an employer monitoring workplace occupational health hazards (ISO 45003 compliance).</p>
+          <p>Data is processed under the "Consent" of the employee taking the survey, or the "Legitimate Interest" of an employer monitoring workplace occupational health hazards.</p>
           <h3>Data Subject Rights (DSR)</h3>
           <p>Employees can exercise their Right to Be Forgotten (data deletion), Right to Access, or Right to Portability. Our system fulfills these requests while keeping anonymous aggregate records intact to preserve historical benchmarking.</p>
           <h3>Data Protection Officer (DPO)</h3>
@@ -5638,7 +5638,7 @@ const App = (() => {
           <li><strong>Zero-Knowledge Encryption Engine:</strong> Nominal (AES-256-GCM)</li>
           <li><strong>COPSOQ III Survey Processor:</strong> Active</li>
           <li><strong>EAP Escalation Service:</strong> Operational (24/7 Hotline Ready)</li>
-          <li><strong>ISO 45003 Compliance Core:</strong> 100% Verified</li>
+          <li><strong>Workplace Wellbeing Engine:</strong> 100% Operational</li>
         </ul>
       `;
       openModal('genericPanelBackdrop');

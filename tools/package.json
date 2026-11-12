@@ -1,0 +1,10 @@
+{
+  "name": "havilah-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tools for Havilah showcase screenshots and local demo environment",
+  "dependencies": {},
+  "devDependencies": {
+    "mongodb-memory-server": "^10.1.2"
+  }
+}

@@ -1,0 +1,11 @@
+const fs = require('fs');
+let c = fs.readFileSync('private/app/superadmin.html', 'utf8');
+c = c.replace('Manage double opt-in consent terms, ISO 45003 Markdown disclosures, and tenant crisis hotline fallbacks.', 'Manage double opt-in consent terms, privacy disclosures, and tenant crisis hotline fallbacks.');
+c = c.replace('<h3>ISO 45003 Worker Double Opt-In Policy</h3>', '<h3>Worker Double Opt-In Policy</h3>');
+c = c.replace('<h3>Master Privacy & Data Processing Disclosure Editor (ISO 45003)</h3>', '<h3>Master Privacy & Data Processing Disclosure Editor</h3>');
+c = c.replace('# ISO 45003 Worker Data Protection Disclosure', '# Worker Data Protection Disclosure');
+c = c.replace("showToast('Policy Saved', 'ISO 45003 double opt-in & onboarding policy updated.', 'success');", "showToast('Policy Saved', 'Double opt-in & onboarding policy updated.', 'success');");
+c = c.replace("showToast('Disclosure Saved', 'Master Privacy & ISO 45003 Markdown Disclosure updated.', 'success');", "showToast('Disclosure Saved', 'Master Privacy & Markdown Disclosure updated.', 'success');");
+c = c.replace('Aggregated logs are retained for ISO 45003 compliance audit reporting according to company policies and automatically purged thereafter.', 'Aggregated logs are retained for audit reporting according to company policies and automatically purged thereafter.');
+fs.writeFileSync('private/app/superadmin.html', c, 'utf8');
+console.log('Cleaned up superadmin.html!');

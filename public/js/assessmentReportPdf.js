@@ -258,7 +258,7 @@
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(8.5);
         pdf.setTextColor(...colors.slateLight);
-        pdf.text('ISO 45003 Psychological Health & Safety at Work Standard', margin, 24);
+        pdf.text('Occupational Health & Psychosocial Wellbeing Guidelines', margin, 24);
 
         // Header Right Meta
         pdf.setFont('helvetica', 'bold');
@@ -298,7 +298,7 @@
         // Security Stamp
         pdf.setFontSize(6.5);
         pdf.setTextColor(160, 170, 185);
-        pdf.text('Complies with ISO 45003:2021 Occupational Health & Psychosocial Risk Screening Guidelines', margin, footerY + 10);
+        pdf.text('Occupational Health & Psychosocial Risk Screening Guidelines', margin, footerY + 10);
       };
 
       // =========================================================================
@@ -715,12 +715,12 @@
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(7);
       pdf.setTextColor(...colors.slate);
-      pdf.text('MANDATORY NON-DIAGNOSTIC NOTICE (ISO 45003 GUIDELINES):', margin + 3, y + 4.5);
+      pdf.text('MANDATORY NON-DIAGNOSTIC NOTICE:', margin + 3, y + 4.5);
 
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(6.8);
       pdf.setTextColor(...colors.slate);
-      const disclaimer = 'This check-in is an occupational well-being screening indicator under ISO 45003 workplace guidelines and does not constitute a formal clinical diagnosis. If you are experiencing acute distress or illness, please contact Dr. Edith Clarke at 024 362 9870 or consult a licensed healthcare professional.';
+      const disclaimer = 'This check-in is an occupational well-being screening indicator under workplace wellbeing guidelines and does not constitute a formal clinical diagnosis. If you are experiencing acute distress or illness, please contact Dr. Edith Clarke at 024 362 9870 or consult a licensed healthcare professional.';
       const splitDisc = pdf.splitTextToSize(disclaimer, contentWidth - 6);
       pdf.text(splitDisc, margin + 3, y + 8.5);
 

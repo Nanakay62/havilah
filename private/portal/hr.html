@@ -707,11 +707,11 @@
       </button>
       <button class="btn btn-secondary btn-sm" onclick="generateComplianceReport()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-        <span>Download ISO 45003 report</span>
+        <span>Download Wellbeing Report</span>
       </button>
       <button class="btn btn-secondary btn-sm" onclick="App.openAssessmentCycles()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span>Assessment cycles</span>
+        <span>Manage Assessment Access</span>
       </button>
       <button class="btn btn-primary btn-sm" onclick="App.openPulseBuilder()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
@@ -976,7 +976,7 @@
         </div>
       </div>
       <div class="modal-body">
-        <p style="color: var(--text-muted); font-size: var(--text-xs); margin-bottom: var(--space-4);">Departments will display on the ISO 45003 Risk Heatmap once at least 5 responses are recorded.</p>
+        <p style="color: var(--text-muted); font-size: var(--text-xs); margin-bottom: var(--space-4);">Departments will display on the Wellbeing Risk Heatmap once at least 5 responses are recorded.</p>
         <div class="form-group" style="margin-bottom: 0;">
           <label for="newDeptNameInput" class="form-label">Department name</label>
           <input type="text" id="newDeptNameInput" class="form-input" placeholder="e.g. Data Science &amp; AI" />
@@ -1415,7 +1415,7 @@ async function getHtml2Canvas() {
 
 async function generateComplianceReport() {
   try {
-    showToast('Generating Report', 'Preparing your 3-page ISO 45003 compliance audit report...', 'info');
+    showToast('Generating Report', 'Preparing your 3-page wellbeing audit report...', 'info');
     
     // Fetch real tenant analytics dynamically from backend
     let analyticsData = null;
@@ -1447,7 +1447,7 @@ async function generateComplianceReport() {
     const margin = 16;
 
     // Helper: Header banner
-    const renderHeader = (pageTitle = 'ISO 45003 Compliance Audit Report') => {
+    const renderHeader = (pageTitle = 'Workplace Wellbeing Audit Report') => {
       pdf.setFillColor(15, 15, 30);
       pdf.rect(0, 0, pageWidth, 38, 'F');
       pdf.setFillColor(99, 102, 241);
@@ -1461,12 +1461,12 @@ async function generateComplianceReport() {
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(9);
       pdf.setTextColor(156, 163, 175);
-      pdf.text('Havilah Occupational Health & Workplace Safety Engine', margin, 27);
+      pdf.text('Havilah Occupational Health & Workplace Safety Platform', margin, 27);
       pdf.text('Date: ' + new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }), pageWidth - margin, 27, { align: 'right' });
     };
 
     // PAGE 1: COVER, EXECUTIVE SUMMARY & RADAR CHART
-    renderHeader('ISO 45003 Compliance Audit Report - Executive Summary');
+    renderHeader('Workplace Wellbeing Audit Report - Executive Summary');
     let y = 48;
 
     pdf.setFontSize(15);
@@ -1626,14 +1626,14 @@ async function generateComplianceReport() {
 
     // PAGE 2: PSYCHOSOCIAL BENCHMARKS & DEPARTMENT RISK MATRIX
     pdf.addPage();
-    renderHeader('ISO 45003 Audit - Risk Benchmarks & Department Matrix');
+    renderHeader('Workplace Wellbeing Audit - Risk Benchmarks & Department Matrix');
     y = 48;
 
     // Section 3. Psychosocial Risk Benchmarks
     pdf.setFontSize(15);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(99, 102, 241);
-    pdf.text('3. Psychosocial Risk Benchmarks (ISO 45003)', margin, y);
+    pdf.text('3. Psychosocial Risk Benchmarks', margin, y);
     y += 8;
 
     const tableWidth = pageWidth - (margin * 2);
@@ -1646,7 +1646,7 @@ async function generateComplianceReport() {
     pdf.setTextColor(255, 255, 255);
     pdf.text('DIMENSION', colX[0] + 4, y + 5.5);
     pdf.text('COMPANY SCORE', colX[1], y + 5.5);
-    pdf.text('ISO BENCHMARK', colX[2], y + 5.5);
+    pdf.text('BENCHMARK', colX[2], y + 5.5);
     pdf.text('RISK LEVEL', colX[3], y + 5.5);
     pdf.text('30-DAY TREND', colX[4], y + 5.5);
     y += 8;
@@ -1757,23 +1757,23 @@ async function generateComplianceReport() {
 
     // PAGE 3: ACTION PLAN & RECOMMENDATIONS
     pdf.addPage();
-    renderHeader('ISO 45003 Audit - Action Plan & Recommendations');
+    renderHeader('Workplace Wellbeing Audit - Action Plan & Recommendations');
     y = 48;
 
     pdf.setFontSize(15);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(99, 102, 241);
-    pdf.text('5. Actionable ISO 45003 Recommendations', margin, y);
+    pdf.text('5. Actionable Wellbeing Recommendations', margin, y);
     y += 8;
 
     const recs = isColdStart ? [
-      { clause: 'Clause 6.1.2', title: 'Establish Initial Baseline Assessment', text: 'Distribute 1-click activation codes to employees across provisioned departments.' },
-      { clause: 'Clause 8.1.1', title: 'Leadership ISO 45003 Orientation', text: 'Orient department managers on recognizing early psychosocial risk indicators.' },
-      { clause: 'Clause 9.1.2', title: 'Differential Privacy Shield Enforcement', text: 'Maintain minimum N >= 5 aggregation threshold for all cohort reporting.' }
+      { clause: 'Baseline', title: 'Establish Initial Baseline Assessment', text: 'Distribute 1-click activation codes to employees across provisioned departments.' },
+      { clause: 'Leadership', title: 'Leadership Wellbeing Orientation', text: 'Orient department managers on recognizing early psychosocial risk indicators.' },
+      { clause: 'Privacy', title: 'Differential Privacy Shield Enforcement', text: 'Maintain minimum N >= 5 aggregation threshold for all cohort reporting.' }
     ] : [
-      { clause: 'Clause 6.1.2', title: 'Targeted Shift & Workload Redistribution', text: 'Execute workload balancing in high-burnout departments to mitigate stress indicators.' },
-      { clause: 'Clause 8.1.1', title: 'Psychosocial Risk Leadership Training', text: 'Conduct mandatory manager training on early recognition of emotional exhaustion.' },
-      { clause: 'Clause 9.1.2', title: 'Bi-weekly Pulse Monitoring Cycle', text: 'Maintain 30-day 5-dimension pulse check-ins to monitor post-intervention risk trajectories.' }
+      { clause: 'Workload', title: 'Targeted Shift & Workload Redistribution', text: 'Execute workload balancing in high-burnout departments to mitigate stress indicators.' },
+      { clause: 'Training', title: 'Psychosocial Risk Leadership Training', text: 'Conduct mandatory manager training on early recognition of emotional exhaustion.' },
+      { clause: 'Cadence', title: 'Bi-weekly Pulse Monitoring Cycle', text: 'Maintain 30-day 5-dimension pulse check-ins to monitor post-intervention risk trajectories.' }
     ];
 
     recs.forEach(rec => {
@@ -1832,11 +1832,11 @@ async function generateComplianceReport() {
     pdf.setFontSize(9);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(15, 23, 42);
-    pdf.text('Official ISO 45003 Audit Verification Stamp', margin + 8, y + 7);
+    pdf.text('Official Wellbeing Audit Verification Stamp', margin + 8, y + 7);
     pdf.setFontSize(8);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(100, 116, 139);
-    pdf.text('Audited & Verified by Havilah Compliance Engine - Anonymization Shield Enforced (N >= 5)', margin + 8, y + 14);
+    pdf.text('Audited & Verified by Havilah Platform - Anonymization Shield Enforced (N >= 5)', margin + 8, y + 14);
 
     const totalPages = pdf.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
@@ -1847,13 +1847,13 @@ async function generateComplianceReport() {
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(148, 163, 184);
-      pdf.text('Confidential - Generated by Havilah Compliance Engine | ISO 45003:2021 Occupational Health Standard', margin, pageHeight - 5);
+      pdf.text('Confidential - Generated by Havilah Platform | Workplace Wellbeing & Occupational Health', margin, pageHeight - 5);
       pdf.text(`Page ${i} of ${totalPages}`, pageWidth - margin, pageHeight - 5, { align: 'right' });
     }
 
     const dateStr = new Date().toISOString().split('T')[0];
-    pdf.save(`Havilah_ISO45003_Audit_${dateStr}.pdf`);
-    showToast('Report downloaded', 'Your 3-page ISO 45003 compliance audit report has been saved.', 'success');
+    pdf.save(`Havilah_Wellbeing_Audit_${dateStr}.pdf`);
+    showToast('Report downloaded', 'Your 3-page wellbeing audit report has been saved.', 'success');
   } catch (err) {
     console.error('[PDF] Report generation failed:', err);
     showToast('Export Error', 'Failed to generate PDF report: ' + err.message, 'error');
@@ -2178,7 +2178,7 @@ const App = (() => {
   const cmdIndex = [
     { group: 'HR Views', items: [
       { title: 'Overview & KPIs', desc: 'Active headcount & composite score', icon: 'chart', action: () => { const el = document.getElementById('kpiGrid'); if (el) el.scrollIntoView({ behavior: 'smooth' }); } },
-      { title: 'Longitudinal Trends', desc: 'ISO 45003 risk distributions', icon: 'chart', action: () => { const el = document.getElementById('risk-trends-container'); if (el) el.scrollIntoView({ behavior: 'smooth' }); } },
+      { title: 'Longitudinal Trends', desc: 'Wellbeing risk distributions', icon: 'chart', action: () => { const el = document.getElementById('risk-trends-container'); if (el) el.scrollIntoView({ behavior: 'smooth' }); } },
       { title: 'Wellness Dimensions Radar', desc: '5-factor org-wide balance', icon: 'heart', action: () => { const el = document.getElementById('radar-container'); if (el) el.scrollIntoView({ behavior: 'smooth' }); } },
       { title: 'Active Risk Alerts', desc: 'Predictive cohort thresholds', icon: 'bell', action: () => { const el = document.getElementById('alertsList'); if (el) el.scrollIntoView({ behavior: 'smooth' }); } }
     ]},
@@ -2821,7 +2821,22 @@ const App = (() => {
       `;
       return;
     }
-    const ctx = $('#severityChart');
+    let ctx = $('#severityChart');
+    if (!ctx && container) {
+      container.innerHTML = `
+        <div class="chart-head">
+          <div><div class="chart-title">Risk severity trends</div><div class="chart-subtitle" id="severitySubtitle">Distribution across 4 severity bands, last 8 weeks</div></div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="background: #15803D;"></span>Healthy</span>
+            <span class="legend-item"><span class="legend-dot" style="background: #0F766E;"></span>Mild</span>
+            <span class="legend-item"><span class="legend-dot" style="background: #D97706;"></span>Moderate</span>
+            <span class="legend-item"><span class="legend-dot" style="background: #DC2626;"></span>High</span>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="severityChart"></canvas></div>
+      `;
+      ctx = $('#severityChart');
+    }
     if (!ctx || state.charts.severity) return;
     state.charts.severity = new Chart(ctx, {
       type: 'bar',
@@ -2865,7 +2880,16 @@ const App = (() => {
       `;
       return;
     }
-    const ctx = $('#radarChart');
+    let ctx = $('#radarChart');
+    if (!ctx && container) {
+      container.innerHTML = `
+        <div class="chart-head">
+          <div><div class="chart-title">Wellness dimensions</div><div class="chart-subtitle">Org-wide radar profile vs target</div></div>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="radarChart"></canvas></div>
+      `;
+      ctx = $('#radarChart');
+    }
     if (!ctx || state.charts.radar) return;
     state.charts.radar = new Chart(ctx, {
       type: 'radar',
@@ -2941,7 +2965,7 @@ const App = (() => {
       </div>
       <h4 style="margin: 0 0 var(--space-1) 0; color: var(--text); font-weight: var(--weight-semibold); font-size: var(--text-sm);">Privacy threshold active (N &lt; 5)</h4>
       <p style="margin: 0; color: var(--text-subtle); font-size: var(--text-xs); max-width: 420px; margin-inline: auto;">
-        ISO 45003 trend charts and heatmaps activate automatically once at least 5 employee pulse responses are recorded.
+        Trend charts and heatmaps activate automatically once at least 5 employee pulse responses are recorded.
       </p>
     </div>
   `;
@@ -3234,7 +3258,7 @@ const App = (() => {
     const s = state.settings || {};
     const nSize = s.nSizeThreshold || 5;
     const body = `
-      <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-deep); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;">ISO 45003 Assessment Modules</div>
+      <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-deep); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;">Assessment Modules</div>
       <div class="toggle-row">
         <div><div class="toggle-label">COPSOQ-II (Work Environment & Hazards)</div><div class="toggle-desc">Copenhagen Psychosocial Questionnaire Module</div></div>
         <button class="toggle ${s.copsoqEnabled !== false ? 'on' : ''}" data-setting="copsoqEnabled" aria-label="Toggle COPSOQ"></button>
@@ -3273,7 +3297,7 @@ const App = (() => {
       </div>
     `;
     const foot = `<button class="btn btn-ghost btn-sm" onclick="App.closeGeneric()">Cancel</button><button class="btn btn-primary btn-sm" onclick="App.saveSettings()">Save preferences</button>`;
-    openGeneric('SETTINGS', 'ISO 45003 Modules & Privacy Settings', body, foot);
+    openGeneric('SETTINGS', 'Assessment Modules & Privacy Settings', body, foot);
     // Wire toggles
     $$('#genericBody .toggle').forEach(t => {
       t.addEventListener('click', () => {
@@ -3293,7 +3317,7 @@ const App = (() => {
     localStorage.setItem('wf_hr_settings', JSON.stringify(state.settings));
     closeGeneric();
     renderHeatmap();
-    toast('Settings saved', `ISO 45003 preferences updated. Privacy threshold set to N ≥ ${state.settings.nSizeThreshold || 5}.`, 'success');
+    toast('Settings saved', `Assessment preferences updated. Privacy threshold set to N ≥ ${state.settings.nSizeThreshold || 5}.`, 'success');
   }
 
   function openProfileSettings() {
@@ -3405,7 +3429,7 @@ const App = (() => {
   const legalDocs = {
     privacy: { title: 'Privacy Policy', body: '<p style="color: var(--text-2); margin-bottom: 16px;">Havilah collects and processes wellness data solely for the purpose of providing aggregated occupational health insights. Individual responses are encrypted at rest using AES-256 and in transit using TLS 1.3.</p><p style="color: var(--text-2); margin-bottom: 16px;">We never expose individual-level data to employers. All HR-facing analytics enforce a minimum cohort size of 5 to prevent re-identification. Employees may export or delete their data at any time.</p><p style="color: var(--text-2);">Full policy document available at <strong>havilah.io/privacy</strong>. Last updated: 12 January 2025.</p>' },
     terms: { title: 'Terms of Service', body: '<p style="color: var(--text-2); margin-bottom: 16px;">By using Havilah, organizations agree to use the platform exclusively for legitimate occupational health purposes, in compliance with applicable labor laws including OSHA, GDPR Article 9, and regional mental health parity statutes.</p><p style="color: var(--text-2);">Subscription tiers, SLA commitments, and acceptable use guidelines are detailed in the full terms document.</p>' },
-    hipaa: { title: 'HIPAA Compliance', body: '<p style="color: var(--text-2); margin-bottom: 16px;">Havilah operates as a Business Associate under HIPAA. We implement administrative, physical, and technical safeguards required under 45 CFR §164.308, §164.310, and §164.312.</p><p style="color: var(--text-2); margin-bottom: 16px;">A signed BAA is provided with every enterprise subscription. Our most recent HHS risk assessment was completed Q4 2024 with zero findings.</p><p style="color: var(--text-2);">Audit logs are retained for 6 years per HIPAA requirements.</p>' },
+    hipaa: { title: 'Health Data Privacy', body: '<p style="color: var(--text-2); margin-bottom: 16px;">Havilah operates with rigorous health data security controls. We implement administrative, physical, and technical safeguards for all personal wellness information.</p><p style="color: var(--text-2); margin-bottom: 16px;">Individual check-in responses remain private and confidential. HR sees results only in aggregated groups of 5 or more.</p><p style="color: var(--text-2);">Designed with the Ghana Data Protection Act, 2012 (Act 843) in mind.</p>' },
     gdpr: { title: 'GDPR & Data Processing', body: '<p style="color: var(--text-2); margin-bottom: 16px;">Under GDPR Article 9, wellness data is classified as special category data. Havilah processes such data under explicit consent, with lawful basis documented per Article 6(1)(a) and 9(2)(a).</p><p style="color: var(--text-2); margin-bottom: 16px;">Data subjects may exercise rights of access, rectification, erasure, and portability through the in-app privacy center or by contacting our DPO.</p><p style="color: var(--text-2);">A full Data Processing Addendum (DPA) is available for download.</p>' }
   };
   function openLegal(key) {
@@ -3871,7 +3895,7 @@ function renderAssessmentCyclesModal() {
   `;
   
   const foot = `<button class="btn btn-ghost btn-sm" onclick="App.closeGeneric()">Close</button>`;
-  openGeneric('ASSESSMENT CYCLES', 'Manage Assessment Availability', body, foot);
+  openGeneric('MANAGE ASSESSMENT ACCESS', 'Manage Assessment Access', body, foot);
 }
 
 async function unlockAssessment(surveyType) {
@@ -3940,7 +3964,7 @@ async function closeAssessmentCycle(cycleId) {
       .concat(depts.map(d => `<option value="${d}" ${targetDept === d ? 'selected' : ''}>${d}</option>`))
       .join('');
     const body = `
-      <p style="color: var(--text-2); margin-bottom: 16px; font-size: 0.8125rem;">Configure a pulse survey and send it to a targeted cohort. Responses map automatically to your ISO 45003 risk model.</p>
+      <p style="color: var(--text-2); margin-bottom: 16px; font-size: 0.8125rem;">Configure a pulse survey and send it to a targeted cohort. Responses map automatically to your wellbeing risk model.</p>
       
       <div class="form-group">
         <label class="form-label">Pulse Name</label>
@@ -4077,7 +4101,7 @@ document.addEventListener('DOMContentLoaded', App.init);
       <p style="font-weight:var(--weight-semibold); color:var(--text); margin-top:8px;">Zero raw data exposure to HR</p>
       <p style="margin-bottom:12px; color:var(--text-muted);">HR Administrators view aggregate statistical trends only. Individual PHQ-9, GAD-7, and COPSOQ III responses are cryptographically detached from employee accounts and never accessible.</p>
       <p style="font-weight:var(--weight-semibold); color:var(--text); margin-top:8px;">Data retention policy</p>
-      <p style="margin-bottom:0; color:var(--text-muted);">Aggregated logs are retained for ISO 45003 compliance audit reporting according to company policies and automatically purged thereafter.</p>
+      <p style="margin-bottom:0; color:var(--text-muted);">Aggregated logs are retained for wellbeing audit reporting according to company policies and automatically purged thereafter.</p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-primary btn-sm" onclick="document.getElementById('privacy-modal').style.display='none'">Got it</button>
@@ -4107,7 +4131,7 @@ document.addEventListener('DOMContentLoaded', App.init);
           {
             target: 'nav, .nav, [role="navigation"]',
             title: 'Portal Navigation',
-            description: 'Navigate between the Analytics Dashboard, Employee Management, Assessment Cycles, and other administrative sections.',
+            description: 'Navigate between the Analytics Dashboard, Employee Management, Manage Assessment Access, and other administrative sections.',
             placement: 'bottom'
           },
           {

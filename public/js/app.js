@@ -559,7 +559,7 @@
     function exportReport() {
         showToast("Generating CSV Export...", 2000);
         setTimeout(() => {
-            showToast("Report download started. Sensitive data filtered out per ISO 45003.", 4000);
+            showToast("Report download started. Sensitive data filtered out for confidentiality.", 4000);
         }, 1500);
     }
 

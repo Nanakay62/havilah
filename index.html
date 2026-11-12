@@ -235,6 +235,7 @@
     .landing-section {
       padding: 48px 0;
       border-bottom: 1px solid var(--border);
+      scroll-margin-top: 64px;
     }
 
     @media (min-width: 1024px) {
@@ -489,97 +490,550 @@
       line-height: 1.5;
     }
 
-    /* Product Section (Interactive Preview, Background: --surface) */
-    .preview-card {
+    /* Three-Portal Showcase Section (Background: --surface) */
+    .showcase-section {
+      padding: 48px 0;
+      background-color: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    @media (min-width: 1024px) {
+      .showcase-section {
+        padding: 64px 0;
+      }
+    }
+
+    .showcase-scroll-track {
+      position: relative;
+    }
+
+    @media (min-width: 1024px) {
+      .showcase-scroll-track {
+        min-height: 200vh;
+      }
+      .showcase-sticky-stage {
+        position: sticky;
+        top: 76px;
+        z-index: 10;
+      }
+    }
+
+    .showcase-grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    @media (min-width: 1024px) {
+      .showcase-grid {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        gap: var(--space-6);
+        align-items: start;
+      }
+    }
+
+    .showcase-tabs {
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: var(--space-2);
+      overflow-x: auto;
+    }
+
+    .showcase-tabs .tab-underline-item {
+      height: 44px;
+      min-height: 44px;
+      padding: 0 var(--space-3);
+      font-size: var(--text-sm);
+      font-weight: var(--weight-medium);
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .showcase-tabs .tab-underline-item:hover {
+      color: var(--text);
+    }
+
+    .showcase-tabs .tab-underline-item.active {
+      color: var(--brand);
+      border-bottom-color: var(--brand);
+      font-weight: var(--weight-semibold);
+    }
+
+    .showcase-caption-card {
+      display: none;
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--space-4);
+      margin-top: var(--space-4);
+      box-shadow: var(--shadow-card);
+    }
+
+    @media (min-width: 1024px) {
+      .showcase-caption-card {
+        display: block;
+      }
+    }
+
+    .showcase-caption-text {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .showcase-mobile-caption {
+      display: block;
+      margin-top: var(--space-3);
+      padding: var(--space-3);
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-control);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    @media (min-width: 1024px) {
+      .showcase-mobile-caption {
+        display: none;
+      }
+    }
+
+    .showcase-device-frame {
       background-color: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow-card);
       overflow: hidden;
-      max-width: 1080px;
-      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 440px;
     }
 
-    .preview-tabs-bar {
+    .showcase-frame-topbar {
+      height: 40px;
+      padding: 0 var(--space-4);
+      background-color: var(--bg);
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      padding: var(--space-2) var(--space-4);
-      background-color: var(--bg);
-      flex-wrap: wrap;
-      gap: var(--space-2);
     }
 
-    .preview-tab-list {
+    .showcase-frame-brand {
       display: flex;
-      gap: var(--space-2);
       align-items: center;
-      overflow-x: auto;
+      gap: var(--space-2);
     }
 
-    .preview-tab-btn {
-      height: 32px;
-      padding: 0 var(--space-3);
-      border-radius: var(--radius-control);
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: var(--text-sm);
-      font-weight: var(--weight-medium);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    .showcase-frame-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--brand);
     }
 
-    .preview-tab-btn:hover {
-      color: var(--text);
-      background-color: var(--surface);
-    }
-
-    .preview-tab-btn[aria-selected="true"] {
-      background-color: var(--surface);
-      color: var(--brand);
-      border-color: var(--border);
+    .showcase-frame-title {
+      font-size: var(--text-xs);
       font-weight: var(--weight-semibold);
-      box-shadow: var(--shadow-card);
+      color: var(--text);
     }
 
-    .preview-panel {
+    .showcase-panels-container {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 400px;
+    }
+
+    .showcase-panel {
       display: none;
-      padding: var(--space-6);
-    }
-
-    .preview-panel.is-active {
-      display: block;
-    }
-
-    .preview-metric-row {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      padding: var(--space-4);
+      flex: 1;
+      flex-direction: column;
       gap: var(--space-4);
-      margin-bottom: var(--space-6);
+    }
+
+    .showcase-panel.is-active {
+      display: flex;
+    }
+
+    .showcase-panel[hidden] {
+      display: none !important;
+    }
+
+    .showcase-panel.is-exiting {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    /* Layouts inside panels */
+    .showcase-hr-layout {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
     }
 
     @media (min-width: 768px) {
-      .preview-metric-row {
+      .showcase-hr-layout {
+        display: grid;
+        grid-template-columns: 160px minmax(0, 1fr);
+        gap: var(--space-4);
+        align-items: start;
+      }
+    }
+
+    .showcase-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: var(--space-2);
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-control);
+    }
+
+    .showcase-sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 6px var(--space-2);
+      border-radius: 4px;
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      font-weight: var(--weight-medium);
+    }
+
+    .showcase-sidebar-item.active {
+      background-color: var(--success-bg);
+      color: var(--brand);
+      font-weight: var(--weight-semibold);
+    }
+
+    .showcase-hr-content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .showcase-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-2);
+    }
+
+    @media (min-width: 768px) {
+      .showcase-stat-grid {
         grid-template-columns: repeat(4, 1fr);
       }
     }
 
-    .preview-screenshot-wrap {
+    .showcase-split-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+    }
+
+    @media (min-width: 640px) {
+      .showcase-split-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .showcase-bar-chart {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-around;
+      height: 110px;
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .showcase-bar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      height: 100%;
+      justify-content: flex-end;
+      width: 44px;
+    }
+
+    .showcase-bar-track {
+      flex: 1;
+      width: 20px;
+      background-color: var(--bg);
+      border-radius: 3px 3px 0 0;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+
+    .showcase-bar {
+      width: 100%;
+      border-radius: 3px 3px 0 0;
+    }
+
+    .showcase-bar-val {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .showcase-bar-lbl {
+      font-size: 9px;
+      color: var(--text-subtle);
+    }
+
+    .showcase-mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-xs);
+    }
+
+    .showcase-mini-table th {
+      text-align: left;
+      padding: 4px 6px;
+      color: var(--text-subtle);
+      font-size: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .showcase-mini-table td {
+      padding: 6px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+    }
+
+    /* Employee Portal Layout */
+    .showcase-emp-layout {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .showcase-emp-subbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .showcase-emp-nav {
+      display: flex;
+      gap: var(--space-1);
+    }
+
+    .showcase-emp-nav-pill {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+    }
+
+    .showcase-emp-nav-pill.active {
+      background-color: var(--bg);
+      color: var(--brand);
+      font-weight: 600;
+    }
+
+    /* Medical Assessor Layout */
+    .showcase-assessor-layout {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    @media (min-width: 768px) {
+      .showcase-assessor-layout {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr);
+        gap: var(--space-3);
+        align-items: start;
+      }
+    }
+
+    .showcase-queue {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background-color: var(--bg);
       border: 1px solid var(--border);
       border-radius: var(--radius-control);
+      padding: var(--space-2);
+    }
+
+    .showcase-queue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px;
+      margin-bottom: 2px;
+    }
+
+    .showcase-queue-item {
+      padding: 6px 8px;
+      border-radius: 4px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .showcase-queue-item.active {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 1px var(--brand);
+    }
+
+    .showcase-chat {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
+    }
+
+    .showcase-chat-header {
+      padding: var(--space-2) var(--space-3);
+      background-color: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .showcase-chat-messages {
+      padding: var(--space-3);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      background-color: var(--surface);
+      min-height: 180px;
+    }
+
+    .chat-bubble {
+      max-width: 85%;
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-control);
+      font-size: var(--text-xs);
+      line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .chat-bubble.incoming {
+      align-self: flex-start;
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 2px;
+    }
+
+    .chat-bubble.outgoing {
+      align-self: flex-end;
+      background-color: var(--brand-subtle);
+      border: 1px solid rgba(15, 118, 110, 0.2);
+      color: var(--brand-deep);
+      border-bottom-right-radius: 2px;
+    }
+
+    .chat-bubble-sender {
+      font-size: 10px;
+      font-weight: 600;
+      opacity: 0.8;
+    }
+
+    .chat-bubble-time {
+      font-size: 9px;
+      opacity: 0.6;
+      align-self: flex-end;
+    }
+
+    .showcase-chat-input-bar {
+      padding: var(--space-2) var(--space-3);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: var(--space-2);
       background-color: var(--bg);
     }
 
-    .preview-screenshot-img {
-      display: block;
-      width: 100%;
-      height: auto;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
+    /* Assembly Animations */
+    .anim-sidebar {
+      opacity: 0;
+      transform: translateX(-16px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .anim-card {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      transition-delay: calc(100ms + var(--stagger, 0) * 60ms);
+    }
+
+    .anim-bar {
+      transform: scaleY(0);
+      transform-origin: bottom;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: calc(260ms + var(--stagger, 0) * 60ms);
+    }
+
+    .anim-row {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      transition-delay: calc(100ms + var(--stagger, 0) * 70ms);
+    }
+
+    .showcase-panel.is-assembling .anim-sidebar {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .showcase-panel.is-assembling .anim-card {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .showcase-panel.is-assembling .anim-bar {
+      transform: scaleY(1);
+    }
+
+    .showcase-panel.is-assembling .anim-row {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .showcase-scroll-track {
+        min-height: auto !important;
+        height: auto !important;
+      }
+      .showcase-sticky-stage {
+        position: static !important;
+      }
+      .anim-sidebar,
+      .anim-card,
+      .anim-bar,
+      .anim-row {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+      }
     }
 
     /* How It Works Steps (Background: --bg) */
@@ -1340,126 +1794,307 @@
       </div>
     </section>
 
-    <!-- Product Interactive Preview Section (Background: --surface) -->
-    <section class="landing-section" id="product-preview" aria-labelledby="preview-heading" style="background-color: var(--surface);">
-      <div class="page-container">
-        <div class="section-header reveal-on-scroll">
-          <h2 id="preview-heading" class="section-title">Measured across validated dimensions</h2>
-          <p class="section-subtitle">Explore how Havilah summarizes aggregate indicators across standardized clinical tools without exposing individual check-in answers.</p>
-        </div>
-
-        <div class="preview-card reveal-on-scroll">
-          <div class="preview-tabs-bar">
-            <!-- Accessible Keyboard Tablist -->
-            <div class="preview-tab-list" role="tablist" aria-label="Screening instruments sample views">
-              <button type="button" class="preview-tab-btn" role="tab" id="tab-phq9" aria-selected="true" aria-controls="panel-phq9" onclick="switchPreviewTab('phq9')">PHQ-9 (Depression &amp; Energy)</button>
-              <button type="button" class="preview-tab-btn" role="tab" id="tab-gad7" aria-selected="false" aria-controls="panel-gad7" onclick="switchPreviewTab('gad7')">GAD-7 (Anxiety &amp; Tension)</button>
-              <button type="button" class="preview-tab-btn" role="tab" id="tab-pss10" aria-selected="false" aria-controls="panel-pss10" onclick="switchPreviewTab('pss10')">PSS-10 (Perceived Stress)</button>
-            </div>
-            <span class="badge badge-neutral" style="font-size: var(--text-xs);">Sample organizational data</span>
+    <!-- Three-Portal Showcase Section (#product-preview - Background: --surface) -->
+    <section class="landing-section showcase-section" id="product-preview" aria-labelledby="preview-heading" style="background-color: var(--surface);">
+      <div class="showcase-scroll-track" id="showcaseTrack">
+        <div class="page-container showcase-sticky-stage">
+          <div class="section-header reveal-on-scroll" style="margin-bottom: var(--space-4);">
+            <h2 id="preview-heading" class="section-title">One platform, three secure portals.</h2>
+            <p class="section-subtitle">Each role sees only what it needs.</p>
           </div>
 
-          <!-- Panel 1: PHQ-9 -->
-          <div class="preview-panel is-active" id="panel-phq9" role="tabpanel" aria-labelledby="tab-phq9">
-            <div class="preview-metric-row">
-              <div class="stat-card">
-                <span class="stat-label">Minimal Symptoms</span>
-                <span class="stat-value" style="color: var(--success);">54%</span>
-                <span class="stat-hint">Score 0 to 4</span>
+          <div class="showcase-grid">
+            <!-- Left Column (Desktop ~35%): Role Tabs & Dynamic Caption -->
+            <div class="showcase-nav-col">
+              <div class="tabs-underline showcase-tabs" role="tablist" aria-label="Platform role experiences">
+                <button type="button" class="tab-underline-item active" role="tab" id="tab-role-hr" aria-selected="true" aria-controls="panel-role-hr" onclick="App.switchShowcase('hr', true)">HR</button>
+                <button type="button" class="tab-underline-item" role="tab" id="tab-role-employee" aria-selected="false" aria-controls="panel-role-employee" onclick="App.switchShowcase('employee', true)">Employee</button>
+                <button type="button" class="tab-underline-item" role="tab" id="tab-role-assessor" aria-selected="false" aria-controls="panel-role-assessor" onclick="App.switchShowcase('assessor', true)">Medical assessor</button>
               </div>
-              <div class="stat-card">
-                <span class="stat-label">Mild Symptoms</span>
-                <span class="stat-value">28%</span>
-                <span class="stat-hint">Score 5 to 9</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">Moderate Symptoms</span>
-                <span class="stat-value" style="color: var(--warning);">14%</span>
-                <span class="stat-hint">Score 10 to 14</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">Elevated Threshold</span>
-                <span class="stat-value" style="color: var(--danger);">4%</span>
-                <span class="stat-hint">Clinical routing active</span>
+
+              <!-- Role Caption Card (Desktop Left / Hidden Mobile) -->
+              <div class="showcase-caption-card" id="showcaseCaptionCard" aria-live="polite">
+                <span class="badge badge-info" id="showcaseCaptionBadge" style="width: fit-content; margin-bottom: var(--space-2);">HR Portal</span>
+                <p class="showcase-caption-text" id="showcaseCaptionText">Anonymous group insight. Results appear only for groups of 5 or more.</p>
               </div>
             </div>
 
-            <div class="preview-screenshot-wrap">
-              <picture>
-                <source srcset="/assets/hero-hr-analytics.webp" type="image/webp">
-                <img src="/assets/hero-hr-analytics.png" alt="Havilah HR Analytics Console showing PHQ-9 aggregated wellbeing distribution" width="1440" height="900" class="preview-screenshot-img">
-              </picture>
-            </div>
-          </div>
+            <!-- Right Column (Desktop ~65%): Persistent Device Frame -->
+            <div class="showcase-frame-col">
+              <div class="showcase-device-frame">
+                <!-- Frame Top Bar (Always Visible, does not animate) -->
+                <div class="showcase-frame-topbar">
+                  <div class="showcase-frame-brand">
+                    <span class="showcase-frame-dot"></span>
+                    <span id="showcaseFrameTitle" class="showcase-frame-title">Havilah · HR Analytics Console</span>
+                  </div>
+                  <div class="showcase-frame-actions">
+                    <span class="badge badge-neutral" style="font-size: var(--text-xs); font-weight: var(--weight-medium);">Sample data</span>
+                  </div>
+                </div>
 
-          <!-- Panel 2: GAD-7 -->
-          <div class="preview-panel" id="panel-gad7" role="tabpanel" aria-labelledby="tab-gad7">
-            <div class="preview-metric-row">
-              <div class="stat-card">
-                <span class="stat-label">Minimal Anxiety</span>
-                <span class="stat-value" style="color: var(--success);">62%</span>
-                <span class="stat-hint">Score 0 to 4</span>
+                <!-- Frame Screen Content Container -->
+                <div class="showcase-panels-container">
+                  <!-- Panel 1: HR -->
+                  <div class="showcase-panel is-active is-assembling" id="panel-role-hr" role="tabpanel" aria-labelledby="tab-role-hr">
+                    <div class="showcase-hr-layout" aria-hidden="true">
+                      <!-- Left Sidebar -->
+                      <aside class="showcase-sidebar anim-sidebar">
+                        <div class="showcase-sidebar-item active">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                          <span>HR Analytics</span>
+                        </div>
+                        <div class="showcase-sidebar-item">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                          <span>Clinical billing</span>
+                        </div>
+                        <div class="showcase-sidebar-item">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                          <span>Ethics and reports</span>
+                        </div>
+                        <div class="showcase-sidebar-item">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                          <span>Employee invites</span>
+                        </div>
+                      </aside>
+
+                      <!-- Main HR Analytics Stage -->
+                      <div class="showcase-hr-content">
+                        <!-- Stat Grid (Staggered 60ms) -->
+                        <div class="showcase-stat-grid">
+                          <div class="stat-card anim-card" style="--stagger: 0;">
+                            <span class="stat-label">Active check-ins</span>
+                            <span class="stat-value" style="color: var(--brand);">86</span>
+                            <span class="stat-hint">78% response rate</span>
+                          </div>
+                          <div class="stat-card anim-card" style="--stagger: 1;">
+                            <span class="stat-label">PHQ-9 group mean</span>
+                            <span class="stat-value" style="color: var(--success);">4.1</span>
+                            <span class="stat-hint">Minimal range (0-4)</span>
+                          </div>
+                          <div class="stat-card anim-card" style="--stagger: 2;">
+                            <span class="stat-label">GAD-7 group mean</span>
+                            <span class="stat-value" style="color: var(--success);">3.8</span>
+                            <span class="stat-hint">Minimal tension</span>
+                          </div>
+                          <div class="stat-card anim-card" style="--stagger: 3;">
+                            <span class="stat-label">Assessor referrals</span>
+                            <span class="stat-value">5</span>
+                            <span class="stat-hint">Anonymous codes</span>
+                          </div>
+                        </div>
+
+                        <!-- Split Charts & Cohort Table -->
+                        <div class="showcase-split-row">
+                          <!-- Severity Bar Chart -->
+                          <div class="stat-card anim-card" style="--stagger: 4;">
+                            <span class="stat-label" style="margin-bottom: var(--space-2);">Group Severity Distribution</span>
+                            <div class="showcase-bar-chart">
+                              <div class="showcase-bar-col">
+                                <div class="showcase-bar-track">
+                                  <div class="showcase-bar anim-bar" style="height: 56%; background-color: var(--success); --stagger: 0;"></div>
+                                </div>
+                                <span class="showcase-bar-val">56%</span>
+                                <span class="showcase-bar-lbl">Minimal</span>
+                              </div>
+                              <div class="showcase-bar-col">
+                                <div class="showcase-bar-track">
+                                  <div class="showcase-bar anim-bar" style="height: 26%; background-color: var(--text-subtle); --stagger: 1;"></div>
+                                </div>
+                                <span class="showcase-bar-val">26%</span>
+                                <span class="showcase-bar-lbl">Mild</span>
+                              </div>
+                              <div class="showcase-bar-col">
+                                <div class="showcase-bar-track">
+                                  <div class="showcase-bar anim-bar" style="height: 13%; background-color: var(--warning); --stagger: 2;"></div>
+                                </div>
+                                <span class="showcase-bar-val">13%</span>
+                                <span class="showcase-bar-lbl">Moderate</span>
+                              </div>
+                              <div class="showcase-bar-col">
+                                <div class="showcase-bar-track">
+                                  <div class="showcase-bar anim-bar" style="height: 5%; background-color: var(--danger); --stagger: 3;"></div>
+                                </div>
+                                <span class="showcase-bar-val">5%</span>
+                                <span class="showcase-bar-lbl">Elevated</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Cohort Privacy Table -->
+                          <div class="stat-card anim-card" style="--stagger: 5;">
+                            <span class="stat-label" style="margin-bottom: var(--space-2);">Anonymous Cohorts</span>
+                            <div class="showcase-table-wrap">
+                              <table class="showcase-mini-table">
+                                <thead>
+                                  <tr>
+                                    <th>Cohort</th>
+                                    <th>Resp.</th>
+                                    <th>Band</th>
+                                    <th>Privacy</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr class="anim-row" style="--stagger: 0;">
+                                    <td><strong>GRP-OPS-04</strong></td>
+                                    <td>24</td>
+                                    <td><span class="badge badge-success" style="font-size: 10px;">Minimal</span></td>
+                                    <td><span style="color: var(--brand); font-size: 11px;">Visible (5+)</span></td>
+                                  </tr>
+                                  <tr class="anim-row" style="--stagger: 1;">
+                                    <td><strong>GRP-ENG-02</strong></td>
+                                    <td>19</td>
+                                    <td><span class="badge badge-neutral" style="font-size: 10px;">Mild</span></td>
+                                    <td><span style="color: var(--brand); font-size: 11px;">Visible (5+)</span></td>
+                                  </tr>
+                                  <tr class="anim-row" style="--stagger: 2;">
+                                    <td><strong>GRP-FIN-01</strong></td>
+                                    <td>11</td>
+                                    <td><span class="badge badge-success" style="font-size: 10px;">Minimal</span></td>
+                                    <td><span style="color: var(--brand); font-size: 11px;">Visible (5+)</span></td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Panel 2: Employee -->
+                  <div class="showcase-panel" id="panel-role-employee" role="tabpanel" aria-labelledby="tab-role-employee" hidden>
+                    <div class="showcase-emp-layout" aria-hidden="true">
+                      <!-- Compact Employee Sub-bar -->
+                      <div class="showcase-emp-subbar anim-sidebar">
+                        <div class="showcase-emp-nav">
+                          <span class="showcase-emp-nav-pill active">Check-in</span>
+                          <span class="showcase-emp-nav-pill">Wellbeing Library</span>
+                          <span class="showcase-emp-nav-pill">Confidential Support</span>
+                        </div>
+                        <span class="badge badge-success" style="font-size: 11px;">Identity hidden from HR</span>
+                      </div>
+
+                      <!-- Primary Check-in Card -->
+                      <div class="stat-card anim-card" style="--stagger: 0; padding: var(--space-4);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
+                          <strong style="font-size: var(--text-sm); color: var(--text);">Today's check-in: Perceived Stress (PSS-10)</strong>
+                          <span style="font-size: var(--text-xs); color: var(--text-subtle);">Step 2 of 3 · 67% complete</span>
+                        </div>
+                        <div style="height: 6px; background-color: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: var(--space-3);">
+                          <div style="width: 67%; height: 100%; background-color: var(--brand); border-radius: 3px;"></div>
+                        </div>
+                        <p style="font-size: var(--text-sm); color: var(--text); margin-bottom: var(--space-3); line-height: 1.4;">
+                          "In the last month, how often have you felt confident in handling personal problems?"
+                        </p>
+                        <div style="display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; justify-content: space-between;">
+                          <div style="display: flex; gap: var(--space-1); flex-wrap: wrap;">
+                            <span class="badge badge-neutral" style="padding: 4px 8px; font-size: 11px;">Never</span>
+                            <span class="badge badge-neutral" style="padding: 4px 8px; font-size: 11px;">Rarely</span>
+                            <span class="badge badge-info" style="padding: 4px 8px; font-size: 11px; font-weight: 600;">Fairly often</span>
+                            <span class="badge badge-neutral" style="padding: 4px 8px; font-size: 11px;">Very often</span>
+                          </div>
+                          <button type="button" class="btn btn-primary btn-sm" tabindex="-1">Continue check-in</button>
+                        </div>
+                      </div>
+
+                      <!-- Split Row: Library & Confidential Help -->
+                      <div class="showcase-split-row">
+                        <div class="stat-card anim-card" style="--stagger: 1;">
+                          <strong style="font-size: var(--text-sm); color: var(--text); margin-bottom: var(--space-2); display: block;">Mental Health Library</strong>
+                          <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                            <div class="anim-row" style="--stagger: 0; padding: var(--space-2); background-color: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-control); display: flex; align-items: center; justify-content: space-between;">
+                              <span style="font-size: var(--text-xs); color: var(--text); font-weight: 500;">Managing workplace pressure &amp; rest</span>
+                              <span style="font-size: 10px; color: var(--text-subtle);">4 min read</span>
+                            </div>
+                            <div class="anim-row" style="--stagger: 1; padding: var(--space-2); background-color: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-control); display: flex; align-items: center; justify-content: space-between;">
+                              <span style="font-size: var(--text-xs); color: var(--text); font-weight: 500;">Guided breathing &amp; grounding audio</span>
+                              <span style="font-size: 10px; color: var(--text-subtle);">Audio guide</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="stat-card anim-card" style="--stagger: 2; justify-content: space-between;">
+                          <div>
+                            <strong style="font-size: var(--text-sm); color: var(--text); margin-bottom: var(--space-1); display: block;">Confidential Clinical Support</strong>
+                            <p style="font-size: var(--text-xs); color: var(--text-muted); line-height: 1.4; margin-bottom: var(--space-3);">
+                              Connect directly with a licensed medical assessor. Triage is routed via an anonymous reference code.
+                            </p>
+                          </div>
+                          <button type="button" class="btn btn-secondary btn-sm" tabindex="-1" style="width: 100%;">Message a medical assessor</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Panel 3: Medical Assessor -->
+                  <div class="showcase-panel" id="panel-role-assessor" role="tabpanel" aria-labelledby="tab-role-assessor" hidden>
+                    <div class="showcase-assessor-layout" aria-hidden="true">
+                      <!-- Referral Queue (Anonymous Codes Only) -->
+                      <div class="showcase-queue anim-sidebar">
+                        <div class="showcase-queue-header">
+                          <span style="font-size: var(--text-xs); font-weight: 600; color: var(--text);">Referral Queue</span>
+                          <span class="badge badge-neutral" style="font-size: 10px;">3 Active</span>
+                        </div>
+                        <div class="showcase-queue-item active anim-row" style="--stagger: 0;">
+                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                            <strong style="font-size: var(--text-xs); color: var(--text);">REF-8492-K</strong>
+                            <span class="badge badge-warning" style="font-size: 9px; height: 18px; padding: 0 4px;">Active triage</span>
+                          </div>
+                          <span style="font-size: 10px; color: var(--text-subtle);">Referred 18m ago</span>
+                        </div>
+                        <div class="showcase-queue-item anim-row" style="--stagger: 1;">
+                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                            <strong style="font-size: var(--text-xs); color: var(--text);">REF-3104-M</strong>
+                            <span class="badge badge-info" style="font-size: 9px; height: 18px; padding: 0 4px;">New</span>
+                          </div>
+                          <span style="font-size: 10px; color: var(--text-subtle);">Referred 2h ago</span>
+                        </div>
+                        <div class="showcase-queue-item anim-row" style="--stagger: 2;">
+                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                            <strong style="font-size: var(--text-xs); color: var(--text);">REF-7721-P</strong>
+                            <span class="badge badge-success" style="font-size: 9px; height: 18px; padding: 0 4px;">Follow-up</span>
+                          </div>
+                          <span style="font-size: 10px; color: var(--text-subtle);">Referred 1d ago</span>
+                        </div>
+                      </div>
+
+                      <!-- Chat Panel (Chat Only, Zero Video) -->
+                      <div class="showcase-chat anim-card" style="--stagger: 1;">
+                        <div class="showcase-chat-header">
+                          <div style="display: flex; align-items: center; gap: var(--space-2);">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--brand);"></span>
+                            <strong style="font-size: var(--text-xs); color: var(--text);">Case REF-8492-K · Secure Assessor Chat</strong>
+                          </div>
+                          <span class="badge badge-neutral" style="font-size: 10px;">Encrypted</span>
+                        </div>
+                        <div class="showcase-chat-messages">
+                          <div class="chat-bubble incoming anim-row" style="--stagger: 0;">
+                            <div class="chat-bubble-sender">Employee (REF-8492-K)</div>
+                            <div class="chat-bubble-text">Hello Doctor. Work stress has made it hard to sleep this week, and I wanted confidential advice.</div>
+                            <div class="chat-bubble-time">10:14 AM</div>
+                          </div>
+                          <div class="chat-bubble outgoing anim-row" style="--stagger: 1;">
+                            <div class="chat-bubble-sender">Medical Assessor</div>
+                            <div class="chat-bubble-text">You are in a private space—your employer only sees anonymous group stats. Let's review your check-in together.</div>
+                            <div class="chat-bubble-time">10:17 AM</div>
+                          </div>
+                        </div>
+                        <div class="showcase-chat-input-bar">
+                          <input type="text" class="input" style="height: 32px; font-size: var(--text-xs);" placeholder="Type a confidential clinical reply..." disabled tabindex="-1">
+                          <button type="button" class="btn btn-primary btn-sm" style="height: 32px;" disabled tabindex="-1">Send</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="stat-card">
-                <span class="stat-label">Mild Tension</span>
-                <span class="stat-value">24%</span>
-                <span class="stat-hint">Score 5 to 9</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">Moderate Anxiety</span>
-                <span class="stat-value" style="color: var(--warning);">10%</span>
-                <span class="stat-hint">Score 10 to 14</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">High Tension</span>
-                <span class="stat-value" style="color: var(--danger);">4%</span>
-                <span class="stat-hint">Assessor chat enabled</span>
+
+              <!-- Mobile Caption Target (Shown under frame on mobile) -->
+              <div class="showcase-mobile-caption" id="showcaseMobileCaption" aria-hidden="true">
+                <p id="showcaseMobileCaptionText">Anonymous group insight. Results appear only for groups of 5 or more.</p>
               </div>
             </div>
-
-            <div class="preview-screenshot-wrap">
-              <picture>
-                <source srcset="/assets/hero-hr-analytics.webp" type="image/webp">
-                <img src="/assets/hero-hr-analytics.png" alt="Havilah HR Analytics Console showing GAD-7 aggregated anxiety distribution" width="1440" height="900" class="preview-screenshot-img">
-              </picture>
-            </div>
-          </div>
-
-          <!-- Panel 3: PSS-10 -->
-          <div class="preview-panel" id="panel-pss10" role="tabpanel" aria-labelledby="tab-pss10">
-            <div class="preview-metric-row">
-              <div class="stat-card">
-                <span class="stat-label">Low Stress Range</span>
-                <span class="stat-value" style="color: var(--success);">48%</span>
-                <span class="stat-hint">Score 0 to 13</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">Moderate Stress</span>
-                <span class="stat-value">42%</span>
-                <span class="stat-hint">Score 14 to 26</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">High Perceived Stress</span>
-                <span class="stat-value" style="color: var(--warning);">10%</span>
-                <span class="stat-hint">Score 27 to 40</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">Group Anonymity</span>
-                <span class="stat-value" style="color: var(--brand);">Enforced</span>
-                <span class="stat-hint">Groups of 5 or more</span>
-              </div>
-            </div>
-
-            <div class="preview-screenshot-wrap">
-              <picture>
-                <source srcset="/assets/hero-hr-analytics.webp" type="image/webp">
-                <img src="/assets/hero-hr-analytics.png" alt="Havilah HR Analytics Console showing PSS-10 stress distribution" width="1440" height="900" class="preview-screenshot-img">
-              </picture>
-            </div>
-          </div>
-
-          <div style="padding: var(--space-3) var(--space-4); background-color: var(--surface); border-top: 1px solid var(--border); font-size: var(--text-xs); color: var(--text-subtle); text-align: center;">
-            Sample organization data shown for illustration. Individual employee responses are never visible to HR.
           </div>
         </div>
       </div>
@@ -2084,9 +2719,9 @@ function showToast(title, message, type = 'info') {
   const c = $('toastContainer');
   if (!c) return;
   const t = document.createElement('div');
-  t.className = `toast toast-${type === 'error' ? 'danger' : type}`;
+  t.className = 'toast toast-' + (type === 'error' ? 'danger' : type);
   t.setAttribute('role', 'alert');
-  t.innerHTML = `<div class="toast-title">${title}</div>${message ? `<div class="toast-desc">${message}</div>` : ''}`;
+  t.innerHTML = '<div class="toast-title">' + title + '</div>' + (message ? '<div class="toast-desc">' + message + '</div>' : '');
   c.appendChild(t);
   setTimeout(() => {
     t.style.opacity = '0';
@@ -2094,17 +2729,62 @@ function showToast(title, message, type = 'info') {
   }, 4000);
 }
 
-function switchPreviewTab(k) {
-  ['phq9', 'gad7', 'pss10'].forEach(t => {
-    $('tab-' + t)?.setAttribute('aria-selected', t === k);
-    $('panel-' + t)?.classList.toggle('is-active', t === k);
-  });
+/* Three-Portal Showcase Controller (< 2.5 KB, zero dependencies) */
+const ROLES = {
+  hr: { title: 'Havilah · HR Analytics Console', badge: 'HR Portal', text: 'Anonymous group insight. Results appear only for groups of 5 or more.' },
+  employee: { title: 'Havilah · Employee Wellbeing Space', badge: 'Employee Portal', text: 'Private check-ins, a mental health library, and confidential access to help.' },
+  assessor: { title: 'Havilah · Medical Assessor Console', badge: 'Medical Assessor', text: 'Referrals arrive as anonymous codes. Assessors respond through secure chat.' }
+};
+let currentRole = 'hr', animTimer = null, userTabLocked = false;
+
+function switchShowcase(role, fromUser = false) {
+  if (!ROLES[role] || (role === currentRole && !fromUser)) return;
+  if (fromUser) userTabLocked = true;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    applyRoleInstant(role);
+    return;
+  }
+  clearTimeout(animTimer);
+  const oldPanel = $('panel-role-' + currentRole);
+  const newPanel = $('panel-role-' + role);
+  if (oldPanel) oldPanel.classList.add('is-exiting');
+
+  animTimer = setTimeout(() => {
+    applyRoleInstant(role);
+    if (newPanel) {
+      newPanel.classList.remove('is-exiting', 'is-assembling');
+      void newPanel.offsetWidth;
+      newPanel.classList.add('is-assembling');
+    }
+  }, 150);
 }
-window.switchPreviewTab = switchPreviewTab;
+
+function applyRoleInstant(role) {
+  currentRole = role;
+  const meta = ROLES[role];
+  ['hr', 'employee', 'assessor'].forEach(r => {
+    const btn = $('tab-role-' + r);
+    const p = $('panel-role-' + r);
+    const active = r === role;
+    if (btn) {
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    }
+    if (p) {
+      p.classList.toggle('is-active', active);
+      if (active) p.removeAttribute('hidden');
+      else p.setAttribute('hidden', '');
+    }
+  });
+  if ($('showcaseFrameTitle')) $('showcaseFrameTitle').textContent = meta.title;
+  if ($('showcaseCaptionBadge')) $('showcaseCaptionBadge').textContent = meta.badge;
+  if ($('showcaseCaptionText')) $('showcaseCaptionText').textContent = meta.text;
+  if ($('showcaseMobileCaptionText')) $('showcaseMobileCaptionText').textContent = meta.text;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
-  const tl = document.querySelector('[role="tablist"]');
-  if (tl) {
+  // Accessible Keyboard Tabs
+  document.querySelectorAll('[role="tablist"]').forEach(tl => {
     tl.addEventListener('keydown', e => {
       const tabs = Array.from(tl.querySelectorAll('[role="tab"]'));
       const i = tabs.indexOf(document.activeElement);
@@ -2116,8 +2796,9 @@ document.addEventListener('DOMContentLoaded', () => {
         tabs[map[e.key]].click();
       }
     });
-  }
+  });
 
+  // Scroll reveals
   if ('IntersectionObserver' in window) {
     const obs = new IntersectionObserver((entries, o) => {
       entries.forEach(e => {
@@ -2125,9 +2806,48 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }, { threshold: 0.1 });
     document.querySelectorAll('.reveal-on-scroll').forEach(el => obs.observe(el));
+
+    // Showcase Initial View Assembly Trigger
+    const showObs = new IntersectionObserver((entries, o) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const p = $('panel-role-hr');
+          if (p) p.classList.add('is-assembling');
+          o.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    const trackEl = $('product-preview');
+    if (trackEl) showObs.observe(trackEl);
   } else {
     document.querySelectorAll('.reveal-on-scroll').forEach(el => el.classList.add('is-visible'));
+    const p = $('panel-role-hr');
+    if (p) p.classList.add('is-assembling');
   }
+
+  // Desktop Sticky Scroll Progress (Throttled RAF)
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking || userTabLocked || window.innerWidth < 1024 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const track = $('showcaseTrack');
+      if (!track) return;
+      const r = track.getBoundingClientRect();
+      const h = r.height - window.innerHeight;
+      if (h <= 0) return;
+      if (r.bottom < 0 || r.top > window.innerHeight) {
+        userTabLocked = false;
+        return;
+      }
+      const p = -r.top / h;
+      if (p >= 0 && p <= 1) {
+        const next = p < 0.33 ? 'hr' : (p < 0.66 ? 'employee' : 'assessor');
+        if (next !== currentRole) switchShowcase(next, false);
+      }
+    });
+  }, { passive: true });
 });
 
 function toggleMobileMenu() {
@@ -2139,9 +2859,9 @@ function toggleMobileMenu() {
   if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   document.body.style.overflow = open ? 'hidden' : '';
 }
-window.toggleMobileMenu = toggleMobileMenu;
 
 window.App = {
+  switchShowcase,
   openModal: id => { const m = $(id); if (m) m.classList.add('is-open'); },
   closeModal: id => { const m = $(id); if (m) m.classList.remove('is-open'); },
   openDemoModal: (title, plan) => {

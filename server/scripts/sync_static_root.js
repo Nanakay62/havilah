@@ -72,8 +72,9 @@ function getSyncPairs() {
     }
   }
 
-  // 4. public/fonts -> public/assets/fonts (ensures /assets/fonts/* works on Cloudflare)
+  // 4. public/fonts -> public/assets/fonts AND root fonts/ (ensures /fonts/* works on Cloudflare)
   addDirPairs('public/fonts', 'public/assets/fonts');
+  addDirPairs('public/fonts', 'fonts');
 
   return pairs;
 }

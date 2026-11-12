@@ -158,7 +158,7 @@ app.use(cookieParser());
 app.use(inputSanitizer);
 
 // General Rate Limiting for all API routes except excluded health pings (Principle 9 & Edge Case 3)
-app.use('/api/v1', apiRateLimiter(200));
+app.use('/api/v1', apiRateLimiter(2000));
 
 // Tenant status enforcement - blocks suspended/expired tenant API access
 // Runs after auth on each route; passes through if no session data

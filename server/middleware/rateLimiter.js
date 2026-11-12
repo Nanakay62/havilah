@@ -34,17 +34,37 @@ if (process.env.REDIS_URL) {
 }
 
 /**
+ * Extracts the genuine client IP address from proxy and Cloudflare headers.
+ */
+function getClientIp(req) {
+  const cfIp = req.headers && req.headers['cf-connecting-ip'];
+  if (cfIp) return cfIp.trim();
+
+  const trueClientIp = req.headers && req.headers['true-client-ip'];
+  if (trueClientIp) return trueClientIp.trim();
+
+  const xForwarded = req.headers && req.headers['x-forwarded-for'];
+  if (xForwarded && typeof xForwarded === 'string') {
+    const firstIp = xForwarded.split(',')[0].trim();
+    if (firstIp) return firstIp;
+  }
+
+  return req.ip || req.socket?.remoteAddress || '127.0.0.1';
+}
+
+/**
  * Sensitive endpoints rate limiter (e.g. auth routes, demo requests)
- * Limit: max 5 requests per window (15 mins) per IP.
+ * Limit: max attempts per window (15 mins) per unique client IP.
  */
 function sensitiveRateLimiter(maxAttempts = 5) {
   const windowMs = 15 * 60 * 1000;
   return rateLimit({
     windowMs,
+    keyGenerator: (req) => getClientIp(req),
     max: (req) => {
-      const ip = req.ip || req.socket?.remoteAddress || '127.0.0.1';
+      const ip = getClientIp(req);
       const isLocalhost = (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') && process.env.NODE_ENV !== 'production';
-      return isLocalhost ? Math.max(maxAttempts * 6, 30) : maxAttempts;
+      return isLocalhost ? Math.max(maxAttempts * 6, 30) : Math.max(maxAttempts, 15);
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -65,12 +85,13 @@ function sensitiveRateLimiter(maxAttempts = 5) {
 
 /**
  * General API rate limiter across all /api/v1/ routes.
- * Limit: max 3000 requests per 15 minutes per IP.
+ * Limit: max 3000 requests per 15 minutes per unique client IP.
  */
 function apiRateLimiter(maxRequests = 3000) {
   const windowMs = 15 * 60 * 1000;
   return rateLimit({
     windowMs,
+    keyGenerator: (req) => getClientIp(req),
     max: maxRequests,
     standardHeaders: true,
     legacyHeaders: false,
@@ -84,11 +105,13 @@ function apiRateLimiter(maxRequests = 3000) {
         p.includes('/message') ||
         p.includes('/reply') ||
         p.includes('/track') ||
-        p.includes('/live')
+        p.includes('/live') ||
+        p.includes('/auth/me') ||
+        p.endsWith('/me')
       ) {
         return true;
       }
-      const ip = req.ip || req.socket?.remoteAddress || '127.0.0.1';
+      const ip = getClientIp(req);
       return (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') && process.env.NODE_ENV !== 'production';
     },
     store: redisStore || undefined,

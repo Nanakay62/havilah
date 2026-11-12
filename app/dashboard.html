@@ -221,8 +221,8 @@
   }
 
   /* ============ MAIN ============ */
-  main { max-width: 1440px; margin: 0 auto; padding: 0 32px; }
-  .view { display: none; animation: fadeUp 0.5s var(--ease-out); }
+  main { max-width: 1440px; width: 100%; margin: 0 auto; padding: 0 32px; box-sizing: border-box; overflow-x: hidden; }
+  .view { display: none; width: 100%; max-width: 100%; box-sizing: border-box; overflow-x: hidden; animation: fadeUp 0.5s var(--ease-out); }
   .view.active { display: block; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -422,7 +422,7 @@
   .surveys-section { margin-bottom: 32px; }
   .section-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
   .section-bar h2 { font-size: 1.25rem; }
-  .surveys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .surveys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 16px; width: 100%; max-width: 100%; box-sizing: border-box; }
   .survey-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -434,6 +434,10 @@
     box-shadow: var(--shadow-card);
     transition: border-color 0.15s ease;
     position: relative;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   .survey-card:hover {
     border-color: var(--text-subtle);
@@ -484,15 +488,15 @@
   .survey-arrow, .take-checkin-btn { width: auto; height: 32px; padding: 0 12px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-deep); display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.75rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.3s var(--ease-out); text-decoration: none; }
   .survey-card:hover .survey-arrow, .survey-card:hover .take-checkin-btn, .take-checkin-btn:hover { background: var(--accent); color: white; transform: translateX(2px); }
   .survey-arrow svg, .take-checkin-btn svg { width: 13px; height: 13px; }
-  .insights-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 32px; width: 100%; max-width: 100%; box-sizing: border-box; }
-  .insight-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box; position: relative; overflow: visible; }
+  .insights-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; margin-bottom: 32px; width: 100%; max-width: 100%; box-sizing: border-box; }
+  .insight-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; position: relative; overflow: hidden; }
   .insight-card h3 { margin-bottom: 16px; font-size: 1.0625rem; display: flex; align-items: center; gap: 10px; }
   .insight-card h3 svg { width: 18px; height: 18px; color: var(--accent-deep); }
-  .trend-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; width: 100%; max-width: 100%; box-sizing: border-box; }
+  .trend-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
   .trend-controls-spacer { flex: 1; }
-  .trend-framework-tabs { display: flex; gap: 3px; background: rgba(0,0,0,0.04); padding: 3px; border-radius: 9px; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; box-sizing: border-box; }
+  .trend-framework-tabs { display: flex; gap: 3px; background: rgba(0,0,0,0.04); padding: 3px; border-radius: 9px; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; box-sizing: border-box; flex-wrap: nowrap; }
   .trend-framework-tabs::-webkit-scrollbar { display: none; }
-  .trend-timeframe-tabs { display: flex; gap: 3px; background: rgba(0,0,0,0.04); padding: 3px; border-radius: 9px; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; box-sizing: border-box; }
+  .trend-timeframe-tabs { display: flex; gap: 3px; background: rgba(0,0,0,0.04); padding: 3px; border-radius: 9px; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; box-sizing: border-box; flex-wrap: nowrap; }
   .trend-timeframe-tabs::-webkit-scrollbar { display: none; }
   .trend-tab {
     padding: 5px 12px; border-radius: 7px; border: none; background: transparent;
@@ -845,14 +849,15 @@
     .display, .hero h1 { text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9); }
     .lead, .hero-lead { color: #1e293b !important; font-weight: 500 !important; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9); }
 
-    .insights-row { grid-template-columns: 1fr !important; gap: 16px !important; margin-bottom: 24px !important; width: 100% !important; max-width: 100% !important; }
-    .insight-card { padding: 16px 14px !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
-    .trend-controls { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; width: 100% !important; }
+    .insights-row { grid-template-columns: minmax(0, 1fr) !important; gap: 16px !important; margin-bottom: 24px !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+    .insight-card { padding: 16px 14px !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; overflow: hidden !important; }
+    .trend-controls { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; }
     .trend-controls-spacer { display: none !important; }
-    .trend-framework-tabs, .trend-timeframe-tabs { width: 100% !important; justify-content: flex-start !important; max-width: 100% !important; overflow-x: auto !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch !important; }
+    .trend-framework-tabs, .trend-timeframe-tabs { width: 100% !important; justify-content: flex-start !important; max-width: 100% !important; min-width: 0 !important; overflow-x: auto !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch !important; box-sizing: border-box !important; }
     .trend-tab { padding: 6px 10px !important; font-size: 0.71875rem !important; }
-    .trend-legend { gap: 8px 12px !important; }
-    .trend-chart { height: 180px !important; width: 100% !important; }
+    .trend-legend { gap: 8px 12px !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+    .trend-chart { height: 180px !important; width: 100% !important; max-width: 100% !important; overflow: hidden !important; box-sizing: border-box !important; }
+    .trend-chart canvas { width: 100% !important; max-width: 100% !important; }
     .resource-list { gap: 8px !important; width: 100% !important; }
     .resource-item { padding: 10px !important; width: 100% !important; }
   }
@@ -862,8 +867,9 @@
     .header-right { gap: 6px !important; }
   }
   @media (max-width: 720px) {
-    main { padding: 0 20px; }
-    .header-inner { padding: 0 20px; }
+    main { padding: 0 !important; width: 100% !important; max-width: 100vw !important; overflow-x: hidden !important; }
+    .page-container { padding: 16px 14px !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+    .header-inner { padding: 0 16px !important; }
     .hero { padding: 48px 0 40px; }
     .section { padding: 56px 0; }
     .features { grid-template-columns: 1fr; }
@@ -883,7 +889,41 @@
     .profile { padding: 4px; }
     .page-head { padding: 28px 0 24px; }
     .page-head h1 { font-size: 1.5rem; }
-    .surveys-grid { grid-template-columns: 1fr; }
+    .surveys-grid { grid-template-columns: minmax(0, 1fr) !important; width: 100% !important; box-sizing: border-box !important; }
+    .assessment-cycle-banner {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      padding: 16px 14px !important;
+      gap: 12px !important;
+      max-height: none !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .assessment-cycle-banner > div:first-child {
+      padding-right: 0 !important;
+    }
+    .assessment-cycle-banner > div:last-child {
+      width: 100% !important;
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+      align-items: center !important;
+    }
+    .assessment-cycle-banner button {
+      flex: 1 1 auto !important;
+      text-align: center !important;
+      justify-content: center !important;
+    }
+    #wellbeing-hero-card {
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    #wellbeing-hero-card > div {
+      min-width: 0 !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
     .heatmap-col-label { font-size: 0.625rem; }
     .dept-row { grid-template-columns: 1fr 60px 50px; }
     .dept-row .dept-bar { display: none; }
@@ -1106,7 +1146,6 @@
   <div style="padding-top: 16px;">
     <div class="wellbeing-breakdown" id="wellbeingBreakdown"></div>
   </div>
-</div>
 </div>
   
   <div class="surveys-section">
@@ -1896,7 +1935,7 @@ async function fetchActiveCycles() {
     if (!bannerContainer) {
       bannerContainer = document.createElement('div');
       bannerContainer.id = 'activeCycleBanners';
-      const mainContent = document.querySelector('.main-content') || document.querySelector('main') || document.querySelector('.dashboard-content') || document.body.firstElementChild;
+      const mainContent = document.querySelector('#view-employee .page-container') || document.querySelector('.page-container') || document.querySelector('.main-content') || document.querySelector('main') || document.querySelector('.dashboard-content') || document.body.firstElementChild;
       if (mainContent && mainContent.firstChild) {
         mainContent.insertBefore(bannerContainer, mainContent.firstChild);
       } else {
@@ -4467,7 +4506,7 @@ const App = (() => {
     if (!bannerContainer) {
       bannerContainer = document.createElement('div');
       bannerContainer.id = 'activeCycleBanners';
-      const mainContent = document.querySelector('.main-content') || document.querySelector('main') || document.body.firstElementChild;
+      const mainContent = document.querySelector('#view-employee .page-container') || document.querySelector('.page-container') || document.querySelector('.main-content') || document.querySelector('main') || document.body.firstElementChild;
       if (mainContent && mainContent.firstChild) {
         mainContent.insertBefore(bannerContainer, mainContent.firstChild);
       } else {

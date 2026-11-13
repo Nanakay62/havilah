@@ -49,6 +49,41 @@ const Auth = {
     }
     return data;
   },
+
+  verify2fa: async (tempToken, code, emailForStorage) => {
+    const res = await fetch('/api/v1/auth/login/verify-2fa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ temp_token: tempToken, code })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || data.error || 'Two-factor verification failed');
+    }
+    if (data.token) {
+      localStorage.setItem('havilah_token', data.token);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('session_token', data.token);
+      if (emailForStorage) localStorage.setItem('wf_user_email', emailForStorage);
+      document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+    }
+    if (data.user) {
+      const userObj = {
+        id: data.user.user_id || data.user.id,
+        user_id: data.user.user_id || data.user.id,
+        email: emailForStorage || localStorage.getItem('wf_user_email') || '',
+        role: data.user.role,
+        tenant_id: data.user.company_id || data.user.tenant_id,
+        company_id: data.user.company_id || data.user.tenant_id,
+        full_name: data.user.full_name
+      };
+      localStorage.setItem('havilah_user', JSON.stringify(userObj));
+      localStorage.setItem('wf_user', JSON.stringify(userObj));
+      if (data.user.full_name) localStorage.setItem('wf_user_name', data.user.full_name);
+    }
+    return data;
+  },
+  },
   
   getToken: () => {
     return localStorage.getItem('havilah_token') || localStorage.getItem('token') || localStorage.getItem('session_token');
@@ -99,6 +134,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                        currentPath.includes('register') ||
                        currentPath.includes('activate') ||
                        currentPath.includes('reset-password') ||
+                       currentPath.includes('privacy') ||
+                       currentPath.includes('terms') ||
                        currentPath === '/' ||
                        currentPath === '/index.html';
 

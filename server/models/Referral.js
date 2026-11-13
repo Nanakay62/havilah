@@ -12,6 +12,7 @@ const ReferralSchema = new mongoose.Schema({
   delegatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', default: null },
   departmentName: { type: String, default: 'General' },
   preferredTime: { type: String, default: 'As soon as available' },
+  priority: { type: String, enum: ['standard', 'urgent', 'crisis'], default: 'standard', index: true },
   status: { type: String, enum: ['pending', 'scheduled', 'completed', 'cancelled', 'archived'], default: 'pending' },
   previousStatus: { type: String, default: 'pending' },
   scheduledAt: { type: Date, default: null },

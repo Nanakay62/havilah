@@ -55,7 +55,11 @@ router.get('/analytics', async (req, res, next) => {
     let matchQuery = { company_id };
     if (targetDept && targetDept !== 'all') {
       const deptMatch = depts.find(d => d.name.toLowerCase() === targetDept.toLowerCase() || d.department_id === targetDept);
-      if (deptMatch) matchQuery.department_id = deptMatch.department_id;
+      if (deptMatch) {
+        matchQuery.department_id = deptMatch.department_id;
+      } else {
+        matchQuery.department_id = '__unmatched_department__';
+      }
     }
 
     const [aggResult] = await PersonalWellnessLog.aggregate([
@@ -69,11 +73,11 @@ router.get('/analytics', async (req, res, next) => {
           avgStress: { $avg: { $ifNull: ['$dimension_scores.stress', 40] } },
           avgEnergy: { $avg: { $ifNull: ['$dimension_scores.energy', 70] } },
           avgWorkFit: { $avg: { $ifNull: ['$dimension_scores.work_fit', 70] } },
-          moodList: { $push: { $ifNull: ['$dimension_scores.mood', 70] } },
-          calmList: { $push: { $ifNull: ['$dimension_scores.calm', 70] } },
-          stressList: { $push: { $ifNull: ['$dimension_scores.stress', 40] } },
-          energyList: { $push: { $ifNull: ['$dimension_scores.energy', 70] } },
-          workFitList: { $push: { $ifNull: ['$dimension_scores.work_fit', 70] } },
+          // Privacy: individual per-respondent score arrays omitted to protect employee confidentiality
+
+
+
+
         }
       }
     ]);
@@ -109,11 +113,11 @@ router.get('/analytics', async (req, res, next) => {
       raw_employee_objects_exposed: false,
       departments: deptNames,
       aggregated_scores: {
-        mood: (aggResult?.moodList || []).slice(0, 100),
-        calm: (aggResult?.calmList || []).slice(0, 100),
-        stress: (aggResult?.stressList || []).slice(0, 100),
-        energy: (aggResult?.energyList || []).slice(0, 100),
-        work_fit: (aggResult?.workFitList || []).slice(0, 100)
+        individual_series_omitted: true
+
+
+
+
       },
       averages: {
         mood: Math.round(aggResult?.avgMood || 70),
@@ -159,6 +163,8 @@ router.get('/trends', async (req, res, next) => {
       const deptMatch = depts.find(d => d.name.toLowerCase() === targetDept.toLowerCase() || d.department_id === targetDept);
       if (deptMatch) {
         matchQuery.department_id = deptMatch.department_id;
+      } else {
+        matchQuery.department_id = '__unmatched_department__';
       }
     }
 
@@ -647,7 +653,16 @@ router.get('/severity-trends', async (req, res, next) => {
        weeks[weekKey].total++;
     });
     
-    const labels = Object.keys(weeks);
+    const labels = Object.keys(weeks).filter(w => weeks[w].total >= 5);
+    if (labels.length === 0) {
+      return res.json({
+        success: true,
+        status: 'SUPPRESSED',
+        labels: [],
+        datasets: { healthy: [], mild: [], moderate: [], severe: [] },
+        privacy_notice: 'Weekly severity trend metrics suppressed (N < 5 per reporting week).'
+      });
+    }
     const datasets = { healthy: [], mild: [], moderate: [], severe: [] };
     
     labels.forEach(w => {
@@ -872,6 +887,7 @@ router.get('/benchmarks', async (req, res, next) => {
 
     const benchmarks = {};
     for (const b of benchmarkResults) {
+      if (!b._id || Number(b.count || 0) < 5) continue;
       if (b._id) {
         benchmarks[b._id] = {
           average_score: Math.round(b.avgScore * 10) / 10,

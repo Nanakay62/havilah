@@ -9,6 +9,8 @@ const { validateSession, requireRole } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const { withTransaction } = require('../utils/dbTransaction');
 const paystack = require('../utils/paystack');
+const crypto = require('crypto');
+const { sendMail } = require('../utils/emailService');
 
 // Tier specifications and ISO 45003 feature entitlements (in GHS)
 const TIERS = {
@@ -338,7 +340,10 @@ router.get('/status', async (req, res, next) => {
         max_allowed_seats: tenant.max_allowed_seats || 100,
         has_paystack_customer: !!(sub.paystackCustomerCode || sub.customerId),
         has_paystack_subscription: !!(sub.paystackSubscriptionCode || sub.subscriptionCode),
-        transaction_count: (sub.transactionReferences || []).length
+        transaction_count: (sub.transactionReferences || []).length,
+        extension_request: sub.extensionRequest || { status: 'none' },
+        invoices: (sub.invoices || []).slice(-20).reverse(),
+        paystack_configured: paystack.isConfigured()
       },
       current_tier_details: TIERS[tier] || null,
       available_tiers: TIERS
@@ -408,6 +413,163 @@ async function handleInitializePayment(req, res, next) {
     next(err);
   }
 }
+
+// POST /api/v1/billing/request-invoice - Generate corporate proforma invoice for bank/EFT/cheque billing
+router.post('/request-invoice', async (req, res, next) => {
+  try {
+    const { company_id, user_id, role } = req.sessionData;
+    const { tier = 'pro', interval = 'annual', poNumber = '', billingEmail = '', notes = '' } = req.body;
+    const tierKey = String(tier).toLowerCase();
+    const tierConfig = TIERS[tierKey];
+
+    if (!tierConfig || tierKey === 'free') {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_TIER',
+        message: 'Valid paid subscription tier (starter, pro, or enterprise) is required for invoicing.'
+      });
+    }
+
+    const billingInterval = String(interval).toLowerCase() === 'monthly' ? 'monthly' : 'annual';
+    const amountGhs = billingInterval === 'annual'
+      ? Math.round(tierConfig.priceMonthlyGhs * 12 * 0.85)
+      : tierConfig.priceMonthlyGhs;
+
+    const tenant = await Tenant.findOne({ company_id });
+    if (!tenant) {
+      return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND' });
+    }
+
+    const invoiceNumber = `INV-HAV-${new Date().getFullYear()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    const dueAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    const invoice = {
+      invoiceNumber,
+      tier: tierKey,
+      interval: billingInterval,
+      amountGhs,
+      status: 'pending',
+      poNumber: String(poNumber || '').trim().slice(0, 80),
+      billingEmail: String(billingEmail || tenant.contact_email || '').trim(),
+      notes: String(notes || '').trim().slice(0, 400),
+      issuedAt: new Date(),
+      dueAt
+    };
+
+    if (!tenant.subscription) tenant.subscription = {};
+    if (!Array.isArray(tenant.subscription.invoices)) tenant.subscription.invoices = [];
+    tenant.subscription.invoices.push(invoice);
+    await tenant.save();
+
+    await AuditLog.append({
+      company_id,
+      actor_user_id: user_id,
+      actor_role: role,
+      event_type: 'tenant_state_changed',
+      event_payload: {
+        action: 'proforma_invoice_requested',
+        invoiceNumber,
+        tier: tierKey,
+        interval: billingInterval,
+        amountGhs
+      }
+    }).catch(() => {});
+
+    const recipient = invoice.billingEmail || tenant.contact_email;
+    if (recipient) {
+      await sendMail({
+        to: recipient,
+        subject: `Havilah Proforma Invoice ${invoiceNumber} (${tierConfig.name})`,
+        html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:10px;">
+          <h2 style="margin-top:0;color:#0f172a;">Proforma Invoice: ${invoiceNumber}</h2>
+          <p><strong>Organization:</strong> ${tenant.company_name}</p>
+          <p><strong>Plan:</strong> ${tierConfig.name} (${billingInterval})</p>
+          <p><strong>Amount Due:</strong> GHS ${amountGhs.toLocaleString()}</p>
+          <p><strong>Due Date:</strong> ${dueAt.toDateString()}</p>
+          ${invoice.poNumber ? `<p><strong>PO Reference:</strong> ${invoice.poNumber}</p>` : ''}
+          <p style="font-size:13px;color:#475569;">Please quote <strong>${invoiceNumber}</strong> on your bank transfer or cheque settlement. Access activates upon confirmation by Havilah Finance / Super Admin.</p>
+        </div>`
+      }).catch(() => {});
+    }
+
+    return res.status(201).json({
+      success: true,
+      invoice,
+      message: `Proforma invoice ${invoiceNumber} generated successfully.`
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/v1/billing/invoices
+router.get('/invoices', async (req, res, next) => {
+  try {
+    const { company_id } = req.sessionData;
+    const tenant = await Tenant.findOne({ company_id }).select('subscription.invoices company_name').lean();
+    if (!tenant) {
+      return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND' });
+    }
+    const invoices = [...(tenant.subscription?.invoices || [])].reverse();
+    return res.json({ success: true, invoices });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/billing/request-extension - HR requests trial extension
+router.post('/request-extension', async (req, res, next) => {
+  try {
+    const { company_id, user_id, role } = req.sessionData;
+    const { requestedDays = 14, reason = '' } = req.body;
+    const days = Math.min(30, Math.max(7, Number(requestedDays) || 14));
+
+    const tenant = await Tenant.findOne({ company_id });
+    if (!tenant) {
+      return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND' });
+    }
+
+    if (!tenant.subscription) tenant.subscription = {};
+    tenant.subscription.extensionRequest = {
+      status: 'pending',
+      requestedDays: days,
+      reason: String(reason || '').trim().slice(0, 500),
+      requestedBy: user_id,
+      requestedAt: new Date(),
+      resolvedAt: null,
+      resolvedBy: null
+    };
+    await tenant.save();
+
+    await AuditLog.append({
+      company_id,
+      actor_user_id: user_id,
+      actor_role: role,
+      event_type: 'tenant_state_changed',
+      event_payload: {
+        action: 'trial_extension_requested',
+        requestedDays: days,
+        reason: tenant.subscription.extensionRequest.reason
+      }
+    }).catch(() => {});
+
+    const notifyTo = process.env.SUPERADMIN_EMAIL || process.env.SUPPORT_EMAIL || '';
+    if (notifyTo) {
+      await sendMail({
+        to: notifyTo,
+        subject: `[Havilah] Trial Extension Request — ${tenant.company_name} (+${days}d)`,
+        html: `<p><strong>${tenant.company_name}</strong> (${company_id}) requested a <strong>${days}-day</strong> trial extension.</p><p>Reason: ${tenant.subscription.extensionRequest.reason || 'Not provided'}</p>`
+      }).catch(() => {});
+    }
+
+    return res.json({
+      success: true,
+      extension_request: tenant.subscription.extensionRequest,
+      message: `Extension request for ${days} days submitted to platform administration.`
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.post('/initialize', handleInitializePayment);
 router.post('/create-checkout-session', handleInitializePayment);

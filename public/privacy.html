@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Havilah Workplace Health</title>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <style>
+    body {
+      background: var(--bg, #f8fafc);
+      color: var(--text, #0f172a);
+      font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+      line-height: 1.65;
+      margin: 0;
+    }
+    .legal-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px 72px;
+    }
+    .legal-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border, #e2e8f0);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .legal-brand {
+      font-weight: 800;
+      font-size: 1.125rem;
+      color: var(--brand, #0d9488);
+      text-decoration: none;
+    }
+    .legal-links {
+      display: flex;
+      gap: 16px;
+      font-size: 0.875rem;
+    }
+    .legal-links a {
+      color: var(--text-muted, #475569);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .legal-links a:hover { color: var(--brand, #0d9488); }
+    .legal-card {
+      background: var(--surface, #ffffff);
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 14px;
+      padding: 36px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+    .legal-card h1 {
+      margin: 0 0 8px;
+      font-size: 1.875rem;
+      line-height: 1.2;
+      color: var(--text, #0f172a);
+    }
+    .legal-meta {
+      font-size: 0.875rem;
+      color: var(--text-muted, #64748b);
+      margin-bottom: 24px;
+    }
+    .legal-card h2 {
+      margin: 28px 0 10px;
+      font-size: 1.15rem;
+      color: var(--text, #0f172a);
+    }
+    .legal-card p, .legal-card li {
+      font-size: 0.95rem;
+      color: var(--text-secondary, #334155);
+    }
+    .legal-card ul {
+      padding-left: 20px;
+    }
+    .legal-callout {
+      background: #f0fdfa;
+      border-left: 4px solid #0d9488;
+      padding: 14px 16px;
+      border-radius: 6px;
+      margin: 20px 0;
+      font-size: 0.925rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="legal-wrap">
+    <nav class="legal-nav" aria-label="Legal navigation">
+      <a href="/index.html" class="legal-brand">Havilah Workplace Health</a>
+      <div class="legal-links">
+        <a href="/privacy.html" aria-current="page" style="color: var(--brand, #0d9488);">Privacy Policy</a>
+        <a href="/terms.html">Terms of Service</a>
+        <a href="/login.html">Sign In</a>
+      </div>
+    </nav>
+
+    <main class="legal-card">
+      <h1>Privacy &amp; Data Protection Policy</h1>
+      <div class="legal-meta">Effective Date: 1 November 2026 &middot; Aligned with the Data Protection Act, 2012 (Act 843, Republic of Ghana) &amp; ISO 45003</div>
+
+      <div class="legal-callout">
+        <strong>Core Anonymity Architecture:</strong> Your employer and HR Administrators can <strong>never</strong> view your individual survey answers, personal mood check-ins, or clinical referral details. Group metrics are strictly suppressed unless at least <strong>5 employees (N &ge; 5)</strong> submit responses.
+      </div>
+
+      <h2>1. Who We Are &amp; Scope</h2>
+      <p>Havilah Workplace Health (&ldquo;Havilah&rdquo;, &ldquo;we&rdquo;, &ldquo;our&rdquo;) provides an enterprise psychosocial risk management, ISO 45003 compliance, and confidential occupational mental health screening platform for organizations. This policy applies to employees, HR administrators, licensed medical assessors, and platform operators.</p>
+
+      <h2>2. Lawful Basis &amp; Explicit Informed Consent (Act 843)</h2>
+      <p>We process personal and sensitive health data in strict compliance with the <strong>Ghana Data Protection Act, 2012 (Act 843)</strong>:</p>
+      <ul>
+        <li><strong>Double Opt-In Consent:</strong> Employee assessment participation requires affirmative, non-coercive consent that can be viewed and withdrawn within the platform.</li>
+        <li><strong>Data Minimization:</strong> Only information necessary to compute aggregate workplace psychosocial safety indicators or deliver clinician-requested care is collected.</li>
+        <li><strong>Employer Separation:</strong> Corporate tenants act as organizational sponsors for anonymized hazard analytics, while individual clinical screening and referral records remain isolated under clinician confidentiality.</li>
+      </ul>
+
+      <h2>3. What Data We Collect</h2>
+      <ul>
+        <li><strong>Account Data:</strong> Encrypted work email address, hashed password (plus optional TOTP two-factor authentication secret &amp; recovery hashes), role, organization ID, and assigned department.</li>
+        <li><strong>Assessment &amp; Check-In Responses:</strong> Standardized psychometric screening items (COPSOQ III, PSS-10, PHQ-9, GAD-7, FAS-10) and daily pulse scores.</li>
+        <li><strong>Clinical Referrals &amp; Crisis Alerts:</strong> When severe psychological distress or self-harm risk (e.g., PHQ-9 Item 9) is detected, or when an employee initiates an urgent referral, secure clinical case details are routed exclusively to credentialed Assessors and Doctors.</li>
+        <li><strong>Whistleblower &amp; Hazard Reports:</strong> Anonymous workplace safety reports stripped of employee identifiers before appearing in HR hazard logs.</li>
+        <li><strong>Security &amp; Audit Metadata:</strong> Tamper-evident hash-chained audit events (login/2FA/admin actions) and rate-limiting telemetry.</li>
+      </ul>
+
+      <h2>4. Technical Privacy Guarantees</h2>
+      <ul>
+        <li><strong>N &ge; 5 Small-Group Suppression:</strong> All organizational analytics, department heatmaps, benchmark comparisons, and severity trends enforce an immutable minimum threshold of 5 respondents. Groups or reporting periods below 5 are automatically withheld and never fall back to ungrouped population data.</li>
+        <li><strong>Zero-Knowledge Clinical Isolation:</strong> HR billing views expose only anonymous reference codes, department tags, status, and fees—never clinical notes, diagnoses, or employee names.</li>
+        <li><strong>Encryption &amp; Access Control:</strong> Communications use TLS in transit; sensitive email and clinical text fields use authenticated AES encryption at rest; HR, Assessor/Doctor, and Super Admin accounts support TOTP Two-Factor Authentication.</li>
+      </ul>
+
+      <h2>5. Sub-Processors &amp; Third-Party Services</h2>
+      <p>To deliver core platform capabilities cleanly and reliably, Havilah relies on vetted infrastructure providers operating under confidentiality and security commitments:</p>
+      <ul>
+        <li><strong>Cloudflare Workers:</strong> Edge routing and static asset delivery.</li>
+        <li><strong>MongoDB Atlas:</strong> Encrypted primary database storage.</li>
+        <li><strong>Brevo (SMTP/API):</strong> Transactional trial alerts, password recovery, invoice receipts, and crisis dispatch emails.</li>
+        <li><strong>Paystack:</strong> PCI-compliant subscription checkout in GHS (Havilah does not store raw payment card numbers).</li>
+      </ul>
+
+      <h2>6. Retention, Deletion &amp; Your Data Subject Rights</h2>
+      <p>Under Act 843, you have the right to request access to your personal account data, correction of inaccurate details, deletion of personal wellness entries where permissible, and objection to processing. Anonymized statistical aggregates already incorporated into employer N &ge; 5 compliance reports cannot be reverse-linked back to you.</p>
+
+      <h2>7. Privacy Inquiries &amp; Data Protection Contact</h2>
+      <p>To exercise your data rights, report a privacy concern, or request tenant data export/deletion, contact our Data Protection Office at <a href="mailto:nanakwamedickson553@gmail.com">nanakwamedickson553@gmail.com</a>.</p>
+    </main>
+  </div>
+</body>
+</html>

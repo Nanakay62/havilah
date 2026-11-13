@@ -28,9 +28,25 @@ async function sendMail({ to, subject, html, from }) {
  * @param {string} [opts.companyName] - Organization / Tenant name
  * @param {string} [opts.to] - Assessor email recipient
  */
-async function sendClinicalDispatch({ referenceCode, companyName, to }) {
+async function sendClinicalDispatch({ referenceCode, companyName, to, priority = 'standard' }) {
   const recipient = to || process.env.CLINICAL_INTAKE_EMAIL || process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'clinical@havilah.app';
   const resolvedCompany = companyName || 'Client Organization';
+  const isCrisis = priority === 'crisis';
+  const isUrgent = priority === 'urgent' || isCrisis;
+  const headerBg = isCrisis
+    ? 'linear-gradient(135deg, #991b1b, #dc2626)'
+    : 'linear-gradient(135deg, #0f766e, #0d9488)';
+  const headerTitle = isCrisis
+    ? '🚨 URGENT CRISIS CLINICAL REFERRAL'
+    : '🏥 Havilah Clinical Referral Alert';
+  const urgencyBanner = isCrisis
+    ? `<div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 14px 16px; border-radius: 4px; margin: 16px 0;">
+        <strong style="color: #991b1b; font-size: 13px; display: block; margin-bottom: 3px;">⚠️ Priority Crisis Escalation:</strong>
+        <p style="margin: 0; font-size: 12px; color: #7f1d1d; line-height: 1.5;">
+          An employee requested urgent clinician outreach following a high-risk screening indicator. Please prioritize immediate review in the Clinical Portal.
+        </p>
+      </div>`
+    : '';
   const timestamp = new Date().toUTCString();
 
   const html = `
@@ -38,19 +54,21 @@ async function sendClinicalDispatch({ referenceCode, companyName, to }) {
       <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; color: #1e293b; border-radius: 14px; overflow: hidden; border: 1px solid #cbd5e1; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);">
         
         <!-- Header -->
-        <div style="background: linear-gradient(135deg, #0f766e, #0d9488); padding: 24px 32px; color: #ffffff;">
+        <div style="background: ${headerBg}; padding: 24px 32px; color: #ffffff;">
           <h1 style="margin: 0; color: #ffffff; font-size: 19px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-            🏥 Havilah Clinical Referral Alert
+            ${headerTitle}
           </h1>
           <p style="margin: 4px 0 0; color: #ccfbf1; font-size: 12.5px;">Zero-Knowledge Confidential Patient Intake System</p>
         </div>
 
         <!-- Body -->
         <div style="padding: 28px 32px;">
+
           <p style="font-size: 15px; line-height: 1.6; color: #1e293b; margin-top: 0;">
             A new confidential occupational health referral (<strong>Ref: <span style="font-family: monospace; color: #0d9488; font-weight: 700;">${referenceCode}</span></strong>) has been submitted for company <strong>${resolvedCompany}</strong> and assigned to your clinical queue.
           </p>
 
+          ${urgencyBanner}
           <!-- Zero-Knowledge Security Notice -->
           <div style="background-color: #f0fdfa; border-left: 4px solid #14b8a6; padding: 14px 16px; border-radius: 4px; margin: 20px 0;">
             <strong style="color: #0f766e; font-size: 13px; display: block; margin-bottom: 3px;">🔒 Patient Privacy &amp; Medical Compliance Guarantee:</strong>
@@ -80,7 +98,7 @@ async function sendClinicalDispatch({ referenceCode, companyName, to }) {
 
   return sendMail({
     to: recipient,
-    subject: `🏥 New Clinical Referral Assigned [${referenceCode}]`,
+    subject: isCrisis ? `🚨 [CRISIS PRIORITY] New Clinical Referral Assigned [${referenceCode}]` : isUrgent ? `⚠️ [URGENT] New Clinical Referral Assigned [${referenceCode}]` : `🏥 New Clinical Referral Assigned [${referenceCode}]`,
     html
   });
 }
@@ -167,6 +185,7 @@ async function sendWhistleblowerAlert({ reportId, companyName, to }) {
 
         <!-- Body -->
         <div style="padding: 28px 32px;">
+
           <p style="font-size: 15px; line-height: 1.6; color: #1e293b; margin-top: 0;">
             A new confidential report (<strong>Ref: <span style="font-family: monospace; color: #4f46e5;">${reportId}</span></strong>) has been submitted to the secure portal.
           </p>

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const crypto = require('crypto');
 
@@ -114,8 +114,45 @@ function verifyTotpCode(token, secret) {
 /**
  * Returns an otpauth:// URI for QR code generation in authenticator apps.
  */
-function getOtpAuthUrl({ issuer = 'Wellframe', accountName, secret }) {
+function getOtpAuthUrl({ issuer = 'Havilah', accountName, secret }) {
   return `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(accountName)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+}
+
+function hashRecoveryCode(code) {
+  const normalized = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return crypto.createHash('sha256').update(normalized).digest('hex');
+}
+
+function generateRecoveryCodes(count = 8) {
+  const plainCodes = [];
+  const hashedCodes = [];
+  for (let i = 0; i < count; i++) {
+    const raw = crypto.randomBytes(4).toString('hex').toUpperCase();
+    const formatted = `${raw.slice(0, 4)}-${raw.slice(4, 8)}`;
+    plainCodes.push(formatted);
+    hashedCodes.push(hashRecoveryCode(formatted));
+  }
+  return { plainCodes, hashedCodes };
+}
+
+function verifyAndConsumeRecoveryCode(candidateCode, storedHashes = []) {
+  if (!candidateCode || !Array.isArray(storedHashes) || storedHashes.length === 0) {
+    return { valid: false, remainingHashes: storedHashes || [] };
+  }
+  const normalized = String(candidateCode).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (normalized.length < 6) {
+    return { valid: false, remainingHashes: storedHashes };
+  }
+  const candidateHash = crypto.createHash('sha256').update(normalized).digest('hex');
+  const idx = storedHashes.findIndex(h => {
+    if (!h || h.length !== candidateHash.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(h, 'utf8'), Buffer.from(candidateHash, 'utf8'));
+  });
+  if (idx === -1) {
+    return { valid: false, remainingHashes: storedHashes };
+  }
+  const remainingHashes = storedHashes.filter((_, i) => i !== idx);
+  return { valid: true, remainingHashes };
 }
 
 module.exports = {
@@ -123,4 +160,7 @@ module.exports = {
   generateTotpCode,
   verifyTotpCode,
   getOtpAuthUrl,
+  generateRecoveryCodes,
+  hashRecoveryCode,
+  verifyAndConsumeRecoveryCode,
 };

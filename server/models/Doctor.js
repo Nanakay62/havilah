@@ -45,6 +45,12 @@ const DoctorSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  totp_enabled: { type: Boolean, default: false },
+  totp_secret: { type: String, default: null },
+  totp_pending_secret: { type: String, default: null },
+  totp_recovery_codes_hashes: { type: [String], default: [] },
+  password_reset_token_hash: { type: String, default: null, index: true },
+  password_reset_expires_at: { type: Date, default: null },
 }, { timestamps: true });
 
 DoctorSchema.index({ practiceId: 1, active: 1 });

@@ -276,6 +276,68 @@ if (process.env.REDIS_URL) {
   }
 }
 
+async function processTrialReminders(now = new Date()) {
+  const Tenant = require('../models/Tenant');
+  const User = require('../models/User');
+  const { sendMail } = require('../utils/emailService');
+  const { decryptField } = require('../utils/crypto');
+
+  const tenants = await Tenant.find({
+    lifecycle_state: { $in: ['active', 'trialing'] },
+    'subscription.status': 'trialing'
+  });
+
+  const sentCheckpoints = [];
+  for (const tenant of tenants) {
+    const trialEndsAt = tenant.subscription?.trialEndsAt || tenant.access_expires_at;
+    if (!trialEndsAt) continue;
+
+    const msRemaining = new Date(trialEndsAt).getTime() - now.getTime();
+    const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
+    const alreadySent = tenant.subscription?.remindersSent || [];
+
+    let checkpoint = null;
+    if (daysRemaining <= 0) checkpoint = 'expired';
+    else if (daysRemaining <= 1) checkpoint = '1d';
+    else if (daysRemaining <= 3) checkpoint = '3d';
+    else if (daysRemaining <= 7) checkpoint = '7d';
+    else if (daysRemaining <= 14) checkpoint = '14d';
+
+    if (!checkpoint || alreadySent.includes(checkpoint)) continue;
+
+    let recipientEmail = tenant.contact_email || '';
+    if (!recipientEmail) {
+      const hrUser = await User.findOne({
+        company_id: tenant.company_id,
+        role: { $in: ['hr_admin', 'tenant_admin'] },
+        status: 'active'
+      });
+      if (hrUser?.email_encrypted?.encrypted) {
+        try { recipientEmail = decryptField(hrUser.email_encrypted); } catch (_) {}
+      }
+    }
+
+    if (recipientEmail) {
+      const subject = checkpoint === 'expired'
+        ? `[Havilah] Your organization's Pro Trial has expired (${tenant.company_name})`
+        : `[Havilah] Pro Trial Reminder: ${daysRemaining} day(s) remaining (${tenant.company_name})`;
+      const bodyMsg = checkpoint === 'expired'
+        ? `Your Havilah 30-day Pro trial for <strong>${tenant.company_name}</strong> has ended. Open HR Billing to upgrade via Paystack, request a corporate invoice, or submit a trial extension request.`
+        : `Your Havilah Pro trial for <strong>${tenant.company_name}</strong> expires in <strong>${daysRemaining} day(s)</strong> (${new Date(trialEndsAt).toDateString()}).`;
+      await sendMail({ to: recipientEmail, subject, html: `<p>${bodyMsg}</p>` }).catch(() => {});
+    }
+
+    if (!tenant.subscription) tenant.subscription = {};
+    tenant.subscription.remindersSent = [...alreadySent, checkpoint];
+    if (checkpoint === 'expired') {
+      tenant.lifecycle_state = 'expired';
+    }
+    await tenant.save();
+    sentCheckpoints.push({ company_id: tenant.company_id, checkpoint });
+  }
+  return sentCheckpoints;
+}
+
 function initScheduler() {
   logger.info('[Scheduler] Initializing ISO 45003 compliance scheduler...');
   
@@ -295,6 +357,20 @@ function initScheduler() {
       logger.error({ err: err.message }, '[Scheduler] Error processing notifications');
     }
   });
+
+  // Hourly trial reminder & expiration check (14d, 7d, 3d, 1d, expired)
+  cron.schedule('0 * * * *', async () => {
+    try {
+      if (redisLockClient && redisLockClient.status === 'ready') {
+        const lockKey = `scheduler:lock:trialReminders:${Math.floor(Date.now() / 3600000)}`;
+        const acquired = await redisLockClient.set(lockKey, '1', 'EX', 3500, 'NX');
+        if (!acquired) return;
+      }
+      await processTrialReminders();
+    } catch (err) {
+      logger.error({ err: err.message }, '[Scheduler] Error processing trial reminders');
+    }
+  });
 }
 
 module.exports = {
@@ -302,5 +378,6 @@ module.exports = {
   schedulerInstance,
   ISO_45003_CONTROLS,
   logControlActivation,
+  processTrialReminders,
   initScheduler
 };

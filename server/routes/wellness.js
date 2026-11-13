@@ -8,6 +8,60 @@ const { validateSession, requireConsent } = require('../middleware/auth');
 const hazardController = require('../controllers/hazardController');
 
 // Helper to compute core dimensions and clinical scales
+function evaluateCrisisRisk(surveyType, answers, rawScore, hotlineConfig = {}) {
+  const normType = String(surveyType || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  let phq9Item9Score = 0;
+
+  if (normType.includes('PHQ9') && answers) {
+    if (Array.isArray(answers) && answers.length >= 9) {
+      phq9Item9Score = Number(answers[8]) || 0;
+    } else if (typeof answers === 'object') {
+      const q9Candidate = answers.phq9_q9 ?? answers.q9 ?? answers['8'] ?? answers[8];
+      phq9Item9Score = Number(q9Candidate) || 0;
+    }
+  }
+
+  const hotlines = {
+    crisis_number: hotlineConfig.crisis_number || '+233 24 362 9870',
+    ghana_helpline: '+233 24 362 9870',
+    emergency_ghana: '112 / 193',
+    international_crisis: '988 (US/CA) or local emergency services',
+    eap_number: hotlineConfig.eap_number || '',
+    occupational_health_contact: hotlineConfig.occupational_health_contact || ''
+  };
+
+  if (phq9Item9Score >= 1) {
+    return {
+      triggered: true,
+      level: 'crisis',
+      reason: 'phq9_self_harm',
+      phq9_item9_score: phq9Item9Score,
+      headline: 'Immediate Support Is Available',
+      message: 'Your response indicates thoughts of self-harm or being better off dead. You do not have to carry this alone — confidential crisis support and an urgent clinician callback are available right now.',
+      hotlines
+    };
+  }
+
+  if ((normType.includes('PHQ9') && rawScore >= 20) || (normType.includes('GAD7') && rawScore >= 15)) {
+    return {
+      triggered: true,
+      level: 'urgent',
+      reason: normType.includes('PHQ9') ? 'severe_depression' : 'severe_anxiety',
+      phq9_item9_score: phq9Item9Score,
+      headline: 'Priority Clinical Support Recommended',
+      message: 'Your screening score falls in the severe range. Immediate helpline numbers and confidential clinician support are available below.',
+      hotlines
+    };
+  }
+
+  return {
+    triggered: false,
+    level: 'none',
+    phq9_item9_score: phq9Item9Score,
+    hotlines
+  };
+}
+
 function computeDimensions(surveyType, answers) {
   let rawScore = 0;
   let normalized = 0;
@@ -329,6 +383,7 @@ router.post('/submit-checkin', async (req, res, next) => {
     }
 
     let anonLogId = null;
+    let crisisProtocol = null;
 
     if (survey_type !== 'checkin_slider') {
       const AssessmentCycle = require('../models/AssessmentCycle');
@@ -416,6 +471,11 @@ router.post('/submit-checkin', async (req, res, next) => {
       await hazardController.submitLog(mockReq, mockRes, next);
 
       const { dimLabel, normalized, rawScore, maxScore, severityLabel } = computeDimensions(survey_type, answers);
+      const tenantDoc = companyId ? await Tenant.findOne({ company_id: companyId }).select('hotline_config').lean() : null;
+      crisisProtocol = evaluateCrisisRisk(survey_type, answers, rawScore, tenantDoc?.hotline_config || {});
+      const effectiveSeverityLabel = (crisisProtocol.triggered && crisisProtocol.level === 'crisis')
+        ? 'Crisis Attention Required'
+        : severityLabel;
       user.baseline_profile[dimLabel] = normalized;
       user.baseline_profile.last_updated = new Date();
       await user.save();
@@ -430,7 +490,7 @@ router.post('/submit-checkin', async (req, res, next) => {
         overallIndex: normalized,
         clinical_score: rawScore,
         max_score: maxScore,
-        severity_label: severityLabel,
+        severity_label: effectiveSeverityLabel,
         dimension_scores: user.baseline_profile
       });
     }
@@ -438,7 +498,8 @@ router.post('/submit-checkin', async (req, res, next) => {
     res.json({
       success: true,
       baseline_profile: user.baseline_profile,
-      anon_log_id: anonLogId // For auditing if necessary
+      anon_log_id: anonLogId, // For auditing if necessary
+      crisis_protocol: crisisProtocol
     });
 
   } catch (err) {

@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="/js/vendor/jspdf.umd.min.js"></script>
 <script src="/js/vendor/html2canvas.min.js"></script>
-<script src="/js/auth.js"></script>
+<script src="/js/auth.js?v=3"></script>
 <script src="/js/router.js"></script>
 <style>
   :root {
@@ -617,6 +617,8 @@
     <div id="hrTrialBanner" style="display: none; background: var(--brand); color: #ffffff; padding: 8px 24px; font-size: 0.8125rem; font-weight: 500; text-align: center; width: 100%;">
       <div style="max-width: 1440px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
         <span id="hrTrialBannerText"><strong>30-Day Pro Reverse Trial Active:</strong> You have full access to all Pro features including whistleblower isolation &amp; clinical routing.</span>
+        <span id="hrTrialBannerText"><strong>30-Day Pro Reverse Trial Active:</strong> You have full access to all Pro features including whistleblower isolation &amp; clinical routing.</span>
+        <a href="#" onclick="event.preventDefault(); if (window.switchHrViewTab) window.switchHrViewTab('billing');" style="background: #ffffff; color: var(--brand); border-radius: 99px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">Upgrade / Request Extension</a>
         <a href="/index.html#pricing" target="_blank" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); border-radius: 99px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">View Plans &rarr;</a>
       </div>
     </div>
@@ -1038,6 +1040,104 @@
       <div class="stat-label">Pending 48+ hrs</div>
       <div class="stat-value" id="billingStaleCount">0</div>
       <div class="stat-hint">Flagged for assessor review</div>
+    </div>
+  </div>
+
+  <!-- Platform Subscription, Trial Extension & Corporate Invoicing -->
+  <div id="hrSubscriptionBillingCard" class="data-table-container" style="margin-bottom: var(--space-6); padding: 20px;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <h2 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text); margin: 0;">Platform Subscription &amp; Trial</h2>
+          <span id="subBillingTierBadge" class="badge badge-neutral">Loading...</span>
+          <span id="subBillingStatusBadge" class="badge badge-neutral">Checking...</span>
+        </div>
+        <p id="subBillingExpiryText" style="font-size: var(--text-xs); color: var(--text-subtle); margin: 6px 0 0 0;">Fetching subscription and trial expiration details...</p>
+        <p id="subBillingExtensionStatus" style="font-size: var(--text-xs); color: var(--brand); margin: 4px 0 0 0; display: none;"></p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="window.initializePaystackCheckout('starter')">Paystack: Starter (GHS 5,500/mo)</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.initializePaystackCheckout('pro')">Paystack: Pro (GHS 15,450/mo)</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="window.initializePaystackCheckout('enterprise')">Paystack: Enterprise (GHS 35,000/mo)</button>
+      </div>
+    </div>
+    <div id="paystackConfigNote" style="display: none; font-size: var(--text-xs); color: var(--text-subtle); background: var(--surface-alt, #f8fafc); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 16px;">
+      Instant Paystack card checkout is not active in this environment. Submit a corporate proforma invoice request below for bank transfer or mobile money settlement.
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
+      <form onsubmit="window.submitInvoiceRequest(event)" style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; background: var(--surface-alt, #f8fafc);">
+        <h3 style="font-size: var(--text-sm); font-weight: var(--weight-semibold); margin: 0 0 6px 0;">Request Corporate Proforma Invoice</h3>
+        <p style="font-size: var(--text-xs); color: var(--text-subtle); margin: 0 0 12px 0;">Generate an official invoice for procurement or bank transfer (15% annual discount included).</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+          <div>
+            <label for="hrInvoiceTier" style="display:block;font-size:11px;font-weight:600;margin-bottom:4px;">Plan Tier</label>
+            <select id="hrInvoiceTier" style="width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:var(--text-xs);">
+              <option value="starter">Starter (GHS 5,500/mo)</option>
+              <option value="pro" selected>Pro (GHS 15,450/mo)</option>
+              <option value="enterprise">Enterprise (GHS 35,000/mo)</option>
+            </select>
+          </div>
+          <div>
+            <label for="hrInvoiceInterval" style="display:block;font-size:11px;font-weight:600;margin-bottom:4px;">Billing Cycle</label>
+            <select id="hrInvoiceInterval" style="width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:var(--text-xs);">
+              <option value="monthly">Monthly</option>
+              <option value="annual">Annual (15% Off)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+          <div>
+            <label for="hrInvoiceEmail" style="display:block;font-size:11px;font-weight:600;margin-bottom:4px;">Finance Email</label>
+            <input type="email" id="hrInvoiceEmail" placeholder="finance@company.com" style="width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:var(--text-xs);">
+          </div>
+          <div>
+            <label for="hrInvoicePo" style="display:block;font-size:11px;font-weight:600;margin-bottom:4px;">PO Number (Optional)</label>
+            <input type="text" id="hrInvoicePo" placeholder="PO-2026-001" style="width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:var(--text-xs);">
+          </div>
+        </div>
+        <button type="submit" id="hrInvoiceSubmitBtn" class="btn btn-primary btn-sm">Generate Proforma Invoice</button>
+        <div id="hrInvoiceFeedback" style="font-size: var(--text-xs); margin-top: 8px; display: none;"></div>
+      </form>
+
+      <form onsubmit="window.submitTrialExtensionRequest(event)" style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; background: var(--surface-alt, #f8fafc);">
+        <h3 style="font-size: var(--text-sm); font-weight: var(--weight-semibold); margin: 0 0 6px 0;">Request Trial Extension</h3>
+        <p style="font-size: var(--text-xs); color: var(--text-subtle); margin: 0 0 12px 0;">Need more time for internal procurement or pilot sign-off? Send a request to platform support.</p>
+        <div style="margin-bottom: 8px;">
+          <label for="hrExtDays" style="display:block;font-size:11px;font-weight:600;margin-bottom:4px;">Additional Days</label>
+          <select id="hrExtDays" style="width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:var(--text-xs);">
+            <option value="7">7 Days</option>
+            <option value="14" selected>14 Days</option>
+            <option value="30">30 Days</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label for="hrExtReason" style="display:block;font-size:11px;font-weight:600;margin-bottom:4px;">Reason for Extension</label>
+          <input type="text" id="hrExtReason" required minlength="5" placeholder="e.g., Awaiting board procurement approval" style="width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:var(--text-xs);">
+        </div>
+        <button type="submit" id="hrExtSubmitBtn" class="btn btn-secondary btn-sm">Submit Extension Request</button>
+        <div id="hrExtensionFeedback" style="font-size: var(--text-xs); margin-top: 8px; display: none;"></div>
+      </form>
+    </div>
+
+    <div style="overflow-x: auto; width: 100%;">
+      <table class="data-table table-to-cards" aria-label="Platform subscription invoices">
+        <thead>
+          <tr>
+            <th scope="col">Invoice #</th>
+            <th scope="col">Plan / Cycle</th>
+            <th scope="col">PO / Email</th>
+            <th scope="col">Amount (GHS)</th>
+            <th scope="col">Status</th>
+            <th scope="col">Requested</th>
+          </tr>
+        </thead>
+        <tbody id="hrInvoicesTableBody">
+          <tr>
+            <td colspan="6" style="padding: 18px; text-align: center; color: var(--text-subtle); font-size: var(--text-xs);">No corporate invoices requested yet.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -3295,9 +3395,22 @@ const App = (() => {
         <div><div class="toggle-label">Anonymous mode</div><div class="toggle-desc">Strip identifiers from all stored responses</div></div>
         <button class="toggle ${s.anonymousMode !== false ? 'on' : ''}" data-setting="anonymousMode" aria-label="Toggle anonymous mode"></button>
       </div>
+
+      <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-deep); text-transform: uppercase; letter-spacing: 0.08em; margin: 20px 0 10px;">Account Security &amp; 2FA</div>
+      <div id="hr2faBox" style="padding: 12px; background: rgba(15, 23, 42, 0.03); border: 1px solid var(--border); border-radius: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div>
+            <div style="font-weight: 600; font-size: 0.85rem;">Two-Factor Authentication (Authenticator App)</div>
+            <div id="hr2faStatusText" style="font-size: 0.75rem; color: var(--text-3);">Loading status...</div>
+          </div>
+          <button type="button" id="hr2faActionBtn" class="btn btn-secondary btn-sm" onclick="window.hrToggle2faPanel()">Configure 2FA</button>
+        </div>
+        <div id="hr2faConfigPanel" style="display:none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);"></div>
+      </div>
     `;
     const foot = `<button class="btn btn-ghost btn-sm" onclick="App.closeGeneric()">Cancel</button><button class="btn btn-primary btn-sm" onclick="App.saveSettings()">Save preferences</button>`;
     openGeneric('SETTINGS', 'Assessment Modules & Privacy Settings', body, foot);
+    if (typeof window.hrLoad2faStatus === 'function') window.hrLoad2faStatus();
     // Wire toggles
     $$('#genericBody .toggle').forEach(t => {
       t.addEventListener('click', () => {
@@ -3308,6 +3421,87 @@ const App = (() => {
     });
   }
   function saveSettings() {
+    window.hrLoad2faStatus = async function() {
+      const el = document.getElementById('hr2faStatusText');
+      if (!el) return;
+      try {
+        const resp = await fetch('/api/v1/auth/2fa/status', { headers: window.Auth ? Auth.getAuthHeader() : {} });
+        const data = await resp.json();
+        window._hr2faEnabled = Boolean(data.enabled);
+        el.textContent = data.enabled
+          ? `Active (${data.recovery_codes_remaining || 0} single-use recovery codes left)`
+          : 'Not enabled — protect HR admin access with an authenticator app';
+      } catch (e) {
+        el.textContent = 'Unable to fetch 2FA status';
+      }
+    };
+    window.hrToggle2faPanel = async function() {
+      const panel = document.getElementById('hr2faConfigPanel');
+      if (!panel) return;
+      const opening = panel.style.display === 'none' || !panel.style.display;
+      panel.style.display = opening ? 'block' : 'none';
+      if (!opening) return;
+      const headers = { 'Content-Type': 'application/json', ...(window.Auth ? Auth.getAuthHeader() : {}) };
+      if (!window._hr2faEnabled) {
+        const res = await fetch('/api/v1/auth/2fa/setup', { method: 'POST', headers });
+        const data = await res.json();
+        panel.innerHTML = `
+          <div style="font-size:0.78rem; color:var(--text-2); margin-bottom:6px;">Scan or enter this setup key in Google Authenticator / Authy:</div>
+          <div style="font-family:monospace; font-weight:700; padding:8px; background:#fff; border:1px solid var(--border); border-radius:6px; word-break:break-all; margin-bottom:8px;">${data.secret || ''}</div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="hr2faCodeInput" placeholder="6-digit code" maxlength="6" style="padding:6px 10px; border:1px solid var(--border); border-radius:6px; max-width:140px;" />
+            <button type="button" class="btn btn-primary btn-sm" onclick="window.hrConfirmEnable2fa()">Verify &amp; Enable</button>
+          </div>
+          <div id="hr2faCodesOut" style="display:none; margin-top:8px;"></div>`;
+      } else {
+        panel.innerHTML = `
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <input type="text" id="hr2faManageCode" placeholder="6-digit code" maxlength="6" style="padding:6px 10px; border:1px solid var(--border); border-radius:6px; max-width:140px;" />
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.hrRegenerate2fa()">New Backup Codes</button>
+            <button type="button" class="btn btn-ghost btn-sm" style="color:#dc2626;" onclick="window.hrDisable2fa()">Disable 2FA</button>
+          </div>
+          <div id="hr2faCodesOut" style="display:none; margin-top:8px;"></div>`;
+      }
+    };
+    window.hrConfirmEnable2fa = async function() {
+      const code = (document.getElementById('hr2faCodeInput')?.value || '').trim();
+      const headers = { 'Content-Type': 'application/json', ...(window.Auth ? Auth.getAuthHeader() : {}) };
+      const res = await fetch('/api/v1/auth/2fa/enable', { method: 'POST', headers, body: JSON.stringify({ code }) });
+      const data = await res.json();
+      if (!res.ok) return toast('Error', data.message || 'Invalid code', 'error');
+      window._hr2faEnabled = true;
+      const out = document.getElementById('hr2faCodesOut');
+      if (out) {
+        out.style.display = 'block';
+        out.innerHTML = `<div style="padding:8px; background:#fef3c7; border:1px solid #f59e0b; border-radius:6px; font-size:0.75rem;"><strong>Save these backup codes now:</strong><div style="font-family:monospace; display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:4px;">${(data.recovery_codes||[]).map(c=>`<span>${c}</span>`).join('')}</div></div>`;
+      }
+      window.hrLoad2faStatus();
+      toast('2FA Enabled', 'Two-factor authentication is now active.', 'success');
+    };
+    window.hrRegenerate2fa = async function() {
+      const code = (document.getElementById('hr2faManageCode')?.value || '').trim();
+      const headers = { 'Content-Type': 'application/json', ...(window.Auth ? Auth.getAuthHeader() : {}) };
+      const res = await fetch('/api/v1/auth/2fa/regenerate-recovery-codes', { method: 'POST', headers, body: JSON.stringify({ code }) });
+      const data = await res.json();
+      if (!res.ok) return toast('Error', data.message || 'Invalid code', 'error');
+      const out = document.getElementById('hr2faCodesOut');
+      if (out) {
+        out.style.display = 'block';
+        out.innerHTML = `<div style="padding:8px; background:#fef3c7; border:1px solid #f59e0b; border-radius:6px; font-size:0.75rem;"><strong>New backup codes:</strong><div style="font-family:monospace; display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:4px;">${(data.recovery_codes||[]).map(c=>`<span>${c}</span>`).join('')}</div></div>`;
+      }
+      window.hrLoad2faStatus();
+    };
+    window.hrDisable2fa = async function() {
+      const code = (document.getElementById('hr2faManageCode')?.value || '').trim();
+      const headers = { 'Content-Type': 'application/json', ...(window.Auth ? Auth.getAuthHeader() : {}) };
+      const res = await fetch('/api/v1/auth/2fa/disable', { method: 'POST', headers, body: JSON.stringify({ code }) });
+      const data = await res.json();
+      if (!res.ok) return toast('Error', data.message || 'Could not disable 2FA', 'error');
+      window._hr2faEnabled = false;
+      document.getElementById('hr2faConfigPanel').style.display = 'none';
+      window.hrLoad2faStatus();
+      toast('2FA Disabled', 'Two-factor authentication turned off.', 'info');
+    };
     const nInput = document.getElementById('nSizeInput');
     if (nInput) {
       const val = parseInt(nInput.value, 10);
@@ -4082,7 +4276,7 @@ window.App = App;
 document.addEventListener('DOMContentLoaded', App.init);
 
 </script>
-  <script src="/js/hrDashboard.js?v=20261026"></script>
+  <script src="/js/hrDashboard.js?v=20261113"></script>
 
 <!-- Privacy & Anonymity Modal -->
 <div id="privacy-modal" class="modal-backdrop" style="display:none; position:fixed; inset:0; background:var(--overlay-backdrop); justify-content:center; align-items:center; z-index:9999;" onclick="if(event.target===this)this.style.display='none'">

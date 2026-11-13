@@ -663,7 +663,11 @@ router.post('/tenants/:id/extend-access', async (req, res, next) => {
     
     const updateFields = { 
       access_expires_at: newExpiry,
-      'subscription.trialEndsAt': newExpiry
+      'subscription.trialEndsAt': newExpiry,
+      'subscription.remindersSent': [],
+      'subscription.extensionRequest.status': 'approved',
+      'subscription.extensionRequest.resolvedAt': new Date(),
+      'subscription.extensionRequest.resolvedBy': req.sessionData ? req.sessionData.user_id : 'SUPERADMIN'
     };
     
     // Ensure subscription tier and status remain healthy
@@ -1386,6 +1390,112 @@ router.post('/users/remove', async (req, res, next) => {
       success: true,
       message: 'Account removed. Seat freed. They can now register again.',
       ...counts,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 10c. Billing Management: List Pending Invoices & Trial Extension Requests across Tenants
+router.get('/billing/pending', async (req, res, next) => {
+  try {
+    const tenants = await Tenant.find({
+      $or: [
+        { 'subscription.extensionRequest.status': 'pending' },
+        { 'subscription.invoices.status': 'pending' }
+      ]
+    }).select('company_id company_name billing_tier lifecycle_state access_expires_at subscription').lean();
+
+    const pendingExtensions = [];
+    const pendingInvoices = [];
+
+    for (const t of tenants) {
+      const sub = t.subscription || {};
+      if (sub.extensionRequest && sub.extensionRequest.status === 'pending') {
+        pendingExtensions.push({
+          company_id: t.company_id,
+          company_name: t.company_name,
+          access_expires_at: t.access_expires_at,
+          ...sub.extensionRequest
+        });
+      }
+      if (Array.isArray(sub.invoices)) {
+        for (const inv of sub.invoices) {
+          if (inv.status === 'pending') {
+            pendingInvoices.push({
+              company_id: t.company_id,
+              company_name: t.company_name,
+              ...inv
+            });
+          }
+        }
+      }
+    }
+
+    res.json({ success: true, pendingExtensions, pendingInvoices });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 10d. Mark a corporate Proforma Invoice as Paid & Activate Subscription
+router.post('/tenants/:id/invoices/:invoiceNumber/mark-paid', async (req, res, next) => {
+  try {
+    const { id, invoiceNumber } = req.params;
+    const { paymentReference = 'BANK-TRANSFER' } = req.body || {};
+
+    const tenant = await Tenant.findOne({ company_id: id });
+    if (!tenant) {
+      return res.status(404).json({ success: false, error: 'Tenant not found' });
+    }
+
+    const invoices = tenant.subscription?.invoices || [];
+    const invoice = invoices.find(inv => inv.invoiceNumber === invoiceNumber);
+    if (!invoice) {
+      return res.status(404).json({ success: false, error: 'Invoice not found' });
+    }
+
+    const SEAT_MAP = { starter: 100, pro: 999999, enterprise: 999999 };
+    const periodDays = invoice.interval === 'annual' ? 365 : 30;
+    const nextPeriodEnd = new Date(Date.now() + periodDays * 24 * 60 * 60 * 1000);
+
+    invoice.status = 'paid';
+    invoice.paidAt = new Date();
+    invoice.paidBy = req.sessionData?.user_id || 'SUPERADMIN';
+    invoice.paymentReference = String(paymentReference || 'BANK-TRANSFER').trim();
+
+    tenant.billing_tier = invoice.tier;
+    tenant.max_allowed_seats = SEAT_MAP[invoice.tier] || 999999;
+    tenant.lifecycle_state = 'active';
+    tenant.locked_at = null;
+    tenant.subscription.tier = invoice.tier;
+    tenant.subscription.status = 'active';
+    tenant.subscription.currentPeriodEnd = nextPeriodEnd;
+    tenant.access_expires_at = nextPeriodEnd;
+
+    await tenant.save();
+
+    const AuditLog = require('../models/AuditLog');
+    await AuditLog.append({
+      company_id: id,
+      actor_user_id: req.sessionData?.user_id || 'SUPERADMIN',
+      actor_role: 'super_admin',
+      event_type: 'tenant_state_changed',
+      event_payload: {
+        action: 'invoice_marked_paid',
+        invoiceNumber,
+        tier: invoice.tier,
+        interval: invoice.interval,
+        amountGhs: invoice.amountGhs,
+        paymentReference: invoice.paymentReference
+      }
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      invoice,
+      subscription: tenant.subscription,
+      message: `Invoice ${invoiceNumber} marked paid and ${invoice.tier} tier activated.`
     });
   } catch (err) {
     next(err);

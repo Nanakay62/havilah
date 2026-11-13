@@ -129,8 +129,22 @@ router.get('/stream-availability', async (req, res, next) => {
  */
 router.get('/completed-status', validateSession, async (req, res, next) => {
   try {
-    const workerId = req.query.worker_id || req.sessionData.user_id;
-    const tenantId = req.query.tenant_id || req.sessionData.company_id;
+    if (req.query.worker_id && req.query.worker_id !== req.sessionData.user_id) {
+      return res.status(403).json({
+        success: false,
+        error: 'PRIVACY_VIOLATION',
+        message: 'Forbidden: Individual assessment completion status cannot be queried for another user.'
+      });
+    }
+    const workerId = req.sessionData.user_id;
+    if (req.query.tenant_id && req.query.tenant_id !== req.sessionData.company_id && req.sessionData.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'CROSS_TENANT_FORBIDDEN',
+        message: 'Forbidden: Cross-tenant assessment queries are blocked.'
+      });
+    }
+    const tenantId = req.sessionData.company_id;
     const cycleId = req.query.cycle_id;
 
     if (!workerId || !tenantId) {

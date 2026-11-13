@@ -441,29 +441,79 @@
     }
   };
 
+  let pendingAssessor2faToken = null;
+
+  window.resetAssessor2faStep = () => {
+    pendingAssessor2faToken = null;
+    const credsGroup = document.getElementById('assessorCredsGroup');
+    const twoFaGroup = document.getElementById('assessor2faGroup');
+    const emailEl = document.getElementById('assessorEmailInput');
+    const passEl = document.getElementById('assessorPasswordInput');
+    const codeEl = document.getElementById('assessor2faCodeInput');
+    const btn = document.getElementById('assessorLoginBtn');
+    if (credsGroup) credsGroup.style.display = 'block';
+    if (twoFaGroup) twoFaGroup.style.display = 'none';
+    if (emailEl) emailEl.required = true;
+    if (passEl) passEl.required = true;
+    if (codeEl) codeEl.value = '';
+    if (btn) btn.textContent = 'Sign In to Clinical Console';
+  };
+
   window.handleAssessorLogin = async (event) => {
     event.preventDefault();
     const email = document.getElementById('assessorEmailInput').value.trim();
     const password = document.getElementById('assessorPasswordInput').value;
+    const codeEl = document.getElementById('assessor2faCodeInput');
+    const twoFaCode = codeEl ? codeEl.value.trim() : '';
     const btn = document.getElementById('assessorLoginBtn');
 
     btn.disabled = true;
-    btn.textContent = 'Signing in...';
+    btn.textContent = pendingAssessor2faToken ? 'Verifying 2FA...' : 'Signing in...';
 
     try {
-      const res = await assessorApiFetch(`${API_BASE}/login`, {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
+      let res;
+      if (pendingAssessor2faToken) {
+        if (!twoFaCode) throw new Error('Enter your 6-digit authenticator code or recovery code.');
+        res = await assessorApiFetch(`${API_BASE}/login/verify-2fa`, {
+          method: 'POST',
+          body: JSON.stringify({ temp_token: pendingAssessor2faToken, code: twoFaCode }),
+        });
+      } else {
+        res = await assessorApiFetch(`${API_BASE}/login`, {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        });
+      }
 
+      if (res && res.requires_2fa && res.temp_token) {
+        pendingAssessor2faToken = res.temp_token;
+        const credsGroup = document.getElementById('assessorCredsGroup');
+        const twoFaGroup = document.getElementById('assessor2faGroup');
+        const emailEl = document.getElementById('assessorEmailInput');
+        const passEl = document.getElementById('assessorPasswordInput');
+        if (credsGroup) credsGroup.style.display = 'none';
+        if (twoFaGroup) twoFaGroup.style.display = 'block';
+        if (emailEl) emailEl.required = false;
+        if (passEl) passEl.required = false;
+        if (codeEl) codeEl.focus();
+        btn.disabled = false;
+        btn.textContent = 'Verify 2FA & Sign In';
+        return;
+      }
+
+      pendingAssessor2faToken = null;
       setAssessorToken(res.token);
       showToast(`Welcome, ${res.assessor.name}!`);
       checkAuth();
     } catch (err) {
       alert(err.message || 'Login failed');
     } finally {
-      btn.disabled = false;
-      btn.textContent = 'Sign In to Clinical Console';
+      if (!pendingAssessor2faToken) {
+        btn.disabled = false;
+        btn.textContent = 'Sign In to Clinical Console';
+      } else {
+        btn.disabled = false;
+      }
     }
   };
 
@@ -877,6 +927,19 @@
       }
 
       const staleBadge = r.isStale ? '<span class="badge badge-stale" title="Pending >48hrs">48h+ Overdue</span>' : '';
+      const prio = (r.priority || 'standard').toLowerCase();
+      const isClosedCase = st === 'completed' || st === 'archived' || st === 'cancelled';
+      const priorityBadge = (prio === 'crisis' && !isClosedCase)
+        ? '<span class="badge" style="background:#DC2626; color:#FFFFFF; font-weight:700; letter-spacing:0.03em;" title="Immediate crisis screening escalation — Prioritize callback">CRISIS PRIORITY</span>'
+        : (prio === 'urgent' && !isClosedCase)
+          ? '<span class="badge" style="background:#EA580C; color:#FFFFFF; font-weight:700;" title="Severe clinical screening score">URGENT</span>'
+          : '';
+      if (prio === 'crisis' && !isClosedCase) {
+        tr.style.borderLeft = '4px solid #DC2626';
+        tr.style.background = 'rgba(220, 38, 38, 0.04)';
+      } else if (prio === 'urgent' && !isClosedCase) {
+        tr.style.borderLeft = '4px solid #EA580C';
+      }
 
       // Clinician Column
       let clinicianHtml = '';
@@ -970,6 +1033,7 @@
         </td>
         <td data-label="Status">
           <div style="display:inline-flex; flex-wrap:wrap; gap:4px; align-items:center;">
+            ${priorityBadge}
             ${statusBadge}
             ${staleBadge}
           </div>
@@ -1989,9 +2053,105 @@
   };
 
   // --- Clinic Profile & Settings ---
+  window.loadAssessor2faStatus = async () => {
+    const statusText = document.getElementById('assessor2faStatusText');
+    const setupStep = document.getElementById('assessor2faSetupStep');
+    const enabledStep = document.getElementById('assessor2faEnabledStep');
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/2fa/status`);
+      if (statusText) {
+        statusText.textContent = res.enabled
+          ? `Enabled (${res.recovery_codes_remaining || 0} backup codes remaining)`
+          : 'Not enabled — recommended for HIPAA/DPA clinical access';
+      }
+      if (setupStep) setupStep.style.display = res.enabled ? 'none' : 'block';
+      if (enabledStep) enabledStep.style.display = res.enabled ? 'block' : 'none';
+    } catch (e) {
+      if (statusText) statusText.textContent = 'Unable to load 2FA status';
+    }
+  };
+
+  window.toggleAssessor2faPanel = async () => {
+    const box = document.getElementById('assessor2faConfigBox');
+    if (!box) return;
+    const opening = box.style.display === 'none' || !box.style.display;
+    box.style.display = opening ? 'block' : 'none';
+    if (!opening) return;
+    await window.loadAssessor2faStatus();
+    try {
+      const statusRes = await assessorApiFetch(`${API_BASE}/2fa/status`);
+      if (!statusRes.enabled) {
+        const setupRes = await assessorApiFetch(`${API_BASE}/2fa/setup`, { method: 'POST' });
+        const secEl = document.getElementById('assessor2faSecretDisplay');
+        if (secEl) secEl.textContent = setupRes.secret || '';
+      }
+    } catch (e) {
+      showToast(e.message || 'Failed to start 2FA setup', 'error');
+    }
+  };
+
+  function showAssessorRecoveryCodes(codes) {
+    const box = document.getElementById('assessor2faRecoveryBox');
+    const list = document.getElementById('assessor2faRecoveryList');
+    if (box && list && Array.isArray(codes) && codes.length) {
+      list.innerHTML = codes.map(c => `<div>${c}</div>`).join('');
+      box.style.display = 'block';
+    }
+  }
+
+  window.confirmEnableAssessor2fa = async () => {
+    const code = (document.getElementById('assessor2faConfirmCode')?.value || '').trim();
+    if (!/^\d{6}$/.test(code)) return showToast('Enter a valid 6-digit code from your authenticator app.', 'error');
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/2fa/enable`, {
+        method: 'POST',
+        body: JSON.stringify({ code })
+      });
+      showAssessorRecoveryCodes(res.recovery_codes);
+      showToast('Two-factor authentication enabled!');
+      await window.loadAssessor2faStatus();
+    } catch (e) {
+      showToast(e.message || 'Invalid verification code', 'error');
+    }
+  };
+
+  window.regenerateAssessorRecoveryCodes = async () => {
+    const code = (document.getElementById('assessor2faManageCode')?.value || '').trim();
+    if (!/^\d{6}$/.test(code)) return showToast('Enter current 6-digit authenticator code first.', 'error');
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/2fa/regenerate-recovery-codes`, {
+        method: 'POST',
+        body: JSON.stringify({ code })
+      });
+      showAssessorRecoveryCodes(res.recovery_codes);
+      showToast('New single-use recovery codes generated.');
+      await window.loadAssessor2faStatus();
+    } catch (e) {
+      showToast(e.message || 'Could not regenerate recovery codes', 'error');
+    }
+  };
+
+  window.disableAssessor2fa = async () => {
+    const code = (document.getElementById('assessor2faManageCode')?.value || '').trim();
+    if (!/^\d{6}$/.test(code)) return showToast('Enter current 6-digit authenticator code to disable 2FA.', 'error');
+    try {
+      await assessorApiFetch(`${API_BASE}/2fa/disable`, {
+        method: 'POST',
+        body: JSON.stringify({ code })
+      });
+      const recBox = document.getElementById('assessor2faRecoveryBox');
+      if (recBox) recBox.style.display = 'none';
+      showToast('Two-factor authentication disabled.');
+      await window.loadAssessor2faStatus();
+    } catch (e) {
+      showToast(e.message || 'Could not disable 2FA', 'error');
+    }
+  };
+
   window.openClinicSettingsModal = async () => {
     try {
       const res = await assessorApiFetch(`${API_BASE}/profile`);
+      window.loadAssessor2faStatus();
       const data = res.data || {};
       const settings = data.billingSettings || {};
 

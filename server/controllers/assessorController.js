@@ -7,6 +7,7 @@ const Assessor = require('../models/Assessor');
 const Doctor = require('../models/Doctor');
 const Referral = require('../models/Referral');
 const { requireAssessorAuth, requireClinicAdmin } = require('../middleware/assessorAuth');
+const { generateTotpSecret, verifyTotpCode, getOtpAuthUrl, generateRecoveryCodes, verifyAndConsumeRecoveryCode } = require('../utils/totp');
 
 const router = express.Router();
 
@@ -50,6 +51,32 @@ router.post('/login', async (req, res, next) => {
       }
 
       // Issue JWT with clinic_admin / lead assessor payload
+      if (assessor.totp_enabled && assessor.totp_secret) {
+        const challengeToken = jwt.sign(
+          {
+            purpose: '2fa_login',
+            entityType: 'assessor',
+            assessorId: assessor._id.toString(),
+            email: assessor.email,
+            name: assessor.name,
+            role: 'clinic_admin',
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: '5m' }
+        );
+        return res.json({
+          success: true,
+          requires_2fa: true,
+          temp_token: challengeToken,
+          assessor: {
+            id: assessor._id,
+            name: assessor.name,
+            email: assessor.email,
+            role: 'clinic_admin',
+          },
+          message: 'Two-factor authentication code required.',
+        });
+      }
       const token = jwt.sign(
         {
           assessorId: assessor._id.toString(),
@@ -103,6 +130,35 @@ router.post('/login', async (req, res, next) => {
           success: false,
           error: 'PRACTICE_INACTIVE',
           message: 'Your associated clinic practice account is inactive.',
+        });
+      }
+
+      if (doctor.totp_enabled && doctor.totp_secret) {
+        const challengeToken = jwt.sign(
+          {
+            purpose: '2fa_login',
+            entityType: 'doctor',
+            assessorId: practice._id.toString(),
+            doctorId: doctor._id.toString(),
+            email: doctor.email,
+            name: doctor.fullName,
+            role: doctor.role || 'doctor',
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: '5m' }
+        );
+        return res.json({
+          success: true,
+          requires_2fa: true,
+          temp_token: challengeToken,
+          assessor: {
+            id: practice._id,
+            doctorId: doctor._id,
+            name: doctor.fullName,
+            email: doctor.email,
+            role: doctor.role || 'doctor',
+          },
+          message: 'Two-factor authentication code required.',
         });
       }
 
@@ -161,6 +217,7 @@ router.get('/me', requireAssessorAuth, async (req, res) => {
       doctorId: req.doctor ? req.doctor._id : null,
       name: req.doctor ? req.doctor.fullName : req.assessor.name,
       email: req.doctor ? req.doctor.email : req.assessor.email,
+      totp_enabled: Boolean(req.doctor ? req.doctor.totp_enabled : req.assessor.totp_enabled),
       role: req.assessorUser?.role || (req.doctor ? req.doctor.role : 'clinic_admin'),
       specialty: req.doctor ? req.doctor.specialty : 'Lead Medical Assessor',
       isLeadAssessor: !req.doctor,
@@ -558,15 +615,28 @@ router.get('/queue', requireAssessorAuth, async (req, res, next) => {
 
     const now = Date.now();
     const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
+    const priorityRank = { crisis: 0, urgent: 1, standard: 2 };
 
-    const data = referrals.map((r) => {
-      const createdAtMs = r.createdAt ? new Date(r.createdAt).getTime() : 0;
-      const isStale = r.status === 'pending' && (now - createdAtMs) > FORTY_EIGHT_HOURS_MS;
-      return {
-        ...r,
-        isStale: !!isStale,
-      };
-    });
+    const data = referrals
+      .map((r) => {
+        const createdAtMs = r.createdAt ? new Date(r.createdAt).getTime() : 0;
+        const isStale = r.status === 'pending' && (now - createdAtMs) > FORTY_EIGHT_HOURS_MS;
+        return {
+          ...r,
+          priority: r.priority || 'standard',
+          isStale: !!isStale,
+        };
+      })
+      .sort((a, b) => {
+        const aPending = a.status === 'pending' || a.status === 'scheduled';
+        const bPending = b.status === 'pending' || b.status === 'scheduled';
+        if (aPending && bPending) {
+          const pa = priorityRank[a.priority] ?? 2;
+          const pb = priorityRank[b.priority] ?? 2;
+          if (pa !== pb) return pa - pb;
+        }
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      });
 
     res.json({
       success: true,
@@ -973,6 +1043,284 @@ router.delete('/referrals/:id', requireAssessorAuth, async (req, res, next) => {
       success: true,
       message: `Referral ${refCode} has been permanently deleted.`,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/assessor/login/verify-2fa
+router.post('/login/verify-2fa', async (req, res, next) => {
+  try {
+    const { temp_token, code, recovery_code } = req.body;
+    if (!temp_token || (!code && !recovery_code)) {
+      return res.status(400).json({
+        success: false,
+        error: 'MISSING_FIELDS',
+        message: 'Challenge token and 6-digit authenticator code or recovery code are required.',
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(temp_token, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({
+        success: false,
+        error: 'INVALID_CHALLENGE',
+        message: 'Two-factor session expired. Please log in again.',
+      });
+    }
+
+    if (!decoded || decoded.purpose !== '2fa_login' || !['assessor', 'doctor'].includes(decoded.entityType)) {
+      return res.status(401).json({
+        success: false,
+        error: 'INVALID_CHALLENGE',
+        message: 'Invalid two-factor challenge token.',
+      });
+    }
+
+    const totpCandidate = String(code || '').trim();
+    const backupCandidate = String(recovery_code || totpCandidate).trim();
+
+    if (decoded.entityType === 'doctor') {
+      const doctor = await Doctor.findById(decoded.doctorId);
+      const practice = doctor ? await Assessor.findById(doctor.practiceId) : null;
+      if (!doctor || !doctor.active || !practice || !practice.active || !doctor.totp_enabled || !doctor.totp_secret) {
+        return res.status(401).json({ success: false, error: 'ACCOUNT_UNAVAILABLE', message: 'Doctor account unavailable for 2FA.' });
+      }
+
+      let ok = false;
+      if (/^\d{6}$/.test(totpCandidate) && verifyTotpCode(totpCandidate, doctor.totp_secret)) {
+        ok = true;
+      } else if (backupCandidate) {
+        const check = verifyAndConsumeRecoveryCode(backupCandidate, doctor.totp_recovery_codes_hashes || []);
+        if (check.valid) {
+          doctor.totp_recovery_codes_hashes = check.remainingHashes;
+          await doctor.save();
+          ok = true;
+        }
+      }
+      if (!ok) {
+        return res.status(401).json({ success: false, error: 'INVALID_2FA_CODE', message: 'Invalid authenticator or recovery code.' });
+      }
+
+      if (doctor.totp_enabled && doctor.totp_secret) {
+        const challengeToken = jwt.sign(
+          {
+            purpose: '2fa_login',
+            entityType: 'doctor',
+            assessorId: practice._id.toString(),
+            doctorId: doctor._id.toString(),
+            email: doctor.email,
+            name: doctor.fullName,
+            role: doctor.role || 'doctor',
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: '5m' }
+        );
+        return res.json({
+          success: true,
+          requires_2fa: true,
+          temp_token: challengeToken,
+          assessor: {
+            id: practice._id,
+            doctorId: doctor._id,
+            name: doctor.fullName,
+            email: doctor.email,
+            role: doctor.role || 'doctor',
+          },
+          message: 'Two-factor authentication code required.',
+        });
+      }
+
+      const token = jwt.sign(
+        {
+          assessorId: practice._id.toString(),
+          doctorId: doctor._id.toString(),
+          email: doctor.email,
+          name: doctor.fullName,
+          role: doctor.role || 'doctor',
+          specialty: doctor.specialty,
+          isLeadAssessor: false,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '12h' }
+      );
+      return res.json({
+        success: true,
+        token,
+        assessor: {
+          id: practice._id,
+          doctorId: doctor._id,
+          name: doctor.fullName,
+          email: doctor.email,
+          role: doctor.role || 'doctor',
+          specialty: doctor.specialty,
+          organization: practice.organization,
+          billingSettings: practice.billingSettings || { defaultRate: 450, defaultCurrency: 'GHS' },
+          totp_enabled: true,
+        },
+      });
+    }
+
+    const assessor = await Assessor.findById(decoded.assessorId);
+    if (!assessor || !assessor.active || !assessor.totp_enabled || !assessor.totp_secret) {
+      return res.status(401).json({ success: false, error: 'ACCOUNT_UNAVAILABLE', message: 'Assessor account unavailable for 2FA.' });
+    }
+
+    let ok = false;
+    if (/^\d{6}$/.test(totpCandidate) && verifyTotpCode(totpCandidate, assessor.totp_secret)) {
+      ok = true;
+    } else if (backupCandidate) {
+      const check = verifyAndConsumeRecoveryCode(backupCandidate, assessor.totp_recovery_codes_hashes || []);
+      if (check.valid) {
+        assessor.totp_recovery_codes_hashes = check.remainingHashes;
+        await assessor.save();
+        ok = true;
+      }
+    }
+    if (!ok) {
+      return res.status(401).json({ success: false, error: 'INVALID_2FA_CODE', message: 'Invalid authenticator or recovery code.' });
+    }
+
+    const token = jwt.sign(
+      {
+        assessorId: assessor._id.toString(),
+        email: assessor.email,
+        name: assessor.name,
+        role: 'clinic_admin',
+        isLeadAssessor: true,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '12h' }
+    );
+    return res.json({
+      success: true,
+      token,
+      assessor: {
+        id: assessor._id,
+        name: assessor.name,
+        email: assessor.email,
+        role: 'clinic_admin',
+        organization: assessor.organization,
+        billingSettings: assessor.billingSettings || { defaultRate: 450, defaultCurrency: 'GHS' },
+        totp_enabled: true,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+async function resolveAssessorOrDoctorAccount(req) {
+  if (req.doctor) {
+    return Doctor.findById(req.doctor._id);
+  }
+  return Assessor.findById(req.assessor._id);
+}
+
+router.get('/2fa/status', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const acct = await resolveAssessorOrDoctorAccount(req);
+    if (!acct) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
+    return res.json({
+      success: true,
+      enabled: Boolean(acct.totp_enabled),
+      recovery_codes_remaining: (acct.totp_recovery_codes_hashes || []).length,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/2fa/setup', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const acct = await resolveAssessorOrDoctorAccount(req);
+    if (!acct) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
+    const secret = generateTotpSecret();
+    acct.totp_pending_secret = secret;
+    await acct.save();
+    return res.json({
+      success: true,
+      secret,
+      otpauth_url: getOtpAuthUrl({
+        issuer: 'Havilah Clinical',
+        accountName: acct.email || acct.name || acct.fullName || 'Assessor',
+        secret,
+      }),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/2fa/enable', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    const acct = await resolveAssessorOrDoctorAccount(req);
+    if (!acct) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
+    if (!acct.totp_pending_secret) {
+      return res.status(400).json({ success: false, error: 'NO_PENDING_SETUP', message: 'Run 2FA setup first.' });
+    }
+    if (!verifyTotpCode(String(code || ''), acct.totp_pending_secret)) {
+      return res.status(400).json({ success: false, error: 'INVALID_CODE', message: 'Invalid 6-digit verification code.' });
+    }
+    const { plainCodes, hashedCodes } = generateRecoveryCodes(8);
+    acct.totp_secret = acct.totp_pending_secret;
+    acct.totp_pending_secret = null;
+    acct.totp_enabled = true;
+    acct.totp_recovery_codes_hashes = hashedCodes;
+    await acct.save();
+    return res.json({
+      success: true,
+      enabled: true,
+      recovery_codes: plainCodes,
+      message: 'Two-factor authentication enabled for Clinical Portal access.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/2fa/disable', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const { code, password } = req.body;
+    const acct = await resolveAssessorOrDoctorAccount(req);
+    if (!acct) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
+    let verified = false;
+    if (password && acct.passwordHash && await bcrypt.compare(String(password), acct.passwordHash)) {
+      verified = true;
+    } else if (code && acct.totp_secret && verifyTotpCode(String(code), acct.totp_secret)) {
+      verified = true;
+    }
+    if (!verified) {
+      return res.status(401).json({ success: false, error: 'VERIFICATION_FAILED', message: 'Provide valid password or 6-digit code to disable 2FA.' });
+    }
+    acct.totp_enabled = false;
+    acct.totp_secret = null;
+    acct.totp_pending_secret = null;
+    acct.totp_recovery_codes_hashes = [];
+    await acct.save();
+    return res.json({ success: true, enabled: false });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/2fa/regenerate-recovery-codes', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    const acct = await resolveAssessorOrDoctorAccount(req);
+    if (!acct || !acct.totp_enabled || !acct.totp_secret) {
+      return res.status(400).json({ success: false, error: '2FA_NOT_ENABLED' });
+    }
+    if (!verifyTotpCode(String(code || ''), acct.totp_secret)) {
+      return res.status(401).json({ success: false, error: 'INVALID_CODE', message: 'Valid 6-digit code required.' });
+    }
+    const { plainCodes, hashedCodes } = generateRecoveryCodes(8);
+    acct.totp_recovery_codes_hashes = hashedCodes;
+    await acct.save();
+    return res.json({ success: true, recovery_codes: plainCodes });
   } catch (err) {
     next(err);
   }

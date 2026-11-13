@@ -132,6 +132,22 @@ const UserSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    totp_enabled: {
+      type: Boolean,
+      default: false,
+    },
+    totp_secret: {
+      type: String,
+      default: null,
+    },
+    totp_pending_secret: {
+      type: String,
+      default: null,
+    },
+    totp_recovery_codes_hashes: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
@@ -144,6 +160,9 @@ const UserSchema = new mongoose.Schema(
         delete ret.passwordHash;
         delete ret.refresh_token_hash;
         delete ret.password_reset_token_hash;
+        delete ret.totp_secret;
+        delete ret.totp_pending_secret;
+        delete ret.totp_recovery_codes_hashes;
         delete ret.__v;
         return ret;
       },

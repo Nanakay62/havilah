@@ -203,6 +203,12 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/register.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'register.html'));
 });
+app.get(['/privacy', '/privacy.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', 'privacy.html'));
+});
+app.get(['/terms', '/terms.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', 'terms.html'));
+});
 app.get('/clinical-portal', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'clinical-portal.html'));
 });

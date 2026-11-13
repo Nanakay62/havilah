@@ -446,6 +446,7 @@
       fetchInvites(),
       fetchDepartments(),
       fetchClinicalBilling(),
+      fetchSubscriptionBilling(),
       fetchEthicsReports(),
       checkTrialStatus()
     ]);
@@ -482,6 +483,7 @@
       if (billingTabBtn) billingTabBtn.classList.add('active');
       if (billingSection) billingSection.style.display = 'block';
       fetchClinicalBilling();
+      fetchSubscriptionBilling();
     } else if (tabName === 'ethics') {
       if (ethicsTabBtn) ethicsTabBtn.classList.add('active');
       if (ethicsSection) ethicsSection.style.display = 'block';
@@ -1077,6 +1079,162 @@
       }
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Remove & allow re-registration'; }
+    }
+  };
+
+  function escapeBillingHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  async function fetchSubscriptionBilling() {
+    const tierBadge = document.getElementById('subBillingTierBadge');
+    const statusBadge = document.getElementById('subBillingStatusBadge');
+    const expiryText = document.getElementById('subBillingExpiryText');
+    const extStatusEl = document.getElementById('subBillingExtensionStatus');
+    const paystackNote = document.getElementById('paystackConfigNote');
+    const invoicesBody = document.getElementById('hrInvoicesTableBody');
+    if (!tierBadge || !statusBadge) return;
+
+    try {
+      const data = await apiFetch('/api/v1/billing/status');
+      if (!data || !data.success) return;
+      const sub = data.subscription || {};
+      const tierLabel = String(sub.tier || 'trial').toUpperCase();
+      const statusLabel = String(sub.status || 'trialing').toUpperCase();
+
+      tierBadge.textContent = `${tierLabel} TIER`;
+      statusBadge.textContent = statusLabel;
+      statusBadge.className = `badge ${sub.is_active ? 'badge-success' : 'badge-warning'}`;
+
+      if (expiryText) {
+        if (sub.trial_ends_at && sub.status === 'trialing') {
+          const d = new Date(sub.trial_ends_at);
+          const daysLeft = Math.max(0, Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+          expiryText.textContent = `Trial ends ${d.toLocaleDateString()} (${daysLeft} day${daysLeft === 1 ? '' : 's'} left).`;
+        } else if (sub.current_period_end) {
+          expiryText.textContent = `Current billing period ends ${new Date(sub.current_period_end).toLocaleDateString()}.`;
+        } else {
+          expiryText.textContent = sub.is_active ? 'Subscription active.' : 'No active paid period. Request an invoice or upgrade via Paystack.';
+        }
+      }
+
+      if (extStatusEl) {
+        if (sub.extension_request && sub.extension_request.status && sub.extension_request.status !== 'none') {
+          extStatusEl.style.display = 'block';
+          extStatusEl.textContent = `Extension request (${sub.extension_request.requestedDays || 14} days): ${sub.extension_request.status.toUpperCase()}`;
+        } else {
+          extStatusEl.style.display = 'none';
+        }
+      }
+
+      if (paystackNote) {
+        paystackNote.style.display = data.paystack_configured ? 'none' : 'block';
+      }
+
+      if (invoicesBody) {
+        const invoices = Array.isArray(sub.invoices) ? sub.invoices : [];
+        if (invoices.length === 0) {
+          invoicesBody.innerHTML = '<tr><td colspan="6" style="padding: 18px; text-align: center; color: var(--text-subtle); font-size: var(--text-xs);">No corporate invoices requested yet.</td></tr>';
+        } else {
+          invoicesBody.innerHTML = invoices.slice().reverse().map((inv) => {
+            const st = String(inv.status || 'pending').toUpperCase();
+            const badgeCls = st === 'PAID' ? 'badge-success' : st === 'VOID' ? 'badge-neutral' : 'badge-warning';
+            return `<tr>
+              <td data-label="Invoice #" style="font-family:monospace;font-weight:600;">${escapeBillingHtml(inv.invoiceNumber)}</td>
+              <td data-label="Plan / Cycle">${escapeBillingHtml((inv.tier || '').toUpperCase())} (${escapeBillingHtml(inv.interval || 'monthly')})</td>
+              <td data-label="PO / Email">${escapeBillingHtml(inv.poNumber || '—')} · ${escapeBillingHtml(inv.billingEmail || '')}</td>
+              <td data-label="Amount (GHS)" style="font-weight:600;">GHS ${Number(inv.amountGhs || 0).toLocaleString()}</td>
+              <td data-label="Status"><span class="badge ${badgeCls}">${escapeBillingHtml(st)}</span></td>
+              <td data-label="Requested">${(inv.issuedAt || inv.requestedAt) ? new Date(inv.issuedAt || inv.requestedAt).toLocaleDateString() : '—'}</td>
+            </tr>`;
+          }).join('');
+        }
+      }
+    } catch (err) {
+      console.warn('[hrDashboard] Could not load subscription billing status:', err.message);
+    }
+  }
+
+  window.initializePaystackCheckout = async (tier) => {
+    try {
+      const data = await apiFetch('/api/v1/billing/initialize', {
+        method: 'POST',
+        body: JSON.stringify({ tier })
+      });
+      if (data && data.authorization_url) {
+        window.location.href = data.authorization_url;
+      }
+    } catch (err) {
+      const fb = document.getElementById('hrInvoiceFeedback');
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.color = '#b91c1c';
+        fb.textContent = err.message || 'Paystack checkout unavailable. You can generate a corporate proforma invoice below.';
+      }
+    }
+  };
+
+  window.submitInvoiceRequest = async (e) => {
+    if (e) e.preventDefault();
+    const tier = (document.getElementById('hrInvoiceTier') || {}).value || 'pro';
+    const interval = (document.getElementById('hrInvoiceInterval') || {}).value || 'monthly';
+    const billingEmail = ((document.getElementById('hrInvoiceEmail') || {}).value || '').trim();
+    const poNumber = ((document.getElementById('hrInvoicePo') || {}).value || '').trim();
+    const fb = document.getElementById('hrInvoiceFeedback');
+    const btn = document.getElementById('hrInvoiceSubmitBtn');
+    if (btn) btn.disabled = true;
+    try {
+      const data = await apiFetch('/api/v1/billing/request-invoice', {
+        method: 'POST',
+        body: JSON.stringify({ tier, interval, billingEmail, poNumber })
+      });
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.color = '#047857';
+        fb.textContent = `${data.invoice?.invoiceNumber || 'Invoice'} generated (GHS ${Number(data.invoice?.amountGhs || 0).toLocaleString()}).`;
+      }
+      await fetchSubscriptionBilling();
+    } catch (err) {
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.color = '#b91c1c';
+        fb.textContent = err.message || 'Could not generate invoice.';
+      }
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  };
+
+  window.submitTrialExtensionRequest = async (e) => {
+    if (e) e.preventDefault();
+    const requestedDays = Number((document.getElementById('hrExtDays') || {}).value || 14);
+    const reason = ((document.getElementById('hrExtReason') || {}).value || '').trim();
+    const fb = document.getElementById('hrExtensionFeedback');
+    const btn = document.getElementById('hrExtSubmitBtn');
+    if (btn) btn.disabled = true;
+    try {
+      const data = await apiFetch('/api/v1/billing/request-extension', {
+        method: 'POST',
+        body: JSON.stringify({ requestedDays, reason })
+      });
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.color = '#047857';
+        fb.textContent = data.message || 'Trial extension request submitted.';
+      }
+      await fetchSubscriptionBilling();
+    } catch (err) {
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.color = '#b91c1c';
+        fb.textContent = err.message || 'Could not submit extension request.';
+      }
+    } finally {
+      if (btn) btn.disabled = false;
     }
   };
 

@@ -74,21 +74,32 @@ describe('Billing & Paystack Security Controls (Ghana Payments)', () => {
     save: function() { return Promise.resolve(this); }
   };
 
+  const AssessmentCycle = require('../models/AssessmentCycle');
+  const emailService = require('../utils/emailService');
+  let originalAssessmentUpdateMany;
+  let originalSendMail;
+
   beforeEach(() => {
     originalTenantFindOne = Tenant.findOne;
     originalTenantFindOneAndUpdate = Tenant.findOneAndUpdate;
     originalAuditLogAppend = AuditLog.append;
+    originalAssessmentUpdateMany = AssessmentCycle.updateMany;
+    originalSendMail = emailService.sendMail;
 
     // Default mock query resolves to active tenant
     Tenant.findOne = () => createMockQuery({ ...mockActiveTenant });
     Tenant.findOneAndUpdate = () => Promise.resolve({ ...mockActiveTenant });
     AuditLog.append = () => Promise.resolve({});
+    AssessmentCycle.updateMany = () => Promise.resolve({ modifiedCount: 0 });
+    emailService.sendMail = async () => ({ skipped: true, messageId: 'mock-msg-id' });
   });
 
   afterEach(() => {
     Tenant.findOne = originalTenantFindOne;
     Tenant.findOneAndUpdate = originalTenantFindOneAndUpdate;
     AuditLog.append = originalAuditLogAppend;
+    AssessmentCycle.updateMany = originalAssessmentUpdateMany;
+    emailService.sendMail = originalSendMail;
 
     if (originalPaystackSecret) {
       process.env.PAYSTACK_SECRET_KEY = originalPaystackSecret;
@@ -310,6 +321,174 @@ describe('Billing & Paystack Security Controls (Ghana Payments)', () => {
       expect(res.body.cancelAtPeriodEnd).toBe(true);
       expect(res.body.accessUntil).toBe(futureExpiry.toISOString().split('T')[0]);
       expect(tenantInstance.subscription.cancelAtPeriodEnd).toBe(true);
+    });
+  });
+
+  describe('Corporate Proforma Invoices, Trial Extensions & SuperAdmin Settlement', () => {
+    it('POST /api/v1/billing/request-invoice calculates 15% annual discount and stores invoice', async () => {
+      const tenantInstance = {
+        ...mockActiveTenant,
+        company_name: 'Accra Mining Corp',
+        contact_email: 'finance@accramining.com',
+        subscription: { ...mockActiveTenant.subscription, invoices: [] },
+        save: function() { return Promise.resolve(this); }
+      };
+      Tenant.findOne = () => createMockQuery(tenantInstance);
+
+      const res = await request(app)
+        .post('/api/v1/billing/request-invoice')
+        .set('Authorization', `Bearer ${hrAdminToken}`)
+        .send({ tier: 'pro', interval: 'annual', poNumber: 'PO-2026-99' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.invoice.invoiceNumber).toMatch(/^INV-HAV-/);
+      expect(res.body.invoice.amountGhs).toBe(Math.round(15450 * 12 * 0.85));
+      expect(res.body.invoice.poNumber).toBe('PO-2026-99');
+      expect(tenantInstance.subscription.invoices).toHaveLength(1);
+    });
+
+    it('GET /api/v1/billing/invoices lists stored tenant invoices newest-first', async () => {
+      Tenant.findOne = () => createMockQuery({
+        company_name: 'Accra Mining Corp',
+        subscription: {
+          invoices: [
+            { invoiceNumber: 'INV-HAV-2026-AAA111', tier: 'starter', amountGhs: 5500, status: 'paid' },
+            { invoiceNumber: 'INV-HAV-2026-BBB222', tier: 'pro', amountGhs: 15450, status: 'pending' }
+          ]
+        }
+      });
+
+      const res = await request(app)
+        .get('/api/v1/billing/invoices')
+        .set('Authorization', `Bearer ${hrAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.invoices.map(i => i.invoiceNumber)).toEqual([
+        'INV-HAV-2026-BBB222',
+        'INV-HAV-2026-AAA111'
+      ]);
+    });
+
+    it('POST /api/v1/billing/request-extension saves a clamped pending trial extension request', async () => {
+      const tenantInstance = {
+        ...mockActiveTenant,
+        company_name: 'Accra Mining Corp',
+        subscription: { ...mockActiveTenant.subscription, status: 'trialing' },
+        save: function() { return Promise.resolve(this); }
+      };
+      Tenant.findOne = () => createMockQuery(tenantInstance);
+
+      const res = await request(app)
+        .post('/api/v1/billing/request-extension')
+        .set('Authorization', `Bearer ${hrAdminToken}`)
+        .send({ requestedDays: 90, reason: 'Board sign-off delayed' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.extension_request.status).toBe('pending');
+      expect(res.body.extension_request.requestedDays).toBe(30);
+      expect(res.body.extension_request.reason).toBe('Board sign-off delayed');
+    });
+
+    it('SuperAdmin GET /billing/pending & POST /mark-paid settle invoice and activate tier', async () => {
+      const expressLib = require('express');
+      const superAdminRouter = require('../routes/superAdmin');
+      const saApp = expressLib();
+      saApp.use(expressLib.json());
+      saApp.use('/api/v1/superadmin', superAdminRouter);
+
+      const prevKey = process.env.SUPER_ADMIN_KEY;
+      process.env.SUPER_ADMIN_KEY = 'test-superadmin-billing-key';
+      const origTenantFind = Tenant.find;
+
+      const tenantInstance = {
+        company_id: TEST_COMPANY_ID,
+        company_name: 'Accra Mining Corp',
+        billing_tier: 'trial',
+        lifecycle_state: 'active',
+        access_expires_at: new Date(),
+        subscription: {
+          tier: 'pro',
+          status: 'trialing',
+          extensionRequest: { status: 'pending', requestedDays: 14, reason: 'Procurement review' },
+          invoices: [{ invoiceNumber: 'INV-HAV-2026-CCC333', tier: 'pro', interval: 'monthly', amountGhs: 15450, status: 'pending' }]
+        },
+        save: function() { return Promise.resolve(this); }
+      };
+
+      Tenant.find = () => createMockQuery([tenantInstance]);
+      Tenant.findOne = () => createMockQuery(tenantInstance);
+
+      try {
+        const pendingRes = await request(saApp)
+          .get('/api/v1/superadmin/billing/pending')
+          .set('x-admin-key', 'test-superadmin-billing-key');
+
+        expect(pendingRes.status).toBe(200);
+        expect(pendingRes.body.pendingInvoices).toHaveLength(1);
+        expect(pendingRes.body.pendingExtensions).toHaveLength(1);
+
+        const paidRes = await request(saApp)
+          .post(`/api/v1/superadmin/tenants/${TEST_COMPANY_ID}/invoices/INV-HAV-2026-CCC333/mark-paid`)
+          .set('x-admin-key', 'test-superadmin-billing-key')
+          .send({ paymentReference: 'WIRE-901' });
+
+        expect(paidRes.status).toBe(200);
+        expect(paidRes.body.success).toBe(true);
+        expect(tenantInstance.subscription.invoices[0].status).toBe('paid');
+        expect(tenantInstance.subscription.status).toBe('active');
+        expect(tenantInstance.billing_tier).toBe('pro');
+        expect(tenantInstance.max_allowed_seats).toBe(999999);
+      } finally {
+        Tenant.find = origTenantFind;
+        if (prevKey === undefined) delete process.env.SUPER_ADMIN_KEY;
+        else process.env.SUPER_ADMIN_KEY = prevKey;
+      }
+    });
+
+    it('processTrialReminders triggers 14d, 7d, 3d, 1d, expired checkpoints without duplicating already-sent checkpoints', async () => {
+      const { processTrialReminders } = require('../scheduler/complianceScheduler');
+      const now = new Date('2026-06-01T12:00:00Z');
+      const dayMs = 24 * 60 * 60 * 1000;
+      const makeTrialTenant = (id, daysLeft, sent = []) => ({
+        company_id: id,
+        company_name: `Org ${id}`,
+        contact_email: `hr@${id}.example.com`,
+        lifecycle_state: 'active',
+        subscription: {
+          status: 'trialing',
+          trialEndsAt: new Date(now.getTime() + daysLeft * dayMs),
+          remindersSent: [...sent]
+        },
+        save: function() { return Promise.resolve(this); }
+      });
+
+      const t14 = makeTrialTenant('t14', 14);
+      const t7 = makeTrialTenant('t7', 7);
+      const t3 = makeTrialTenant('t3', 3);
+      const t1 = makeTrialTenant('t1', 1);
+      const tExp = makeTrialTenant('tExp', 0);
+
+      const origFind = Tenant.find;
+      Tenant.find = () => Promise.resolve([t14, t7, t3, t1, tExp]);
+      try {
+        const firstRun = await processTrialReminders(now);
+        expect(firstRun).toEqual([
+          { company_id: 't14', checkpoint: '14d' },
+          { company_id: 't7', checkpoint: '7d' },
+          { company_id: 't3', checkpoint: '3d' },
+          { company_id: 't1', checkpoint: '1d' },
+          { company_id: 'tExp', checkpoint: 'expired' }
+        ]);
+        expect(tExp.lifecycle_state).toBe('expired');
+
+        const secondRun = await processTrialReminders(now);
+        expect(secondRun).toEqual([]);
+      } finally {
+        Tenant.find = origFind;
+      }
     });
   });
 });

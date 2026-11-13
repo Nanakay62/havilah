@@ -11,7 +11,7 @@
 <script src="/js/vendor/chart.umd.min.js"></script>
 <script src="/js/vendor/jspdf.umd.min.js"></script>
 <script src="/js/data.js"></script>
-<script src="/js/auth.js"></script>
+<script src="/js/auth.js?v=3"></script>
 <script src="/js/router.js"></script>
 <script src="/js/assessmentReportPdf.js"></script>
 <script src="/js/havilahCall.js?v=2.7.0" defer></script>
@@ -3941,7 +3941,12 @@ const App = (() => {
       { text: "Little interest or pleasure in doing things?" },
       { text: "Feeling down, depressed, or hopeless?" },
       { text: "Trouble falling or staying asleep, or sleeping too much?" },
-      { text: "Feeling tired or having little energy?" }
+      { text: "Feeling tired or having little energy?" },
+      { text: "Poor appetite or overeating?" },
+      { text: "Feeling bad about yourself — or that you are a failure or have let yourself or your family down?" },
+      { text: "Trouble concentrating on things, such as reading the newspaper or watching television?" },
+      { text: "Moving or speaking so slowly that other people could have noticed? Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual?" },
+      { text: "Thoughts that you would be better off dead, or of hurting yourself in some way?" }
     ],
     gad7: [
       { text: "Feeling nervous, anxious, or on edge?" },
@@ -4076,6 +4081,12 @@ const App = (() => {
       `;
       btn.onclick = () => {
         state.surveyState.answers[currentIndex] = opt.value;
+        if (sType === 'phq9' && currentIndex === 8 && Number(opt.value) >= 1) {
+          state.surveyState.crisisTriggeredImmediate = true;
+          if (window.WF_CrisisDetector && typeof window.WF_CrisisDetector.showCrisisBanner === 'function') {
+            window.WF_CrisisDetector.showCrisisBanner();
+          }
+        }
         surveyNext();
       };
       optionsContainer.appendChild(btn);
@@ -4202,8 +4213,19 @@ const App = (() => {
     }
     
     normalized = Math.max(0, Math.min(100, Math.round(normalized)));
+    const phq9Q9Score = (sType === 'phq9' && Array.isArray(answers)) ? (Number(answers[8]) || 0) : 0;
+    const clinicalSum = (Array.isArray(answers) ? answers : []).reduce((acc, v) => acc + (Number(v) || 0), 0);
+    const isCrisisQ9 = phq9Q9Score >= 1;
+    const isSevereClinical = (sType === 'phq9' && clinicalSum >= 20) || (sType === 'gad7' && clinicalSum >= 15);
     let statusLabel = normalized >= 75 ? 'Healthy' : normalized >= 50 ? 'Moderate' : 'At Risk';
     let statusColor = normalized >= 75 ? 'var(--healthy)' : normalized >= 50 ? '#f59e0b' : 'var(--critical)';
+    if (isCrisisQ9) {
+      statusLabel = 'Immediate Support Needed';
+      statusColor = '#dc2626';
+    } else if (isSevereClinical) {
+      statusLabel = 'Severe / Priority Support';
+      statusColor = '#dc2626';
+    }
 
     // Update Dimension Mapping
     const dimMap = { 'phq9': 'Mood', 'gad7': 'Calm', 'pss10': 'Stress', 'fas10': 'Energy', 'copsoq3_core': 'Work-fit' };
@@ -4229,7 +4251,39 @@ const App = (() => {
     // Show result to user
     const providerName = (state.clinicalProvider && state.clinicalProvider.name) ? state.clinicalProvider.name : 'Dr. Edith Clarke (FZ Safety and Health)';
     let lowScoreTriggerHtml = '';
-    if (normalized < 50 || statusLabel.toLowerCase().includes('risk') || statusLabel.toLowerCase().includes('critical') || statusLabel.toLowerCase().includes('adjusting')) {
+    if (isCrisisQ9 || isSevereClinical) {
+      const hotlineNum = (state.clinicalProvider && state.clinicalProvider.hotline) || '+233 24 362 9870';
+      const defaultContact = localStorage.getItem('havilah_patient_contact') || (state.user && (state.user.phone || state.user.email)) || '';
+      lowScoreTriggerHtml = `
+        <div class="cosmic-glass-panel" id="crisisProtocolResultCard" style="margin-top: 20px; padding: 20px; text-align: left; border: 2px solid rgba(220, 38, 38, 0.75); background: rgba(127, 29, 29, 0.28); border-radius: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 800;">!</div>
+            <div>
+              <strong style="color: #fecaca; font-size: 1rem;">${isCrisisQ9 ? 'Immediate Support Is Available' : 'Priority Clinical Support Recommended'}</strong>
+              <div style="font-size: 0.75rem; color: #fca5a5;">Confidential &bull; Not shared with HR</div>
+            </div>
+          </div>
+          <p style="font-size: 0.86rem; color: #fee2e2; line-height: 1.5; margin-bottom: 14px;">
+            ${isCrisisQ9
+              ? 'Your response indicated thoughts of self-harm or being better off dead. Please reach out right now — free, confidential human support is available immediately.'
+              : 'Your screening score falls in the severe range. Connecting with a qualified clinician promptly is strongly recommended.'}
+          </p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
+            <a href="tel:${hotlineNum.replace(/\s+/g, '')}" class="btn btn-sm" style="background: #dc2626; color: #fff; text-decoration: none; font-weight: 700; padding: 8px 14px; border-radius: 8px;">Call Helpline: ${hotlineNum}</a>
+            <a href="tel:112" class="btn btn-sm" style="background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25); padding: 8px 12px; border-radius: 8px;">Emergency: 112 / 193</a>
+            <span style="font-size: 0.78rem; color: #fecaca; align-self: center;">Int'l Crisis Line: <strong>988</strong></span>
+          </div>
+          <div style="border-top: 1px solid rgba(248, 113, 113, 0.35); padding-top: 12px;">
+            <div style="font-size: 0.78rem; color: #fecaca; margin-bottom: 8px; font-weight: 600;">Request a 1-Click Urgent Confidential Clinician Callback (${providerName}):</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+              <input type="text" id="crisisCallbackContactInput" value="${String(defaultContact).replace(/"/g, '&quot;')}" placeholder="Best phone number or email..." style="flex: 1; min-width: 190px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); background: rgba(15, 23, 42, 0.85); color: #f8fafc; font-size: 0.84rem;" />
+              <button type="button" id="urgentCrisisCallbackBtn" onclick="App.triggerCrisisCallback('${isCrisisQ9 ? 'crisis' : 'urgent'}')" class="btn btn-sm" style="background: #f59e0b; color: #0f172a; font-weight: 700; border: none; padding: 9px 14px; border-radius: 8px; cursor: pointer;">Request Urgent Callback</button>
+            </div>
+            <div id="crisisCallbackStatus" style="margin-top: 8px; font-size: 0.8rem; color: #bbf7d0; display: none;"></div>
+          </div>
+        </div>
+      `;
+    } else if (normalized < 50 || statusLabel.toLowerCase().includes('risk') || statusLabel.toLowerCase().includes('critical') || statusLabel.toLowerCase().includes('adjusting')) {
       lowScoreTriggerHtml = `
         <div class="cosmic-glass-panel" style="margin-top: 20px; padding: 18px; text-align: left; border: 1px solid rgba(244, 63, 94, 0.35); background: rgba(15, 23, 42, 0.9);">
           <div style="font-size: 0.875rem; font-weight: 700; color: #fb7185; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
@@ -6162,6 +6216,65 @@ const App = (() => {
     });
   }
 
+  async function triggerCrisisCallback(priorityLevel) {
+    const contactEl = document.getElementById('crisisCallbackContactInput');
+    const statusEl = document.getElementById('crisisCallbackStatus');
+    const btn = document.getElementById('urgentCrisisCallbackBtn');
+    const contact = contactEl ? contactEl.value.trim() : '';
+    if (!contact) {
+      if (typeof showToast === 'function') {
+        showToast('Contact Needed', 'Please enter a phone number or email so a clinician can reach you urgently.', 'warning');
+      }
+      if (contactEl) contactEl.focus();
+      return;
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Sending urgent request...';
+    }
+    try {
+      const payload = {
+        patientName: (state.user && (state.user.full_name || state.user.name)) || 'Confidential Staff Member',
+        patientContact: contact,
+        departmentName: (state.user && (state.user.department || state.user.department_name)) || 'Confidential',
+        priority: priorityLevel === 'crisis' ? 'crisis' : 'urgent',
+        preferredDate: new Date().toISOString().split('T')[0],
+        preferredTime: 'Immediate / Urgent Callback',
+        topic: priorityLevel === 'crisis'
+          ? 'Urgent Crisis Screening Support (PHQ-9 Safety Escalation)'
+          : 'Urgent Clinical Screening Support (Severe Score)',
+        notes: 'Triggered directly from immediate well-being crisis support card. Scores remain strictly confidential.'
+      };
+      const resp = await apiFetch('/api/v1/referrals/occupational-health', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      const json = await resp.json().catch(() => ({}));
+      if (resp.ok && json.success) {
+        const refCode = json.reference_code || (json.data && json.data.referenceCode) || 'CONFIRMED';
+        localStorage.setItem('havilah_last_consult_ref', refCode);
+        if (statusEl) {
+          statusEl.style.display = 'block';
+          statusEl.style.color = '#bbf7d0';
+          statusEl.textContent = `Urgent callback dispatched. Reference code: ${refCode}. Your employer/HR has not been notified.`;
+        }
+        if (btn) btn.textContent = 'Urgent Callback Requested';
+      } else {
+        throw new Error(json.message || 'Unable to submit callback request');
+      }
+    } catch (err) {
+      if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#fecaca';
+        statusEl.textContent = 'Could not submit online request. Please call +233 24 362 9870 or 112 immediately.';
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Retry Urgent Callback';
+      }
+    }
+  }
+
   return {
     navigate,
     openSurvey,
@@ -6174,6 +6287,7 @@ const App = (() => {
     closeDailyPulseModal: window.closeDailyPulseModal,
     submitDailyPulse: window.submitDailyPulse,
     surveyNext,
+    triggerCrisisCallback,
     surveyBack,
     toggleContextDrawer,
     setTrendFramework,

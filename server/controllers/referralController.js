@@ -150,6 +150,8 @@ router.post(
       const preferredDate = req.body.preferredDate || req.body.date || '';
       const preferredTime = req.body.preferredTime || req.body.preferred_time || req.body.time || 'As soon as available';
       const notes = req.body.notes || '';
+      const rawPriority = String(req.body.priority || 'standard').toLowerCase().trim();
+      const priority = ['standard', 'urgent', 'crisis'].includes(rawPriority) ? rawPriority : 'standard';
 
       const intakeNotes = notes ? (topic ? `${topic} - ${notes}` : notes) : (topic || '');
 
@@ -161,6 +163,7 @@ router.post(
         assignedAssessorId: tenant.activeAssessorId,
         departmentName,
         preferredTime,
+        priority,
         status: 'pending',
         clinicalDetails: {
           patientName,
@@ -169,15 +172,18 @@ router.post(
         },
       });
 
-      console.log('[Occupational Health Referral] Saved referral', referenceCode, 'for tenant', tenant.company_name, 'assigned to assessor', tenant.activeAssessorId);
+      console.log('[Occupational Health Referral] Saved referral', referenceCode, 'priority:', priority, 'for tenant', tenant.company_name, 'assigned to assessor', tenant.activeAssessorId);
 
       // Respond immediately to client after successful DB save
       res.status(200).json({
         success: true,
-        message: 'Referral submitted securely to the designated medical assessor.',
+        message: priority === 'crisis'
+          ? 'Urgent clinician escalation submitted. A practitioner has been prioritized to reach out.'
+          : 'Referral submitted securely to the designated medical assessor.',
         reference_code: referenceCode,
         data: {
           referenceCode,
+          priority,
           status: referral.status,
         },
       });
@@ -195,6 +201,7 @@ router.post(
             referenceCode,
             companyName: tenant.company_name || tenant.companyName || 'Organization',
             to: targetEmail,
+            priority,
           });
 
           if (!result.success) {

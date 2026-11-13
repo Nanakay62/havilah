@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/css/tailwind.css">
   <link rel="stylesheet" href="/css/tour.css">
   <script src="/js/icons.js"></script>
-  <script src="/js/auth.js?v=2"></script>
+  <script src="/js/auth.js?v=3"></script>
 </head>
 <body class="auth-page">
   <main class="auth-card" id="loginCard">
@@ -28,6 +28,7 @@
     <div id="errorBox" class="hidden alert-banner alert-danger" style="margin-bottom: var(--space-4);" role="alert"></div>
 
     <form id="loginForm" novalidate>
+      <div id="credentialsFields">
       <div class="form-field">
         <label for="email" class="form-label">Corporate email</label>
         <input type="email" id="email" required class="input" placeholder="you@company.com" autocomplete="username">
@@ -42,6 +43,20 @@
           <input type="password" id="password" required class="input" placeholder="••••••••" autocomplete="current-password">
           <button type="button" id="togglePasswordBtn" class="input-action-btn" title="Toggle password visibility" aria-label="Toggle password visibility"></button>
         </div>
+      </div>
+      </div>
+
+      <div id="twoFactorStepBox" class="hidden" style="margin-bottom: var(--space-4);">
+        <div style="padding: 12px; border-radius: 10px; background: rgba(0, 183, 195, 0.08); border: 1px solid rgba(0, 183, 195, 0.25); margin-bottom: 12px; font-size: var(--text-xs); color: var(--text-2);">
+          Enter the 6-digit code from your authenticator app, or enter an unused single-use backup recovery code (e.g. <code>A1B2-C3D4</code>).
+        </div>
+        <div class="form-field">
+          <label for="totpCodeInput" class="form-label">Two-Factor or Recovery Code</label>
+          <input type="text" id="totpCodeInput" class="input" placeholder="123456 or A1B2-C3D4" autocomplete="one-time-code" style="letter-spacing: 0.1em; font-weight: 600;">
+        </div>
+        <button type="button" id="backToCredentialsBtn" class="btn btn-ghost btn-sm" style="padding: 0; font-size: var(--text-xs); color: var(--text-muted); margin-top: 4px; background: none; border: none; cursor: pointer;">
+          &larr; Use a different account
+        </button>
       </div>
 
       <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; margin-top: var(--space-4);">
@@ -88,10 +103,25 @@
       }
     });
 
+    let pending2faTempToken = null;
+    let pending2faEmail = '';
+
+    const backToCredsBtn = document.getElementById('backToCredentialsBtn');
+    if (backToCredsBtn) {
+      backToCredsBtn.addEventListener('click', () => {
+        pending2faTempToken = null;
+        document.getElementById('twoFactorStepBox').classList.add('hidden');
+        document.getElementById('credentialsFields').classList.remove('hidden');
+        document.getElementById('totpCodeInput').value = '';
+        document.getElementById('submitBtn').innerHTML = '<span>Sign In</span>';
+      });
+    }
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
+      const totpCode = document.getElementById('totpCodeInput') ? document.getElementById('totpCodeInput').value.trim() : '';
       const btn = document.getElementById('submitBtn');
       const errorBox = document.getElementById('errorBox');
       const statusBox = document.getElementById('statusBox');
@@ -99,7 +129,13 @@
       if (statusBox) statusBox.classList.add('hidden');
       errorBox.classList.add('hidden');
 
-      if (!email || !password) {
+      if (pending2faTempToken) {
+        if (!totpCode) {
+          errorBox.textContent = 'Please enter your 6-digit authenticator code or recovery code.';
+          errorBox.classList.remove('hidden');
+          return;
+        }
+      } else if (!email || !password) {
         errorBox.textContent = 'Please enter both your corporate email and password.';
         errorBox.classList.remove('hidden');
         return;
@@ -110,7 +146,22 @@
       btn.innerHTML = '<svg class="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
       
       try {
-        await Auth.login(email, password);
+        if (pending2faTempToken) {
+          await Auth.verify2fa(pending2faTempToken, totpCode, pending2faEmail);
+        } else {
+          const loginResp = await Auth.login(email, password);
+          if (loginResp && loginResp.requires_2fa && loginResp.temp_token) {
+            pending2faTempToken = loginResp.temp_token;
+            pending2faEmail = email;
+            document.getElementById('credentialsFields').classList.add('hidden');
+            document.getElementById('twoFactorStepBox').classList.remove('hidden');
+            document.getElementById('totpCodeInput').focus();
+            btn.disabled = false;
+            btn.classList.remove('is-loading');
+            btn.innerHTML = '<span>Verify &amp; Sign In</span>';
+            return;
+          }
+        }
         const tokenData = Auth.parseToken();
         
         if (!tokenData) throw new Error('Invalid token received');

@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/css/tailwind.css">
   <link rel="stylesheet" href="/css/tour.css">
   <script src="/js/icons.js"></script>
-  <script src="/js/auth.js"></script>
+  <script src="/js/auth.js?v=3"></script>
 </head>
 <body class="auth-page">
   <main class="auth-card" id="registerCard">
@@ -92,15 +92,16 @@
         <div class="form-field">
           <label for="setup-password" class="form-label">Set password</label>
           <div class="input-with-button">
-            <input type="password" id="setup-password" required minlength="8" class="input" placeholder="••••••••" autocomplete="new-password">
+            <input type="password" id="setup-password" required minlength="12" class="input" placeholder="••••••••" autocomplete="new-password">
             <button type="button" id="toggleSetupPasswordBtn" class="input-action-btn" title="Toggle password visibility" aria-label="Toggle password visibility"></button>
           </div>
+          <p class="form-hint" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Minimum 12 characters with upper &amp; lowercase letters, a number, and a special character.</p>
         </div>
 
         <div class="form-field">
           <label for="setup-confirm" class="form-label">Confirm password</label>
           <div class="input-with-button">
-            <input type="password" id="setup-confirm" required minlength="8" class="input" placeholder="••••••••" autocomplete="new-password">
+            <input type="password" id="setup-confirm" required minlength="12" class="input" placeholder="••••••••" autocomplete="new-password">
             <button type="button" id="toggleSetupConfirmBtn" class="input-action-btn" title="Toggle password visibility" aria-label="Toggle password visibility"></button>
           </div>
           <p id="pwd-error" class="form-error hidden" style="margin-top: 4px;">Passwords do not match.</p>
@@ -109,7 +110,7 @@
         <div class="form-field">
           <label class="auth-checkbox-label">
             <input type="checkbox" id="accept-terms" required>
-            <span>I agree to the <a href="/terms" target="_blank">Privacy Terms</a> and understand that my wellness data remains strictly confidential and anonymous (N &ge; 5).</span>
+            <span>I agree to the <a href="/privacy.html" target="_blank">Privacy Policy</a> and <a href="/terms.html" target="_blank">Terms of Service</a> and understand that my wellness data remains strictly confidential and anonymous (N &ge; 5).</span>
           </label>
         </div>
 

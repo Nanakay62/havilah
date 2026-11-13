@@ -937,13 +937,28 @@
           <p style="color: var(--text-2); font-size: 0.85rem; margin-top: 4px;">Multi-tenant clinical practitioner &amp; billing access</p>
         </div>
         <form id="assessorLoginForm" onsubmit="handleAssessorLogin(event)">
-          <div class="form-group">
-            <label class="form-label" for="assessorEmailInput">Assessor Login Email</label>
-            <input type="email" id="assessorEmailInput" class="form-input" placeholder="e.g. clarke.edith@gmail.com" required autocomplete="email">
+          <div id="assessorCredsGroup">
+            <div class="form-group">
+              <label class="form-label" for="assessorEmailInput">Assessor Login Email</label>
+              <input type="email" id="assessorEmailInput" class="form-input" placeholder="e.g. clarke.edith@gmail.com" required autocomplete="email">
+            </div>
+            <div class="form-group">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label class="form-label" for="assessorPasswordInput" style="margin-bottom:0;">Password</label>
+                <a href="/reset-password.html" style="font-size:0.75rem; color:var(--accent); font-weight:600; text-decoration:none;">Forgot password?</a>
+              </div>
+              <input type="password" id="assessorPasswordInput" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="assessorPasswordInput">Password</label>
-            <input type="password" id="assessorPasswordInput" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+          <div id="assessor2faGroup" style="display:none; margin-bottom:12px;">
+            <div style="padding:10px 12px; border-radius:8px; background:#EFF6FF; border:1px solid #BFDBFE; color:#1E40AF; font-size:0.78rem; margin-bottom:10px;">
+              Enter the 6-digit code from your authenticator app or an unused backup recovery code.
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="assessor2faCodeInput">Authenticator / Recovery Code</label>
+              <input type="text" id="assessor2faCodeInput" class="form-input" placeholder="123456 or A1B2-C3D4" autocomplete="one-time-code" style="letter-spacing:0.08em; font-weight:700;">
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="resetAssessor2faStep()" style="padding:2px 0; font-size:0.75rem;">&larr; Back to login</button>
           </div>
           <button type="submit" class="btn btn-primary" id="assessorLoginBtn" style="width: 100%; padding: 11px; margin-top: 8px;">
             Sign In to Clinical Console
@@ -1446,6 +1461,38 @@
           <textarea id="settingsPaymentInstructions" class="form-textarea" rows="2" placeholder="Bank: Stanbic Bank Ghana | Account: 9040001234567 | MoMo: 0244567890 (FZ Safety Health)"></textarea>
         </div>
 
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div>
+              <div style="font-size:0.86rem; font-weight:700; color:var(--text-1);">Two-Factor Authentication (2FA)</div>
+              <div id="assessor2faStatusText" style="font-size:0.75rem; color:var(--text-muted);">Checking status...</div>
+            </div>
+            <button type="button" id="assessor2faToggleBtn" class="btn btn-outline btn-sm" onclick="toggleAssessor2faPanel()">Configure 2FA</button>
+          </div>
+          <div id="assessor2faConfigBox" style="display:none; padding:12px; border-radius:8px; background:var(--surface-canvas); border:1px solid var(--border); font-size:0.8rem;">
+            <div id="assessor2faSetupStep" style="display:none;">
+              <p style="margin:0 0 8px; color:var(--text-2);">Add this setup key to Google Authenticator or Authy, then enter the 6-digit code below:</p>
+              <div style="font-family:monospace; font-weight:700; padding:8px 10px; background:#fff; border:1px solid var(--border); border-radius:6px; word-break:break-all; margin-bottom:8px;" id="assessor2faSecretDisplay"></div>
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="assessor2faConfirmCode" class="form-input" placeholder="6-digit code" maxlength="6" style="max-width:150px;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="confirmEnableAssessor2fa()">Verify &amp; Enable</button>
+              </div>
+            </div>
+            <div id="assessor2faEnabledStep" style="display:none;">
+              <p style="margin:0 0 8px; color:var(--success); font-weight:600;">Two-factor authentication is active on your account.</p>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                <input type="text" id="assessor2faManageCode" class="form-input" placeholder="Current 6-digit code" maxlength="6" style="max-width:160px;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="regenerateAssessorRecoveryCodes()">Regenerate Backup Codes</button>
+                <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="disableAssessor2fa()">Disable 2FA</button>
+              </div>
+            </div>
+            <div id="assessor2faRecoveryBox" style="display:none; margin-top:10px; padding:10px; background:#FEF3C7; border:1px solid #F59E0B; border-radius:6px;">
+              <div style="font-weight:700; color:#92400E; margin-bottom:4px;">Save these single-use recovery codes safely (shown once):</div>
+              <div id="assessor2faRecoveryList" style="font-family:monospace; font-size:0.78rem; color:#78350F; display:grid; grid-template-columns:repeat(2,1fr); gap:4px;"></div>
+            </div>
+          </div>
+        </div>
+
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
           <button type="button" class="btn btn-ghost" onclick="closeModal('clinicSettingsModal')">Cancel</button>
           <button type="submit" class="btn btn-primary" id="saveSettingsBtn">Save Settings</button>
@@ -1593,7 +1640,7 @@
   </div>
 
   <script src="/js/havilahCall.js?v=2.7.0" defer></script>
-  <script src="/js/assessorPortal.js?v=2.2.0"></script>
+  <script src="/js/assessorPortal.js?v=2.3.0"></script>
 <script src="/js/tour.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {

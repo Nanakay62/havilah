@@ -8,7 +8,10 @@ const User = require('../models/User');
 const Invitation = require('../models/Invitation');
 const Tenant = require('../models/Tenant');
 const Department = require('../models/Department');
-const { encryptField, hashField, validatePasswordStrength } = require('../utils/crypto');
+const { encryptField, decryptField, hashField, validatePasswordStrength } = require('../utils/crypto');
+const { generateTotpSecret, verifyTotpCode, getOtpAuthUrl, generateRecoveryCodes, verifyAndConsumeRecoveryCode } = require('../utils/totp');
+const Assessor = require('../models/Assessor');
+const Doctor = require('../models/Doctor');
 const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
 const { validate } = require('../middleware/validate');
 const { LoginSchema, RegisterSchema } = require('../schemas/auth.schema');
@@ -81,6 +84,34 @@ router.post('/login', sensitiveRateLimiter(5, { skipSuccessfulRequests: true }),
     });
 
     // Issue 7-day Refresh Token
+    if (user.totp_enabled && user.totp_secret) {
+      const challengeToken = jwt.sign(
+        {
+          purpose: '2fa_login',
+          entityType: 'user',
+          userId: user.user_id,
+          companyId: user.company_id,
+          departmentId: user.department_id,
+          role: user.role,
+          status: user.status,
+          isSystemSuperAdmin: isSuper,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '5m' }
+      );
+      return res.json({
+        success: true,
+        requires_2fa: true,
+        temp_token: challengeToken,
+        user: {
+          user_id: user.user_id,
+          role: user.role,
+          full_name: user.full_name,
+        },
+        message: 'Two-factor authentication code required.',
+      });
+    }
+
     const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
     const refreshToken = jwt.sign({ userId: user.user_id }, refreshSecret, { expiresIn: '7d' });
     user.refresh_token_hash = hashField(refreshToken);
@@ -564,6 +595,24 @@ router.post('/change-password', sensitiveRateLimiter(5), validateSession, async 
   }
 });
 
+const mongoose = require('mongoose');
+async function findFallbackClinicAccount(query) {
+  const dbReady = mongoose.connection && mongoose.connection.readyState === 1;
+  if (dbReady || Assessor.findOne !== mongoose.Model.findOne) {
+    try {
+      const assessor = await Assessor.findOne(query);
+      if (assessor) return assessor;
+    } catch (_) {}
+  }
+  if (dbReady || Doctor.findOne !== mongoose.Model.findOne) {
+    try {
+      const doctor = await Doctor.findOne(query);
+      if (doctor) return doctor;
+    } catch (_) {}
+  }
+  return null;
+}
+
 // POST /api/v1/auth/forgot-password - Rate limited (max 5 attempts per window)
 router.post('/forgot-password', sensitiveRateLimiter(5), async (req, res, next) => {
   try {
@@ -575,10 +624,11 @@ router.post('/forgot-password', sensitiveRateLimiter(5), async (req, res, next) 
     const normalised = email.trim().toLowerCase();
     const emailHash = hashField(normalised);
 
-    const user = await User.findOne({ email_hash: emailHash });
+    let user = await User.findOne({ email_hash: emailHash });
+    if (!user) user = await findFallbackClinicAccount({ email: normalised });
 
     // Always respond with success to prevent user enumeration attacks
-    if (!user || user.status === 'deactivated') {
+    if (!user || user.status === 'deactivated' || user.active === false) {
       return res.json({
         success: true,
         message: 'If an active account exists for that email, a password reset link has been dispatched.'
@@ -649,12 +699,18 @@ router.post('/reset-password', sensitiveRateLimiter(5), async (req, res, next) =
     }
 
     const tokenHash = hashField(String(token).trim());
-    const user = await User.findOne({
+    let user = await User.findOne({
       password_reset_token_hash: tokenHash,
       password_reset_expires_at: { $gt: new Date() }
     });
+    if (!user) {
+      user = await findFallbackClinicAccount({
+        password_reset_token_hash: tokenHash,
+        password_reset_expires_at: { $gt: new Date() }
+      });
+    }
 
-    if (!user || user.status === 'deactivated') {
+    if (!user || user.status === 'deactivated' || user.active === false) {
       return res.status(400).json({
         success: false,
         error: 'INVALID_OR_EXPIRED_TOKEN',
@@ -683,6 +739,240 @@ router.post('/reset-password', sensitiveRateLimiter(5), async (req, res, next) =
       success: true,
       message: 'Your password has been reset successfully. You can now log in with your new credentials.'
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/auth/login/verify-2fa - Complete login with TOTP code or single-use recovery code
+router.post('/login/verify-2fa', sensitiveRateLimiter(5), async (req, res, next) => {
+  try {
+    const { temp_token, code, recovery_code } = req.body;
+    if (!temp_token || (!code && !recovery_code)) {
+      return res.status(400).json({
+        success: false,
+        error: 'MISSING_FIELDS',
+        message: 'Challenge token and 6-digit authenticator code or recovery code are required.',
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(temp_token, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({
+        success: false,
+        error: 'INVALID_CHALLENGE',
+        message: 'Two-factor session expired. Please sign in again.',
+      });
+    }
+
+    if (!decoded || decoded.purpose !== '2fa_login' || decoded.entityType !== 'user') {
+      return res.status(401).json({
+        success: false,
+        error: 'INVALID_CHALLENGE',
+        message: 'Invalid two-factor challenge token.',
+      });
+    }
+
+    const user = await User.findOne({ user_id: decoded.userId });
+    if (!user || user.status === 'deactivated' || !user.totp_enabled || !user.totp_secret) {
+      return res.status(401).json({
+        success: false,
+        error: 'ACCOUNT_UNAVAILABLE',
+        message: 'Unable to complete two-factor authentication for this account.',
+      });
+    }
+
+    const totpCandidate = (code || '').toString().trim();
+    const backupCandidate = (recovery_code || totpCandidate).toString().trim();
+    let authenticated = false;
+
+    if (/^\d{6}$/.test(totpCandidate) && verifyTotpCode(totpCandidate, user.totp_secret)) {
+      authenticated = true;
+    } else if (backupCandidate) {
+      const check = verifyAndConsumeRecoveryCode(backupCandidate, user.totp_recovery_codes_hashes || []);
+      if (check.valid) {
+        user.totp_recovery_codes_hashes = check.remainingHashes;
+        authenticated = true;
+      }
+    }
+
+    if (!authenticated) {
+      return res.status(401).json({
+        success: false,
+        error: 'INVALID_2FA_CODE',
+        message: 'Invalid authenticator or recovery code.',
+      });
+    }
+
+    const isSuper = user.isSystemSuperAdmin === true || user.role === 'super_admin' || user.role === 'superadmin';
+    const payload = {
+      userId: user.user_id,
+      companyId: user.company_id,
+      departmentId: user.department_id,
+      role: user.role,
+      status: user.status,
+      isSystemSuperAdmin: isSuper,
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+    const refreshToken = jwt.sign({ userId: user.user_id }, refreshSecret, { expiresIn: '7d' });
+    user.refresh_token_hash = hashField(refreshToken);
+    user.refresh_token_expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    user.last_login_at = new Date();
+    await user.save();
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
+    return res.json({
+      success: true,
+      token,
+      refreshToken,
+      user: {
+        user_id: user.user_id,
+        role: user.role,
+        full_name: user.full_name,
+        totp_enabled: true,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/v1/auth/2fa/status
+router.get('/2fa/status', validateSession, async (req, res, next) => {
+  try {
+    const user = await User.findOne({ user_id: req.sessionData.user_id });
+    if (!user) return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
+    return res.json({
+      success: true,
+      enabled: Boolean(user.totp_enabled),
+      recovery_codes_remaining: (user.totp_recovery_codes_hashes || []).length,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/auth/2fa/setup
+router.post('/2fa/setup', validateSession, async (req, res, next) => {
+  try {
+    const user = await User.findOne({ user_id: req.sessionData.user_id });
+    if (!user) return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
+
+    const secret = generateTotpSecret();
+    user.totp_pending_secret = secret;
+    await user.save();
+
+    let accountLabel = user.full_name || user.user_id;
+    try {
+      if (user.email_encrypted && user.email_encrypted.encrypted) {
+        accountLabel = decryptField(user.email_encrypted);
+      }
+    } catch (_) {}
+
+    const otpauthUrl = getOtpAuthUrl({
+      issuer: 'Havilah',
+      accountName: accountLabel,
+      secret,
+    });
+
+    return res.json({
+      success: true,
+      secret,
+      otpauth_url: otpauthUrl,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/auth/2fa/enable
+router.post('/2fa/enable', validateSession, async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    const user = await User.findOne({ user_id: req.sessionData.user_id });
+    if (!user) return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
+    if (!user.totp_pending_secret) {
+      return res.status(400).json({ success: false, error: 'NO_PENDING_SETUP', message: 'Run 2FA setup first.' });
+    }
+    if (!verifyTotpCode(String(code || ''), user.totp_pending_secret)) {
+      return res.status(400).json({ success: false, error: 'INVALID_CODE', message: 'Invalid 6-digit verification code.' });
+    }
+
+    const { plainCodes, hashedCodes } = generateRecoveryCodes(8);
+    user.totp_secret = user.totp_pending_secret;
+    user.totp_pending_secret = null;
+    user.totp_enabled = true;
+    user.totp_recovery_codes_hashes = hashedCodes;
+    await user.save();
+
+    return res.json({
+      success: true,
+      enabled: true,
+      recovery_codes: plainCodes,
+      message: 'Two-factor authentication enabled. Store your single-use recovery codes safely.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/auth/2fa/disable
+router.post('/2fa/disable', validateSession, async (req, res, next) => {
+  try {
+    const { code, password } = req.body;
+    const user = await User.findOne({ user_id: req.sessionData.user_id });
+    if (!user) return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
+
+    let verified = false;
+    if (password && user.passwordHash && await bcrypt.compare(String(password), user.passwordHash)) {
+      verified = true;
+    } else if (code && user.totp_secret && verifyTotpCode(String(code), user.totp_secret)) {
+      verified = true;
+    }
+    if (!verified) {
+      return res.status(401).json({ success: false, error: 'VERIFICATION_FAILED', message: 'Provide valid password or 6-digit authenticator code to disable 2FA.' });
+    }
+
+    user.totp_enabled = false;
+    user.totp_secret = null;
+    user.totp_pending_secret = null;
+    user.totp_recovery_codes_hashes = [];
+    await user.save();
+
+    return res.json({ success: true, enabled: false });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/auth/2fa/regenerate-recovery-codes
+router.post('/2fa/regenerate-recovery-codes', validateSession, async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    const user = await User.findOne({ user_id: req.sessionData.user_id });
+    if (!user || !user.totp_enabled || !user.totp_secret) {
+      return res.status(400).json({ success: false, error: '2FA_NOT_ENABLED' });
+    }
+    if (!verifyTotpCode(String(code || ''), user.totp_secret)) {
+      return res.status(401).json({ success: false, error: 'INVALID_CODE', message: 'Valid 6-digit authenticator code required.' });
+    }
+
+    const { plainCodes, hashedCodes } = generateRecoveryCodes(8);
+    user.totp_recovery_codes_hashes = hashedCodes;
+    await user.save();
+
+    return res.json({ success: true, recovery_codes: plainCodes });
   } catch (err) {
     next(err);
   }

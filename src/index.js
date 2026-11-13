@@ -137,6 +137,28 @@ export default {
         headers.set('Cache-Control', 'public, max-age=120, must-revalidate');
       }
 
+      const contentType = headers.get('content-type') || '';
+      const backendBase = (env && env.BACKEND_API_URL)
+        ? env.BACKEND_API_URL.replace(/\/$/, '')
+        : 'https://havilah-api.onrender.com';
+
+      if (response.status === 200 && contentType.includes('text/html') && typeof HTMLRewriter !== 'undefined') {
+        headers.delete('Content-Length');
+        const htmlResponse = new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers,
+        });
+        const apiShim = `<script>(function(){var B=${JSON.stringify(backendBase)};var F=window.fetch;if(!F)return;window.fetch=function(u,o){if(typeof u==='string'&&u.startsWith('/api/')){u=B+u;}else if(typeof URL!=='undefined'&&u instanceof URL&&u.origin===location.origin&&u.pathname.startsWith('/api/')){u=new URL(B+u.pathname+u.search);}else if(typeof Request!=='undefined'&&u instanceof Request){var p=new URL(u.url,location.origin);if(p.origin===location.origin&&p.pathname.startsWith('/api/')){u=new Request(B+p.pathname+p.search,u);}}return F.call(this,u,o);};})();</script>`;
+        return new HTMLRewriter()
+          .on('head', {
+            element(el) {
+              el.prepend(apiShim, { html: true });
+            },
+          })
+          .transform(htmlResponse);
+      }
+
       return new Response(response.body, {
         status: response.status,
         statusText: response.statusText,

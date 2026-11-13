@@ -2181,8 +2181,11 @@
   <!-- 6. Overview Video Modal -->
   <div class="modal-backdrop" id="videoModal" role="dialog" aria-modal="true" aria-labelledby="videoModalTitle">
     <div class="modal-dialog" style="max-width: 840px;">
-      <div class="modal-header">
-        <h3 class="modal-title" id="videoModalTitle">Product overview (30 seconds)</h3>
+      <div class="modal-header" style="height: auto; min-height: 56px; padding: var(--space-3) var(--space-4); gap: var(--space-3);">
+        <div style="display: flex; align-items: center; gap: var(--space-2) var(--space-3); flex-wrap: wrap;">
+          <h3 class="modal-title" id="videoModalTitle">Product overview (30 seconds)</h3>
+          <span style="font-size: var(--text-xs); color: var(--text-subtle); background-color: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-control); padding: 2px 8px;">Visual walkthrough · No audio</span>
+        </div>
         <button type="button" class="modal-close-btn" onclick="App.closeVideoModal()" aria-label="Close dialog">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -2191,13 +2194,13 @@
         </button>
       </div>
       <div class="modal-body" style="padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4);">
-        <div style="width: 100%; border-radius: var(--radius-card); overflow: hidden; background-color: #000000; aspect-ratio: 16 / 9; box-shadow: 0 4px 16px rgba(0,0,0,0.12);">
-          <video id="overviewVideo" controls preload="none" poster="/assets/video/havilah-overview-poster.webp" playsinline style="width: 100%; height: 100%; display: block; object-fit: contain;">
+        <div style="width: 100%; border-radius: var(--radius-card); overflow: hidden; background-color: var(--bg); border: 1px solid var(--border); aspect-ratio: 16 / 9; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+          <video id="overviewVideo" controls preload="none" poster="/assets/video/havilah-overview-poster.webp" playsinline style="width: 100%; height: 100%; display: block; object-fit: contain; background-color: var(--bg);">
             <source data-src="/assets/video/havilah-overview.mp4" type="video/mp4">
             <source data-src="/assets/video/havilah-overview.webm" type="video/webm">
-            <track src="/assets/video/havilah-overview.vtt" kind="captions" srclang="en" label="English" default>
-            <p style="color: #ffffff; padding: var(--space-4); text-align: center;">
-              Your browser does not support HTML5 video. You can <a href="/assets/video/havilah-overview.mp4" download style="color: var(--brand-subtle); text-decoration: underline;">download the overview MP4 directly</a>.
+            <track src="/assets/video/havilah-overview.vtt" kind="captions" srclang="en" label="English">
+            <p style="color: var(--text); padding: var(--space-4); text-align: center;">
+              Your browser does not support HTML5 video. You can <a href="/assets/video/havilah-overview.mp4" download style="color: var(--brand); text-decoration: underline;">download the overview MP4 directly</a>.
             </p>
           </video>
         </div>
@@ -2208,10 +2211,10 @@
             Read text transcript
           </summary>
           <div style="margin-top: var(--space-3); font-size: var(--text-sm); color: var(--text-muted); line-height: 1.6; display: flex; flex-direction: column; gap: var(--space-3); border-top: 1px solid var(--border); padding-top: var(--space-3);">
-            <p><strong>[00:00 - 00:04] The Challenge:</strong> Wellbeing data is scattered and hard to trust. Printed questionnaires and unencrypted spreadsheets risk employee privacy and lack trusted clinical oversight.</p>
-            <p><strong>[00:04 - 00:10] Employee Check-in:</strong> Employees check in privately. Using validated clinical screening tools like PSS-10, responses stay completely private. Individual submissions are never shared with HR.</p>
-            <p><strong>[00:10 - 00:17] Medical Assessor Triage:</strong> When support is needed, a medical assessor is one step away. A referral appears in the assessor queue using only an anonymous case reference code (REF-8492-K). Secure two-way text chat provides timely support with complete confidentiality.</p>
-            <p><strong>[00:17 - 00:25] HR Group Insight:</strong> HR sees patterns, never individuals. As employee check-ins accumulate, results appear only when a group reaches five or more people. Aggregate severity bands (minimal, mild, moderate, elevated) reveal department wellbeing while protecting individual anonymity.</p>
+            <p><strong>[00:00 - 00:04] The Challenge:</strong> Wellbeing data is scattered and hard to trust. Printed questionnaires, unencrypted spreadsheets, and delayed referrals risk employee privacy and lack trusted clinical oversight.</p>
+            <p><strong>[00:04 - 00:10] Employee Check-in:</strong> Employees check in privately using validated clinical screening tools (PHQ-9, GAD-7, PSS-10, FAS-10, and COPSOQ-III). Individual responses remain strictly confidential and are never shared with HR.</p>
+            <p><strong>[00:10 - 00:17] Medical Assessor Triage:</strong> When support is needed, a medical assessor is one step away. A referral appears in the assessor queue identified only by an anonymous case code (REF-8492-K) for encrypted two-way text chat.</p>
+            <p><strong>[00:17 - 00:25] HR Group Insight:</strong> HR sees patterns, never individuals. Metrics remain hidden below 5 responses; once a group reaches five or more colleagues, aggregate severity bands (minimal, mild, moderate, elevated) reveal team trends while protecting individual anonymity.</p>
             <p><strong>[00:25 - 00:30] Summary:</strong> Havilah. Workplace wellbeing, measured with care. Designed with the Ghana Data Protection Act, 2012 (Act 843) in mind.</p>
           </div>
         </details>
@@ -2320,15 +2323,24 @@ window.App = {
   openVideoModal: () => {
     const video = $('overviewVideo');
     if (video) {
-      const sources = video.querySelectorAll('source');
-      sources.forEach(s => {
-        if (!s.src && s.dataset.src) {
-          s.src = s.dataset.src;
-        }
-      });
-      video.load();
+      if (!video.dataset.loaded) {
+        const sources = video.querySelectorAll('source');
+        sources.forEach(s => {
+          if (!s.src && s.dataset.src) {
+            s.src = s.dataset.src;
+          }
+        });
+        video.dataset.loaded = 'true';
+        video.load();
+      } else if (video.ended) {
+        video.currentTime = 0;
+        video.poster = video.poster.includes('-hr.webp')
+          ? '/assets/video/havilah-overview-poster.webp'
+          : '/assets/video/havilah-overview-poster-hr.webp';
+      }
       video.play().catch(() => {});
     }
+    document.body.style.overflow = 'hidden';
     App.openModal('videoModal');
     setTimeout(() => {
       const closeBtn = document.querySelector('#videoModal .modal-close-btn');
@@ -2340,6 +2352,7 @@ window.App = {
     if (video) {
       video.pause();
     }
+    document.body.style.overflow = '';
     App.closeModal('videoModal');
     const trigger = $('heroWatchVideoBtn');
     if (trigger) trigger.focus();
@@ -2409,7 +2422,7 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (e.key === 'Tab' && openModal) {
-    const focusables = openModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), details, summary');
+    const focusables = openModal.querySelectorAll('button, [href], input, select, textarea, video[controls], [tabindex]:not([tabindex="-1"]), summary');
     if (!focusables.length) return;
     const first = focusables[0];
     const last = focusables[focusables.length - 1];

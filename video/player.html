@@ -54,24 +54,23 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 60px 80px;
+      padding: 56px 80px;
     }
 
-    /* Permanent Header / Badge during product preview */
+    /* Permanent Header / Badge during product preview (4.0s - 25.0s) */
     .stage-sample-badge {
       position: absolute;
-      top: 40px;
-      right: 60px;
+      top: 36px;
+      right: 56px;
       background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 6px 16px;
-      font-size: 16px;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 18px;
       font-weight: 500;
       color: var(--text-subtle);
       box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
       opacity: 0;
-      transition: opacity 0.3s ease;
       z-index: 100;
     }
 
@@ -83,29 +82,29 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 60px 100px;
+      padding: 56px 96px;
       opacity: 0;
       pointer-events: none;
     }
 
     .scene-headline {
-      font-size: 46px;
+      font-size: 50px;
       font-weight: 600;
       letter-spacing: -0.025em;
       color: var(--text);
       text-align: center;
-      margin-bottom: 40px;
-      line-height: 1.2;
-      max-width: 1400px;
+      margin-bottom: 36px;
+      line-height: 1.18;
+      max-width: 1440px;
     }
 
     .scene-subheadline {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 400;
       color: var(--text-muted);
       text-align: center;
-      margin-top: -24px;
-      margin-bottom: 40px;
+      margin-top: -20px;
+      margin-bottom: 36px;
     }
 
     /* =========================================================================
@@ -114,62 +113,84 @@
     .before-cards-grid {
       display: flex;
       gap: 36px;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
-      margin-top: 20px;
+      margin-top: 12px;
     }
 
     .before-card {
-      width: 380px;
-      height: 320px;
+      width: 440px;
+      min-height: 340px;
       background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(16, 24, 40, 0.05);
-      padding: 32px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(16, 24, 40, 0.06);
+      padding: 36px;
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
 
+    .before-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
     .before-card-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 8px;
+      width: 58px;
+      height: 58px;
+      border-radius: 10px;
       background-color: var(--bg);
       border: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--text-subtle);
-      margin-bottom: 8px;
+    }
+
+    .before-status-pill {
+      font-size: 15px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 6px;
+      background-color: var(--warning-bg);
+      color: var(--warning);
+      border: 1px solid rgba(180, 83, 9, 0.18);
+    }
+
+    .before-status-pill.danger {
+      background-color: var(--danger-bg);
+      color: var(--danger);
+      border-color: rgba(185, 28, 28, 0.18);
     }
 
     .before-card-title {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 600;
       color: var(--text);
     }
 
     .before-card-desc {
-      font-size: 20px;
+      font-size: 22px;
       color: var(--text-muted);
-      line-height: 1.45;
+      line-height: 1.48;
     }
 
     /* =========================================================================
        SCENE 2: EMPLOYEE CHECK-IN (4.0s - 10.0s)
        ========================================================================= */
     .employee-checkin-frame {
-      width: 880px;
+      width: 1080px;
       background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: 0 12px 32px rgba(16, 24, 40, 0.08);
-      padding: 40px;
+      border-radius: 18px;
+      box-shadow: 0 14px 36px rgba(16, 24, 40, 0.08);
+      padding: 44px 48px;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 26px;
       position: relative;
     }
 
@@ -182,55 +203,56 @@
     .checkin-badge-private {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-size: 18px;
+      gap: 10px;
+      font-size: 20px;
       color: var(--brand);
       background-color: var(--brand-subtle);
-      padding: 6px 16px;
-      border-radius: 6px;
+      padding: 8px 18px;
+      border-radius: 8px;
       font-weight: 600;
     }
 
     .checkin-progress-bar-bg {
       width: 100%;
-      height: 10px;
+      height: 12px;
       background-color: var(--border);
-      border-radius: 5px;
+      border-radius: 6px;
       overflow: hidden;
-      margin: 8px 0;
+      margin: 4px 0;
     }
 
     .checkin-progress-bar-fill {
-      width: 33%;
+      width: 90%;
       height: 100%;
       background-color: var(--brand);
-      border-radius: 5px;
+      border-radius: 6px;
     }
 
     .checkin-question-text {
-      font-size: 28px;
+      font-size: 30px;
       font-weight: 500;
       color: var(--text);
-      line-height: 1.4;
+      line-height: 1.42;
     }
 
     .checkin-options-row {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
     }
 
     .checkin-option {
-      height: 64px;
+      height: 68px;
       border: 2px solid var(--border);
       border-radius: 10px;
       background-color: var(--surface);
       color: var(--text);
-      font-size: 22px;
+      font-size: 21px;
       font-weight: 500;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 0 12px;
     }
 
     .checkin-option.is-selected {
@@ -238,25 +260,35 @@
       background-color: var(--brand-subtle);
       color: var(--brand-deep);
       font-weight: 600;
+      box-shadow: 0 0 0 1px var(--brand);
     }
 
     .checkin-footer-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-top: 16px;
+      padding-top: 20px;
       border-top: 1px solid var(--border);
     }
 
     .checkin-btn {
-      height: 52px;
-      padding: 0 32px;
+      height: 56px;
+      padding: 0 36px;
       background-color: var(--brand);
       color: #FFFFFF;
       font-size: 22px;
       font-weight: 600;
-      border-radius: 8px;
+      border-radius: 10px;
       border: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .instruments-strip {
+      margin-top: 22px;
+      font-size: 19px;
+      color: var(--text-subtle);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -265,17 +297,18 @@
     /* Virtual Cursor & Ripple for Scene 2 */
     .virtual-cursor {
       position: absolute;
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       pointer-events: none;
       z-index: 50;
       opacity: 0;
+      filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.22));
     }
 
     .click-ripple {
       position: absolute;
-      width: 48px;
-      height: 48px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
       border: 3px solid var(--brand);
       opacity: 0;
@@ -288,21 +321,21 @@
        SCENE 3: REFERRAL & ASSESSOR CHAT (10.0s - 17.0s)
        ========================================================================= */
     .assessor-split-frame {
-      width: 1240px;
-      height: 620px;
+      width: 1380px;
+      height: 640px;
       background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: 0 12px 32px rgba(16, 24, 40, 0.08);
+      border-radius: 18px;
+      box-shadow: 0 14px 36px rgba(16, 24, 40, 0.08);
       display: grid;
-      grid-template-columns: 380px 1fr;
+      grid-template-columns: 410px 1fr;
       overflow: hidden;
     }
 
     .assessor-queue-column {
       background-color: var(--bg);
       border-right: 1px solid var(--border);
-      padding: 32px 24px;
+      padding: 32px 26px;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -311,11 +344,11 @@
     .queue-card {
       background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px 20px;
+      border-radius: 12px;
+      padding: 18px 22px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
     .queue-card.active {
@@ -324,7 +357,7 @@
     }
 
     .queue-code-title {
-      font-size: 22px;
+      font-size: 23px;
       font-weight: 600;
       color: var(--text);
     }
@@ -336,7 +369,7 @@
     }
 
     .chat-top-header {
-      height: 72px;
+      height: 76px;
       padding: 0 32px;
       background-color: var(--bg);
       border-bottom: 1px solid var(--border);
@@ -356,10 +389,10 @@
     .chat-bubble-row {
       display: flex;
       flex-direction: column;
-      max-width: 82%;
-      padding: 16px 22px;
+      max-width: 84%;
+      padding: 18px 24px;
       border-radius: 12px;
-      font-size: 22px;
+      font-size: 23px;
       line-height: 1.45;
       opacity: 0;
       transform: translateY(12px);
@@ -381,43 +414,84 @@
       border-bottom-right-radius: 2px;
     }
 
-    /* =========================================================================
-       SCENE 4: HR GROUP INSIGHT (17.0s - 25.0s)
-       ========================================================================= */
-    .hr-dots-stage {
-      width: 1200px;
-      height: 140px;
-      position: relative;
-      margin-bottom: 16px;
+    .chat-composer-bar {
+      padding: 18px 32px;
+      border-top: 1px solid var(--border);
+      background-color: var(--bg);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .chat-composer-input {
+      flex: 1;
+      height: 48px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background-color: var(--surface);
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      font-size: 18px;
+      color: var(--text-subtle);
+    }
+
+    .chat-composer-send {
+      height: 48px;
+      padding: 0 24px;
+      border-radius: 8px;
+      background-color: var(--brand);
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 600;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
+    /* =========================================================================
+       SCENE 4: HR GROUP INSIGHT (17.0s - 25.0s)
+       ========================================================================= */
+    .hr-dots-stage {
+      width: 1380px;
+      height: 100px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+    }
+
     .dot-anonymity-badge {
-      position: absolute;
-      top: 10px;
-      background-color: var(--brand-subtle);
-      border: 1px solid var(--brand);
-      color: var(--brand-deep);
-      border-radius: 8px;
-      padding: 8px 24px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 10px;
+      padding: 12px 26px;
       font-size: 22px;
       font-weight: 600;
-      opacity: 0;
-      transform: scale(0.95);
+      min-width: 360px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(16, 24, 40, 0.05);
+    }
+
+    .dot-anonymity-badge.is-active {
+      background-color: var(--brand-subtle);
+      border-color: var(--brand);
+      color: var(--brand-deep);
     }
 
     .hr-dashboard-frame {
-      width: 1320px;
+      width: 1380px;
       background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: 0 12px 32px rgba(16, 24, 40, 0.08);
+      border-radius: 18px;
+      box-shadow: 0 14px 36px rgba(16, 24, 40, 0.08);
       padding: 36px 44px;
       display: flex;
       flex-direction: column;
-      gap: 28px;
+      gap: 24px;
+      position: relative;
     }
 
     .hr-kpi-row {
@@ -429,15 +503,34 @@
     .hr-kpi-card {
       background-color: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 20px 24px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
     }
 
     .hr-kpi-val {
-      font-size: 38px;
+      font-size: 40px;
+      font-weight: 600;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hr-chart-section {
+      position: relative;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 40px 22px 40px;
+    }
+
+    .hr-chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      font-size: 19px;
       font-weight: 600;
       color: var(--text);
     }
@@ -446,11 +539,8 @@
       display: flex;
       align-items: flex-end;
       justify-content: space-around;
-      height: 180px;
-      padding: 16px 40px;
-      background-color: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      height: 190px;
+      padding-top: 10px;
     }
 
     .hr-bar-col {
@@ -459,13 +549,13 @@
       align-items: center;
       height: 100%;
       justify-content: flex-end;
-      width: 140px;
+      width: 150px;
       gap: 8px;
     }
 
     .hr-bar-slot {
       flex: 1;
-      width: 48px;
+      width: 56px;
       background-color: var(--bg);
       border-radius: 6px 6px 0 0;
       display: flex;
@@ -477,6 +567,28 @@
       border-radius: 6px 6px 0 0;
       transform: scaleY(0);
       transform-origin: bottom;
+    }
+
+    .hr-threshold-overlay {
+      position: absolute;
+      inset: 14px;
+      background-color: rgba(248, 250, 252, 0.92);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-muted);
+      z-index: 5;
+    }
+
+    .hr-footer-note {
+      font-size: 18px;
+      color: var(--text-subtle);
+      text-align: center;
     }
 
     /* =========================================================================
@@ -491,11 +603,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 8px 20px rgba(15, 118, 110, 0.22);
     }
 
     .close-headline {
-      font-size: 54px;
+      font-size: 56px;
       font-weight: 600;
       letter-spacing: -0.03em;
       color: var(--text);
@@ -507,12 +620,12 @@
       font-size: 28px;
       color: var(--text-muted);
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 42px;
     }
 
     .close-btn {
-      height: 64px;
-      padding: 0 44px;
+      height: 66px;
+      padding: 0 46px;
       background-color: var(--brand);
       color: #FFFFFF;
       font-size: 26px;
@@ -536,24 +649,33 @@
       <h1 class="scene-headline">Wellbeing data is scattered and hard to trust.</h1>
       <div class="before-cards-grid">
         <div class="before-card" id="beforeCard1">
-          <div class="before-card-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <div class="before-card-top">
+            <div class="before-card-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <span class="before-status-pill">Unverified privacy</span>
           </div>
           <div class="before-card-title">Paper Questionnaires</div>
           <p class="before-card-desc">Printed assessments are slow to collect and impossible to verify with true confidentiality.</p>
         </div>
 
         <div class="before-card" id="beforeCard2">
-          <div class="before-card-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="3" x2="21" y1="9"/><line x1="3" x2="21" y1="15"/><line x1="9" x2="9" y1="3" y2="21"/><line x1="15" x2="15" y1="3" y2="21"/></svg>
+          <div class="before-card-top">
+            <div class="before-card-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="3" x2="21" y1="9"/><line x1="3" x2="21" y1="15"/><line x1="9" x2="9" y1="3" y2="21"/><line x1="15" x2="15" y1="3" y2="21"/></svg>
+            </div>
+            <span class="before-status-pill danger">Unencrypted files</span>
           </div>
           <div class="before-card-title">Spreadsheets</div>
           <p class="before-card-desc">Sensitive health records sitting unencrypted in shared inboxes with no privacy partitions.</p>
         </div>
 
         <div class="before-card" id="beforeCard3">
-          <div class="before-card-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          <div class="before-card-top">
+            <div class="before-card-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </div>
+            <span class="before-status-pill">Delayed care</span>
           </div>
           <div class="before-card-title">Uncoordinated Referrals</div>
           <p class="before-card-desc">Stigma prevents employees from asking for help; referrals happen only after severe burnout.</p>
@@ -567,8 +689,8 @@
       <p class="scene-subheadline">Responses stay anonymous.</p>
       <div class="employee-checkin-frame" id="checkinCard">
         <div class="checkin-top-row">
-          <span style="font-size: 24px; font-weight: 600; color: var(--text);">Today's Check-in: PSS-10</span>
-          <span id="checkinStepLbl" style="font-size: 20px; color: var(--text-subtle);">Step 1 of 3 · 33% complete</span>
+          <span style="font-size: 26px; font-weight: 600; color: var(--text);">Today's Check-in: PSS-10</span>
+          <span id="checkinStepLbl" style="font-size: 21px; color: var(--text-subtle);">Question 10 of 10 · 90% complete</span>
         </div>
         <div class="checkin-progress-bar-bg">
           <div class="checkin-progress-bar-fill" id="checkinProgFill"></div>
@@ -578,7 +700,8 @@
         </p>
         <div class="checkin-options-row">
           <div class="checkin-option">Never</div>
-          <div class="checkin-option">Rarely</div>
+          <div class="checkin-option">Almost never</div>
+          <div class="checkin-option">Sometimes</div>
           <div class="checkin-option" id="optFairlyOften">Fairly often</div>
           <div class="checkin-option">Very often</div>
         </div>
@@ -588,14 +711,17 @@
             <span>Responses stay anonymous</span>
           </div>
           <button class="checkin-btn" id="checkinBtn">
-            <span id="checkinBtnText">Continue check-in</span>
+            <span id="checkinBtnText">Submit check-in</span>
           </button>
         </div>
+      </div>
+      <div class="instruments-strip">
+        <span>Validated screening tools: PHQ-9 · GAD-7 · PSS-10 · FAS-10 · COPSOQ-III</span>
       </div>
 
       <!-- Virtual cursor -->
       <div class="virtual-cursor" id="virtualCursor">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="#0F172A" stroke="#FFFFFF" stroke-width="1.5"><path d="m3 3 7 18 3-7 7-3L3 3z"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="#0F172A" stroke="#FFFFFF" stroke-width="1.5"><path d="m3 3 7 18 3-7 7-3L3 3z"/></svg>
       </div>
       <div class="click-ripple" id="clickRipple"></div>
     </div>
@@ -607,52 +733,56 @@
         <!-- Left Referral Queue -->
         <div class="assessor-queue-column">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 18px; font-weight: 600; color: var(--text-subtle);">REFERRAL QUEUE</span>
-            <span style="font-size: 16px; color: var(--brand); font-weight: 600;">Anonymous</span>
+            <span style="font-size: 19px; font-weight: 600; color: var(--text-subtle);">REFERRAL QUEUE</span>
+            <span style="font-size: 17px; color: var(--brand); font-weight: 600;">Anonymous</span>
           </div>
           <div class="queue-card active" id="qCard1">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span class="queue-code-title">REF-8492-K</span>
-              <span style="background-color: var(--warning-bg); color: var(--warning); padding: 4px 10px; border-radius: 4px; font-size: 14px; font-weight: 600;">Active triage</span>
+              <span style="background-color: var(--warning-bg); color: var(--warning); padding: 4px 12px; border-radius: 5px; font-size: 15px; font-weight: 600;">Active triage</span>
             </div>
-            <span style="font-size: 16px; color: var(--text-subtle);">Referred 18m ago</span>
+            <span style="font-size: 17px; color: var(--text-subtle);">Referred 18m ago</span>
           </div>
           <div class="queue-card">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span class="queue-code-title">REF-3104-M</span>
-              <span style="background-color: var(--info-bg); color: var(--info); padding: 4px 10px; border-radius: 4px; font-size: 14px; font-weight: 600;">New</span>
+              <span style="background-color: var(--info-bg); color: var(--info); padding: 4px 12px; border-radius: 5px; font-size: 15px; font-weight: 600;">New</span>
             </div>
-            <span style="font-size: 16px; color: var(--text-subtle);">Referred 2h ago</span>
+            <span style="font-size: 17px; color: var(--text-subtle);">Referred 2h ago</span>
           </div>
           <div class="queue-card">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span class="queue-code-title">REF-7721-P</span>
-              <span style="background-color: var(--success-bg); color: var(--success); padding: 4px 10px; border-radius: 4px; font-size: 14px; font-weight: 600;">Follow-up</span>
+              <span style="background-color: var(--success-bg); color: var(--success); padding: 4px 12px; border-radius: 5px; font-size: 15px; font-weight: 600;">Follow-up</span>
             </div>
-            <span style="font-size: 16px; color: var(--text-subtle);">Referred 1d ago</span>
+            <span style="font-size: 17px; color: var(--text-subtle);">Referred 1d ago</span>
           </div>
         </div>
 
-        <!-- Right Chat Panel -->
+        <!-- Right Chat Panel (Text Chat Only) -->
         <div class="assessor-chat-column">
           <div class="chat-top-header">
             <div style="display: flex; align-items: center; gap: 12px;">
               <span style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--brand);"></span>
-              <strong style="font-size: 20px; color: var(--text);">Case REF-8492-K · Secure Assessor Chat</strong>
+              <strong style="font-size: 22px; color: var(--text);">Case REF-8492-K · Secure Assessor Chat</strong>
             </div>
-            <span style="background-color: var(--bg); border: 1px solid var(--border); padding: 4px 12px; border-radius: 6px; font-size: 16px; color: var(--text-subtle);">Encrypted</span>
+            <span style="background-color: var(--bg); border: 1px solid var(--border); padding: 6px 14px; border-radius: 6px; font-size: 17px; color: var(--text-subtle);">Encrypted</span>
           </div>
           <div class="chat-bubbles-stage">
             <div class="chat-bubble-row in" id="chatMsg1">
-              <span style="font-size: 16px; font-weight: 600; margin-bottom: 4px; opacity: 0.8;">Employee (REF-8492-K)</span>
+              <span style="font-size: 17px; font-weight: 600; margin-bottom: 4px; opacity: 0.85;">Employee (REF-8492-K)</span>
               <span>Hello Doctor. Work stress has made it hard to sleep this week, and I wanted confidential advice.</span>
-              <span style="font-size: 14px; opacity: 0.6; align-self: flex-end; margin-top: 4px;">10:14 AM</span>
+              <span style="font-size: 15px; opacity: 0.65; align-self: flex-end; margin-top: 6px;">10:14 AM</span>
             </div>
             <div class="chat-bubble-row out" id="chatMsg2">
-              <span style="font-size: 16px; font-weight: 600; margin-bottom: 4px; opacity: 0.8;">Medical Assessor</span>
+              <span style="font-size: 17px; font-weight: 600; margin-bottom: 4px; opacity: 0.85;">Medical Assessor</span>
               <span>You are in a private space—your employer only sees anonymous group stats. Let's review your check-in together.</span>
-              <span style="font-size: 14px; opacity: 0.6; align-self: flex-end; margin-top: 4px;">10:17 AM</span>
+              <span style="font-size: 15px; opacity: 0.65; align-self: flex-end; margin-top: 6px;">10:17 AM</span>
             </div>
+          </div>
+          <div class="chat-composer-bar">
+            <div class="chat-composer-input">Type a confidential clinical reply...</div>
+            <div class="chat-composer-send">Send</div>
           </div>
         </div>
       </div>
@@ -661,12 +791,12 @@
     <!-- Scene 4: HR Group Insight (17.0 - 25.0s) -->
     <div class="scene" id="scene4">
       <h1 class="scene-headline">HR sees patterns, never individuals.</h1>
-      
-      <!-- Dots Gathering Metaphor (17.0s - 19.5s) -->
+
+      <!-- Dots Gathering Metaphor + Threshold Status Pill (Non-overlapping side-by-side layout) -->
       <div class="hr-dots-stage" id="hrDotsStage">
-        <canvas id="dotsGatherCanvas" width="600" height="120" style="display: block;"></canvas>
+        <canvas id="dotsGatherCanvas" width="440" height="96" style="display: block;"></canvas>
         <div class="dot-anonymity-badge" id="dotAnonymityBadge">
-          Group of 5 · Threshold Active
+          Waiting for 5 responses…
         </div>
       </div>
 
@@ -674,56 +804,71 @@
       <div class="hr-dashboard-frame" id="hrDashboardFrame">
         <div class="hr-kpi-row">
           <div class="hr-kpi-card">
-            <span style="font-size: 18px; color: var(--text-subtle);">Active check-ins</span>
-            <span class="hr-kpi-val" style="color: var(--brand);">86</span>
-            <span style="font-size: 16px; color: var(--text-muted);">78% response rate</span>
+            <span style="font-size: 19px; color: var(--text-subtle);">Active check-ins</span>
+            <span class="hr-kpi-val" id="kpiActiveVal" style="color: var(--brand);">—</span>
+            <span style="font-size: 17px; color: var(--text-muted);" id="kpiActiveHint">Hidden below N = 5</span>
           </div>
           <div class="hr-kpi-card">
-            <span style="font-size: 18px; color: var(--text-subtle);">PHQ-9 group mean</span>
-            <span class="hr-kpi-val" style="color: var(--success);">4.1</span>
-            <span style="font-size: 16px; color: var(--text-muted);">Minimal range (0-4)</span>
+            <span style="font-size: 19px; color: var(--text-subtle);">PHQ-9 group mean</span>
+            <span class="hr-kpi-val" id="kpiPhqVal" style="color: var(--success);">—</span>
+            <span style="font-size: 17px; color: var(--text-muted);" id="kpiPhqHint">Minimal range (0-4)</span>
           </div>
           <div class="hr-kpi-card">
-            <span style="font-size: 18px; color: var(--text-subtle);">GAD-7 group mean</span>
-            <span class="hr-kpi-val" style="color: var(--success);">3.8</span>
-            <span style="font-size: 16px; color: var(--text-muted);">Minimal tension</span>
+            <span style="font-size: 19px; color: var(--text-subtle);">GAD-7 group mean</span>
+            <span class="hr-kpi-val" id="kpiGadVal" style="color: var(--success);">—</span>
+            <span style="font-size: 17px; color: var(--text-muted);" id="kpiGadHint">Minimal range (0-4)</span>
           </div>
           <div class="hr-kpi-card">
-            <span style="font-size: 18px; color: var(--text-subtle);">Assessor referrals</span>
-            <span class="hr-kpi-val">5</span>
-            <span style="font-size: 16px; color: var(--text-muted);">Anonymous codes</span>
+            <span style="font-size: 19px; color: var(--text-subtle);">Assessor referrals</span>
+            <span class="hr-kpi-val" id="kpiRefVal">—</span>
+            <span style="font-size: 17px; color: var(--text-muted);">Anonymous codes</span>
           </div>
         </div>
 
-        <div class="hr-chart-bars-wrap">
-          <div class="hr-bar-col">
-            <span style="font-size: 18px; font-weight: 600;">56%</span>
-            <div class="hr-bar-slot">
-              <div class="hr-bar-fill" id="hrBar1" style="height: 56%; background-color: var(--success);"></div>
-            </div>
-            <span style="font-size: 16px; color: var(--text-subtle);">Minimal</span>
+        <div class="hr-chart-section">
+          <div class="hr-chart-header">
+            <span>Group Severity Distribution</span>
+            <span style="font-size: 17px; font-weight: 400; color: var(--text-subtle);">Sample organizational cohort</span>
           </div>
-          <div class="hr-bar-col">
-            <span style="font-size: 18px; font-weight: 600;">26%</span>
-            <div class="hr-bar-slot">
-              <div class="hr-bar-fill" id="hrBar2" style="height: 26%; background-color: var(--text-subtle);"></div>
+          <div class="hr-chart-bars-wrap">
+            <div class="hr-bar-col">
+              <span id="hrPct1" style="font-size: 20px; font-weight: 600;">—</span>
+              <div class="hr-bar-slot">
+                <div class="hr-bar-fill" id="hrBar1" style="height: 56%; background-color: var(--success);"></div>
+              </div>
+              <span style="font-size: 18px; color: var(--text-subtle);">Minimal</span>
             </div>
-            <span style="font-size: 16px; color: var(--text-subtle);">Mild</span>
-          </div>
-          <div class="hr-bar-col">
-            <span style="font-size: 18px; font-weight: 600;">13%</span>
-            <div class="hr-bar-slot">
-              <div class="hr-bar-fill" id="hrBar3" style="height: 13%; background-color: var(--warning);"></div>
+            <div class="hr-bar-col">
+              <span id="hrPct2" style="font-size: 20px; font-weight: 600;">—</span>
+              <div class="hr-bar-slot">
+                <div class="hr-bar-fill" id="hrBar2" style="height: 26%; background-color: var(--text-subtle);"></div>
+              </div>
+              <span style="font-size: 18px; color: var(--text-subtle);">Mild</span>
             </div>
-            <span style="font-size: 16px; color: var(--text-subtle);">Moderate</span>
-          </div>
-          <div class="hr-bar-col">
-            <span style="font-size: 18px; font-weight: 600;">5%</span>
-            <div class="hr-bar-slot">
-              <div class="hr-bar-fill" id="hrBar4" style="height: 5%; background-color: var(--danger);"></div>
+            <div class="hr-bar-col">
+              <span id="hrPct3" style="font-size: 20px; font-weight: 600;">—</span>
+              <div class="hr-bar-slot">
+                <div class="hr-bar-fill" id="hrBar3" style="height: 13%; background-color: var(--warning);"></div>
+              </div>
+              <span style="font-size: 18px; color: var(--text-subtle);">Moderate</span>
             </div>
-            <span style="font-size: 16px; color: var(--text-subtle);">Elevated</span>
+            <div class="hr-bar-col">
+              <span id="hrPct4" style="font-size: 20px; font-weight: 600;">—</span>
+              <div class="hr-bar-slot">
+                <div class="hr-bar-fill" id="hrBar4" style="height: 8%; background-color: var(--danger);"></div>
+              </div>
+              <span style="font-size: 18px; color: var(--text-subtle);">Elevated</span>
+            </div>
           </div>
+
+          <div class="hr-threshold-overlay" id="hrThresholdOverlay">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Individual responses hidden · Group threshold (N ≥ 5) pending</span>
+          </div>
+        </div>
+
+        <div class="hr-footer-note">
+          Anonymous by design: HR sees aggregated trends only for groups of 5 or more.
         </div>
       </div>
     </div>
@@ -731,8 +876,8 @@
     <!-- Scene 5: Close (25.0 - 30.0s) -->
     <div class="scene" id="scene5">
       <div class="close-logo-mark" id="closeLogo">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L12 12M12 12L7 7M12 12L17 7M12 12L12 22"/>
         </svg>
       </div>
       <h1 class="close-headline" id="closeHeadline">Havilah. Workplace wellbeing, measured with care.</h1>
@@ -755,24 +900,38 @@
 
     const $ = id => document.getElementById(id);
 
-    // Canvas setup for Scene 4 dots gathering
+    // Measure exact DOM centers in Scene 2 before any render transforms
+    function measureInScene(el, sceneEl) {
+      const er = el.getBoundingClientRect();
+      const sr = sceneEl.getBoundingClientRect();
+      return {
+        x: er.left - sr.left + er.width * 0.5,
+        y: er.top - sr.top + er.height * 0.55
+      };
+    }
+
+    const scene2El = $('scene2');
+    const optTarget = measureInScene($('optFairlyOften'), scene2El);
+    const btnTarget = measureInScene($('checkinBtn'), scene2El);
+    const cursorStart = { x: optTarget.x - 520, y: optTarget.y + 150 };
+
+    // Canvas setup for Scene 4 dots gathering (440x96)
     const dotsCanvas = $('dotsGatherCanvas');
     const ctx = dotsCanvas.getContext('2d');
 
-    // Deterministic dot positions
     const dotTargets = [
-      { x: 260, y: 60 },
-      { x: 285, y: 40 },
-      { x: 315, y: 45 },
-      { x: 335, y: 70 },
-      { x: 300, y: 80 }
+      { x: 185, y: 48 },
+      { x: 208, y: 30 },
+      { x: 236, y: 35 },
+      { x: 254, y: 60 },
+      { x: 220, y: 68 }
     ];
     const dotOrigins = [
-      { x: 100, y: 30 },
-      { x: 160, y: 100 },
-      { x: 440, y: 20 },
-      { x: 500, y: 90 },
-      { x: 300, y: -20 }
+      { x: 40, y: 24 },
+      { x: 96, y: 78 },
+      { x: 350, y: 20 },
+      { x: 400, y: 76 },
+      { x: 220, y: 8 }
     ];
 
     /**
@@ -784,7 +943,7 @@
       // 1. "Sample data" badge visibility (4.0s to 25.0s)
       const badge = $('sampleDataBadge');
       if (t >= 4.0 && t <= 24.8) {
-        badge.style.opacity = '1';
+        badge.style.opacity = String(Math.min(lin(t, 4.0, 4.3), 1 - lin(t, 24.5, 24.8)));
       } else {
         badge.style.opacity = '0';
       }
@@ -794,19 +953,19 @@
       // =======================================================================
       const s1 = $('scene1');
       if (t >= 0.0 && t <= 4.2) {
-        const fadeIn = easeOut(lin(t, 0.0, 0.4));
+        const fadeIn = easeOut(lin(t, 0.0, 0.35));
         const fadeOut = 1 - lin(t, 3.6, 4.0);
         s1.style.opacity = Math.min(fadeIn, fadeOut);
 
-        const driftP = easeOut(lin(t, 0.2, 1.2));
-        const fadeGrayP = lin(t, 1.8, 3.0);
-        const cardOpacity = 1 - (fadeGrayP * 0.6); // settles to 40%
+        const fadeDimP = lin(t, 2.3, 3.5);
+        const cardOpacity = 1 - (fadeDimP * 0.45);
 
         ['beforeCard1', 'beforeCard2', 'beforeCard3'].forEach((id, idx) => {
           const el = $(id);
-          const yOff = (1 - driftP) * (20 + idx * 8);
+          const staggerIn = easeOut(lin(t, 0.1 + idx * 0.14, 0.75 + idx * 0.14));
+          const yOff = (1 - staggerIn) * 24;
           el.style.transform = `translateY(${yOff}px)`;
-          el.style.opacity = cardOpacity;
+          el.style.opacity = cardOpacity * staggerIn;
         });
       } else {
         s1.style.opacity = '0';
@@ -821,8 +980,8 @@
         const fadeOut = 1 - lin(t, 9.6, 10.0);
         s2.style.opacity = Math.min(fadeIn, fadeOut);
 
-        // Check-in card assemble
-        const cardP = easeOut(lin(t, 4.1, 4.8));
+        // Check-in card assemble (finishes by t=4.8s before cursor moves)
+        const cardP = easeOut(lin(t, 4.05, 4.75));
         $('checkinCard').style.transform = `translateY(${(1 - cardP) * 16}px)`;
 
         // Option selection at t=6.5s
@@ -833,63 +992,71 @@
           opt.classList.remove('is-selected');
         }
 
-        // Progress bar fill (t=7.0 to 8.2s)
-        const progP = easeInOut(lin(t, 7.0, 8.2));
-        const currentPct = Math.round(33 + progP * 34); // 33% -> 67%
+        // Progress bar fill (t=6.9 to 7.9s: 90% -> 100%)
+        const progP = easeInOut(lin(t, 6.9, 7.9));
+        const currentPct = Math.round(90 + progP * 10);
         $('checkinProgFill').style.width = `${currentPct}%`;
-        $('checkinStepLbl').textContent = `Step ${progP > 0.5 ? 2 : 1} of 3 · ${currentPct}% complete`;
+        $('checkinStepLbl').textContent = `Question 10 of 10 · ${currentPct}% complete`;
 
-        // Submit button click at t=8.6s
+        // Submit button click at t=8.65s
         const btn = $('checkinBtn');
         const btnText = $('checkinBtnText');
-        if (t >= 8.8) {
+        if (t >= 8.75) {
           btnText.textContent = '✓ Submitted';
           btn.style.backgroundColor = 'var(--success)';
         } else {
-          btnText.textContent = 'Continue check-in';
+          btnText.textContent = 'Submit check-in';
           btn.style.backgroundColor = 'var(--brand)';
         }
 
-        // Virtual Cursor movement
+        // Virtual Cursor movement (tip offset: -4px, -4px of 32px SVG)
         const cur = $('virtualCursor');
         const ripple = $('clickRipple');
+        const tipOffsetX = -4;
+        const tipOffsetY = -4;
 
-        if (t >= 5.0 && t <= 9.4) {
-          cur.style.opacity = '1';
+        if (t >= 4.8 && t <= 9.5) {
+          const curFadeIn = lin(t, 4.8, 5.15);
+          const curFadeOut = 1 - lin(t, 9.15, 9.5);
+          cur.style.opacity = String(Math.min(curFadeIn, curFadeOut));
+
+          let cx = optTarget.x;
+          let cy = optTarget.y;
+
           if (t < 6.5) {
-            // Move cursor to "Fairly often" option
-            const cp = easeInOut(lin(t, 5.2, 6.4));
-            const startX = 400, startY = 700;
-            const targetX = 940, targetY = 570;
-            cur.style.left = `${startX + (targetX - startX) * cp}px`;
-            cur.style.top = `${startY + (targetY - startY) * cp}px`;
-          } else if (t >= 6.5 && t < 7.2) {
-            // Hold and click ripple
-            cur.style.left = '940px';
-            cur.style.top = '570px';
-            const ripP = lin(t, 6.5, 7.0);
-            ripple.style.left = '926px';
-            ripple.style.top = '556px';
-            ripple.style.opacity = `${(1 - ripP) * 0.8}`;
-            ripple.style.transform = `scale(${0.3 + ripP * 1.2})`;
-          } else if (t >= 7.2 && t < 8.6) {
-            // Move cursor to "Continue check-in" button
-            const cp2 = easeInOut(lin(t, 7.4, 8.5));
-            const startX = 940, startY = 570;
-            const targetX = 1320, targetY = 660;
-            cur.style.left = `${startX + (targetX - startX) * cp2}px`;
-            cur.style.top = `${startY + (targetY - startY) * cp2}px`;
+            // Move cursor to "Fairly often" option center
+            const cp = easeInOut(lin(t, 5.1, 6.4));
+            cx = cursorStart.x + (optTarget.x - cursorStart.x) * cp;
+            cy = cursorStart.y + (optTarget.y - cursorStart.y) * cp;
             ripple.style.opacity = '0';
-          } else if (t >= 8.6) {
-            // Click button ripple
-            cur.style.left = '1320px';
-            cur.style.top = '660px';
-            const ripP2 = lin(t, 8.6, 9.1);
-            ripple.style.left = '1306px';
-            ripple.style.top = '646px';
-            ripple.style.opacity = `${(1 - ripP2) * 0.8}`;
-            ripple.style.transform = `scale(${0.3 + ripP2 * 1.2})`;
+          } else if (t >= 6.5 && t < 7.2) {
+            // Click ripple centered on "Fairly often"
+            cx = optTarget.x;
+            cy = optTarget.y;
+            const ripP = lin(t, 6.5, 7.05);
+            ripple.style.left = `${optTarget.x - 28}px`;
+            ripple.style.top = `${optTarget.y - 28}px`;
+            ripple.style.opacity = `${(1 - ripP) * 0.85}`;
+            ripple.style.transform = `scale(${0.25 + ripP * 1.15})`;
+          } else if (t >= 7.2 && t < 8.6) {
+            // Move cursor to "Submit check-in" button center
+            const cp2 = easeInOut(lin(t, 7.3, 8.5));
+            cx = optTarget.x + (btnTarget.x - optTarget.x) * cp2;
+            cy = optTarget.y + (btnTarget.y - optTarget.y) * cp2;
+            ripple.style.opacity = '0';
+          } else {
+            // Click ripple centered on "Submit check-in"
+            cx = btnTarget.x;
+            cy = btnTarget.y;
+            const ripP2 = lin(t, 8.6, 9.15);
+            ripple.style.left = `${btnTarget.x - 28}px`;
+            ripple.style.top = `${btnTarget.y - 28}px`;
+            ripple.style.opacity = `${(1 - ripP2) * 0.85}`;
+            ripple.style.transform = `scale(${0.25 + ripP2 * 1.15})`;
           }
+
+          cur.style.left = `${cx + tipOffsetX}px`;
+          cur.style.top = `${cy + tipOffsetY}px`;
         } else {
           cur.style.opacity = '0';
           ripple.style.opacity = '0';
@@ -910,14 +1077,14 @@
         const frameP = easeOut(lin(t, 10.1, 10.8));
         $('assessorFrame').style.transform = `translateY(${(1 - frameP) * 16}px)`;
 
-        // Message 1 (Incoming from REF-8492-K, t=11.6 to 12.3s)
-        const msg1P = easeOut(lin(t, 11.6, 12.3));
+        // Message 1 (Incoming from REF-8492-K, t=11.4 to 12.1s)
+        const msg1P = easeOut(lin(t, 11.4, 12.1));
         const msg1 = $('chatMsg1');
         msg1.style.opacity = `${msg1P}`;
         msg1.style.transform = `translateY(${(1 - msg1P) * 12}px)`;
 
-        // Message 2 (Outgoing from Assessor, t=14.2 to 15.0s)
-        const msg2P = easeOut(lin(t, 14.2, 15.0));
+        // Message 2 (Outgoing from Assessor, t=13.8 to 14.6s)
+        const msg2P = easeOut(lin(t, 13.8, 14.6));
         const msg2 = $('chatMsg2');
         msg2.style.opacity = `${msg2P}`;
         msg2.style.transform = `translateY(${(1 - msg2P) * 12}px)`;
@@ -934,15 +1101,24 @@
         const fadeOut = 1 - lin(t, 24.6, 25.0);
         s4.style.opacity = Math.min(fadeIn, fadeOut);
 
-        // Dots gather animation (t=17.2 to 19.4s)
-        ctx.clearRect(0, 0, 600, 120);
-        const gatherP = easeOut(lin(t, 17.3, 19.0));
+        // Dots gather animation (t=17.2 to 18.9s)
+        ctx.clearRect(0, 0, 440, 96);
+        const gatherP = easeOut(lin(t, 17.2, 18.9));
+        const thresholdActive = t >= 19.0;
 
-        // Draw connections if gathered
+        // Draw group enclosure ring & connections once threshold reached
         if (t >= 18.8) {
           const connAlpha = lin(t, 18.8, 19.3);
-          ctx.strokeStyle = `rgba(15, 118, 110, ${connAlpha * 0.4})`;
-          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(220, 48, 42, 0, 6.28);
+          ctx.fillStyle = `rgba(15, 118, 110, ${connAlpha * 0.06})`;
+          ctx.fill();
+          ctx.strokeStyle = `rgba(15, 118, 110, ${connAlpha * 0.35})`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          ctx.strokeStyle = `rgba(15, 118, 110, ${connAlpha * 0.35})`;
+          ctx.lineWidth = 1.5;
           ctx.beginPath();
           dotTargets.forEach((p, idx) => {
             const next = dotTargets[(idx + 1) % dotTargets.length];
@@ -959,34 +1135,61 @@
           const y = origin.y + (target.y - origin.y) * gatherP;
 
           ctx.beginPath();
-          ctx.arc(x, y, 9, 0, 6.28);
-          if (t >= 19.0) {
-            ctx.fillStyle = '#0F766E'; // teal
-          } else {
-            ctx.fillStyle = '#64748B'; // slate grey
-          }
+          ctx.arc(x, y, 8.5, 0, 6.28);
+          ctx.fillStyle = thresholdActive ? '#0F766E' : '#64748B';
           ctx.fill();
           ctx.strokeStyle = '#FFFFFF';
           ctx.lineWidth = 2;
           ctx.stroke();
         });
 
-        // "Group of 5 · Threshold Active" badge lights up (t=19.0 to 19.6s)
-        const badgeP = easeOut(lin(t, 19.0, 19.6));
+        // Threshold status pill (non-overlapping sibling)
         const badgeEl = $('dotAnonymityBadge');
-        badgeEl.style.opacity = `${badgeP}`;
-        badgeEl.style.transform = `scale(${0.9 + badgeP * 0.1})`;
+        if (thresholdActive) {
+          badgeEl.classList.add('is-active');
+          badgeEl.textContent = 'Group of 5 · Threshold Active';
+        } else {
+          badgeEl.classList.remove('is-active');
+          const count = Math.min(4, Math.max(1, Math.floor(1 + gatherP * 3.2)));
+          badgeEl.textContent = `Group of ${count} · Hidden below N = 5`;
+        }
 
-        // HR Frame builds in (t=19.4 to 20.2s)
-        const frameP = easeOut(lin(t, 19.4, 20.2));
-        $('hrDashboardFrame').style.transform = `translateY(${(1 - frameP) * 16}px)`;
+        // Dashboard frame entrance
+        const frameP = easeOut(lin(t, 17.1, 17.8));
+        $('hrDashboardFrame').style.transform = `translateY(${(1 - frameP) * 14}px)`;
 
-        // Severity bars grow from baseline (t=20.2 to 21.4s)
-        const barP = easeOut(lin(t, 20.2, 21.4));
-        $('hrBar1').style.transform = `scaleY(${barP})`;
-        $('hrBar2').style.transform = `scaleY(${barP})`;
-        $('hrBar3').style.transform = `scaleY(${barP})`;
-        $('hrBar4').style.transform = `scaleY(${barP})`;
+        // Unlock transition at t=19.0s
+        const unlockP = easeOut(lin(t, 19.0, 20.4));
+        const overlayEl = $('hrThresholdOverlay');
+        overlayEl.style.opacity = String(1 - lin(t, 19.0, 19.45));
+
+        if (!thresholdActive) {
+          $('kpiActiveVal').textContent = '—';
+          $('kpiActiveHint').textContent = 'Hidden below N = 5';
+          $('kpiPhqVal').textContent = '—';
+          $('kpiGadVal').textContent = '—';
+          $('kpiRefVal').textContent = '—';
+          ['hrPct1', 'hrPct2', 'hrPct3', 'hrPct4'].forEach(id => $(id).textContent = '—');
+          ['hrBar1', 'hrBar2', 'hrBar3', 'hrBar4'].forEach(id => $(id).style.transform = 'scaleY(0)');
+        } else {
+          const kpiP = easeOut(lin(t, 19.0, 20.1));
+          $('kpiActiveVal').textContent = String(Math.round(86 * kpiP));
+          $('kpiActiveHint').textContent = '78% response rate';
+          $('kpiPhqVal').textContent = (4.1 * kpiP).toFixed(1);
+          $('kpiGadVal').textContent = (3.8 * kpiP).toFixed(1);
+          $('kpiRefVal').textContent = String(Math.round(5 * kpiP));
+
+          const barP = easeOut(lin(t, 19.3, 20.7));
+          $('hrBar1').style.transform = `scaleY(${barP})`;
+          $('hrBar2').style.transform = `scaleY(${barP})`;
+          $('hrBar3').style.transform = `scaleY(${barP})`;
+          $('hrBar4').style.transform = `scaleY(${barP})`;
+
+          $('hrPct1').textContent = `${Math.round(56 * barP)}%`;
+          $('hrPct2').textContent = `${Math.round(26 * barP)}%`;
+          $('hrPct3').textContent = `${Math.round(13 * barP)}%`;
+          $('hrPct4').textContent = `${Math.round(5 * barP)}%`;
+        }
       } else {
         s4.style.opacity = '0';
       }

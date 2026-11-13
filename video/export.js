@@ -40,6 +40,7 @@ const OUT_DIR = path.resolve(__dirname, '..', 'public', 'assets', 'video');
 const MP4_OUT = path.join(OUT_DIR, 'havilah-overview.mp4');
 const WEBM_OUT = path.join(OUT_DIR, 'havilah-overview.webm');
 const POSTER_OUT = path.join(OUT_DIR, 'havilah-overview-poster.webp');
+const POSTER_HR_OUT = path.join(OUT_DIR, 'havilah-overview-poster-hr.webp');
 const PLAYER_HTML = path.resolve(__dirname, 'player.html');
 
 if (!fs.existsSync(OUT_DIR)) {
@@ -128,15 +129,22 @@ async function buildVideo() {
   const mp4SizeMB = (mp4Stat.size / (1024 * 1024)).toFixed(2);
   console.log(`MP4 completed: ${MP4_OUT} (${mp4SizeMB} MB)`);
 
-  // 2. Extract WebP poster at t=6.5s (Employee check-in scene)
-  console.log('Generating poster webp at t=6.5s...');
-  execSync(`"${ffmpegPath}" -y -ss 00:00:06.500 -i "${MP4_OUT}" -vframes 1 -c:v libwebp -quality 92 "${POSTER_OUT}"`, { stdio: 'inherit' });
+  // 2. Extract WebP posters:
+  //    - Primary: Employee check-in with centered mid-click ripple (t=6.72s)
+  //    - Secondary: Unlocked HR Group Insight dashboard (t=21.8s)
+  console.log('Generating employee check-in poster webp at t=6.72s...');
+  execSync(`"${ffmpegPath}" -y -ss 00:00:06.720 -i "${MP4_OUT}" -vframes 1 -c:v libwebp -quality 92 "${POSTER_OUT}"`, { stdio: 'inherit' });
   const posterStat = fs.statSync(POSTER_OUT);
   console.log(`Poster completed: ${POSTER_OUT} (${(posterStat.size / 1024).toFixed(1)} KB)`);
 
-  // 3. Generate WebM (VP9)
+  console.log('Generating HR group insight poster webp at t=21.8s...');
+  execSync(`"${ffmpegPath}" -y -ss 00:00:21.800 -i "${MP4_OUT}" -vframes 1 -c:v libwebp -quality 92 "${POSTER_HR_OUT}"`, { stdio: 'inherit' });
+  const posterHrStat = fs.statSync(POSTER_HR_OUT);
+  console.log(`HR Poster completed: ${POSTER_HR_OUT} (${(posterHrStat.size / 1024).toFixed(1)} KB)`);
+
+  // 3. Generate WebM (VP9, optimized bitrate/quality)
   console.log('Generating VP9 WebM for modern browser support...');
-  execSync(`"${ffmpegPath}" -y -i "${MP4_OUT}" -c:v libvpx-vp9 -b:v 0 -crf 30 -an "${WEBM_OUT}"`, { stdio: 'inherit' });
+  execSync(`"${ffmpegPath}" -y -i "${MP4_OUT}" -c:v libvpx-vp9 -b:v 0 -crf 34 -deadline good -cpu-used 2 -row-mt 1 -an "${WEBM_OUT}"`, { stdio: 'inherit' });
   const webmStat = fs.statSync(WEBM_OUT);
   const webmSizeMB = (webmStat.size / (1024 * 1024)).toFixed(2);
   console.log(`WebM completed: ${WEBM_OUT} (${webmSizeMB} MB)`);

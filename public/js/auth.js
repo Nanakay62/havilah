@@ -83,7 +83,6 @@ const Auth = {
     }
     return data;
   },
-  },
   
   getToken: () => {
     return localStorage.getItem('havilah_token') || localStorage.getItem('token') || localStorage.getItem('session_token');

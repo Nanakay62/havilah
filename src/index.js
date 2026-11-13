@@ -101,6 +101,8 @@ export default {
       targetPath = '/register.html';
     } else if (path === '/activate') {
       targetPath = '/activate.html';
+    } else if (path === '/reset-password') {
+      targetPath = '/reset-password.html';
     } else if (path === '/') {
       targetPath = '/index.html';
     } else if (path.startsWith('/js/')) {

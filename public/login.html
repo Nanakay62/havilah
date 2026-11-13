@@ -34,7 +34,10 @@
       </div>
 
       <div class="form-field">
-        <label for="password" class="form-label">Password</label>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label for="password" class="form-label" style="margin-bottom: 0;">Password</label>
+          <a href="/reset-password.html" style="font-size: var(--text-xs); color: var(--brand); font-weight: var(--weight-medium); text-decoration: none;">Forgot password?</a>
+        </div>
         <div class="input-with-button">
           <input type="password" id="password" required class="input" placeholder="••••••••" autocomplete="current-password">
           <button type="button" id="togglePasswordBtn" class="input-action-btn" title="Toggle password visibility" aria-label="Toggle password visibility"></button>
@@ -62,6 +65,10 @@
       const urlParams = new URLSearchParams(window.location.search);
       if ((urlParams.get('registered') === 'true' || urlParams.get('activated') === 'true') && statusBox) {
         statusBox.textContent = 'Account activated successfully. Please sign in with your password.';
+        statusBox.classList.remove('hidden');
+      }
+      if (urlParams.get('reset') === 'true' && statusBox) {
+        statusBox.textContent = 'Your password has been reset. Please sign in with your new password.';
         statusBox.classList.remove('hidden');
       }
 

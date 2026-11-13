@@ -654,7 +654,7 @@ router.post('/reset-password', sensitiveRateLimiter(5), async (req, res, next) =
       password_reset_expires_at: { $gt: new Date() }
     });
 
-    if (!user) {
+    if (!user || user.status === 'deactivated') {
       return res.status(400).json({
         success: false,
         error: 'INVALID_OR_EXPIRED_TOKEN',

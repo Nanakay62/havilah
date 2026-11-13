@@ -78,6 +78,14 @@
       "destination": "/public/activate.html"
     },
     {
+      "source": "/reset-password",
+      "destination": "/public/reset-password.html"
+    },
+    {
+      "source": "/reset-password.html",
+      "destination": "/public/reset-password.html"
+    },
+    {
       "source": "/join",
       "destination": "/public/activate.html"
     },

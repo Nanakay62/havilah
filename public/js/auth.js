@@ -98,6 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const isPublicPage = currentPath.includes('login') ||
                        currentPath.includes('register') ||
                        currentPath.includes('activate') ||
+                       currentPath.includes('reset-password') ||
                        currentPath === '/' ||
                        currentPath === '/index.html';
 

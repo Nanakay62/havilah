@@ -1311,7 +1311,523 @@
   }
 }
 
-
+/* ============ GET HELP PAGE (#help, #help/request, #help/requests) ============ */
+.help-view {
+  padding: 24px 0 88px;
+}
+.help-shell {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+}
+.help-request-shell {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.help-page-head {
+  margin-bottom: 16px;
+}
+.help-page-title {
+  font-size: var(--text-xl, 24px);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  margin: 0 0 4px 0;
+}
+.help-page-subtitle {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.45;
+}
+.help-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  padding: 6px 0;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--brand);
+  cursor: pointer;
+  text-decoration: none;
+}
+.help-back-link:hover {
+  color: var(--brand-hover);
+  text-decoration: underline;
+}
+.help-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+.help-danger-card {
+  background: var(--danger-bg);
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-card);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 16px;
+}
+.help-section-heading {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+.help-section-text {
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+.help-emergency-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.help-clinic-divider {
+  border-top: 1px solid #FECACA;
+  margin-top: 16px;
+  padding-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-control);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  white-space: nowrap;
+}
+.help-btn:hover {
+  text-decoration: none;
+}
+.help-btn--danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #FFFFFF;
+}
+.help-btn--danger:hover {
+  background: #991B1B;
+  border-color: #991B1B;
+  color: #FFFFFF;
+}
+.help-btn--primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #FFFFFF;
+}
+.help-btn--primary:hover {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+  color: #FFFFFF;
+}
+.help-btn--secondary {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+.help-btn--secondary:hover {
+  background: var(--bg);
+  border-color: #CBD5E1;
+  color: var(--text);
+}
+.help-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 6px 2px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--brand);
+  cursor: pointer;
+  text-decoration: none;
+}
+.help-text-link:hover {
+  color: var(--brand-hover);
+  text-decoration: underline;
+}
+.help-quiet-link {
+  color: var(--text-muted);
+}
+.help-quiet-link:hover {
+  color: var(--text);
+}
+.help-two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.help-card--split {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+.help-card-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.help-latest-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.help-latest-row:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+}
+.help-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.help-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-control);
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+}
+.help-status-badge--pending {
+  background: var(--warning-bg);
+  border-color: #FDE68A;
+  color: var(--warning);
+}
+.help-status-badge--scheduled {
+  background: var(--info-bg);
+  border-color: #BFDBFE;
+  color: var(--info);
+}
+.help-status-badge--completed {
+  background: var(--success-bg);
+  border-color: #BBF7D0;
+  color: var(--success);
+}
+.help-workplace-section {
+  margin-bottom: 16px;
+}
+.help-workplace-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.help-workplace-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--bg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.help-accordion {
+  margin-top: 8px;
+}
+.help-accordion-item {
+  border-top: 1px solid var(--border);
+}
+.help-accordion-item:first-child {
+  border-top: none;
+}
+.help-accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.help-accordion-trigger:hover {
+  color: var(--brand);
+}
+.help-accordion-chevron {
+  flex-shrink: 0;
+  color: var(--text-subtle);
+  transition: transform 150ms ease;
+}
+.help-accordion-trigger[aria-expanded="true"] .help-accordion-chevron {
+  transform: rotate(180deg);
+}
+.help-accordion-panel {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 65ch;
+  padding: 0 0 16px 0;
+}
+.help-form-group {
+  margin-bottom: 16px;
+}
+.help-form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.help-form-control {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.help-form-control:focus {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+  border-color: var(--brand);
+}
+.help-form-control[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.help-field-error {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--danger);
+}
+.help-alert-error {
+  padding: 12px 14px;
+  background: var(--danger-bg);
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-control);
+  color: var(--danger);
+  font-size: 14px;
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+.help-consent-box {
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+.help-requests-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.help-req-row {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.help-req-row:hover {
+  background: var(--bg);
+}
+.help-req-row.is-active {
+  border-color: var(--brand);
+  background: var(--brand-subtle);
+}
+.help-thread-box {
+  min-height: 220px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.help-msg-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+  gap: 4px;
+}
+.help-msg-row--me {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.help-msg-row--peer {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+.help-msg-meta {
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+.help-msg-bubble {
+  padding: 10px 14px;
+  border-radius: var(--radius-card);
+  font-size: 14px;
+  line-height: 1.45;
+  border: 1px solid var(--border);
+  word-break: break-word;
+}
+.help-msg-bubble--me {
+  background: var(--brand-subtle);
+  border-color: #99F6E4;
+  color: var(--text);
+}
+.help-msg-bubble--peer {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+.help-nav-btn--active {
+  background: var(--brand-subtle) !important;
+  color: var(--brand-deep) !important;
+  border-color: #99F6E4 !important;
+}
+@media (max-width: 767px) {
+  .help-view {
+    padding: 12px 0 96px;
+  }
+  .help-page-head {
+    margin-bottom: 12px;
+  }
+  .help-page-title {
+    font-size: 22px;
+  }
+  .help-danger-card {
+    padding: 16px;
+  }
+  .help-card {
+    padding: 20px 16px;
+  }
+  .help-emergency-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .help-emergency-actions .help-btn--danger,
+  .help-emergency-actions .help-btn--full-mobile {
+    grid-column: 1 / -1;
+    min-height: 48px;
+    width: 100%;
+    font-size: 15px;
+    white-space: normal;
+  }
+  .help-emergency-actions .help-btn--secondary {
+    min-height: 44px;
+    width: 100%;
+    font-size: 13px;
+    line-height: 1.2;
+    padding: 4px 6px;
+    white-space: normal;
+    text-align: center;
+  }
+  .help-clinic-call-btn {
+    min-height: 48px;
+    width: 100%;
+    font-size: 15px;
+  }
+  .help-two-col {
+    grid-template-columns: 1fr;
+  }
+  .help-form-control {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .help-form-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+  .help-sticky-submit-bar {
+    position: sticky;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 0;
+    margin-top: 8px;
+    z-index: 20;
+  }
+  .help-sticky-submit-bar .help-btn--primary {
+    width: 100%;
+    min-height: 48px;
+    font-size: 15px;
+  }
+  .help-requests-grid {
+    grid-template-columns: 1fr;
+  }
+  .help-composer-sticky {
+    position: sticky;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    padding-top: 10px;
+    z-index: 15;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .help-btn,
+  .help-accordion-chevron,
+  .help-latest-row,
+  .help-req-row {
+    transition: none !important;
+  }
+}
 </style>
   <link rel="stylesheet" href="/css/tour.css">
   <script src="/js/data.js?v=1784217446485"></script>
@@ -1341,9 +1857,9 @@
     </nav>
     
     <div class="header-right" style="display: flex; align-items: center; gap: 10px;">
-      <button class="btn btn-secondary btn-sm" id="headerHelpBtn" onclick="App.openHelp()" title="Confidential Help & Active Clinical Partner Support" style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-        <span>Confidential Help</span>
+      <button class="btn btn-secondary btn-sm" id="headerHelpBtn" onclick="App.navigate('help')" title="Get confidential help and emergency contacts" style="font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line><line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line><line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line></svg>
+        <span>Get help</span>
       </button>
       <button class="icon-btn" id="searchBtn" onclick="App.openSearch()" aria-label="Search (Ctrl+K)" title="Search (Ctrl+K)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -1379,9 +1895,9 @@
           </button>
           <div class="dropdown-divider"></div>
           <div class="dropdown-section-label">Help</div>
-          <button class="dropdown-item" onclick="App.openHelp()" role="menuitem">
+          <button class="dropdown-item" onclick="App.toggleProfileDropdown(); App.navigate('help');" role="menuitem">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            Help Center
+            Get help
           </button>
           <button class="dropdown-item" onclick="App.openKeyboardShortcuts()" role="menuitem">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/></svg>
@@ -1409,7 +1925,7 @@
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
     <span>Library</span>
   </button>
-  <button class="mobile-bottom-nav-item" id="mobileNavBtnHelp" onclick="App.openHelp()" aria-label="Help">
+  <button class="mobile-bottom-nav-item" id="mobileNavBtnHelp" onclick="App.navigate('help')" aria-label="Help">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
     <span>Help</span>
   </button>
@@ -1573,13 +2089,13 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--warning);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
         <div>
           <div style="font-weight: 600; font-size: 14px; color: var(--warning);">Immediate Confidential Crisis Assistance</div>
-          <div style="font-size: 13px; color: var(--text-muted);">If you or a colleague are experiencing severe distress or thoughts of self-harm, free 24/7 support is accessible now.</div>
+          <div style="font-size: 13px; color: var(--text-muted);">If you or someone else is in distress or needs urgent support, view emergency numbers and clinical help now.</div>
         </div>
       </div>
       <div style="display: flex; gap: 8px;">
-        <button onclick="App.openLearnArticle('urgent-crisis-resources')" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+        <button onclick="App.navigate('help')" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-          <span>View crisis hotlines</span>
+          <span>Get help</span>
         </button>
       </div>
     </div>
@@ -1846,224 +2362,335 @@
   </div>
 </section>
 
-</main>
+<!-- ============ GET HELP VIEW (#help, #help/request, #help/requests) ============ -->
+<section class="view help-view" id="view-help" style="display:none;" aria-label="Get help">
+  <div class="page-container" style="max-width: 1280px; margin: 0 auto; padding: 0 16px;">
 
-<!-- ============ HELP & CRISIS SUPPORT CENTER UNIFIED MODAL ============ -->
-<div class="modal-backdrop" id="helpCenterModalBackdrop" role="dialog" aria-modal="true">
-  <div class="modal card" style="max-width: 640px; padding: 24px; border-radius: var(--radius-modal); box-shadow: var(--shadow-overlay); background: var(--surface); border: 1px solid var(--border);">
-    <div class="modal-head" style="padding-bottom: 14px; border-bottom: 1px solid var(--border);">
-      <div class="modal-head-top" style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 36px; height: 36px; border-radius: var(--radius-control); background: var(--info-bg); color: var(--info); display: flex; align-items: center; justify-content: center;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-          </div>
+    <!-- SCREEN 1: MAIN GET HELP PAGE (#help) -->
+    <div class="help-shell" id="helpScreenMain">
+      <div class="help-page-head">
+        <h1 class="help-page-title">Get help</h1>
+        <p class="help-page-subtitle">Support is confidential. Choose what fits you today.</p>
+      </div>
+
+      <!-- SECTION 1: Need help right now? (Static content rendered immediately without API calls) -->
+      <div class="help-danger-card" aria-labelledby="helpUrgentHeading">
+        <h2 class="help-section-heading" id="helpUrgentHeading">Need help right now?</h2>
+        <p class="help-section-text">If you or someone else is in immediate danger, call the emergency number.</p>
+
+        <div class="help-emergency-actions">
+          <a href="tel:112" class="help-btn help-btn--danger">Call 112</a>
+          <a href="tel:191" class="help-btn help-btn--secondary">Police 191</a>
+          <a href="tel:193" class="help-btn help-btn--secondary">Ambulance 193</a>
+          <a href="tel:192" class="help-btn help-btn--secondary">Fire 192</a>
+          <a href="tel:0800678678" class="help-btn help-btn--secondary help-btn--full-mobile">Mental Health Helpline 0800 678 678</a>
+        </div>
+
+        <div class="help-clinic-divider">
           <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text);">Confidential Clinical Help &amp; Support</h2>
-              <span class="badge badge-success">Confidential</span>
+            <div style="font-size: 15px; font-weight: 600; color: var(--text);">Clinical partner helpline: FZ Safety and Health Centre</div>
+            <div style="font-size: 14px; color: var(--text-muted); margin-top: 2px;">
+              Hours: Open every day, day and night · Email: <a href="mailto:clarke.edith@gmail.com" style="color: var(--brand); font-weight: 500;">clarke.edith@gmail.com</a>
             </div>
-            <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Privacy Protected · Clinical Provider Routing</div>
           </div>
+          <a href="tel:+233243629870" class="help-btn help-btn--secondary help-clinic-call-btn">Call +233 24 362 9870</a>
         </div>
-        <button class="modal-close" onclick="App.closeHelpCenter()" aria-label="Close" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: var(--radius-control); display: flex; align-items: center; justify-content: center;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
-      <!-- Underline Tab Navigation -->
-      <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-top: 14px;">
-        <button class="help-nav-tab active" id="btn-help-tab-1" onclick="App.switchHelpTab('privacy')" style="flex:1; padding: 8px 12px; border: none; border-bottom: 2px solid var(--brand); background: transparent; font-weight: 600; font-size: 13px; color: var(--brand); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          <span>Privacy Rules</span>
-        </button>
-        <button class="help-nav-tab" id="btn-help-tab-2" onclick="App.switchHelpTab('faq')" style="flex:1; padding: 8px 12px; border: none; border-bottom: 2px solid transparent; background: transparent; font-weight: 500; font-size: 13px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-          <span>Platform FAQ</span>
-        </button>
-        <button class="help-nav-tab" id="btn-help-tab-3" onclick="App.switchHelpTab('eap')" style="flex:1; padding: 8px 12px; border: none; border-bottom: 2px solid transparent; background: transparent; font-weight: 500; font-size: 13px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-          <span>Clinical Partner &amp; EAP</span>
-        </button>
-      </div>
-    </div>
-    
-    <div class="modal-body" style="padding-top: 18px; max-height: 65vh; overflow-y: auto;">
-      <!-- TAB 1: Privacy Guarantees -->
-      <div id="help-tab-content-privacy" class="help-tab-panel">
-        <div class="cosmic-card" style="margin-bottom: 16px;">
-          <h3 style="font-size: 0.9375rem; font-weight: 700; color: #0284c7; margin-bottom: 6px;">How Your Data is Protected</h3>
-          <p style="font-size: 0.8125rem; color: var(--cosmic-text-secondary); line-height: 1.5; margin: 0;">
-            Havilah is engineered for psychological health and safety at work. Your individual survey responses are encrypted and stored in your private employee vault.
-          </p>
-        </div>
-
-        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
-          <li class="cosmic-card" style="display: flex; gap: 12px; font-size: 0.8125rem; color: var(--cosmic-text-primary); padding: 12px;">
-            <span style="font-size: 1.1rem;">🔒</span>
-            <div><strong>Individual Responses are Vaulted:</strong> Your manager, HR team, or employer can NEVER see individual check-ins, scores, or timestamps.</div>
-          </li>
-          <li class="cosmic-card" style="display: flex; gap: 12px; font-size: 0.8125rem; color: var(--cosmic-text-primary); padding: 12px;">
-            <span style="font-size: 1.1rem;">📊</span>
-            <div><strong>N ≥ 5 Minimum Anonymity Threshold:</strong> Aggregated reports are only generated when at least 5 employees in a group complete assessments. Smaller groups are automatically merged.</div>
-          </li>
-          <li class="cosmic-card" style="display: flex; gap: 12px; font-size: 0.8125rem; color: var(--cosmic-text-primary); padding: 12px;">
-            <span style="font-size: 1.1rem;">✍️</span>
-            <div><strong>Voluntary & Non-Coercive:</strong> All check-ins are optional. Consent can be updated or revoked in your Privacy Settings at any time.</div>
-          </li>
-        </ul>
       </div>
 
-      <!-- TAB 2: Platform FAQ -->
-      <div id="help-tab-content-faq" class="help-tab-panel" style="display: none;">
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <div class="cosmic-card">
-            <h4 style="font-size: 0.875rem; font-weight: 700; color: var(--cosmic-text-primary); margin-bottom: 4px;">What is the difference between Daily Pulse and Formal Surveys?</h4>
-            <p style="font-size: 0.8125rem; color: var(--cosmic-text-secondary); margin: 0;">Daily Pulse is a 2-minute micro self-check across 5 dimensions. Formal surveys (COPSOQ III, PHQ-9, PSS-10) are validated clinical instruments unlocked by HR during scheduled assessment cycles.</p>
+      <!-- SECTIONS 2 & 3: Two-column desktop, stacked mobile -->
+      <div class="help-two-col">
+        <!-- SECTION 2: Talk to a professional -->
+        <div class="help-card help-card--split" aria-labelledby="helpConsultHeading">
+          <div>
+            <h2 class="help-section-heading" id="helpConsultHeading">Talk to a professional</h2>
+            <p class="help-section-text" style="margin-top: 8px;">Request a confidential consultation with a licensed practitioner from FZ Safety and Health Centre. Only the clinical partner sees your name and contact details. Your employer is not told.</p>
           </div>
-          <div class="cosmic-card">
-            <h4 style="font-size: 0.875rem; font-weight: 700; color: var(--cosmic-text-primary); margin-bottom: 4px;">Why are formal assessment cards locked?</h4>
-            <p style="font-size: 0.8125rem; color: var(--cosmic-text-secondary); margin: 0;">Formal surveys are unlocked by HR during specific evaluation cycles to provide targeted organizational baseline measurements.</p>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="help-card-actions">
+              <button type="button" class="help-btn help-btn--primary" onclick="App.navigate('help/request')">Request a consultation</button>
+              <a href="#help/requests" class="help-text-link" onclick="App.navigate('help/requests'); return false;">View my requests</a>
+            </div>
+            <button type="button" id="helpLatestRequestRow" class="help-latest-row" style="display:none;" onclick="App.navigate('help/requests')">
+              <span style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span class="help-mono" id="helpLatestReqCode" style="font-size: 13px; font-weight: 600; color: var(--text);">REF-XXXXXXXX</span>
+                <span class="help-status-badge" id="helpLatestReqBadge">Pending</span>
+              </span>
+              <span id="helpLatestReqUpdated" style="font-size: 13px; color: var(--text-muted);">Updated recently</span>
+            </button>
           </div>
-          <div class="cosmic-card">
-            <h4 style="font-size: 0.875rem; font-weight: 700; color: var(--cosmic-text-primary); margin-bottom: 4px;">How is my Overall Index computed?</h4>
-            <p style="font-size: 0.8125rem; color: var(--cosmic-text-secondary); margin: 0;">Your index is normalized on a 0–100 scale across Mood, Calm, Stress, Energy, and Work-Fit. Higher scores indicate optimal balance.</p>
+        </div>
+
+        <!-- SECTION 3: Report a concern -->
+        <div class="help-card help-card--split" aria-labelledby="helpReportHeading">
+          <div>
+            <h2 class="help-section-heading" id="helpReportHeading">Report a concern</h2>
+            <p class="help-section-text" style="margin-top: 8px;">Report a workplace hazard, harassment or a safety issue. Reports are anonymous.</p>
+          </div>
+          <div class="help-card-actions">
+            <button type="button" class="help-btn help-btn--secondary" onclick="window.openVaultModal()">Report a concern</button>
+            <button type="button" class="help-text-link help-quiet-link" onclick="window.openVaultTrackModal()">Track a report</button>
           </div>
         </div>
       </div>
 
-      <!-- TAB 3: Dynamic Clinical Partner & EAP -->
-      <div id="help-tab-content-eap" class="help-tab-panel" style="display: none;">
-        <div class="card" style="margin-bottom: 14px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <h3 style="font-size: 14px; font-weight: 600; color: var(--text); margin: 0;" id="helpProviderTitle">Active Clinical Partner: FZ Safety and Health</h3>
-            <span class="badge badge-success" id="helpProviderBadge">Primary Provider</span>
-          </div>
-          <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Free, 100% confidential professional counseling, occupational health consultation, and 24/7 crisis support.</p>
-        </div>
+      <!-- PHASE 2: From your workplace (hidden unless employer configured contacts) -->
+      <div class="help-card help-workplace-section" id="helpWorkplaceContactsSection" style="display:none;" aria-labelledby="helpWorkplaceHeading">
+        <h2 class="help-section-heading" id="helpWorkplaceHeading">From your workplace</h2>
+        <p class="help-section-text" style="font-size: 14px;">Provided by your employer. Contacting these numbers is not anonymous to your employer.</p>
+        <div class="help-workplace-list" id="helpWorkplaceContactsList"></div>
+      </div>
 
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);">
-            <div>
-              <div style="font-size: 14px; font-weight: 600; color: var(--text);" id="helpEapLabel">FZ Safety and Health Helpline</div>
-              <div style="font-size: 13px; color: var(--text-muted);">Direct confidential counseling &amp; advice line</div>
-              <div id="helpEapEmailRow" style="font-size: 12px; color: var(--text-subtle); margin-top: 2px; display: none;">Email: <a href="#" id="helpEapEmailLink" style="color: var(--brand); text-decoration: none;"></a></div>
-            </div>
-            <a href="tel:+233243629870" id="helpEapButton" class="btn btn-secondary btn-sm" style="font-weight: 600;">+233 24 362 9870</a>
-          </div>
-
-          <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);">
-            <div>
-              <div style="font-size: 14px; font-weight: 600; color: var(--text);">24/7 Crisis &amp; Lifeline</div>
-              <div style="font-size: 13px; color: var(--text-muted);">Call or text +233 24 362 9870 anytime for emergency support</div>
-            </div>
-            <a href="tel:+233243629870" class="btn btn-danger btn-sm" style="font-weight: 600;">Call +233 24 362 9870</a>
-          </div>
-
-          <div class="card" style="padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);">
-            <div style="font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-              <span>Request Confidential Clinical Consultation</span>
-              <span class="badge badge-info">Direct Intake</span>
-            </div>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Submit an encrypted request to connect with a licensed practitioner from <strong id="helpProviderFormName">FZ Safety and Health</strong>. Employer is never notified.</p>
-            
-            <!-- Intake Form Container -->
-            <div id="clinicalIntakeFormContainer" style="display: flex; flex-direction: column; gap: 10px;">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div>
-                  <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Employee Name *</label>
-                  <input type="text" id="consultNameInput" aria-label="Your full name" class="form-input" placeholder="Your Full Name" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
-                </div>
-                <div>
-                  <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Contact Phone / Email *</label>
-                  <input type="text" id="consultContactInput" aria-label="Contact phone number or email" class="form-input" placeholder="Phone (+233...) or Email" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
-                </div>
-              </div>
-              <div>
-                <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Consultation Topic / Reason</label>
-                <input type="text" id="consultTopicInput" aria-label="Consultation primary topic" class="form-input" placeholder="e.g. Work stress, Fatigue, Anxiety, Sleep disturbance" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
-              </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div>
-                  <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Preferred Date</label>
-                  <input type="date" id="consultDateInput" aria-label="Preferred consultation appointment date" class="form-input" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
-                </div>
-                <div>
-                  <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Preferred Time</label>
-                  <select id="consultTimeInput" aria-label="Preferred consultation appointment time" class="form-select" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text);">
-                    <option value="As soon as available">As soon as available</option>
-                    <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
-                    <option value="Afternoon (13:00 - 17:00)">Afternoon (13:00 - 17:00)</option>
-                    <option value="Evening (17:00 - 20:00)">Evening (17:00 - 20:00)</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label style="font-size: 13px; color: var(--text); font-weight: 500; display: block; margin-bottom: 4px;">Additional Notes (Optional)</label>
-                <textarea id="consultNotesInput" aria-label="Optional consultation notes or requests" class="form-textarea" rows="2" placeholder="Optional details or specific accommodations needed..." style="width: 100%; padding: 8px 12px; border-radius: var(--radius-control); border: 1px solid var(--border); font-size: 14px; background: var(--surface); color: var(--text); resize: vertical;"></textarea>
-              </div>
-              <button type="button" class="btn btn-primary" style="width: 100%; margin-top: 6px;" onclick="App.submitClinicalConsultation()">Submit Request to Clinical Partner</button>
-              <button type="button" onclick="window.openConsultTrackModal();" class="btn btn-secondary" style="width: 100%; margin-top: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <span>Track Existing Consultation &amp; Dialogue</span>
-                <span id="dashboardDoctorPresencePill" style="display:none; font-size:11px; padding:2px 8px; border-radius:99px; font-weight:600; margin-left:4px;"></span>
-              </button>
-            </div>
-
-            <!-- In-Place Submission Success & Reference Code Box -->
-            <div id="clinicalIntakeSuccessContainer" style="display: none; flex-direction: column; gap: 12px; background: #ffffff; border: 1px solid #bbf7d0; border-radius: 14px; padding: 18px; box-shadow: 0 4px 14px rgba(16,185,129,0.1);">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 36px; height: 36px; border-radius: 50%; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">✓</div>
-                <div>
-                  <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #15803d;">Request Submitted Successfully!</h4>
-                  <p style="margin: 2px 0 0; font-size: 0.75rem; color: #64748b;">Dispatched securely to your assigned practitioner.</p>
-                </div>
-              </div>
-
-              <!-- Prominent Reference Code Box -->
-              <div style="background: #f0fdf4; border: 1.5px dashed #22c55e; border-radius: 12px; padding: 14px 16px; text-align: center;">
-                <div style="font-size: 0.7rem; color: #15803d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Your Unique Reference Code</div>
-                <div id="clinicalSuccessRefCode" style="font-family: monospace; font-size: 1.5rem; font-weight: 800; color: #0f766e; letter-spacing: 1.5px; margin: 4px 0 8px;">REF-XXXXXXXX</div>
-                <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('clinicalSuccessRefCode').textContent); showToast('Copied to Clipboard', 'Reference code copied!', 'success');" style="background: #ffffff; border: 1px solid #86efac; color: #15803d; font-weight: 700; font-size: 0.75rem; padding: 5px 14px; border-radius: 6px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: inline-flex; align-items: center; gap: 4px;">
-                  <span>📋</span> <span>Copy Reference Code</span>
-                </button>
-              </div>
-
-              <p style="margin: 0; font-size: 0.75rem; color: #475569; line-height: 1.45;">
-                🔒 <strong>Zero-Knowledge Privacy:</strong> Please save this Reference Code. You can use it anytime to track appointment confirmations, join your telehealth video room, and message your practitioner directly.
-              </p>
-
-              <div style="display: flex; gap: 8px; margin-top: 4px;">
-                <button type="button" id="clinicalSuccessOpenTrackerBtn" onclick="window.openConsultTrackModal(document.getElementById('clinicalSuccessRefCode').textContent);" style="flex: 1; padding: 10px 14px; background: linear-gradient(135deg,#0d9488,#0f766e); color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 3px 10px rgba(13,148,136,0.25);">
-                  <span>🩺</span> <span>Open Consultation Tracker Now</span>
-                </button>
-                <button type="button" onclick="document.getElementById('clinicalIntakeSuccessContainer').style.display='none'; document.getElementById('clinicalIntakeFormContainer').style.display='flex';" style="padding: 10px 12px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600; font-size: 0.78rem; cursor: pointer;">
-                  New Form
-                </button>
-              </div>
+      <!-- SECTION 4: How your privacy works (Accordion, one open at a time) -->
+      <div class="help-card" aria-labelledby="helpPrivacyHeading">
+        <h2 class="help-section-heading" id="helpPrivacyHeading">How your privacy works</h2>
+        <div class="help-accordion" id="helpPrivacyAccordion">
+          <div class="help-accordion-item">
+            <button type="button" class="help-accordion-trigger" aria-expanded="false" aria-controls="help-faq-1" id="help-faq-btn-1" onclick="App.toggleHelpAccordion(this)">
+              <span>What does HR see?</span>
+              <svg class="help-accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="help-accordion-panel" id="help-faq-1" role="region" aria-labelledby="help-faq-btn-1" hidden>
+              HR only sees combined scores for a group or department when at least five people have responded. They cannot see your individual answers, personal scores, or when you submitted a check-in.
             </div>
           </div>
-          
-          <div class="card" style="padding: 16px; margin-top: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);">
-            <div style="font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-              <span>Whistleblower Vault</span>
-              <span class="badge badge-neutral">Anonymous</span>
+          <div class="help-accordion-item">
+            <button type="button" class="help-accordion-trigger" aria-expanded="false" aria-controls="help-faq-2" id="help-faq-btn-2" onclick="App.toggleHelpAccordion(this)">
+              <span>Who can see a consultation request?</span>
+              <svg class="help-accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="help-accordion-panel" id="help-faq-2" role="region" aria-labelledby="help-faq-btn-2" hidden>
+              Only the licensed practitioner at FZ Safety and Health Centre sees your name, contact details, and reason for reaching out. Your employer does not see who requested a consultation or what you discussed.
             </div>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Report workplace hazards, harassment, or safety violations. Your identity is structurally unrecoverable.</p>
-            <div style="display: flex; gap: 8px; flex-direction: column;">
-              <button onclick="window.openVaultModal()" class="btn btn-secondary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <span>Report Workplace Hazard</span>
-              </button>
-              <button onclick="window.openVaultTrackModal()" class="btn btn-ghost" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <span>Track Existing Report &amp; Thread</span>
-              </button>
+          </div>
+          <div class="help-accordion-item">
+            <button type="button" class="help-accordion-trigger" aria-expanded="false" aria-controls="help-faq-3" id="help-faq-btn-3" onclick="App.toggleHelpAccordion(this)">
+              <span>What is the difference between a daily check-in and a formal assessment?</span>
+              <svg class="help-accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="help-accordion-panel" id="help-faq-3" role="region" aria-labelledby="help-faq-btn-3" hidden>
+              A daily check-in is a quick log to help you track your own mood, calm, stress, energy, and work balance over time. A formal assessment is a structured questionnaire, such as PHQ-9, PSS-10, or COPSOQ, opened by your workplace during a scheduled survey period.
+            </div>
+          </div>
+          <div class="help-accordion-item">
+            <button type="button" class="help-accordion-trigger" aria-expanded="false" aria-controls="help-faq-4" id="help-faq-btn-4" onclick="App.toggleHelpAccordion(this)">
+              <span>Why are some assessments locked?</span>
+              <svg class="help-accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="help-accordion-panel" id="help-faq-4" role="region" aria-labelledby="help-faq-btn-4" hidden>
+              Formal assessments open only when your organization starts a scheduled survey cycle. Once you submit an assessment for that cycle, it locks until the next survey period begins.
+            </div>
+          </div>
+          <div class="help-accordion-item">
+            <button type="button" class="help-accordion-trigger" aria-expanded="false" aria-controls="help-faq-5" id="help-faq-btn-5" onclick="App.toggleHelpAccordion(this)">
+              <span>How is my overall index calculated?</span>
+              <svg class="help-accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="help-accordion-panel" id="help-faq-5" role="region" aria-labelledby="help-faq-btn-5" hidden>
+              Your overall index is a score from 0 to 100 calculated from your recent check-ins and completed assessments across mood, calm, stress, energy, and work balance. A higher score means healthier balance, while a lower score highlights areas of strain.
+            </div>
+          </div>
+          <div class="help-accordion-item">
+            <button type="button" class="help-accordion-trigger" aria-expanded="false" aria-controls="help-faq-6" id="help-faq-btn-6" onclick="App.toggleHelpAccordion(this)">
+              <span>Are check-ins optional?</span>
+              <svg class="help-accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="help-accordion-panel" id="help-faq-6" role="region" aria-labelledby="help-faq-btn-6" hidden>
+              Yes, daily check-ins are completely optional and you can use them at your own pace. Logging them simply gives you a clearer picture of your personal trends over time.
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- SCREEN 2: CONSULTATION REQUEST SCREEN (#help/request) -->
+    <div class="help-request-shell" id="helpScreenRequest" style="display:none;">
+      <a href="#help" class="help-back-link" onclick="App.navigate('help'); return false;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <span>Back to Get help</span>
+      </a>
+      <div class="help-page-head">
+        <h1 class="help-page-title">Request a consultation</h1>
+        <p class="help-page-subtitle">Send a confidential request to FZ Safety and Health Centre.</p>
+      </div>
+
+      <div class="help-card">
+        <div id="helpReqErrorSummary" class="help-alert-error" style="display:none;" role="alert" aria-live="assertive" tabindex="-1"></div>
+
+        <!-- Intake Form -->
+        <form id="helpRequestForm" novalidate onsubmit="event.preventDefault(); App.submitClinicalConsultation();">
+          <div class="help-form-group">
+            <label for="consultNameInput" class="help-form-label">Name</label>
+            <input type="text" id="consultNameInput" name="patientName" class="help-form-control" autocomplete="name" required aria-describedby="consultNameError">
+            <div id="consultNameError" class="help-field-error" style="display:none;"></div>
+          </div>
+
+          <div class="help-form-group">
+            <label for="consultContactInput" class="help-form-label">How should the clinic reach you?</label>
+            <input type="text" id="consultContactInput" name="patientContact" class="help-form-control" placeholder="Phone number or email address" required aria-describedby="consultContactError">
+            <div id="consultContactError" class="help-field-error" style="display:none;"></div>
+          </div>
+
+          <div class="help-form-group">
+            <label for="consultTopicInput" class="help-form-label">Reason (optional)</label>
+            <input type="text" id="consultTopicInput" name="topic" class="help-form-control" placeholder="For example: work stress, fatigue, sleep problems">
+          </div>
+
+          <div class="help-form-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="help-form-group">
+              <label for="consultDateInput" class="help-form-label">Preferred date</label>
+              <input type="date" id="consultDateInput" name="preferredDate" class="help-form-control">
+            </div>
+            <div class="help-form-group">
+              <label for="consultTimeInput" class="help-form-label">Preferred time</label>
+              <select id="consultTimeInput" name="preferredTime" class="help-form-control">
+                <option value="As soon as available">As soon as available</option>
+                <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
+                <option value="Afternoon (13:00 - 17:00)">Afternoon (13:00 - 17:00)</option>
+                <option value="Evening (17:00 - 20:00)">Evening (17:00 - 20:00)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="help-form-group">
+            <label for="consultNotesInput" class="help-form-label">Additional notes (optional)</label>
+            <textarea id="consultNotesInput" name="notes" rows="3" class="help-form-control" style="min-height: 88px; resize: vertical;"></textarea>
+          </div>
+
+          <div class="help-consent-box">
+            Your name and contact details go to FZ Safety and Health Centre only. Your employer is not told.
+          </div>
+
+          <div id="helpReqSubmitFailure" class="help-alert-error" style="display:none;" role="alert">
+            We couldn't send your request. Try again, or call the clinic on <a href="tel:+233243629870" style="color: var(--danger); font-weight: 600; text-decoration: underline;">+233 24 362 9870</a>.
+          </div>
+
+          <div class="help-sticky-submit-bar">
+            <button type="submit" id="helpReqSubmitBtn" class="help-btn help-btn--primary">Send request</button>
+          </div>
+        </form>
+
+        <!-- In-Place Success State -->
+        <div id="clinicalIntakeSuccessContainer" style="display:none;">
+          <h2 class="help-section-heading" style="color: var(--success); margin-bottom: 6px;">Request sent</h2>
+          <p class="help-section-text" style="margin-bottom: 16px;">Your consultation request has been sent to FZ Safety and Health Centre.</p>
+
+          <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-control); padding: 14px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <div style="font-size: 13px; color: var(--text-muted);">Reference code</div>
+              <div id="clinicalSuccessRefCode" class="help-mono" style="font-size: 20px; font-weight: 600; color: var(--text); margin-top: 2px;">REF-XXXXXXXX</div>
+            </div>
+            <button type="button" class="help-btn help-btn--secondary" onclick="navigator.clipboard.writeText(document.getElementById('clinicalSuccessRefCode').textContent); showToast('Copied', 'Reference code copied to clipboard.', 'success');">Copy code</button>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px;">What happens next</div>
+            <p class="help-section-text" style="font-size: 14px; margin-bottom: 6px;">A licensed practitioner from FZ Safety and Health Centre will review your request and respond using your preferred contact method or in your request thread.</p>
+            <p class="help-section-text" style="font-size: 14px;">Save your reference code so you can check updates and message the clinic on the requests page.</p>
+          </div>
+
+          <div class="help-card-actions">
+            <button type="button" class="help-btn help-btn--primary" onclick="App.openRequestsAfterSubmit()">View my requests</button>
+            <button type="button" class="help-btn help-btn--secondary" onclick="App.resetConsultationForm()">Send another request</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: MY REQUESTS SCREEN (#help/requests) -->
+    <div class="help-shell" id="helpScreenRequests" style="display:none;">
+      <a href="#help" class="help-back-link" onclick="App.navigate('help'); return false;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <span>Back to Get help</span>
+      </a>
+      <div class="help-page-head" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div>
+          <h1 class="help-page-title">My consultation requests</h1>
+          <p class="help-page-subtitle">Check status updates and exchange confidential messages with your practitioner.</p>
+        </div>
+        <button type="button" class="help-btn help-btn--secondary" onclick="App.navigate('help/request')">Request a consultation</button>
+      </div>
+
+      <!-- Lookup by reference code bar (for cross-device recovery) -->
+      <div class="help-card" style="padding: 16px; margin-bottom: 16px;">
+        <form onsubmit="event.preventDefault(); window.lookupConsultationReport();" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <label for="consultTrackCodeInput" style="font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap;">Find by reference code</label>
+          <input type="text" id="consultTrackCodeInput" class="help-form-control help-mono" placeholder="REF-XXXXXXXX" style="flex: 1; min-width: 180px; text-transform: uppercase;">
+          <button type="submit" id="consultTrackLookupBtn" class="help-btn help-btn--secondary">Look up</button>
+        </form>
+        <div id="consultTrackAuthErrorMsg" class="help-alert-error" style="display:none; margin-top: 10px; margin-bottom: 0;" role="alert"></div>
+      </div>
+
+      <!-- Empty state -->
+      <div class="help-card" id="helpRequestsEmptyState" style="display:none; text-align: center; padding: 32px 24px;">
+        <h2 class="help-section-heading">You have no requests yet</h2>
+        <p class="help-section-text" style="margin: 6px auto 16px; max-width: 440px;">When you submit a consultation request, your reference code, status updates, and practitioner messages appear here.</p>
+        <button type="button" class="help-btn help-btn--primary" onclick="App.navigate('help/request')">Request a consultation</button>
+      </div>
+
+      <!-- List + Detail/Thread Grid -->
+      <div class="help-requests-grid" id="helpRequestsWorkspace" style="display:none;">
+        <!-- Left: List of Requests -->
+        <div id="helpRequestsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+
+        <!-- Right: Selected Request Details & Thread -->
+        <div class="help-card" id="consultTrackDetailsSection" style="display:none; padding: 20px;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 14px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span id="consultDisplayCode" class="help-mono" style="font-size: 16px; font-weight: 600; color: var(--text);">REF-XXXXXXXX</span>
+                <span id="consultDisplayStatus" class="help-status-badge">Pending</span>
+              </div>
+              <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+                Requested on <span id="consultDisplayDate">—</span> · Preferred: <span id="consultDisplayPreferred">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Telehealth / Call Bar (Calm, token-based; shows availability only from real signal) -->
+          <div id="consultTelehealthBanner" style="display:none; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-control); padding: 12px 14px; margin-bottom: 14px; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <div style="font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span>Practitioner session</span>
+                <span id="empPeerPresencePill" class="help-status-badge" style="display:none;">Not available right now</span>
+              </div>
+              <div id="consultScheduleTimeText" style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Use voice call or video link when an appointment is scheduled.</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <button type="button" id="consultInAppCallBtn" class="help-btn help-btn--secondary" onclick="startEmployeeCall()">Call practitioner</button>
+              <a id="consultJoinMeetingBtn" href="#" target="_blank" rel="noopener noreferrer" class="help-btn help-btn--secondary" style="display:none;">Join video link</a>
+              <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); cursor: pointer;">
+                <input type="checkbox" id="empIpShieldToggle" aria-label="Route audio via relay" onchange="if(window.HavilahCall) window.HavilahCall.setIpShield(this.checked)">
+                <span>Relay audio</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Medical Certificates / Attachments -->
+          <div id="consultAttachmentsCard" style="display:none; border: 1px solid var(--border); border-radius: var(--radius-control); padding: 12px 14px; margin-bottom: 14px; flex-direction: column; gap: 8px;">
+            <div style="font-size: 14px; font-weight: 600; color: var(--text);">Clinical documents</div>
+            <div id="consultAttachmentsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+          </div>
+
+          <!-- Conversation Thread -->
+          <div style="font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px;">Messages with practitioner</div>
+          <div id="consultThreadContainer" class="help-thread-box"></div>
+
+          <div id="consultReplyError" class="help-alert-error" style="display:none; margin-top: 10px; margin-bottom: 0;" role="alert"></div>
+
+          <div class="help-composer-sticky" style="margin-top: 12px;">
+            <div style="display: flex; gap: 8px; align-items: flex-end;">
+              <textarea id="consultReplyInput" aria-label="Message to your practitioner" rows="2" class="help-form-control" placeholder="Write a confidential message to your practitioner..." style="flex: 1; min-height: 44px; resize: vertical;"></textarea>
+              <button type="button" id="consultReplyBtn" class="help-btn help-btn--primary" onclick="window.sendConsultationEmployeeReply()">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
-</div>
+</section>
+
+</main>
 
 <!-- ============ GENERIC SLIDE-OVER PANEL ============ -->
 <div class="panel-backdrop" id="genericPanelBackdrop"></div>
@@ -2437,7 +3064,7 @@ async function fetchActiveCycles() {
             <button onclick="window.openSurveyFromBanner('${cycle.survey_type}')" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;">
               Take Assessment
             </button>
-            <button onclick="window.snoozeAssessment('${cycle.survey_type}', this)" style="background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 16px;font-size:12px;cursor:pointer;transition:all 0.2s;" title="Snooze for 24 hours">
+            <button onclick="window.snoozeAssessment('${cycle.survey_type}', this)" style="background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 16px;font-size:12px;cursor:pointer;transition:all 0.2s;" title="Snooze until tomorrow">
               ⏰ Snooze
             </button>
             <button onclick="window.snoozeAssessment('${cycle.survey_type}', this)" 
@@ -2495,7 +3122,7 @@ window.snoozeAssessment = function(surveyType, btnEl) {
       banner.remove();
     }, 300);
   }
-  if (typeof showToast === 'function') showToast('Snoozed', 'Assessment reminder snoozed for 24 hours.', 'info');
+  if (typeof showToast === 'function') showToast('Snoozed', 'Assessment reminder snoozed until tomorrow.', 'info');
 };
 
 // ═══ Helper functions for worker context & instrument code normalization ═══
@@ -2828,72 +3455,56 @@ function stopVaultTrackLiveSync() {
 // Lightweight thread-only re-renderer used by live sync polling.
 // Updates only the chat bubbles and status badge without rebuilding the full
 // 2-column panel, so there is no visible flash on each 2.5s polling tick.
+function getVaultStatusConfig(status) {
+  const stKey = (status || 'submitted').toLowerCase();
+  const statusMap = {
+    submitted: { label: 'Submitted', bg: 'var(--success-bg)', color: 'var(--success)', border: '#BBF7D0' },
+    under_investigation: { label: 'Investigating', bg: 'var(--warning-bg)', color: 'var(--warning)', border: '#FDE68A' },
+    action_taken: { label: 'Action taken', bg: 'var(--info-bg)', color: 'var(--info)', border: '#BFDBFE' },
+    closed: { label: 'Closed', bg: 'var(--bg)', color: 'var(--text-muted)', border: 'var(--border)' }
+  };
+  return statusMap[stKey] || statusMap.submitted;
+}
+
+function renderVaultThreadList(threadContainer, thread) {
+  threadContainer.innerHTML = '';
+  const list = Array.isArray(thread) ? thread : [];
+  if (list.length === 0) {
+    const emptyDiv = document.createElement('div');
+    emptyDiv.style.cssText = 'color:var(--text-muted);font-size:14px;text-align:center;padding:24px 12px;';
+    emptyDiv.textContent = 'No messages in this report yet. Write a follow-up note below.';
+    threadContainer.appendChild(emptyDiv);
+    return;
+  }
+  list.forEach((msg) => {
+    const isMe = msg.sender === 'whistleblower';
+    const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const senderLabel = isMe ? 'You (Anonymous)' : 'Case Investigator';
+    const safeMsg = (msg.message || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n/g, '<br>');
+    const row = document.createElement('div');
+    row.className = 'help-msg-row ' + (isMe ? 'help-msg-row--me' : 'help-msg-row--peer');
+    row.innerHTML = `
+      <div class="help-msg-meta">${senderLabel}${timeStr ? ' · ' + timeStr : ''}</div>
+      <div class="help-msg-bubble ${isMe ? 'help-msg-bubble--me' : 'help-msg-bubble--peer'}">${safeMsg}</div>
+    `;
+    threadContainer.appendChild(row);
+  });
+  setTimeout(() => { threadContainer.scrollTop = threadContainer.scrollHeight; }, 10);
+}
+
 function renderVaultThreadOnly(report) {
   if (!report) return;
-
-  // Update status badge if it changed
   const statusEl = document.getElementById('trackDisplayStatus');
   if (statusEl) {
-    const stKey = (report.status || 'submitted').toLowerCase();
-    const statusMap = {
-      submitted: { label: 'SUBMITTED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
-      under_investigation: { label: '⏳ INVESTIGATING', bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
-      action_taken: { label: '🛡️ ACTION TAKEN', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' },
-      closed: { label: '🔒 CLOSED', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' }
-    };
-    const conf = statusMap[stKey] || statusMap['submitted'];
-    statusEl.innerHTML = `<span style="font-size:12px;">${conf.label.split(' ')[0]}</span> ${conf.label.split(' ').slice(1).join(' ')}`;
+    const conf = getVaultStatusConfig(report.status);
+    statusEl.textContent = conf.label;
     statusEl.style.background = conf.bg;
     statusEl.style.color = conf.color;
     statusEl.style.borderColor = conf.border;
   }
-
-  // Re-render only the thread container
   const threadContainer = document.getElementById('trackThreadContainer');
-  if (!threadContainer) return;
-  threadContainer.innerHTML = '';
-
-  // Date separator pill
-  const datePill = document.createElement('div');
-  datePill.style.cssText = 'align-self:center;background:#f1f5f9;color:#64748b;font-size:11px;font-weight:600;padding:4px 14px;border-radius:9999px;margin-bottom:8px;';
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  datePill.textContent = `Today, ${dateStr}`;
-  threadContainer.appendChild(datePill);
-
-  const thread = report.thread || [];
-  if (thread.length === 0) {
-    const emptyDiv = document.createElement('div');
-    emptyDiv.style.cssText = 'color:#94a3b8;font-size:13px;text-align:center;padding:24px 12px;';
-    emptyDiv.textContent = 'No messages in investigation thread yet. Use the reply box below to send secure notes.';
-    threadContainer.appendChild(emptyDiv);
-  } else {
-    thread.forEach(msg => {
-      const isMe = msg.sender === 'whistleblower';
-      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase() : '';
-      const safeMsg = (msg.message || '').replace(/</g, '&lt;');
-      const row = document.createElement('div');
-      if (isMe) {
-        row.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;align-self:flex-end;max-width:85%;gap:4px;';
-        row.innerHTML = `
-          <div style="font-size:11px;color:#64748b;font-weight:600;margin-right:44px;">You (Whistleblower) • ${timeStr}</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;">
-            <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#ffffff;border-radius:18px 18px 4px 18px;padding:12px 18px;font-size:13.5px;line-height:1.5;font-weight:500;box-shadow:0 4px 14px rgba(79,70,229,0.25);word-break:break-word;">${safeMsg}</div>
-            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 6px rgba(168,85,247,0.25);">👤</div>
-          </div>`;
-      } else {
-        const isGreen = safeMsg.toLowerCase().includes('investigat') || safeMsg.toLowerCase().includes('received') || safeMsg.toLowerCase().includes('action');
-        row.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;align-self:flex-start;max-width:85%;gap:4px;';
-        row.innerHTML = `
-          <div style="font-size:11px;color:#64748b;font-weight:600;margin-left:44px;">Case Investigator • ${timeStr}</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;">
-            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 6px rgba(99,102,241,0.25);">👤</div>
-            <div style="background:${isGreen ? '#ecfdf5' : '#f8fafc'};border:1px solid ${isGreen ? '#a7f3d0' : '#e2e8f0'};color:${isGreen ? '#064e3b' : '#0f172a'};border-radius:18px 18px 18px 4px;padding:12px 18px;font-size:13.5px;line-height:1.5;box-shadow:0 2px 6px rgba(0,0,0,0.02);word-break:break-word;font-weight:${isGreen ? '600' : '400'};">${safeMsg}</div>
-          </div>`;
-      }
-      threadContainer.appendChild(row);
-    });
-    setTimeout(() => { threadContainer.scrollTop = threadContainer.scrollHeight; }, 10);
+  if (threadContainer) {
+    renderVaultThreadList(threadContainer, report.thread);
   }
 }
 
@@ -2934,14 +3545,13 @@ window.lookupVaultReport = async function() {
   }
 
   if (!code || !pin) {
-    const msg = 'Please enter both your Tracking Code and 4-digit PIN.';
+    const msg = 'Enter both your tracking code and 4-digit PIN.';
     if (errEl) { errEl.style.display = 'block'; errEl.textContent = msg; }
-    if (typeof window.showToast === 'function') window.showToast('Validation Error', msg, 'error');
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = 'Verifying Credentials...';
+  btn.textContent = 'Checking...';
 
   try {
     const res = await apiFetch('/api/v1/whistleblower/track', {
@@ -2959,17 +3569,15 @@ window.lookupVaultReport = async function() {
       renderTrackedReportView(window.activeTrackedReport);
       startVaultTrackLiveSync();
     } else {
-      const errMsg = result.message || 'Invalid Tracking Code or PIN. Please verify and try again.';
-      if (errEl) { errEl.style.display = 'block'; errEl.textContent = '❌ ' + errMsg; }
-      if (typeof window.showToast === 'function') window.showToast('Authentication Failed', errMsg, 'error');
+      const errMsg = result.message || 'Invalid tracking code or PIN. Check your credentials and try again.';
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = errMsg; }
     }
   } catch (err) {
-    const errMsg = 'Could not reach the server. Please try again.';
-    if (errEl) { errEl.style.display = 'block'; errEl.textContent = '⚠️ ' + errMsg; }
-    if (typeof window.showToast === 'function') window.showToast('Error', errMsg, 'error');
+    const errMsg = 'Could not reach the server. Try again.';
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = errMsg; }
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Access Report & Messages';
+    btn.textContent = 'Open report';
   }
 };
 
@@ -2978,21 +3586,16 @@ function renderTrackedReportView(report) {
   document.getElementById('trackAuthSection').style.display = 'none';
   document.getElementById('trackDetailsSection').style.display = 'block';
 
-  // Date formatting e.g. 21/08/2026
-  let formattedDate = '21/08/2026';
+  let formattedDate = '—';
   if (report.createdAt) {
     const d = new Date(report.createdAt);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    formattedDate = `${day}/${month}/${year}`;
+    formattedDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   const trackingCode = report.trackingCode || '—';
   const category = report.category || 'General';
   const urgency = report.urgency || 'Standard';
 
-  // Update Top Banner
   const codeEl = document.getElementById('trackDisplayCode');
   const catEl = document.getElementById('trackDisplayCategory');
   const urgEl = document.getElementById('trackDisplayUrgency');
@@ -3003,26 +3606,18 @@ function renderTrackedReportView(report) {
   if (catEl) catEl.textContent = category;
   if (urgEl) {
     urgEl.textContent = urgency;
-    urgEl.style.color = urgency === 'Critical' ? '#dc2626' : urgency === 'Urgent' ? '#ea580c' : '#d97706';
+    urgEl.style.color = urgency === 'Critical' ? 'var(--danger)' : urgency === 'Urgent' ? 'var(--warning)' : 'var(--text)';
   }
   if (dateEl) dateEl.textContent = formattedDate;
-  
+
   if (statusEl) {
-    const stKey = (report.status || 'submitted').toLowerCase();
-    const statusMap = {
-      submitted: { label: 'SUBMITTED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
-      under_investigation: { label: '⏳ INVESTIGATING', bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
-      action_taken: { label: '🛡️ ACTION TAKEN', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' },
-      closed: { label: '🔒 CLOSED', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' }
-    };
-    const conf = statusMap[stKey] || statusMap['submitted'];
-    statusEl.innerHTML = `<span style="font-size:12px;">${conf.label.split(' ')[0]}</span> ${conf.label.split(' ').slice(1).join(' ')}`;
+    const conf = getVaultStatusConfig(report.status);
+    statusEl.textContent = conf.label;
     statusEl.style.background = conf.bg;
     statusEl.style.color = conf.color;
     statusEl.style.borderColor = conf.border;
   }
 
-  // Update Left Sidebar
   const sideCode = document.getElementById('trackSidebarCode');
   const sideDate = document.getElementById('trackSidebarDate');
   const sideCat = document.getElementById('trackSidebarCategory');
@@ -3033,64 +3628,12 @@ function renderTrackedReportView(report) {
   if (sideCat) sideCat.textContent = category;
   if (sideUrg) {
     sideUrg.textContent = urgency;
-    sideUrg.style.color = urgency === 'Critical' ? '#dc2626' : urgency === 'Urgent' ? '#ea580c' : '#d97706';
+    sideUrg.style.color = urgency === 'Critical' ? 'var(--danger)' : urgency === 'Urgent' ? 'var(--warning)' : 'var(--text)';
   }
-  
+
   const threadContainer = document.getElementById('trackThreadContainer');
-  if (!threadContainer) return;
-  threadContainer.innerHTML = '';
-
-  // Date Separator Pill
-  const datePill = document.createElement('div');
-  datePill.style.cssText = 'align-self:center;background:#f1f5f9;color:#64748b;font-size:11px;font-weight:600;padding:4px 14px;border-radius:9999px;margin-bottom:8px;';
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  datePill.textContent = `Today, ${dateStr}`;
-  threadContainer.appendChild(datePill);
-
-  const thread = report.thread || [];
-  if (thread.length === 0) {
-    const emptyDiv = document.createElement('div');
-    emptyDiv.style.cssText = 'color:#94a3b8;font-size:13px;text-align:center;padding:24px 12px;';
-    emptyDiv.textContent = 'No messages in investigation thread yet. Use the reply box below to send secure notes.';
-    threadContainer.appendChild(emptyDiv);
-  } else {
-    thread.forEach(msg => {
-      const isMe = msg.sender === 'whistleblower';
-      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase() : '';
-      const safeMsg = (msg.message || '').replace(/</g, '&lt;');
-
-      const row = document.createElement('div');
-      
-      if (isMe) {
-        // Whistleblower ("You") -> Right Aligned
-        row.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;align-self:flex-end;max-width:85%;gap:4px;';
-        row.innerHTML = `
-          <div style="font-size:11px;color:#64748b;font-weight:600;margin-right:44px;">You (Whistleblower) • ${timeStr}</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;">
-            <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#ffffff;border-radius:18px 18px 4px 18px;padding:12px 18px;font-size:13.5px;line-height:1.5;font-weight:500;box-shadow:0 4px 14px rgba(79,70,229,0.25);word-break:break-word;">
-              ${safeMsg}
-            </div>
-            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 6px rgba(168,85,247,0.25);">👤</div>
-          </div>
-        `;
-      } else {
-        // Investigator -> Left Aligned
-        const isGreen = safeMsg.toLowerCase().includes('investigat') || safeMsg.toLowerCase().includes('received') || safeMsg.toLowerCase().includes('action');
-        row.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;align-self:flex-start;max-width:85%;gap:4px;';
-        row.innerHTML = `
-          <div style="font-size:11px;color:#64748b;font-weight:600;margin-left:44px;">Case Investigator • ${timeStr}</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;">
-            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 6px rgba(99,102,241,0.25);">👤</div>
-            <div style="background:${isGreen ? '#ecfdf5' : '#f8fafc'};border:1px solid ${isGreen ? '#a7f3d0' : '#e2e8f0'};color:${isGreen ? '#064e3b' : '#0f172a'};border-radius:18px 18px 18px 4px;padding:12px 18px;font-size:13.5px;line-height:1.5;box-shadow:0 2px 6px rgba(0,0,0,0.02);word-break:break-word;font-weight:${isGreen ? '600' : '400'};">
-              ${safeMsg}
-            </div>
-          </div>
-        `;
-      }
-      threadContainer.appendChild(row);
-    });
-    setTimeout(() => { threadContainer.scrollTop = threadContainer.scrollHeight; }, 10);
+  if (threadContainer) {
+    renderVaultThreadList(threadContainer, report.thread);
   }
 }
 
@@ -3146,9 +3689,278 @@ window.sendAnonymousReply = async function() {
   }
 };
 
-// ═══ Clinical Consultation Tracking & Telehealth Dialogue ═══
+// ═══ Clinical Consultation Tracking & Help Page Data ═══
 let consultTrackPollInterval = null;
 window.activeTrackedConsultation = null;
+window.helpRequestsCache = new Map();
+
+function escapeHelpHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function getSavedConsultRefs() {
+  const seen = new Set();
+  const list = [];
+  try {
+    const raw = JSON.parse(localStorage.getItem('havilah_consult_refs') || '[]');
+    if (Array.isArray(raw)) {
+      raw.forEach((c) => {
+        const clean = String(c || '').replace(/\s+/g, '').toUpperCase();
+        if (clean && !seen.has(clean)) {
+          seen.add(clean);
+          list.push(clean);
+        }
+      });
+    }
+  } catch (e) {}
+  try {
+    const last = String(localStorage.getItem('havilah_last_consult_ref') || '').replace(/\s+/g, '').toUpperCase();
+    if (last && !seen.has(last)) {
+      seen.add(last);
+      list.unshift(last);
+    }
+  } catch (e) {}
+  return list;
+}
+
+function saveConsultRef(code) {
+  const clean = String(code || '').replace(/\s+/g, '').toUpperCase();
+  if (!clean) return;
+  try {
+    const existing = getSavedConsultRefs().filter((c) => c !== clean);
+    existing.unshift(clean);
+    localStorage.setItem('havilah_consult_refs', JSON.stringify(existing.slice(0, 25)));
+    localStorage.setItem('havilah_last_consult_ref', clean);
+  } catch (e) {}
+}
+
+function getConsultStatusConfig(status) {
+  const st = String(status || 'pending').toLowerCase();
+  const map = {
+    pending: { label: 'Pending review', cls: 'help-status-badge help-status-badge--pending' },
+    scheduled: { label: 'Scheduled', cls: 'help-status-badge help-status-badge--scheduled' },
+    completed: { label: 'Completed', cls: 'help-status-badge help-status-badge--completed' },
+    cancelled: { label: 'Cancelled', cls: 'help-status-badge' }
+  };
+  return map[st] || map.pending;
+}
+
+function formatHelpShortDate(iso) {
+  if (!iso) return 'Recently';
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return 'Recently';
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch (e) {
+    return 'Recently';
+  }
+}
+
+function renderWorkplaceSupportContacts(contacts) {
+  const section = document.getElementById('helpWorkplaceContactsSection');
+  const list = document.getElementById('helpWorkplaceContactsList');
+  if (!section || !list) return;
+  if (!Array.isArray(contacts) || contacts.length === 0) {
+    section.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  list.innerHTML = contacts.map((item) => {
+    const label = escapeHelpHtml(item.label || '');
+    const phone = String(item.phone || '').trim();
+    const email = String(item.email || '').trim();
+    const hours = escapeHelpHtml(item.hours || '');
+    const telHref = phone ? ('tel:' + phone.replace(/[^\d+]/g, '')) : '';
+    const mailHref = email ? ('mailto:' + encodeURIComponent(email).replace(/%40/g, '@')) : '';
+    return `
+      <div class="help-workplace-item">
+        <div style="font-size: 14px; font-weight: 600; color: var(--text);">${label}</div>
+        <div style="font-size: 13px; color: var(--text-muted);">${hours || 'Workplace contact'}</div>
+        <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 6px;">
+          ${phone ? `
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 13px; color: var(--text); word-break: break-all;">${escapeHelpHtml(phone)}</span>
+              <a href="${escapeHelpHtml(telHref)}" class="help-btn help-btn--secondary" style="min-height: 34px; padding: 6px 12px; font-size: 13px;">Call</a>
+            </div>
+          ` : ''}
+          ${email ? `
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 13px; color: var(--text); word-break: break-all;">${escapeHelpHtml(email)}</span>
+              <a href="${escapeHelpHtml(mailHref)}" class="help-btn help-btn--secondary" style="min-height: 34px; padding: 6px 12px; font-size: 13px;">Email</a>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  section.style.display = 'block';
+}
+
+async function loadWorkplaceSupportContacts() {
+  try {
+    const resp = await apiFetch('/api/v1/tenant/support-contacts');
+    if (!resp || !resp.ok) return;
+    const payload = await resp.json();
+    if (payload && payload.success && Array.isArray(payload.data)) {
+      renderWorkplaceSupportContacts(payload.data);
+    }
+  } catch (e) {
+    // Keep section hidden on failure; emergency numbers remain static and visible
+  }
+}
+
+function getConsultLastUpdated(data) {
+  if (!data) return null;
+  const thread = Array.isArray(data.thread) ? data.thread : [];
+  if (thread.length > 0 && thread[thread.length - 1].timestamp) {
+    return thread[thread.length - 1].timestamp;
+  }
+  return data.updatedAt || data.scheduledAt || data.createdAt || null;
+}
+
+function renderHelpLatestRow(items) {
+  const row = document.getElementById('helpLatestRequestRow');
+  const codeEl = document.getElementById('helpLatestReqCode');
+  const badgeEl = document.getElementById('helpLatestReqBadge');
+  const updatedEl = document.getElementById('helpLatestReqUpdated');
+  if (!row || !items || items.length === 0) {
+    if (row) row.style.display = 'none';
+    return;
+  }
+  const latest = items[0];
+  const conf = getConsultStatusConfig(latest.status);
+  if (codeEl) codeEl.textContent = latest.referenceCode || '';
+  if (badgeEl) {
+    badgeEl.className = conf.cls;
+    badgeEl.textContent = conf.label;
+  }
+  if (updatedEl) {
+    const ts = getConsultLastUpdated(latest);
+    updatedEl.textContent = ts ? ('Updated ' + formatHelpShortDate(ts)) : 'Updated recently';
+  }
+  row.style.display = 'flex';
+}
+
+function renderHelpRequestsList(items) {
+  const listEl = document.getElementById('helpRequestsList');
+  const emptyEl = document.getElementById('helpRequestsEmptyState');
+  const workspaceEl = document.getElementById('helpRequestsWorkspace');
+  if (!listEl || !emptyEl || !workspaceEl) return;
+
+  if (!items || items.length === 0) {
+    emptyEl.style.display = 'block';
+    workspaceEl.style.display = 'none';
+    listEl.innerHTML = '';
+    return;
+  }
+
+  emptyEl.style.display = 'none';
+  workspaceEl.style.display = 'grid';
+  const activeCode = window.activeTrackedConsultation?.referenceCode || '';
+  listEl.innerHTML = items.map((item) => {
+    const code = item.referenceCode || '';
+    const conf = getConsultStatusConfig(item.status);
+    const isActive = code && code === activeCode;
+    const thread = Array.isArray(item.thread) ? item.thread : [];
+    const lastTs = thread.length > 0 ? thread[thread.length - 1].timestamp : null;
+    const dateLabel = item.createdAt ? formatHelpShortDate(item.createdAt) : '—';
+    const msgLabel = lastTs ? ('Last message ' + formatHelpShortDate(lastTs)) : 'No messages yet';
+    return `
+      <button type="button" class="help-req-row${isActive ? ' is-active' : ''}" onclick="window.lookupConsultationReport('${escapeHelpHtml(code)}')">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
+          <span class="help-mono" style="font-size: 14px; font-weight: 600; color: var(--text);">${escapeHelpHtml(code)}</span>
+          <span class="${conf.cls}">${conf.label}</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--text-muted); width: 100%;">
+          <span>${escapeHelpHtml(dateLabel)}</span>
+          <span>${escapeHelpHtml(msgLabel)}</span>
+        </div>
+      </button>
+    `;
+  }).join('');
+}
+
+async function loadHelpSummaryAndRequests(preferredCode) {
+  const refSet = new Set(getSavedConsultRefs());
+  try {
+    const activeResp = await apiFetch('/api/v1/referrals/my-active');
+    if (activeResp && activeResp.ok) {
+      const activeJson = await activeResp.json();
+      if (activeJson && activeJson.success && activeJson.data && activeJson.data.referenceCode) {
+        const c = String(activeJson.data.referenceCode).toUpperCase();
+        saveConsultRef(c);
+        refSet.add(c);
+        window.helpRequestsCache.set(c, activeJson.data);
+      }
+    }
+  } catch (e) {}
+
+  if (preferredCode) {
+    const cleanPref = String(preferredCode).replace(/\s+/g, '').toUpperCase();
+    if (cleanPref) refSet.add(cleanPref);
+  }
+
+  const refs = Array.from(refSet);
+  const fetched = await Promise.all(refs.slice(0, 12).map(async (code) => {
+    try {
+      const r = await fetch(`/api/v1/referrals/status/${encodeURIComponent(code)}`);
+      const j = await r.json();
+      if (j && j.success && j.data) {
+        window.helpRequestsCache.set(code, j.data);
+        return j.data;
+      }
+    } catch (e) {}
+    return window.helpRequestsCache.get(code) || null;
+  }));
+
+  const validItems = fetched.filter(Boolean);
+  validItems.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+  renderHelpLatestRow(validItems);
+  renderHelpRequestsList(validItems);
+
+  const reqScreen = document.getElementById('helpScreenRequests');
+  const isRequestsVisible = reqScreen && reqScreen.style.display !== 'none';
+  if (isRequestsVisible && validItems.length > 0) {
+    const targetCode = (preferredCode && String(preferredCode).toUpperCase())
+      || (window.activeTrackedConsultation && window.activeTrackedConsultation.referenceCode)
+      || validItems[0].referenceCode;
+    const match = validItems.find((i) => i.referenceCode === targetCode) || validItems[0];
+    if (match) {
+      window.activeTrackedConsultation = match;
+      renderConsultationTrackView(match);
+      renderHelpRequestsList(validItems);
+      initEmployeeCallForRef(match.referenceCode);
+      startConsultTrackLiveSync();
+    }
+  }
+}
+
+function initEmployeeCallForRef(code) {
+  if (!window.HavilahCall || !code) return;
+  try {
+    const shieldCheck = document.getElementById('empIpShieldToggle');
+    if (shieldCheck) shieldCheck.checked = window.HavilahCall.ipShield;
+
+    window.HavilahCall.init({
+      role: 'employee',
+      referenceCode: code,
+      token: localStorage.getItem('token') || localStorage.getItem('havilah_token') || '',
+      onPeerPresence: (isOnline) => {
+        const pill = document.getElementById('empPeerPresencePill');
+        if (pill) {
+          pill.style.display = 'inline-flex';
+          pill.textContent = isOnline ? 'Practitioner available' : 'Not available right now';
+          pill.className = isOnline ? 'help-status-badge help-status-badge--completed' : 'help-status-badge';
+        }
+      }
+    });
+  } catch (e) {}
+}
 
 function startConsultTrackLiveSync() {
   stopConsultTrackLiveSync();
@@ -3157,14 +3969,15 @@ function startConsultTrackLiveSync() {
       stopConsultTrackLiveSync();
       return;
     }
-    const modal = document.getElementById('consultTrackModalBackdrop');
-    const isHidden = !modal || modal.style.display === 'none' || getComputedStyle(modal).display === 'none';
-    if (isHidden) {
+    const helpView = document.getElementById('view-help');
+    const reqScreen = document.getElementById('helpScreenRequests');
+    const isVisible = helpView && reqScreen
+      && helpView.style.display !== 'none'
+      && reqScreen.style.display !== 'none';
+    if (!isVisible) {
       stopConsultTrackLiveSync();
       return;
     }
-    const authSection = document.getElementById('consultTrackAuthSection');
-    if (authSection && authSection.style.display !== 'none') return;
 
     try {
       const res = await fetch(`/api/v1/referrals/status/${encodeURIComponent(window.activeTrackedConsultation.referenceCode)}`);
@@ -3181,7 +3994,10 @@ function startConsultTrackLiveSync() {
 
         if (newLen !== prevLen || newStatus !== prevStatus || newLink !== prevLink || newSched !== prevSched) {
           window.activeTrackedConsultation = result.data;
+          window.helpRequestsCache.set(result.data.referenceCode, result.data);
           renderConsultationThreadOnly(result.data);
+          renderHelpRequestsList(Array.from(window.helpRequestsCache.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)));
+          renderHelpLatestRow(Array.from(window.helpRequestsCache.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)));
         }
       }
     } catch (e) {
@@ -3198,31 +4014,8 @@ function stopConsultTrackLiveSync() {
 }
 
 window.openConsultTrackModal = function(prefilledCode) {
-  stopConsultTrackLiveSync();
-  try {
-    if (typeof closeModal === 'function') closeModal('helpCenterModalBackdrop');
-  } catch (e) {}
-
-  const modal = document.getElementById('consultTrackModalBackdrop');
-  if (!modal) return;
-
-  modal.style.display = 'flex';
-  const savedRef = prefilledCode || localStorage.getItem('havilah_last_consult_ref') || '';
-  const inputEl = document.getElementById('consultTrackCodeInput');
-  const errEl = document.getElementById('consultTrackAuthErrorMsg');
-  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
-
-  if (savedRef) {
-    if (inputEl) inputEl.value = savedRef;
-    window.lookupConsultationReport(savedRef);
-  } else {
-    document.getElementById('consultTrackAuthSection').style.display = 'block';
-    document.getElementById('consultTrackDetailsSection').style.display = 'none';
-    if (inputEl) {
-      setTimeout(() => {
-        inputEl.focus();
-      }, 100);
-    }
+  if (typeof window.App !== 'undefined' && typeof window.App.navigate === 'function') {
+    window.App.navigate('help/requests', prefilledCode);
   }
 };
 
@@ -3231,8 +4024,6 @@ window.closeConsultTrackModal = function() {
   if (window.HavilahCall && window.HavilahCall.activeCallState !== 'idle') {
     window.HavilahCall.hangup();
   }
-  const modal = document.getElementById('consultTrackModalBackdrop');
-  if (modal) modal.style.display = 'none';
 };
 
 window.startEmployeeCall = function() {
@@ -3244,7 +4035,7 @@ window.startEmployeeCall = function() {
     }
     return;
   }
-  const savedRef = (window.activeTrackedConsultation?.referenceCode || localStorage.getItem('havilah_last_consult_ref') || '').trim().toUpperCase();
+  const savedRef = (window.activeTrackedConsultation?.referenceCode || getSavedConsultRefs()[0] || '').trim().toUpperCase();
   const name = window.activeTrackedConsultation?.patientName || localStorage.getItem('wf_user_name') || 'Employee';
 
   if (!window.activeTrackedConsultation) {
@@ -3257,9 +4048,7 @@ window.startEmployeeCall = function() {
       return;
     }
     if (typeof window.showToast === 'function') {
-      window.showToast('Reference Code Required', 'Please enter your Reference Code before starting a call.', 'warning');
-    } else {
-      alert('Please enter your Reference Code before starting a call.');
+      window.showToast('Reference Code Required', 'Select or look up a request before starting a call.', 'warning');
     }
     return;
   }
@@ -3267,7 +4056,8 @@ window.startEmployeeCall = function() {
 };
 
 window.lookupConsultationReport = async function(codeOverride) {
-  const rawCode = codeOverride || document.getElementById('consultTrackCodeInput')?.value || '';
+  const inputEl = document.getElementById('consultTrackCodeInput');
+  const rawCode = codeOverride || inputEl?.value || '';
   const btn = document.getElementById('consultTrackLookupBtn');
   const errEl = document.getElementById('consultTrackAuthErrorMsg');
 
@@ -3279,13 +4069,12 @@ window.lookupConsultationReport = async function(codeOverride) {
   }
 
   if (!code) {
-    const msg = 'Please enter your Reference Code (e.g. REF-E0A58FEF).';
+    const msg = 'Enter your reference code (for example, REF-E0A58FEF).';
     if (errEl) { errEl.style.display = 'block'; errEl.textContent = msg; }
-    if (typeof window.showToast === 'function') window.showToast('Validation Error', msg, 'error');
     return;
   }
 
-  if (btn) { btn.disabled = true; btn.textContent = 'Verifying Reference Code...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Looking up...'; }
 
   try {
     const res = await fetch(`/api/v1/referrals/status/${encodeURIComponent(code)}`);
@@ -3293,57 +4082,36 @@ window.lookupConsultationReport = async function(codeOverride) {
 
     if (result.success && result.data) {
       window.activeTrackedConsultation = result.data;
-      localStorage.setItem('havilah_last_consult_ref', code);
+      saveConsultRef(code);
+      window.helpRequestsCache.set(code, result.data);
+      if (inputEl && !codeOverride) inputEl.value = '';
+      const allItems = Array.from(window.helpRequestsCache.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      renderHelpLatestRow(allItems);
+      renderHelpRequestsList(allItems);
       renderConsultationTrackView(result.data);
       startConsultTrackLiveSync();
-
-      // Initialize WebRTC Call Client for Employee
-      if (window.HavilahCall) {
-        const shieldCheck = document.getElementById('empIpShieldToggle');
-        if (shieldCheck) shieldCheck.checked = window.HavilahCall.ipShield;
-
-        window.HavilahCall.init({
-          role: 'employee',
-          referenceCode: code,
-          token: localStorage.getItem('token') || localStorage.getItem('havilah_token') || '',
-          onPeerPresence: (isOnline) => {
-            const pill = document.getElementById('empPeerPresencePill');
-            if (pill) {
-              pill.textContent = isOnline ? 'Doctor Online' : 'Doctor Offline';
-              pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
-              pill.style.color = isOnline ? '#15803d' : '#475569';
-            }
-          }
-        });
-      }
+      initEmployeeCallForRef(code);
     } else {
-      const errMsg = result.message || 'No consultation request found matching this reference code.';
-      document.getElementById('consultTrackAuthSection').style.display = 'block';
-      document.getElementById('consultTrackDetailsSection').style.display = 'none';
-      if (errEl) { errEl.style.display = 'block'; errEl.textContent = '❌ ' + errMsg; }
-      if (typeof window.showToast === 'function') window.showToast('Not Found', errMsg, 'error');
+      const errMsg = result.message || 'No consultation request found matching that reference code.';
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = errMsg; }
     }
   } catch (err) {
-    const errMsg = 'Could not connect to the server. Please try again.';
-    if (errEl) { errEl.style.display = 'block'; errEl.textContent = '⚠️ ' + errMsg; }
-    if (typeof window.showToast === 'function') window.showToast('Connection Error', errMsg, 'error');
+    const errMsg = 'Could not connect to the server. Try again.';
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = errMsg; }
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Track Consultation Status'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Look up'; }
   }
 };
 
 function renderConsultationTrackView(data) {
   if (!data) return;
 
-  document.getElementById('consultTrackAuthSection').style.display = 'none';
-  document.getElementById('consultTrackDetailsSection').style.display = 'block';
-
-  // Format date submitted
-  let dateStr = '—';
-  if (data.createdAt) {
-    const d = new Date(data.createdAt);
-    dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
+  const emptyEl = document.getElementById('helpRequestsEmptyState');
+  const workspaceEl = document.getElementById('helpRequestsWorkspace');
+  const detailsEl = document.getElementById('consultTrackDetailsSection');
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (workspaceEl) workspaceEl.style.display = 'grid';
+  if (detailsEl) detailsEl.style.display = 'block';
 
   const codeEl = document.getElementById('consultDisplayCode');
   const dateEl = document.getElementById('consultDisplayDate');
@@ -3351,37 +4119,26 @@ function renderConsultationTrackView(data) {
   const statusEl = document.getElementById('consultDisplayStatus');
 
   if (codeEl) codeEl.textContent = data.referenceCode;
-  if (dateEl) dateEl.textContent = dateStr;
+  if (dateEl) dateEl.textContent = formatHelpShortDate(data.createdAt);
   if (prefEl) prefEl.textContent = data.preferredTime || 'As soon as available';
 
-  // Status mapping
   if (statusEl) {
-    const st = (data.status || 'pending').toLowerCase();
-    const map = {
-      pending: { label: '⏳ PENDING REVIEW', bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
-      scheduled: { label: '📅 SCHEDULED', bg: '#e0e7ff', color: '#4338ca', border: '#c7d2fe' },
-      completed: { label: '✓ COMPLETED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
-      cancelled: { label: '✕ CANCELLED', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
-    };
-    const conf = map[st] || map.pending;
+    const conf = getConsultStatusConfig(data.status);
+    statusEl.className = conf.cls;
     statusEl.textContent = conf.label;
-    statusEl.style.background = conf.bg;
-    statusEl.style.color = conf.color;
-    statusEl.style.borderColor = conf.border;
   }
 
-  // Telehealth Video Meeting Banner
   const telehealthBanner = document.getElementById('consultTelehealthBanner');
   const joinBtn = document.getElementById('consultJoinMeetingBtn');
   const schedTimeText = document.getElementById('consultScheduleTimeText');
-  const schedInfoCard = document.getElementById('consultScheduleInfoCard');
-  const schedInfoText = document.getElementById('consultScheduleInfoText');
 
   let formattedSched = '';
   if (data.scheduledAt) {
     const d = new Date(data.scheduledAt);
-    formattedSched = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) +
-      ' at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (!isNaN(d.getTime())) {
+      formattedSched = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) +
+        ' at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
   }
 
   if (data.meetingLink || data.status === 'scheduled' || data.status === 'pending') {
@@ -3396,16 +4153,13 @@ function renderConsultationTrackView(data) {
     }
     if (schedTimeText) {
       schedTimeText.textContent = formattedSched
-        ? `Appointment confirmed for ${formattedSched}. You can initiate or receive encrypted calls here.`
-        : 'Encrypted consultation room active. You can speak directly with your doctor.';
+        ? `Appointment scheduled for ${formattedSched}. You can join here or start a voice call.`
+        : 'You can start a voice call or exchange messages with your practitioner below.';
     }
-    if (schedInfoCard) schedInfoCard.style.display = 'none';
-  } else {
-    if (telehealthBanner) telehealthBanner.style.display = 'none';
-    if (schedInfoCard) schedInfoCard.style.display = 'none';
+  } else if (telehealthBanner) {
+    telehealthBanner.style.display = 'none';
   }
 
-  // Render attachments & conversation thread
   renderConsultationAttachments(data.attachments || []);
   renderConsultationThreadOnly(data);
 }
@@ -3422,38 +4176,22 @@ function renderConsultationAttachments(attachments) {
   }
 
   card.style.display = 'flex';
-  list.innerHTML = attachments.map(att => {
-    const isPdf = (att.fileName || '').toLowerCase().endsWith('.pdf') || (att.fileType || '').includes('pdf');
-    const isImg = /\.(png|jpg|jpeg|webp)$/i.test(att.fileName || '') || (att.fileType || '').includes('image');
-    const icon = isPdf ? '📕' : isImg ? '🖼️' : '📝';
-    
-    const sizeStr = att.fileSize 
-      ? (att.fileSize > 1024 * 1024 
-          ? `${(att.fileSize / (1024 * 1024)).toFixed(1)} MB` 
+  list.innerHTML = attachments.map((att) => {
+    const sizeStr = att.fileSize
+      ? (att.fileSize > 1024 * 1024
+          ? `${(att.fileSize / (1024 * 1024)).toFixed(1)} MB`
           : `${Math.round(att.fileSize / 1024)} KB`)
       : '';
-
-    const timeStr = att.uploadedAt 
-      ? new Date(att.uploadedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-      : 'Recently';
+    const timeStr = att.uploadedAt ? formatHelpShortDate(att.uploadedAt) : 'Recently';
+    const fileName = escapeHelpHtml(att.fileName || 'Medical_Certificate');
 
     return `
-      <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;border:1px solid #e2e8f0;padding:12px 16px;border-radius:12px;gap:12px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
-          <div style="font-size:24px;flex-shrink:0;">${icon}</div>
-          <div style="min-width:0;flex:1;">
-            <div style="font-weight:700;color:#0f172a;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${att.fileName || 'Medical_Certificate'}</div>
-            <div style="font-size:11.5px;color:#64748b;margin-top:2px;">
-              <span>Issued ${timeStr}</span>
-              ${sizeStr ? `<span> · ${sizeStr}</span>` : ''}
-              <span style="color:#059669;font-weight:600;"> · Verified</span>
-            </div>
-          </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:1px solid var(--border);padding:12px;border-radius:var(--radius-control);gap:12px;flex-wrap:wrap;">
+        <div style="min-width:0;flex:1;">
+          <div style="font-weight:600;color:var(--text);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fileName}</div>
+          <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">Issued ${escapeHelpHtml(timeStr)}${sizeStr ? ' · ' + escapeHelpHtml(sizeStr) : ''}</div>
         </div>
-        <a href="${att.fileData}" download="${att.fileName}" style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#ffffff;text-decoration:none;padding:8px 16px;border-radius:10px;font-weight:700;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(13,148,136,0.25);transition:all 0.2s;">
-          <span>📥</span>
-          <span>Download Certificate</span>
-        </a>
+        <a href="${att.fileData}" download="${fileName}" class="help-btn help-btn--secondary" style="min-height:36px;padding:6px 12px;font-size:13px;">Download</a>
       </div>
     `;
   }).join('');
@@ -3462,31 +4200,23 @@ function renderConsultationAttachments(attachments) {
 function renderConsultationThreadOnly(data) {
   if (!data) return;
 
-  // Status, attachments & telehealth banner sync
   renderConsultationAttachments(data.attachments || []);
 
-  // Status & telehealth banner sync
   const statusEl = document.getElementById('consultDisplayStatus');
   if (statusEl) {
-    const st = (data.status || 'pending').toLowerCase();
-    const map = {
-      pending: { label: '⏳ PENDING REVIEW', bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
-      scheduled: { label: '📅 SCHEDULED', bg: '#e0e7ff', color: '#4338ca', border: '#c7d2fe' },
-      completed: { label: '✓ COMPLETED', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
-      cancelled: { label: '✕ CANCELLED', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
-    };
-    const conf = map[st] || map.pending;
+    const conf = getConsultStatusConfig(data.status);
+    statusEl.className = conf.cls;
     statusEl.textContent = conf.label;
-    statusEl.style.background = conf.bg;
-    statusEl.style.color = conf.color;
-    statusEl.style.borderColor = conf.border;
   }
 
   const telehealthBanner = document.getElementById('consultTelehealthBanner');
   const joinBtn = document.getElementById('consultJoinMeetingBtn');
   if (data.meetingLink) {
     if (telehealthBanner) telehealthBanner.style.display = 'flex';
-    if (joinBtn) joinBtn.href = data.meetingLink;
+    if (joinBtn) {
+      joinBtn.style.display = 'inline-flex';
+      joinBtn.href = data.meetingLink;
+    }
   }
 
   const container = document.getElementById('consultThreadContainer');
@@ -3494,50 +4224,34 @@ function renderConsultationThreadOnly(data) {
 
   const thread = data.thread || [];
   if (thread.length === 0) {
-    container.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:24px 12px;">No messages in consultation dialogue yet. Send a note below to communicate with your practitioner.</div>';
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:24px 12px;">No messages yet. Write a confidential note below to message your practitioner.</div>';
     return;
   }
 
-  container.innerHTML = thread.map(msg => {
+  container.innerHTML = thread.map((msg) => {
     const isEmployee = msg.sender === 'employee';
     const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-    const safeMsg = (msg.message || '').replace(/</g, '&lt;');
+    const senderLabel = isEmployee ? 'You' : escapeHelpHtml(msg.senderName || 'Practitioner');
+    const safeMsg = escapeHelpHtml(msg.message || '').replace(/\n/g, '<br>');
 
-    if (isEmployee) {
-      // Employee ("You") -> Right aligned, Indigo
-      return `
-        <div style="display:flex;flex-direction:column;align-items:flex-end;align-self:flex-end;max-width:85%;gap:3px;margin-bottom:6px;">
-          <div style="font-size:11px;color:#64748b;font-weight:600;margin-right:40px;">You (Employee) • ${timeStr}</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;">
-            <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#ffffff;border-radius:18px 18px 4px 18px;padding:10px 16px;font-size:13.5px;line-height:1.45;box-shadow:0 3px 10px rgba(13,148,136,0.2);word-break:break-word;">
-              ${safeMsg}
-            </div>
-            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#14b8a6,#0d9488);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;box-shadow:0 2px 6px rgba(13,148,136,0.25);">👤</div>
-          </div>
-        </div>
-      `;
-    } else {
-      // Medical Assessor -> Left aligned, Teal/Slate
-      return `
-        <div style="display:flex;flex-direction:column;align-items:flex-start;align-self:flex-start;max-width:85%;gap:3px;margin-bottom:6px;">
-          <div style="font-size:11px;color:#64748b;font-weight:600;margin-left:40px;">${(msg.senderName || 'Medical Assessor').replace(/</g, '&lt;')} • ${timeStr}</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;">
-            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;box-shadow:0 2px 6px rgba(99,102,241,0.25);">🩺</div>
-            <div style="background:#ffffff;border:1px solid #e2e8f0;color:#0f172a;border-radius:18px 18px 18px 4px;padding:10px 16px;font-size:13.5px;line-height:1.45;box-shadow:0 2px 6px rgba(0,0,0,0.03);word-break:break-word;">
-              ${safeMsg}
-            </div>
-          </div>
-        </div>
-      `;
-    }
+    return `
+      <div class="help-msg-row ${isEmployee ? 'help-msg-row--me' : 'help-msg-row--peer'}">
+        <div class="help-msg-meta">${senderLabel}${timeStr ? ' · ' + escapeHelpHtml(timeStr) : ''}</div>
+        <div class="help-msg-bubble ${isEmployee ? 'help-msg-bubble--me' : 'help-msg-bubble--peer'}">${safeMsg}</div>
+      </div>
+    `;
   }).join('');
 
   setTimeout(() => { container.scrollTop = container.scrollHeight; }, 10);
 }
 
 window.sendConsultationEmployeeReply = async function() {
+  const errEl = document.getElementById('consultReplyError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
   if (!window.activeTrackedConsultation || !window.activeTrackedConsultation.referenceCode) {
-    if (typeof window.showToast === 'function') window.showToast('Session Expired', 'Please enter your Reference Code to send replies.', 'error');
+    const msg = 'Select or look up a consultation request before sending a message.';
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = msg; }
     return;
   }
 
@@ -3547,7 +4261,9 @@ window.sendConsultationEmployeeReply = async function() {
   const btn = document.getElementById('consultReplyBtn');
 
   if (!message) {
-    if (typeof window.showToast === 'function') window.showToast('Validation Error', 'Please type a message before sending.', 'warning');
+    const msg = 'Write a message before sending.';
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = msg; }
+    if (inputEl) inputEl.focus();
     return;
   }
 
@@ -3564,18 +4280,18 @@ window.sendConsultationEmployeeReply = async function() {
     if (result.success && result.thread) {
       if (inputEl) inputEl.value = '';
       window.activeTrackedConsultation.thread = result.thread;
+      window.helpRequestsCache.set(code, window.activeTrackedConsultation);
       renderConsultationThreadOnly(window.activeTrackedConsultation);
-      if (typeof window.showToast === 'function') {
-        window.showToast('Message Sent', 'Your message has been dispatched to your practitioner.', 'success');
-      }
+      renderHelpRequestsList(Array.from(window.helpRequestsCache.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)));
     } else {
-      const errMsg = result.message || 'Failed to send message.';
-      if (typeof window.showToast === 'function') window.showToast('Error', errMsg, 'error');
+      const errMsg = result.message || 'Your message could not be sent. Try again.';
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = errMsg; }
     }
   } catch (err) {
-    if (typeof window.showToast === 'function') window.showToast('Connection Error', 'Could not reach server.', 'error');
+    const errMsg = 'Could not reach the server. Your message was not sent.';
+    if (errEl) { errEl.style.display = 'block'; errEl.textContent = errMsg; }
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<span>Send</span>'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Send'; }
     if (inputEl) inputEl.focus();
   }
 };
@@ -3676,10 +4392,103 @@ const App = (() => {
   function openModal(id) { document.getElementById(id).classList.add('show'); }
   function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
-  function navigate(view) {
+  function prefillHelpConsultationForm() {
+    try {
+      let userMeta = {};
+      try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || localStorage.getItem('wf_user') || '{}'); } catch (e) {}
+      const storedName = state.user?.name || state.user?.full_name || localStorage.getItem('wf_user_name') || userMeta.name || userMeta.full_name || '';
+      const storedEmail = state.user?.email || localStorage.getItem('wf_user_email') || userMeta.email || '';
+      const storedPhone = state.user?.phone || userMeta.phone || '';
+      const nameInput = document.getElementById('consultNameInput');
+      const contactInput = document.getElementById('consultContactInput');
+      const dateInput = document.getElementById('consultDateInput');
+      if (nameInput && !nameInput.value && storedName) nameInput.value = storedName;
+      if (contactInput && !contactInput.value && (storedPhone || storedEmail)) {
+        contactInput.value = storedPhone || storedEmail;
+      }
+      if (dateInput && !dateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.min = today;
+        dateInput.value = today;
+      }
+      if ((!storedName || (!storedPhone && !storedEmail)) && typeof apiFetch === 'function') {
+        apiFetch('/api/v1/auth/me').then((r) => r && r.ok ? r.json() : null).then((me) => {
+          const u = me && (me.user || me.data || me);
+          if (!u) return;
+          if (nameInput && !nameInput.value && (u.name || u.full_name)) nameInput.value = u.name || u.full_name;
+          if (contactInput && !contactInput.value && (u.phone || u.email)) contactInput.value = u.phone || u.email;
+        }).catch(() => {});
+      }
+    } catch (e) {}
+  }
+
+  function showHelpSubScreen(subScreen, extraParam) {
+    const mainEl = document.getElementById('helpScreenMain');
+    const reqEl = document.getElementById('helpScreenRequest');
+    const listEl = document.getElementById('helpScreenRequests');
+    if (mainEl) mainEl.style.display = subScreen === 'main' ? 'block' : 'none';
+    if (reqEl) reqEl.style.display = subScreen === 'request' ? 'block' : 'none';
+    if (listEl) listEl.style.display = subScreen === 'requests' ? 'block' : 'none';
+
+    if (subScreen !== 'requests' && typeof stopConsultTrackLiveSync === 'function') {
+      stopConsultTrackLiveSync();
+    }
+    if (subScreen === 'main') {
+      if (typeof loadWorkplaceSupportContacts === 'function') loadWorkplaceSupportContacts();
+      if (typeof loadHelpSummaryAndRequests === 'function') loadHelpSummaryAndRequests();
+    } else if (subScreen === 'request') {
+      const formEl = document.getElementById('helpRequestForm');
+      const successEl = document.getElementById('clinicalIntakeSuccessContainer');
+      const summaryErr = document.getElementById('helpReqErrorSummary');
+      const submitErr = document.getElementById('helpReqSubmitFailure');
+      if (formEl && successEl && successEl.style.display !== 'block') {
+        formEl.style.display = 'block';
+      }
+      if (summaryErr) summaryErr.style.display = 'none';
+      if (submitErr) submitErr.style.display = 'none';
+      prefillHelpConsultationForm();
+    } else if (subScreen === 'requests') {
+      if (typeof loadHelpSummaryAndRequests === 'function') loadHelpSummaryAndRequests(extraParam);
+    }
+  }
+
+  function navigate(view, extraParam, fromHash) {
     if (!view || view === 'landing') {
       view = 'employee';
     }
+    if (view === 'help' || view === 'help/request' || view === 'help/requests') {
+      state.currentView = view;
+      document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
+      const helpView = document.getElementById('view-help');
+      if (helpView) helpView.style.display = 'block';
+
+      const navWellness = document.getElementById('navBtnWellness');
+      const navLearn = document.getElementById('navBtnLearn');
+      const mNavWellness = document.getElementById('mobileNavBtnWellness');
+      const mNavLearn = document.getElementById('mobileNavBtnLearn');
+      const hHelpBtn = document.getElementById('headerHelpBtn');
+      const mNavHelp = document.getElementById('mobileNavBtnHelp');
+      if (navWellness) navWellness.classList.remove('active');
+      if (navLearn) navLearn.classList.remove('active');
+      if (mNavWellness) mNavWellness.classList.remove('active');
+      if (mNavLearn) mNavLearn.classList.remove('active');
+      if (hHelpBtn) hHelpBtn.classList.add('help-nav-btn--active');
+      if (mNavHelp) mNavHelp.classList.add('active');
+
+      const sub = view === 'help/request' ? 'request' : (view === 'help/requests' ? 'requests' : 'main');
+      showHelpSubScreen(sub, extraParam);
+
+      if (!fromHash) {
+        const targetHash = '#' + view;
+        if (window.location.hash !== targetHash) {
+          history.replaceState(null, '', targetHash);
+        }
+      }
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      return;
+    }
+
+    if (typeof stopConsultTrackLiveSync === 'function') stopConsultTrackLiveSync();
     state.currentView = view;
     document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
     const target = document.getElementById('view-' + view) || document.getElementById('view-employee');
@@ -3689,13 +4498,18 @@ const App = (() => {
     const navLearn = document.getElementById('navBtnLearn');
     const mNavWellness = document.getElementById('mobileNavBtnWellness');
     const mNavLearn = document.getElementById('mobileNavBtnLearn');
+    const hHelpBtn = document.getElementById('headerHelpBtn');
+    const mNavHelp = document.getElementById('mobileNavBtnHelp');
+    if (hHelpBtn) hHelpBtn.classList.remove('help-nav-btn--active');
+    if (mNavHelp) mNavHelp.classList.remove('active');
+
     if (view === 'learn') {
       if (navWellness) navWellness.classList.remove('active');
       if (navLearn) navLearn.classList.add('active');
       if (mNavWellness) mNavWellness.classList.remove('active');
       if (mNavLearn) mNavLearn.classList.add('active');
       loadLearnHub();
-      if (window.location.hash.startsWith('#settings')) {
+      if (window.location.hash.startsWith('#settings') || window.location.hash.startsWith('#help')) {
         history.replaceState(null, '', '#learn');
       }
     } else if (view === 'settings') {
@@ -3708,7 +4522,7 @@ const App = (() => {
       if (navLearn) navLearn.classList.remove('active');
       if (mNavWellness) mNavWellness.classList.add('active');
       if (mNavLearn) mNavLearn.classList.remove('active');
-      if (window.location.hash.startsWith('#settings')) {
+      if (window.location.hash.startsWith('#settings') || window.location.hash.startsWith('#help')) {
         history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     }
@@ -4291,7 +5105,7 @@ const App = (() => {
             <span class="cosmic-pill rose">Low Score Trigger</span>
           </div>
           <p style="font-size: 0.8125rem; color: #cbd5e1; margin-bottom: 12px; line-height: 1.5;">Your score indicates elevated pressure on the ${dimLabel} area. We strongly encourage you to speak with our registered medical assessor, <strong>${providerName}</strong> (024 362 9870), for a free, 100% private consultation.</p>
-          <button class="cosmic-pill success" style="cursor: pointer; padding: 8px 16px; font-weight: 700; font-size: 0.8125rem;" onclick="App.closeSurvey(); App.openContact();">Contact Dr. Edith Clarke</button>
+          <button class="cosmic-pill success" style="cursor: pointer; padding: 8px 16px; font-weight: 700; font-size: 0.8125rem;" onclick="App.closeSurvey(); App.navigate('help/request');">Contact Dr. Edith Clarke</button>
         </div>
       `;
     }
@@ -5246,16 +6060,16 @@ const App = (() => {
             onPeerPresence: (isOnline) => {
               const pill = document.getElementById('empPeerPresencePill');
               if (pill) {
-                pill.textContent = isOnline ? 'Doctor Online' : 'Doctor Offline';
-                pill.style.background = isOnline ? '#dcfce7' : '#e2e8f0';
-                pill.style.color = isOnline ? '#15803d' : '#475569';
+                pill.style.display = 'inline-flex';
+                pill.textContent = isOnline ? 'Practitioner available' : 'Not available right now';
+                pill.className = isOnline ? 'help-status-badge help-status-badge--completed' : 'help-status-badge';
               }
               const dashPill = document.getElementById('dashboardDoctorPresencePill');
               if (dashPill) {
-                dashPill.style.display = 'inline-block';
-                dashPill.textContent = isOnline ? 'Doctor Online' : 'Doctor Offline';
-                dashPill.style.background = isOnline ? '#dcfce7' : '#f1f5f9';
-                dashPill.style.color = isOnline ? '#15803d' : '#64748b';
+                dashPill.style.display = 'inline-flex';
+                dashPill.textContent = isOnline ? 'Practitioner available' : 'Not available right now';
+                dashPill.style.background = isOnline ? 'var(--success-bg)' : 'var(--bg)';
+                dashPill.style.color = isOnline ? 'var(--success)' : 'var(--text-muted)';
               }
             }
           });
@@ -5278,6 +6092,7 @@ const App = (() => {
     fetchActiveCycles();
     fetchWorkerCompletedStatus();
     initAvailabilityStream();
+    if (typeof loadHelpSummaryAndRequests === 'function') loadHelpSummaryAndRequests();
 
     setupSettingsKeyboardNav();
     window.addEventListener('hashchange', handleHashRoute);
@@ -5287,7 +6102,7 @@ const App = (() => {
       }
     });
 
-    if (window.location.hash && window.location.hash.startsWith('#settings')) {
+    if (window.location.hash && (window.location.hash.startsWith('#settings') || window.location.hash.startsWith('#help') || window.location.hash.startsWith('#learn'))) {
       handleHashRoute();
     }
   });
@@ -6137,8 +6952,8 @@ const App = (() => {
   function handleHashRoute() {
     const rawHash = (window.location.hash || '').replace(/^#\/?/, '').trim();
     if (!rawHash) {
-      if (state.currentView === 'settings') {
-        navigate('employee');
+      if (state.currentView === 'settings' || String(state.currentView || '').startsWith('help')) {
+        navigate('employee', null, true);
       }
       return;
     }
@@ -6146,8 +6961,19 @@ const App = (() => {
     const rootRoute = parts[0];
     const subRoute = parts[1] || '';
 
+    if (rootRoute === 'help') {
+      if (subRoute === 'request') {
+        navigate('help/request', null, true);
+      } else if (subRoute === 'requests') {
+        navigate('help/requests', parts[2] || null, true);
+      } else {
+        navigate('help', null, true);
+      }
+      return;
+    }
+
     if (rootRoute === 'settings') {
-      navigate('settings');
+      navigate('settings', null, true);
       populateSettingsProfile();
       loadNotificationPreferences();
 
@@ -6175,9 +7001,9 @@ const App = (() => {
         applyActiveSettingsSection(subRoute || 'profile', false);
       }
     } else if (rootRoute === 'learn') {
-      navigate('learn');
+      navigate('learn', null, true);
     } else if (rootRoute === 'employee' || rootRoute === 'wellness') {
-      navigate('employee');
+      navigate('employee', null, true);
     }
   }
 
@@ -6253,6 +7079,7 @@ const App = (() => {
       if (resp.ok && json.success) {
         const refCode = json.reference_code || (json.data && json.data.referenceCode) || 'CONFIRMED';
         localStorage.setItem('havilah_last_consult_ref', refCode);
+        if (typeof saveConsultRef === 'function' && refCode !== 'CONFIRMED') saveConsultRef(refCode);
         if (statusEl) {
           statusEl.style.display = 'block';
           statusEl.style.color = '#bbf7d0';
@@ -6329,120 +7156,167 @@ const App = (() => {
       showToast('Export Complete', 'Your check-in history has been exported as JSON.', 'success');
     },
     openHelp: () => {
-      openModal('helpCenterModalBackdrop');
-      // Pre-fill consultation form with stored user credentials and default schedule
-      try {
-        let userMeta = {};
-        try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || localStorage.getItem('wf_user') || '{}'); } catch(e) {}
-        const storedName = localStorage.getItem('wf_user_name') || userMeta.name || userMeta.full_name || state.user?.name || '';
-        const storedEmail = localStorage.getItem('wf_user_email') || userMeta.email || state.user?.email || '';
-        const nameInput = document.getElementById('consultNameInput');
-        const contactInput = document.getElementById('consultContactInput');
-        const dateInput = document.getElementById('consultDateInput');
-        if (nameInput && !nameInput.value && storedName) nameInput.value = storedName;
-        if (contactInput && !contactInput.value && storedEmail) contactInput.value = storedEmail;
-        if (dateInput && !dateInput.value) {
-          const today = new Date().toISOString().split('T')[0];
-          dateInput.min = today;
-          dateInput.value = today;
-        }
-      } catch(e) {}
+      navigate('help');
     },
-    openContact: () => { App.openHelp(); App.switchHelpTab('eap'); },
+    openContact: () => {
+      navigate('help/request');
+    },
+    toggleHelpAccordion: (triggerBtn) => {
+      if (!triggerBtn) return;
+      const accordion = document.getElementById('helpPrivacyAccordion');
+      const isExpanded = triggerBtn.getAttribute('aria-expanded') === 'true';
+      if (accordion) {
+        accordion.querySelectorAll('.help-accordion-trigger').forEach((btn) => {
+          btn.setAttribute('aria-expanded', 'false');
+          const pId = btn.getAttribute('aria-controls');
+          if (pId) {
+            const p = document.getElementById(pId);
+            if (p) p.hidden = true;
+          }
+        });
+      }
+      if (!isExpanded) {
+        triggerBtn.setAttribute('aria-expanded', 'true');
+        const panelId = triggerBtn.getAttribute('aria-controls');
+        if (panelId) {
+          const panel = document.getElementById(panelId);
+          if (panel) panel.hidden = false;
+        }
+      }
+    },
+    openRequestsAfterSubmit: () => {
+      const codeEl = document.getElementById('clinicalSuccessRefCode');
+      const code = codeEl ? codeEl.textContent.trim() : '';
+      App.resetConsultationForm(true);
+      navigate('help/requests', code);
+    },
+    resetConsultationForm: (preserveInputs) => {
+      const formEl = document.getElementById('helpRequestForm');
+      const successEl = document.getElementById('clinicalIntakeSuccessContainer');
+      const summaryErr = document.getElementById('helpReqErrorSummary');
+      const submitErr = document.getElementById('helpReqSubmitFailure');
+      if (successEl) successEl.style.display = 'none';
+      if (formEl) formEl.style.display = 'block';
+      if (summaryErr) summaryErr.style.display = 'none';
+      if (submitErr) submitErr.style.display = 'none';
+      if (!preserveInputs) {
+        if (document.getElementById('consultTopicInput')) document.getElementById('consultTopicInput').value = '';
+        if (document.getElementById('consultNotesInput')) document.getElementById('consultNotesInput').value = '';
+        prefillHelpConsultationForm();
+      }
+    },
     submitClinicalConsultation: async () => {
+      const nameInput = document.getElementById('consultNameInput');
+      const contactInput = document.getElementById('consultContactInput');
+      const nameErrEl = document.getElementById('consultNameError');
+      const contactErrEl = document.getElementById('consultContactError');
+      const summaryErr = document.getElementById('helpReqErrorSummary');
+      const submitFailure = document.getElementById('helpReqSubmitFailure');
+      const submitBtn = document.getElementById('helpReqSubmitBtn');
+
+      if (nameErrEl) { nameErrEl.style.display = 'none'; nameErrEl.textContent = ''; }
+      if (contactErrEl) { contactErrEl.style.display = 'none'; contactErrEl.textContent = ''; }
+      if (nameInput) nameInput.removeAttribute('aria-invalid');
+      if (contactInput) contactInput.removeAttribute('aria-invalid');
+      if (summaryErr) { summaryErr.style.display = 'none'; summaryErr.textContent = ''; }
+      if (submitFailure) submitFailure.style.display = 'none';
+
+      const nameVal = nameInput?.value.trim() || '';
+      const contactVal = contactInput?.value.trim() || '';
+      const topicVal = document.getElementById('consultTopicInput')?.value.trim() || '';
+      const dateVal = document.getElementById('consultDateInput')?.value.trim() || '';
+      const timeVal = document.getElementById('consultTimeInput')?.value.trim() || 'As soon as available';
+      const notesVal = document.getElementById('consultNotesInput')?.value.trim() || '';
+
+      const errors = [];
+      if (!nameVal) {
+        const msg = 'Enter your name.';
+        if (nameErrEl) { nameErrEl.textContent = msg; nameErrEl.style.display = 'block'; }
+        if (nameInput) nameInput.setAttribute('aria-invalid', 'true');
+        errors.push({ el: nameInput, msg });
+      }
+      if (!contactVal) {
+        const msg = 'Enter a phone number or email address so the clinic can reach you.';
+        if (contactErrEl) { contactErrEl.textContent = msg; contactErrEl.style.display = 'block'; }
+        if (contactInput) contactInput.setAttribute('aria-invalid', 'true');
+        errors.push({ el: contactInput, msg });
+      }
+      if (errors.length > 0) {
+        if (summaryErr) {
+          summaryErr.textContent = 'Check the following: ' + errors.map(e => e.msg).join(' ');
+          summaryErr.style.display = 'block';
+          summaryErr.focus();
+        } else if (errors[0].el) {
+          errors[0].el.focus();
+        }
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+      }
+
       try {
-        const nameVal = document.getElementById('consultNameInput')?.value.trim();
-        const contactVal = document.getElementById('consultContactInput')?.value.trim();
-        const topicVal = document.getElementById('consultTopicInput')?.value.trim();
-        const dateVal = document.getElementById('consultDateInput')?.value.trim() || '';
-        const timeVal = document.getElementById('consultTimeInput')?.value.trim() || 'As soon as available';
-        const notesVal = document.getElementById('consultNotesInput')?.value.trim() || '';
-
         let userMeta = {};
-        try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || localStorage.getItem('wf_user') || '{}'); } catch(e) {}
+        try { userMeta = JSON.parse(localStorage.getItem('havilah_user') || localStorage.getItem('wf_user') || '{}'); } catch (e) {}
 
-        const storedName = localStorage.getItem('wf_user_name') || '';
-        const storedEmail = localStorage.getItem('wf_user_email') || '';
-        const patientName = nameVal || storedName || userMeta.name || userMeta.full_name || state.user?.name || 'Not provided';
-        const patientContact = contactVal || storedEmail || userMeta.email || state.user?.email || 'Not provided';
-        // Extract department name
         const departmentName = state.user?.department || state.user?.department_name || userMeta.department_name || userMeta.department || 'General Staff';
         const topic = topicVal || 'General Clinical Consultation Intake Request';
-        const preferredDate = dateVal;
-        const preferredTime = timeVal;
-        const notes = notesVal;
 
-        if (!nameVal && !storedName && !contactVal && !storedEmail) {
-          showToast('Contact Required', 'Please provide your name and a phone number or email for the practitioner to reach you.', 'warning');
-          return;
-        }
-
-        // Single clean non-redundant payload
         const formData = {
-          patientName,
-          patientContact,
+          patientName: nameVal,
+          patientContact: contactVal,
           departmentName,
           topic,
-          preferredDate,
-          preferredTime,
-          notes
+          preferredDate: dateVal,
+          preferredTime: timeVal,
+          notes: notesVal
         };
 
         const resp = await apiFetch('/api/v1/referrals/occupational-health', {
           method: 'POST',
           body: JSON.stringify(formData)
         });
-        
+
         let result = {};
         try {
           result = await resp.json();
         } catch (parseErr) {
-          result = { success: false, message: `Server error (${resp.status}): ${resp.statusText || 'Unable to process referral.'}` };
+          result = { success: false };
         }
 
-        if (result.success) {
+        if (resp.ok && result.success) {
           const refCode = result.reference_code || result.referenceCode || (result.data && result.data.referenceCode) || '';
-          if (refCode) {
+          if (refCode && typeof saveConsultRef === 'function') {
+            saveConsultRef(refCode);
+          } else if (refCode) {
             localStorage.setItem('havilah_last_consult_ref', refCode);
           }
-          
-          // Display the in-place prominent reference code card
+
           const codeEl = document.getElementById('clinicalSuccessRefCode');
           if (codeEl) codeEl.textContent = refCode;
 
-          const formContainer = document.getElementById('clinicalIntakeFormContainer');
+          const formEl = document.getElementById('helpRequestForm');
           const successContainer = document.getElementById('clinicalIntakeSuccessContainer');
-          if (formContainer && successContainer) {
-            formContainer.style.display = 'none';
-            successContainer.style.display = 'flex';
+          if (formEl && successContainer) {
+            formEl.style.display = 'none';
+            successContainer.style.display = 'block';
           }
 
-          showToast('Referral Submitted', `Confidential intake submitted to FZ Safety & Health. Reference: ${refCode}`, 'success');
           if (document.getElementById('consultTopicInput')) document.getElementById('consultTopicInput').value = '';
           if (document.getElementById('consultNotesInput')) document.getElementById('consultNotesInput').value = '';
+          if (typeof loadHelpSummaryAndRequests === 'function') loadHelpSummaryAndRequests();
         } else {
-          showToast('Submission Failed', result.message || 'Please try calling +233 24 362 9870 directly.', 'error');
+          if (submitFailure) submitFailure.style.display = 'block';
         }
       } catch (err) {
-        showToast('Connection Error', 'Could not reach the server. Please call +233 24 362 9870 directly.', 'error');
-      }
-    },
-    closeHelpCenter: () => { closeModal('helpCenterModalBackdrop'); },
-    switchHelpTab: (tabName) => {
-      document.querySelectorAll('.help-tab-panel').forEach(el => el.style.display = 'none');
-      const target = document.getElementById('help-tab-content-' + tabName);
-      if (target) target.style.display = 'block';
-
-      document.querySelectorAll('.help-nav-tab').forEach(btn => {
-        btn.style.background = 'transparent';
-        btn.style.color = 'var(--text-3)';
-        btn.style.boxShadow = 'none';
-      });
-      const activeBtn = document.getElementById('btn-help-tab-' + (tabName === 'privacy' ? '1' : tabName === 'faq' ? '2' : '3'));
-      if (activeBtn) {
-        activeBtn.style.background = 'var(--bg-elev)';
-        activeBtn.style.color = 'var(--text-1)';
-        activeBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+        if (submitFailure) submitFailure.style.display = 'block';
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Send request';
+        }
       }
     },
     openKeyboardShortcuts: () => {},
@@ -6583,39 +7457,20 @@ const App = (() => {
       openModal('genericPanelBackdrop');
       document.getElementById('genericPanel').classList.add('open');
     },
-    openContact: () => {
-      const titleEl = document.getElementById('genericPanelTitle');
-      const bodyEl = document.getElementById('genericPanelBody');
-      titleEl.innerText = 'Contact & Support';
-      const eapEmail = (window.companyConfig && window.companyConfig.eap_contact_email) || null;
-      const emailLine = eapEmail ? `<li><strong>${eapEmail}</strong>: Organization wellness support.</li>` : '';
-      bodyEl.innerHTML = `
-        <h3>Support Triage Lines</h3>
-        <p>For assistance, please contact your organization's wellness administrator or crisis support:</p>
-        <ul>
-          ${emailLine}
-          <li><strong>Crisis Helpline</strong>: Toll-free 24/7 confidential crisis line.</li>
-        </ul>
-        <h3>Response Window Assurances</h3>
-        <p>Our support engineering team typically responds to enterprise dashboard tickets within 24 operational business hours.</p>
-      `;
-      openModal('genericPanelBackdrop');
-      document.getElementById('genericPanel').classList.add('open');
-    },
     openStatus: () => {
       const titleEl = document.getElementById('genericPanelTitle');
       const bodyEl = document.getElementById('genericPanelBody');
       titleEl.innerText = 'Platform System Status';
       bodyEl.innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:12px;margin-bottom:16px;">
-          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c55e;"></span>
-          <strong style="color:#15803d;font-size:0.95rem;">All Systems Fully Operational</strong>
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--success-bg);border:1px solid #BBF7D0;border-radius:var(--radius-control);margin-bottom:16px;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--success);"></span>
+          <strong style="color:var(--success);font-size:0.95rem;">All Systems Fully Operational</strong>
         </div>
         <h3>Core Telemetry</h3>
         <ul>
           <li><strong>Zero-Knowledge Encryption Engine:</strong> Nominal (AES-256-GCM)</li>
           <li><strong>COPSOQ III Survey Processor:</strong> Active</li>
-          <li><strong>EAP Escalation Service:</strong> Operational (24/7 Hotline Ready)</li>
+          <li><strong>Clinical Consultation Referral Service:</strong> Active</li>
           <li><strong>Workplace Wellbeing Engine:</strong> 100% Operational</li>
         </ul>
       `;
@@ -6646,383 +7501,185 @@ window.App = App;
 </script>
 
 <!-- ═══ Whistleblower Vault Modal (Report Workplace Hazard) ═══ -->
-<div id="vaultModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(15,23,42,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;" onclick="if(event.target===this)window.closeVaultModal()">
-  <div style="background:#ffffff;border:1px solid rgba(226,232,240,0.9);border-radius:24px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 25px 60px -15px rgba(15,23,42,0.2), 0 0 0 1px rgba(255,255,255,0.8) inset;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a;box-sizing:border-box;">
-    
+<div id="vaultModalBackdrop" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.45);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;" onclick="if(event.target===this)window.closeVaultModal()">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-modal);width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-overlay);font-family:var(--font-sans);color:var(--text);box-sizing:border-box;">
+
     <!-- Modal Header -->
-    <div style="padding:24px 28px 0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#818cf8,#6366f1);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(99,102,241,0.25);flex-shrink:0;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              <path d="m9 12 2 2 4-4"/>
-            </svg>
-          </div>
-          <div>
-            <h2 style="margin:0;font-size:19px;font-weight:800;color:#0f172a;">Anonymous Hazard Report</h2>
-            <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Whistleblower Protection System</p>
-          </div>
+    <div style="padding:24px 24px 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;">
+        <div>
+          <h2 style="margin:0;font-size:20px;font-weight:600;color:var(--text);line-height:1.3;">Report a concern</h2>
+          <p style="margin:4px 0 0;font-size:14px;color:var(--text-muted);">Whistleblower protection system</p>
         </div>
-        <button onclick="window.closeVaultModal()" style="background:#f1f5f9;border:none;width:32px;height:32px;border-radius:50%;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
+        <button type="button" aria-label="Close dialog" onclick="window.closeVaultModal()" style="background:var(--bg);border:1px solid var(--border);width:34px;height:34px;border-radius:var(--radius-control);color:var(--text-muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">&times;</button>
       </div>
 
-      <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:14px;padding:12px 16px;margin-bottom:20px;">
-        <p style="margin:0;font-size:12.5px;color:#5b21b6;line-height:1.5;"><strong>🔒 100% Anonymous.</strong> No IP addresses, user IDs, or identifying metadata are stored. Your identity is structurally unrecoverable.</p>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-control);padding:12px 14px;margin-bottom:18px;">
+        <p style="margin:0;font-size:14px;color:var(--text-muted);line-height:1.5;">Reports are anonymous. No IP addresses, user IDs, or identifying metadata are stored.</p>
       </div>
     </div>
 
     <!-- Intake Form -->
-    <div id="vaultFormContainer" style="padding:0 28px 28px;">
-      <label style="display:block;margin-bottom:6px;font-size:12.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">Category *</label>
-      <select id="vaultCategory" aria-label="Whistleblower report hazard category" style="width:100%;padding:12px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-size:14px;margin-bottom:16px;appearance:auto;outline:none;transition:border-color 0.2s;box-sizing:border-box;">
-        <option value="">Select a category...</option>
-        <option value="Safety Hazard">Safety Hazard</option>
-        <option value="Harassment / Bullying">Harassment / Bullying</option>
-        <option value="Fraud / Financial">Fraud / Financial</option>
-        <option value="Discrimination">Discrimination</option>
-        <option value="Retaliation">Retaliation</option>
-        <option value="Other">Other</option>
-      </select>
-
-      <label style="display:block;margin-bottom:6px;font-size:12.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">Description *</label>
-      <textarea id="vaultDescription" aria-label="Workplace hazard or ethics incident description" rows="5" maxlength="5000" placeholder="Describe the workplace hazard or incident in detail..." style="width:100%;padding:12px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-size:14px;resize:vertical;margin-bottom:4px;font-family:inherit;box-sizing:border-box;outline:none;transition:border-color 0.2s;line-height:1.5;"></textarea>
-      <div style="text-align:right;font-size:11px;color:#94a3b8;margin-bottom:16px;"><span id="vaultCharCount">0</span>/5000</div>
-
-      <label style="display:block;margin-bottom:6px;font-size:12.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.5px;">Urgency Level</label>
-      <div style="display:flex;gap:10px;margin-bottom:18px;">
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:11px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;color:#475569;transition:all 0.2s;">
-          <input type="radio" name="vaultUrgency" value="Standard" checked style="accent-color:#6366f1;"> Standard
-        </label>
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:11px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;color:#d97706;transition:all 0.2s;">
-          <input type="radio" name="vaultUrgency" value="Urgent" style="accent-color:#f59e0b;"> Urgent
-        </label>
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:11px 14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;color:#dc2626;transition:all 0.2s;">
-          <input type="radio" name="vaultUrgency" value="Critical" style="accent-color:#ef4444;"> Critical
-        </label>
+    <div id="vaultFormContainer" style="padding:0 24px 24px;">
+      <div class="help-form-group">
+        <label for="vaultCategory" class="help-form-label">Category</label>
+        <select id="vaultCategory" aria-label="Whistleblower report hazard category" class="help-form-control">
+          <option value="">Select a category...</option>
+          <option value="Safety Hazard">Safety Hazard</option>
+          <option value="Harassment / Bullying">Harassment / Bullying</option>
+          <option value="Fraud / Financial">Fraud / Financial</option>
+          <option value="Discrimination">Discrimination</option>
+          <option value="Retaliation">Retaliation</option>
+          <option value="Other">Other</option>
+        </select>
       </div>
 
-      <!-- Conflict of Interest Checkbox -->
-      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:14px;padding:14px 16px;margin-bottom:20px;">
-        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:#991b1b;line-height:1.4;">
-          <input type="checkbox" id="vaultConflictCheck" aria-label="Whistleblower conflict of interest confirmation" style="margin-top:2px;accent-color:#dc2626;width:16px;height:16px;">
-          <span><strong style="color:#991b1b;">Conflict of Interest Routing:</strong> Does this report involve HR, Senior Leadership, or Executive Management? <em style="display:block;font-size:11.5px;color:#7f1d1d;margin-top:3px;font-style:normal;">If checked, this report will completely bypass internal HR and route directly to the Independent SuperAdmin Ombudsman.</em></span>
-        </label>
+      <div class="help-form-group">
+        <label for="vaultDescription" class="help-form-label">Description</label>
+        <textarea id="vaultDescription" aria-label="Workplace hazard or ethics incident description" rows="5" maxlength="5000" placeholder="Describe the workplace hazard or incident..." class="help-form-control" style="min-height:110px;resize:vertical;"></textarea>
+        <div style="text-align:right;font-size:12px;color:var(--text-subtle);margin-top:4px;"><span id="vaultCharCount">0</span>/5000</div>
       </div>
 
-      <button id="vaultSubmitBtn" onclick="window.submitVaultReport()" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(99,102,241,0.25);transition:all 0.2s;">Submit Anonymous Report</button>
-    </div>
-
-    <!-- Success Access Card -->
-    <div id="vaultSuccessCard" style="display:none;padding:0 28px 28px;">
-      <div style="background:#f8fafc;border:1.5px solid #e0e7ff;border-radius:20px;padding:24px 20px;text-align:center;box-shadow:0 10px 30px -5px rgba(99,102,241,0.1);">
-        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:12px;box-shadow:0 6px 16px rgba(99,102,241,0.3);">🔐</div>
-        <h3 style="color:#0f172a;margin:0 0 6px;font-size:19px;font-weight:800;">Anonymous Access Credentials</h3>
-        <p style="color:#64748b;font-size:12.5px;margin-bottom:18px;line-height:1.5;">Save these credentials now. Since your report is 100% anonymous, these are the <strong>ONLY keys</strong> to look up investigation updates and exchange two-way messages with investigators.</p>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#ffffff;padding:16px;border-radius:14px;margin-bottom:16px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.03);">
-          <div>
-            <div style="font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Tracking Code</div>
-            <div id="vaultAccessCode" style="font-family:monospace;font-size:18px;font-weight:800;color:#4f46e5;margin-top:4px;">WBL-XXXXXX</div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">4-Digit PIN</div>
-            <div id="vaultAccessPin" style="font-family:monospace;font-size:18px;font-weight:800;color:#16a34a;margin-top:4px;">••••</div>
-          </div>
-        </div>
-
-        <div id="vaultRoutingNotice" style="font-size:12px;color:#d97706;margin-bottom:18px;font-weight:700;"></div>
-
-        <div style="display:flex;gap:10px;">
-          <button onclick="window.copyVaultCredentials()" style="flex:1;padding:12px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:13.5px;box-shadow:0 4px 12px rgba(99,102,241,0.25);">📋 Copy Credentials</button>
-          <button onclick="window.closeVaultModal()" style="flex:1;padding:12px;background:#ffffff;color:#475569;border:1.5px solid #e2e8f0;border-radius:12px;font-weight:600;cursor:pointer;font-size:13.5px;">Done</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ Whistleblower Report Tracking Modal (White Acrylic Workspace) ═══ -->
-<div id="vaultTrackModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(15,23,42,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;" onclick="if(event.target===this)window.closeVaultTrackModal()">
-  <div id="vaultTrackModalCard" style="background:#f8fafc;border:1px solid rgba(226,232,240,0.9);border-radius:28px;width:100%;max-width:980px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px -15px rgba(15,23,42,0.2), 0 0 0 1px rgba(255,255,255,0.8) inset;padding:24px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a;position:relative;">
-    
-    <!-- Step 1: Authentication Form (Clean White Card) -->
-    <div id="trackAuthSection" style="max-width:460px;margin:24px auto;background:#ffffff;border:1px solid rgba(226,232,240,0.9);border-radius:24px;padding:32px 28px;box-shadow:0 10px 30px -5px rgba(148,163,184,0.15);position:relative;">
-      <button onclick="window.closeVaultTrackModal()" style="position:absolute;top:20px;right:20px;background:#f1f5f9;border:none;width:32px;height:32px;border-radius:50%;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
-      
-      <div style="text-align:center;margin-bottom:24px;">
-        <div style="width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #e0e7ff, #c7d2fe);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(99,102,241,0.2);margin-bottom:14px;">
-          <span style="color: var(--text-subtle);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
-        </div>
-        <h3 style="margin:0 0 4px;font-size:20px;font-weight:800;color:#0f172a;">Anonymous Report Tracking</h3>
-        <p style="margin:0;font-size:13px;color:#64748b;">Enter your credentials to unlock your two-way secure thread</p>
-      </div>
-
-      <div id="trackAuthErrorMsg" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:12px 14px;border-radius:12px;font-size:13px;margin-bottom:18px;line-height:1.4;"></div>
-
-      <div style="margin-bottom:16px;">
-        <label style="display:block;margin-bottom:6px;font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Tracking Code *</label>
-        <input type="text" id="trackCodeInput" aria-label="Whistleblower tracking code" placeholder="e.g. WBL-22891E" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:16px;font-weight:700;text-transform:uppercase;box-sizing:border-box;outline:none;transition:all 0.2s;">
-      </div>
-
-      <div style="margin-bottom:24px;">
-        <label style="display:block;margin-bottom:6px;font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">4-Digit PIN *</label>
-        <input type="password" maxlength="4" id="trackPinInput" aria-label="Whistleblower 4-digit PIN" placeholder="••••" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:20px;letter-spacing:6px;box-sizing:border-box;outline:none;transition:all 0.2s;">
-      </div>
-
-      <button id="trackLookupBtn" onclick="window.lookupVaultReport()" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 8px 20px rgba(99,102,241,0.3);transition:all 0.2s;">
-        Access Report &amp; Messages
-      </button>
-    </div>
-
-    <!-- Step 2: Report & Thread View (Reference White UI Exact Implementation) -->
-    <div id="trackDetailsSection" style="display:none;">
-      
-      <!-- Top Card (Summary Banner) -->
-      <div style="background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;">
-        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-          <!-- Shield Icon Badge -->
-          <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#818cf8,#6366f1);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(99,102,241,0.25);flex-shrink:0;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              <path d="m9 12 2 2 4-4"/>
-            </svg>
-          </div>
-          <div>
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:3px;">
-              <span style="font-family:monospace;font-size:18px;font-weight:800;color:#0f172a;letter-spacing:0.02em;" id="trackDisplayCode">WBL-XXXXXX</span>
-              <span style="color:#64748b;font-size:13.5px;font-weight:500;" id="trackDisplayDate">21/08/2026</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:16px;font-size:12.5px;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span style="color:#6366f1;font-size:14px;">📁</span>
-                <span style="color:#64748b;font-weight:500;">Category</span>
-                <strong style="color:#0f172a;font-weight:700;" id="trackDisplayCategory">General</strong>
-              </div>
-              <div style="width:1px;height:14px;background:#e2e8f0;"></div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span style="color:#f59e0b;font-size:14px;">⚡</span>
-                <span style="color:#64748b;font-weight:500;">Urgency</span>
-                <strong style="color:#d97706;font-weight:700;" id="trackDisplayUrgency">Standard</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Status & Close Actions -->
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span id="trackDisplayStatus" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;border-radius:9999px;padding:6px 16px;font-size:12px;font-weight:800;letter-spacing:0.5px;box-shadow:0 2px 8px rgba(34,197,94,0.15);display:inline-flex;align-items:center;gap:6px;">
-            <span style="font-size:12px;">✓</span> SUBMITTED
-          </span>
-          <button onclick="window.closeVaultTrackModal()" title="Close Tracking" style="width:36px;height:36px;border-radius:12px;border:1px solid #e2e8f0;background:#ffffff;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-            &times;
-          </button>
-        </div>
-      </div>
-
-      <!-- Bottom Two-Column Grid -->
-      <div style="display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start;">
-        
-        <!-- Left Sidebar Card -->
-        <div style="background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:24px 20px;display:flex;flex-direction:column;">
-          <!-- Glowing Search Icon -->
-          <div style="width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #e0e7ff, #c7d2fe);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(99,102,241,0.2);margin-bottom:16px;">
-            <span style="color: var(--text-subtle);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
-          </div>
-
-          <h4 style="margin:0 0 4px;font-size:17px;font-weight:800;color:#0f172a;line-height:1.3;">Anonymous Report Tracking</h4>
-          <p style="margin:0 0 20px;font-size:11.5px;color:#64748b;line-height:1.4;">Two-Way Cryptographic Whistleblower Thread</p>
-          
-          <div style="height:1px;background:#f1f5f9;margin-bottom:18px;"></div>
-
-          <!-- Info Meta List -->
-          <div style="display:flex;flex-direction:column;gap:14px;font-size:12.5px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"> Report ID</span>
-              <strong style="color:#0f172a;font-family:monospace;font-size:13px;" id="trackSidebarCode">WBL-22891E</strong>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"> Submitted</span>
-              <strong style="color:#0f172a;" id="trackSidebarDate">21/08/2026</strong>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"> Category</span>
-              <strong style="color:#0f172a;" id="trackSidebarCategory">Discrimination</strong>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-              <span style="color:#64748b;display:flex;align-items:center;gap:6px;"> Urgency</span>
-              <strong style="color:#d97706;" id="trackSidebarUrgency">Standard</strong>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right Chat Area Card -->
-        <div style="background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:22px 24px;display:flex;flex-direction:column;">
-          <!-- Chat Header -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid #f1f5f9;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:18px;">💬</span>
-              <h4 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">Investigation Exchange</h4>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#10b981;">
-              <span style="width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block;"></span>
-              Secure &amp; Encrypted
-              <span style="color:#6366f1;font-size:13px;margin-left:2px;">🔒</span>
-            </div>
-          </div>
-
-          <!-- Messages Thread Scroll Area -->
-          <div id="trackThreadContainer" style="min-height:280px;max-height:360px;overflow-y:auto;padding:16px 4px;display:flex;flex-direction:column;gap:14px;">
-            <!-- Dynamically rendered bubbles -->
-          </div>
-
-          <!-- Bottom Input Capsule -->
-          <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9999px;padding:6px 6px 6px 14px;margin-top:14px;box-shadow:0 2px 6px rgba(0,0,0,0.02);transition:border-color 0.2s;">
-            <button type="button" style="background:none;border:none;color:#64748b;font-size:18px;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;" title="Attach file (optional)">
-              📎
-            </button>
-            <input type="text" id="trackReplyInput" aria-label="Type anonymous follow-up message" placeholder="Type anonymous follow-up message..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendAnonymousReply();}" style="flex:1;border:none;background:transparent;color:#0f172a;font-size:13.5px;outline:none;padding:6px 4px;">
-            <button id="trackReplyBtn" onclick="window.sendAnonymousReply()" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#ffffff;border:none;border-radius:9999px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(79,70,229,0.3);transition:all 0.2s;flex-shrink:0;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-              </svg>
-              Send Reply
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ Confidential Clinical Consultation Tracking Modal (White Acrylic Workspace) ═══ -->
-<div id="consultTrackModalBackdrop" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(15,23,42,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;" onclick="if(event.target===this)window.closeConsultTrackModal()">
-  <div id="consultTrackModalCard" style="background:#f8fafc;border:1px solid rgba(226,232,240,0.9);border-radius:28px;width:100%;max-width:920px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px -15px rgba(15,23,42,0.2), 0 0 0 1px rgba(255,255,255,0.8) inset;padding:24px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a;position:relative;">
-    
-    <!-- Step 1: Reference Code Lookup Form -->
-    <div id="consultTrackAuthSection" style="max-width:460px;margin:24px auto;background:#ffffff;border:1px solid rgba(226,232,240,0.9);border-radius:24px;padding:32px 28px;box-shadow:0 10px 30px -5px rgba(148,163,184,0.15);position:relative;">
-      <button onclick="window.closeConsultTrackModal()" style="position:absolute;top:20px;right:20px;background:#f1f5f9;border:none;width:32px;height:32px;border-radius:50%;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
-      
-      <div style="text-align:center;margin-bottom:24px;">
-        <div style="width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #ccfbf1, #99f6e4);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(13,148,136,0.2);margin-bottom:14px;">
-          <span style="font-size:26px;">🩺</span>
-        </div>
-        <h3 style="margin:0 0 4px;font-size:20px;font-weight:800;color:#0f172a;">Consultation Tracking</h3>
-        <p style="margin:0;font-size:13px;color:#64748b;">Enter your Reference Code to track appointment status &amp; chat with your practitioner</p>
-      </div>
-
-      <div id="consultTrackAuthErrorMsg" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:12px 14px;border-radius:12px;font-size:13px;margin-bottom:18px;line-height:1.4;"></div>
-
-      <div style="margin-bottom:20px;">
-        <label style="display:block;margin-bottom:6px;font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Reference Code *</label>
-        <input type="text" id="consultTrackCodeInput" aria-label="Clinical referral tracking code" placeholder="e.g. REF-E0A58FEF" onkeydown="if(event.key==='Enter')window.lookupConsultationReport()" style="width:100%;padding:13px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#0f172a;font-family:monospace;font-size:16px;font-weight:700;text-transform:uppercase;box-sizing:border-box;outline:none;transition:all 0.2s;">
-      </div>
-
-      <button id="consultTrackLookupBtn" onclick="window.lookupConsultationReport()" style="width:100%;padding:14px;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 8px 20px rgba(13,148,136,0.3);transition:all 0.2s;">
-        Track Consultation Status
-      </button>
-    </div>
-
-    <!-- Step 2: Consultation Details, Telehealth & Messaging View -->
-    <div id="consultTrackDetailsSection" style="display:none;">
-      
-      <!-- Top Card (Summary Banner) -->
-      <div style="background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-          <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#14b8a6,#0d9488);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(13,148,136,0.25);flex-shrink:0;">
-            <span style="font-size:22px;">🩺</span>
-          </div>
-          <div>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <span id="consultDisplayCode" style="font-family:monospace;font-size:16px;font-weight:800;color:#0f172a;letter-spacing:0.5px;">REF-XXXXXXXX</span>
-              <span id="consultDisplayStatus" style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:9999px;border:1px solid #86efac;background:#dcfce7;color:#15803d;">
-                SUBMITTED
-              </span>
-            </div>
-            <div style="font-size:12.5px;color:#64748b;margin-top:3px;">
-              Submitted on <span id="consultDisplayDate" style="color:#0f172a;font-weight:600;">—</span> · Preferred: <span id="consultDisplayPreferred" style="color:#0f172a;font-weight:600;">—</span>
-            </div>
-          </div>
-        </div>
-
-        <button onclick="window.closeConsultTrackModal()" style="background:#f1f5f9;border:none;width:34px;height:34px;border-radius:50%;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">&times;</button>
-      </div>
-
-      <!-- Telehealth / Video Consultation Callout (Dynamic) -->
-      <div id="consultTelehealthBanner" style="display:none;background:linear-gradient(135deg, #042f2e, #115e59);color:#ffffff;border-radius:18px;padding:16px 20px;margin-bottom:16px;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;box-shadow:0 6px 20px rgba(13,148,136,0.25);">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;">
-            📞
-          </div>
-          <div>
-            <div style="font-weight:800;font-size:14.5px;display:flex;align-items:center;gap:8px;">
-              <span>Consultation Call Ready</span>
-              <span id="empPeerPresencePill" style="font-size:11px;background:#e2e8f0;color:#475569;padding:2px 8px;border-radius:99px;font-weight:600;">Connecting...</span>
-            </div>
-            <div style="font-size:12px;color:#ccfbf1;" id="consultScheduleTimeText">Your practitioner is available for consultation.</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <button type="button" id="consultInAppCallBtn" onclick="startEmployeeCall()" style="background:#10b981;color:#ffffff;border:none;font-weight:800;font-size:13.5px;padding:10px 18px;border-radius:10px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(16,185,129,0.3);cursor:pointer;transition:all 0.2s;">
-            <span>Call Doctor</span>
-          </button>
-          <a id="consultJoinMeetingBtn" href="#" target="_blank" rel="noopener noreferrer" style="display:none;background:rgba(255,255,255,0.15);color:#ffffff;text-decoration:none;font-weight:700;font-size:12.5px;padding:10px 14px;border-radius:10px;align-items:center;gap:6px;border:1px solid rgba(255,255,255,0.3);">
-            <span>External Video Link &rarr;</span>
-          </a>
-          <label style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#ccfbf1;cursor:pointer;" title="Routes voice traffic through TURN relays to hide your IP">
-            <input type="checkbox" id="empIpShieldToggle" aria-label="IP shield masking toggle" onchange="if(window.HavilahCall) window.HavilahCall.setIpShield(this.checked)">
-            <span>IP Shield</span>
+      <div class="help-form-group">
+        <div class="help-form-label">Urgency level</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <label style="flex:1;min-width:110px;display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-control);cursor:pointer;font-size:14px;font-weight:500;color:var(--text);">
+            <input type="radio" name="vaultUrgency" value="Standard" checked style="accent-color:var(--brand);"> Standard
+          </label>
+          <label style="flex:1;min-width:110px;display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-control);cursor:pointer;font-size:14px;font-weight:500;color:var(--warning);">
+            <input type="radio" name="vaultUrgency" value="Urgent" style="accent-color:var(--warning);"> Urgent
+          </label>
+          <label style="flex:1;min-width:110px;display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-control);cursor:pointer;font-size:14px;font-weight:500;color:var(--danger);">
+            <input type="radio" name="vaultUrgency" value="Critical" style="accent-color:var(--danger);"> Critical
           </label>
         </div>
       </div>
 
-      <!-- Appointment Date Callout (When scheduled without meeting link) -->
-      <div id="consultScheduleInfoCard" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:14px;padding:12px 18px;margin-bottom:16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
-        
-        <span id="consultScheduleInfoText">Confirmed Appointment: —</span>
+      <!-- Conflict of Interest Checkbox -->
+      <div style="background:var(--danger-bg);border:1px solid #FECACA;border-radius:var(--radius-control);padding:12px 14px;margin-bottom:18px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:14px;color:var(--danger);line-height:1.45;">
+          <input type="checkbox" id="vaultConflictCheck" aria-label="Whistleblower conflict of interest confirmation" style="margin-top:3px;accent-color:var(--danger);width:16px;height:16px;flex-shrink:0;">
+          <span>
+            <strong>Conflict of interest routing:</strong> Does this report involve HR or senior management?
+            <span style="display:block;font-size:13px;color:var(--text-muted);margin-top:2px;">If checked, the report bypasses internal HR and routes directly to an independent ombudsman.</span>
+          </span>
+        </label>
       </div>
 
-      <!-- Medical Documents & Certificates Card (When issued by practitioner) -->
-      <div id="consultAttachmentsCard" style="display:none;background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:20px;margin-bottom:16px;flex-direction:column;gap:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid #f1f5f9;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:18px;">📎</span>
-            <span style="font-weight:700;font-size:14px;color:#0f172a;">Clinical Documents &amp; Medical Certificates</span>
+      <button type="button" id="vaultSubmitBtn" onclick="window.submitVaultReport()" class="help-btn help-btn--primary" style="width:100%;">Submit anonymous report</button>
+    </div>
+
+    <!-- Success Access Card -->
+    <div id="vaultSuccessCard" style="display:none;padding:0 24px 24px;">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-card);padding:20px;">
+        <h3 style="color:var(--success);margin:0 0 6px;font-size:18px;font-weight:600;">Anonymous access credentials</h3>
+        <p style="color:var(--text-muted);font-size:14px;margin:0 0 16px;line-height:1.5;">Save this code and PIN now. Because reports are anonymous, they are the only way to check status updates or reply to investigators.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;background:var(--surface);padding:14px 16px;border-radius:var(--radius-control);margin-bottom:14px;border:1px solid var(--border);">
+          <div>
+            <div style="font-size:13px;color:var(--text-muted);">Tracking code</div>
+            <div id="vaultAccessCode" class="help-mono" style="font-size:18px;font-weight:600;color:var(--text);margin-top:4px;">WBL-XXXXXX</div>
           </div>
-          <span style="font-size:11.5px;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;padding:2px 8px;border-radius:9999px;font-weight:700;">
-            Issued by Practitioner
-          </span>
+          <div>
+            <div style="font-size:13px;color:var(--text-muted);">4-digit PIN</div>
+            <div id="vaultAccessPin" class="help-mono" style="font-size:18px;font-weight:600;color:var(--text);margin-top:4px;">••••</div>
+          </div>
         </div>
-        <div id="consultAttachmentsList" style="display:flex;flex-direction:column;gap:8px;">
-          <!-- Populated dynamically -->
+
+        <div id="vaultRoutingNotice" style="font-size:13px;color:var(--warning);margin-bottom:16px;font-weight:500;"></div>
+
+        <div class="help-card-actions">
+          <button type="button" onclick="window.copyVaultCredentials()" class="help-btn help-btn--primary" style="flex:1;">Copy credentials</button>
+          <button type="button" onclick="window.closeVaultModal()" class="help-btn help-btn--secondary" style="flex:1;">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Whistleblower Report Tracking Modal ═══ -->
+<div id="vaultTrackModalBackdrop" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.45);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;" onclick="if(event.target===this)window.closeVaultTrackModal()">
+  <div id="vaultTrackModalCard" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-modal);width:100%;max-width:960px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-overlay);padding:24px;box-sizing:border-box;font-family:var(--font-sans);color:var(--text);position:relative;">
+
+    <!-- Step 1: Authentication Form -->
+    <div id="trackAuthSection" style="max-width:440px;margin:12px auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);padding:24px;box-shadow:var(--shadow-card);position:relative;">
+      <button type="button" aria-label="Close dialog" onclick="window.closeVaultTrackModal()" style="position:absolute;top:16px;right:16px;background:var(--bg);border:1px solid var(--border);width:32px;height:32px;border-radius:var(--radius-control);color:var(--text-muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>
+
+      <h3 style="margin:0 0 6px;font-size:20px;font-weight:600;color:var(--text);">Track a report</h3>
+      <p style="margin:0 0 18px;font-size:14px;color:var(--text-muted);">Enter your tracking code and 4-digit PIN to check updates or message investigators.</p>
+
+      <div id="trackAuthErrorMsg" class="help-alert-error" style="display:none;" role="alert"></div>
+
+      <div class="help-form-group">
+        <label for="trackCodeInput" class="help-form-label">Tracking code</label>
+        <input type="text" id="trackCodeInput" aria-label="Whistleblower tracking code" placeholder="e.g. WBL-22891E" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" class="help-form-control help-mono" style="text-transform:uppercase;">
+      </div>
+
+      <div class="help-form-group">
+        <label for="trackPinInput" class="help-form-label">4-digit PIN</label>
+        <input type="password" maxlength="4" id="trackPinInput" aria-label="Whistleblower 4-digit PIN" placeholder="••••" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" class="help-form-control help-mono" style="letter-spacing:4px;">
+      </div>
+
+      <button type="button" id="trackLookupBtn" onclick="window.lookupVaultReport()" class="help-btn help-btn--primary" style="width:100%;">Open report</button>
+    </div>
+
+    <!-- Step 2: Report & Thread View -->
+    <div id="trackDetailsSection" style="display:none;">
+      <div style="background:var(--surface);border-radius:var(--radius-card);border:1px solid var(--border);box-shadow:var(--shadow-card);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span class="help-mono" style="font-size:17px;font-weight:600;color:var(--text);" id="trackDisplayCode">WBL-XXXXXX</span>
+            <span style="color:var(--text-muted);font-size:14px;" id="trackDisplayDate">—</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text-muted);margin-top:4px;flex-wrap:wrap;">
+            <span>Category: <strong style="color:var(--text);font-weight:500;" id="trackDisplayCategory">General</strong></span>
+            <span>·</span>
+            <span>Urgency: <strong style="color:var(--text);font-weight:500;" id="trackDisplayUrgency">Standard</strong></span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span id="trackDisplayStatus" class="help-status-badge help-status-badge--completed">Submitted</span>
+          <button type="button" aria-label="Close report tracking" onclick="window.closeVaultTrackModal()" style="width:34px;height:34px;border-radius:var(--radius-control);border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>
         </div>
       </div>
 
-      <!-- Two-Way Messaging Card -->
-      <div style="background:#ffffff;border-radius:20px;border:1px solid rgba(226,232,240,0.8);box-shadow:0 4px 20px -2px rgba(148,163,184,0.12);padding:20px;display:flex;flex-direction:column;gap:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid #f1f5f9;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;"></div>
-            <span style="font-weight:700;font-size:14px;color:#0f172a;">Practitioner Clinical Exchange</span>
+      <div class="help-requests-grid">
+        <div style="background:var(--surface);border-radius:var(--radius-card);border:1px solid var(--border);box-shadow:var(--shadow-card);padding:20px;display:flex;flex-direction:column;gap:12px;">
+          <h4 style="margin:0;font-size:16px;font-weight:600;color:var(--text);">Report details</h4>
+          <div style="height:1px;background:var(--border);"></div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;">
+            <div style="display:flex;justify-content:space-between;gap:8px;">
+              <span style="color:var(--text-muted);">Report ID</span>
+              <span class="help-mono" style="color:var(--text);font-weight:500;" id="trackSidebarCode">WBL-XXXXXX</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:8px;">
+              <span style="color:var(--text-muted);">Submitted</span>
+              <span style="color:var(--text);font-weight:500;" id="trackSidebarDate">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:8px;">
+              <span style="color:var(--text-muted);">Category</span>
+              <span style="color:var(--text);font-weight:500;" id="trackSidebarCategory">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:8px;">
+              <span style="color:var(--text-muted);">Urgency</span>
+              <span style="color:var(--text);font-weight:500;" id="trackSidebarUrgency">—</span>
+            </div>
           </div>
-          <span style="font-size:12px;color:#64748b;display:flex;align-items:center;gap:4px;">
-            <span>Confidential &amp; Encrypted</span>
-          </span>
         </div>
 
-        <!-- Chat Container -->
-        <div id="consultThreadContainer" style="max-height:280px;min-height:120px;overflow-y:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;">
-          <!-- Populated dynamically -->
-        </div>
+        <div style="background:var(--surface);border-radius:var(--radius-card);border:1px solid var(--border);box-shadow:var(--shadow-card);padding:20px;display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--border);">
+            <h4 style="margin:0;font-size:16px;font-weight:600;color:var(--text);">Investigation messages</h4>
+            <span style="font-size:13px;color:var(--text-muted);">Anonymous two-way thread</span>
+          </div>
 
-        <!-- Message Input Area -->
-        <div style="display:flex;gap:10px;align-items:flex-end;">
-          <textarea id="consultReplyInput" aria-label="Follow-up note to assigned clinician" rows="2" placeholder="Send a message or follow-up note to your assigned practitioner..." style="flex:1;padding:12px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;color:#0f172a;font-size:13.5px;line-height:1.4;outline:none;resize:vertical;font-family:inherit;transition:all 0.2s;"></textarea>
-          <button id="consultReplyBtn" onclick="window.sendConsultationEmployeeReply()" style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#ffffff;border:none;border-radius:14px;padding:12px 22px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(13,148,136,0.25);transition:all 0.2s;height:46px;">
-            <span>Send</span>
-            
-          </button>
+          <div id="trackThreadContainer" class="help-thread-box"></div>
+
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="text" id="trackReplyInput" aria-label="Type anonymous follow-up message" placeholder="Write an anonymous follow-up message..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.sendAnonymousReply();}" class="help-form-control" style="flex:1;">
+            <button type="button" id="trackReplyBtn" onclick="window.sendAnonymousReply()" class="help-btn help-btn--primary">Send reply</button>
+          </div>
         </div>
       </div>
     </div>

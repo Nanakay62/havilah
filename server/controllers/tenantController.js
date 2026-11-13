@@ -87,4 +87,40 @@ router.patch(
   }
 );
 
+/**
+ * @route   GET /api/v1/tenant/support-contacts
+ * @desc    Retrieve the active tenant's employer-provided workplace support contacts
+ * @access  Authenticated
+ */
+router.get(
+  '/support-contacts',
+  validateSession,
+  enforceTenantScope,
+  async (req, res, next) => {
+    try {
+      const companyId = req.tenantScope.company_id;
+      const tenant = await Tenant.findOne({ company_id: companyId })
+        .select('company_id company_name employer_support_contacts')
+        .lean();
+
+      if (!tenant) {
+        return res.status(404).json({
+          success: false,
+          error: 'TENANT_NOT_FOUND',
+          message: 'The active tenant could not be found.',
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        employer_support_contacts: Array.isArray(tenant.employer_support_contacts)
+          ? tenant.employer_support_contacts
+          : [],
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 module.exports = router;

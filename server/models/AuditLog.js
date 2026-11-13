@@ -27,7 +27,8 @@ const EVENT_TYPES = [
   'invite_generated',
   'invite_revoked',
   'invite_deleted',
-  'user_removed'
+  'user_removed',
+  'support_contacts_updated'
 ];
 
 const AuditLogSchema = new mongoose.Schema(

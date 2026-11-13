@@ -160,7 +160,7 @@
           <ul class="tour-welcome-features">
             <li><span class="tw-icon">📍</span> <span>${stepCount} interactive stops to explore</span></li>
             <li><span class="tw-icon">⏱️</span> <span>Takes about ${estimatedTime} minute${estimatedTime > 1 ? 's' : ''} to complete</span></li>
-            <li><span class="tw-icon">🔄</span> <span>Restart anytime from the ? button</span></li>
+            <li><span class="tw-icon">🔄</span> <span>Restart whenever needed from the ? button</span></li>
           </ul>
           <div class="tour-welcome-actions">
             <button class="tour-welcome-start" id="tourWelcomeStart">

@@ -2194,8 +2194,8 @@ const App = (() => {
       { title: 'Walking meditation', meta: '10 min · Audio', color: 'linear-gradient(135deg, #0078D4, #00B7C3)', icon: 'wind' }
     ]},
     { cat: 'Immediate support', items: [
-      { title: 'Talk to an EAP counselor', meta: 'Confidential · 24/7', color: 'linear-gradient(135deg, #4FB286, #00B7C3)', icon: 'phone' },
-      { title: 'Crisis support line', meta: '988 · Available 24/7', color: 'linear-gradient(135deg, #E5646E, #B23A48)', icon: 'phone' },
+      { title: 'Talk to an EAP counselor', meta: 'Confidential helpline', color: 'linear-gradient(135deg, #4FB286, #00B7C3)', icon: 'phone' },
+      { title: 'Crisis support line', meta: 'Emergency dispatch · 112', color: 'linear-gradient(135deg, #E5646E, #B23A48)', icon: 'phone' },
       { title: 'Request occupational health referral', meta: 'Confidential · Manager not notified', color: 'linear-gradient(135deg, #7000FF, #0078D4)', icon: 'file' }
     ]}
   ];
@@ -2452,8 +2452,8 @@ const App = (() => {
         <input type="text" id="settingsEap" aria-label="EAP toll-free hotline" class="input" style="width:100%" value="${pr.eapHotline || '1-800-555-FZCARE'}" placeholder="e.g. 1-800-555-FZCARE">
       </div>
       <div style="margin-bottom:14px;">
-        <label style="display:block;margin-bottom:6px;font-weight:600;font-size:0.8125rem;">24/7 Crisis Hotline</label>
-        <input type="text" id="settingsCrisis" aria-label="24/7 crisis hotline" class="input" style="width:100%" value="${pr.crisisHotline || '988'}" placeholder="e.g. 988">
+        <label style="display:block;margin-bottom:6px;font-weight:600;font-size:0.8125rem;">Crisis Helpline</label>
+        <input type="text" id="settingsCrisis" aria-label="Crisis helpline" class="input" style="width:100%" value="${pr.crisisHotline || '112'}" placeholder="e.g. 112">
       </div>
       <div style="margin-bottom:14px;">
         <label style="display:block;margin-bottom:6px;font-weight:600;font-size:0.8125rem;">Occupational Health Contact Email</label>
@@ -2586,7 +2586,7 @@ const App = (() => {
        body = `<div style="padding:20px;background:var(--bg-base);border-radius:var(--radius-sm); border: 1px solid var(--border);"><h4 style="margin-bottom:12px;">${item.title}</h4><p style="color:var(--text-2);line-height:1.6;font-size:0.9rem;">${text}</p></div>`;
     } else if (item.title.toLowerCase().includes('occupational health referral')) {
        body = `<div style="padding:24px;text-align:center;"><div style="width:56px;height:56px;border-radius:50%;background:rgba(112,0,255,0.1);color:var(--purple);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">${resourceIcons.file}</div><h3 style="margin-bottom:8px;">${item.title}</h3><p style="color:var(--text-2);margin-bottom:24px;">This will generate a secure, isolated email containing ONLY your name and contact info. Your survey data remains anonymous and is not attached.</p><button class="btn btn-primary" onclick="App.submitReferral();">Request Referral</button></div>`;
-    } else if (item.meta.includes('Confidential') || item.meta.includes('24/7')) {
+    } else if (item.meta.includes('Confidential') || item.meta.includes('Emergency')) {
        body = `<div style="padding:24px;text-align:center;"><div style="width:56px;height:56px;border-radius:50%;background:rgba(229,100,110,0.1);color:var(--critical);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">${resourceIcons.phone}</div><h3 style="margin-bottom:8px;">${item.title}</h3><p style="color:var(--text-2);margin-bottom:24px;">${item.meta}</p><button class="btn btn-primary" onclick="App.toast('Call initiated', 'Dialing secure line...', 'success'); App.closeGeneric();">Connect Now</button></div>`;
     } else {
        body = `<p style="color:var(--text-2);">Opening ${item.title}...</p>`;
@@ -2665,7 +2665,7 @@ const App = (() => {
     const recs = [
       { title: 'Box breathing for acute stress', meta: '4 min · Audio guided', color: 'linear-gradient(135deg, #00B7C3, #0078D4)', icon: 'breath' },
       { title: 'Sleep hygiene for shift workers', meta: '7 min · Article', color: 'linear-gradient(135deg, #7000FF, #0078D4)', icon: 'moon' },
-      { title: 'Talk to an EAP counselor', meta: 'Confidential · 24/7', color: 'linear-gradient(135deg, #4FB286, #00B7C3)', icon: 'phone' }
+      { title: 'Talk to an EAP counselor', meta: 'Confidential helpline', color: 'linear-gradient(135deg, #4FB286, #00B7C3)', icon: 'phone' }
     ];
     recs.forEach(r => {
       const a = el('a', 'resource-item');
@@ -3354,6 +3354,129 @@ const App = (() => {
     $('#genericBackdrop').classList.remove('show');
   }
 
+  let hrSupportContactsCache = [];
+
+  function escapeSupportAttr(v) {
+    return String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderSupportContactsEditor() {
+    const panel = document.getElementById('hrSupportContactsPanel');
+    if (!panel) return;
+    const rows = hrSupportContactsCache.map((c, idx) => `
+      <div class="hr-sc-row" style="border: 1px solid var(--border); background: var(--surface, #fff); border-radius: 8px; padding: 10px; margin-bottom: 8px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+          <input type="text" class="input hr-sc-label" placeholder="Label (e.g. Company Nurse)" maxlength="80" value="${escapeSupportAttr(c.label)}" aria-label="Contact label">
+          <input type="text" class="input hr-sc-hours" placeholder="Hours (e.g. Mon-Fri 8am-5pm)" maxlength="80" value="${escapeSupportAttr(c.hours)}" aria-label="Contact hours">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center;">
+          <input type="text" class="input hr-sc-phone" placeholder="Phone (e.g. +233...)" maxlength="30" value="${escapeSupportAttr(c.phone)}" aria-label="Contact phone">
+          <input type="email" class="input hr-sc-email" placeholder="Email (optional)" maxlength="120" value="${escapeSupportAttr(c.email)}" aria-label="Contact email">
+          <button type="button" class="btn btn-ghost btn-sm" style="color: var(--danger, #b91c1c);" onclick="window.hrRemoveSupportContactRow(${idx})">Remove</button>
+        </div>
+      </div>
+    `).join('');
+
+    panel.innerHTML = `
+      <div style="font-size: 0.78rem; color: var(--text-2); margin-bottom: 8px;">
+        Add up to 5 internal contacts (company nurse, welfare officer, HR desk). Clinical partner routing stays SuperAdmin-only.
+      </div>
+      <div id="hrSupportContactsRows">${rows || '<div style="font-size: 0.8rem; color: var(--text-3); padding: 6px 0;">No workplace support contacts added yet.</div>'}</div>
+      <div id="hrSupportContactsErr" style="display:none; color: var(--danger, #b91c1c); font-size: 0.78rem; margin: 6px 0;"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary btn-sm" ${hrSupportContactsCache.length >= 5 ? 'disabled' : ''} onclick="window.hrAddSupportContactRow()">Add contact (${hrSupportContactsCache.length}/5)</button>
+        <button type="button" class="btn btn-primary btn-sm" id="hrSaveSupportContactsBtn" onclick="window.hrSaveSupportContacts()">Save support contacts</button>
+      </div>
+    `;
+  }
+
+  function syncSupportContactsFromDom() {
+    const rowEls = document.querySelectorAll('#hrSupportContactsRows .hr-sc-row');
+    if (!rowEls.length) return;
+    hrSupportContactsCache = Array.from(rowEls).map((el) => ({
+      label: el.querySelector('.hr-sc-label')?.value || '',
+      hours: el.querySelector('.hr-sc-hours')?.value || '',
+      phone: el.querySelector('.hr-sc-phone')?.value || '',
+      email: el.querySelector('.hr-sc-email')?.value || '',
+    }));
+  }
+
+  window.hrInitSupportContacts = async function() {
+    const summaryEl = document.getElementById('hrSupportContactsSummary');
+    try {
+      const headers = { ...(window.Auth ? Auth.getAuthHeader() : {}) };
+      const resp = await apiFetch('/api/v1/hr/support-contacts', { headers });
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok && data.success) {
+        hrSupportContactsCache = Array.isArray(data.employer_support_contacts) ? data.employer_support_contacts : [];
+        if (summaryEl) {
+          summaryEl.textContent = hrSupportContactsCache.length
+            ? `${hrSupportContactsCache.length} contact(s) shown under "From your workplace".`
+            : 'No internal contacts configured (card hidden on employee Get help page).';
+        }
+      }
+    } catch (e) {
+      if (summaryEl) summaryEl.textContent = 'Shown separately from external clinical care. Max 5 contacts.';
+    }
+  };
+
+  window.hrToggleSupportContactsPanel = function() {
+    const panel = document.getElementById('hrSupportContactsPanel');
+    if (!panel) return;
+    const opening = panel.style.display === 'none' || !panel.style.display;
+    panel.style.display = opening ? 'block' : 'none';
+    if (opening) renderSupportContactsEditor();
+  };
+
+  window.hrAddSupportContactRow = function() {
+    syncSupportContactsFromDom();
+    if (hrSupportContactsCache.length >= 5) return;
+    hrSupportContactsCache.push({ label: '', phone: '', email: '', hours: '' });
+    renderSupportContactsEditor();
+  };
+
+  window.hrRemoveSupportContactRow = function(idx) {
+    syncSupportContactsFromDom();
+    hrSupportContactsCache.splice(idx, 1);
+    renderSupportContactsEditor();
+  };
+
+  window.hrSaveSupportContacts = async function() {
+    syncSupportContactsFromDom();
+    const errEl = document.getElementById('hrSupportContactsErr');
+    const saveBtn = document.getElementById('hrSaveSupportContactsBtn');
+    const summaryEl = document.getElementById('hrSupportContactsSummary');
+    if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+
+    try {
+      const headers = { 'Content-Type': 'application/json', ...(window.Auth ? Auth.getAuthHeader() : {}) };
+      const resp = await apiFetch('/api/v1/hr/support-contacts', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ contacts: hrSupportContactsCache }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data.success) {
+        const msg = data.message || 'Could not save support contacts.';
+        if (errEl) { errEl.style.display = 'block'; errEl.textContent = msg; }
+        return;
+      }
+      hrSupportContactsCache = Array.isArray(data.employer_support_contacts) ? data.employer_support_contacts : [];
+      if (summaryEl) {
+        summaryEl.textContent = hrSupportContactsCache.length
+          ? `${hrSupportContactsCache.length} contact(s) shown under "From your workplace".`
+          : 'No internal contacts configured (card hidden on employee Get help page).';
+      }
+      renderSupportContactsEditor();
+      toast('Saved', 'Workplace support contacts updated.', 'success');
+    } catch (err) {
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Could not reach the server.'; }
+    } finally {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save support contacts'; }
+    }
+  };
+
   function openSettings() {
     const s = state.settings || {};
     const nSize = s.nSizeThreshold || 5;
@@ -3407,10 +3530,23 @@ const App = (() => {
         </div>
         <div id="hr2faConfigPanel" style="display:none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);"></div>
       </div>
+
+      <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-deep); text-transform: uppercase; letter-spacing: 0.08em; margin: 20px 0 10px;">Workplace Support Contacts</div>
+      <div id="hrSupportContactsBox" style="padding: 12px; background: rgba(15, 23, 42, 0.03); border: 1px solid var(--border); border-radius: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div>
+            <div style="font-weight: 600; font-size: 0.85rem;">Internal Support Contacts (Employee Get Help Page)</div>
+            <div id="hrSupportContactsSummary" style="font-size: 0.75rem; color: var(--text-3);">Shown separately from external clinical care. Max 5 contacts.</div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.hrToggleSupportContactsPanel()">Manage Contacts</button>
+        </div>
+        <div id="hrSupportContactsPanel" style="display:none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);"></div>
+      </div>
     `;
     const foot = `<button class="btn btn-ghost btn-sm" onclick="App.closeGeneric()">Cancel</button><button class="btn btn-primary btn-sm" onclick="App.saveSettings()">Save preferences</button>`;
     openGeneric('SETTINGS', 'Assessment Modules & Privacy Settings', body, foot);
     if (typeof window.hrLoad2faStatus === 'function') window.hrLoad2faStatus();
+    if (typeof window.hrInitSupportContacts === 'function') window.hrInitSupportContacts();
     // Wire toggles
     $$('#genericBody .toggle').forEach(t => {
       t.addEventListener('click', () => {
@@ -3645,7 +3781,7 @@ const App = (() => {
       <div style="display: flex; gap: 16px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
         <div style="flex: 1;"><div style="font-size: 0.75rem; color: var(--text-3); font-weight: 600; margin-bottom: 4px;">EMAIL</div><div style="font-size: 0.875rem; font-weight: 500;">nanakwamedickson553@gmail.com</div></div>
         <div style="flex: 1;"><div style="font-size: 0.75rem; color: var(--text-3); font-weight: 600; margin-bottom: 4px;">PHONE</div><div style="font-size: 0.875rem; font-weight: 500;">+1 (800) 555-0142</div></div>
-        <div style="flex: 1;"><div style="font-size: 0.75rem; color: var(--text-3); font-weight: 600; margin-bottom: 4px;">HOURS</div><div style="font-size: 0.875rem; font-weight: 500;">24/7 enterprise</div></div>
+        <div style="flex: 1;"><div style="font-size: 0.75rem; color: var(--text-3); font-weight: 600; margin-bottom: 4px;">HOURS</div><div style="font-size: 0.875rem; font-weight: 500;">Monday to Friday, enterprise SLA</div></div>
       </div>
     `;
     const foot = `<button class="btn btn-ghost btn-sm" onclick="App.closeGeneric()">Cancel</button><button class="btn btn-primary btn-sm" onclick="App.sendContact()">Send message</button>`;
@@ -3766,7 +3902,7 @@ const App = (() => {
   }
   function submitDemo() {
     closeGeneric();
-    toast('Demo scheduled', 'A specialist will reach out within 24 hours to confirm.', 'success');
+    toast('Demo scheduled', 'A specialist will reach out within 1 business day to confirm.', 'success');
   }
 
   /* ---------- GREETING ---------- */

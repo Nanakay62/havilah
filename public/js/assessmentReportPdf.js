@@ -663,12 +663,12 @@
       y += clinicalBoxH + 6.5;
 
       // =========================================================================
-      // SECTION 5: STRICTLY GHANAIAN 24/7 CRISIS HELPLINES
+      // SECTION 5: GHANAIAN EMERGENCY & CRISIS HELPLINES
       // =========================================================================
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(11);
       pdf.setTextColor(...colors.navy);
-      pdf.text('5. 24/7 Emergency & Mental Health Helplines (Ghana)', margin, y);
+      pdf.text('5. Emergency & Mental Health Helplines (Ghana)', margin, y);
       y += 4;
 
       const crisisBoxH = 30;

@@ -1146,4 +1146,85 @@ router.post('/users/remove', sensitiveRateLimiter(10), async (req, res, next) =>
   }
 });
 
+// GET /api/v1/hr/support-contacts - Retrieve employer-provided workplace support contacts
+router.get('/support-contacts', async (req, res, next) => {
+  try {
+    const { company_id } = req.sessionData;
+    const Tenant = require('../models/Tenant');
+    const tenant = await Tenant.findOne({ company_id })
+      .select('employer_support_contacts')
+      .lean();
+    if (!tenant) {
+      return res.status(404).json({ success: false, error: 'Tenant not found' });
+    }
+    return res.json({
+      success: true,
+      employer_support_contacts: Array.isArray(tenant.employer_support_contacts)
+        ? tenant.employer_support_contacts
+        : [],
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/v1/hr/support-contacts - Update employer-provided workplace support contacts (max 5, audit-logged)
+router.put('/support-contacts', async (req, res, next) => {
+  try {
+    const { company_id, user_id, role } = req.sessionData;
+    const { validateEmployerSupportContacts } = require('../utils/supportContacts');
+    const Tenant = require('../models/Tenant');
+    const AuditLog = require('../models/AuditLog');
+
+    const rawContacts = req.body?.contacts ?? req.body?.employer_support_contacts ?? [];
+    const check = validateEmployerSupportContacts(rawContacts);
+    if (!check.valid) {
+      return res.status(400).json({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: check.message,
+      });
+    }
+
+    const tenant = await Tenant.findOne({ company_id });
+    if (!tenant) {
+      return res.status(404).json({ success: false, error: 'Tenant not found' });
+    }
+
+    const previousContacts = Array.isArray(tenant.employer_support_contacts)
+      ? tenant.employer_support_contacts.map((c) => ({
+          label: c.label,
+          phone: c.phone || '',
+          email: c.email || '',
+          hours: c.hours || '',
+        }))
+      : [];
+
+    tenant.employer_support_contacts = check.contacts;
+    await tenant.save();
+
+    await AuditLog.append({
+      company_id,
+      actor_user_id: user_id || 'HR_ADMIN',
+      actor_role: role || 'hr_admin',
+      event_type: 'support_contacts_updated',
+      event_payload: {
+        previous_count: previousContacts.length,
+        updated_count: check.contacts.length,
+        labels: check.contacts.map((c) => c.label),
+      },
+    }).catch((auditErr) => {
+      console.warn('[AuditLog Warning]', auditErr.message);
+    });
+
+    return res.json({
+      success: true,
+      message: 'Workplace support contacts updated.',
+      employer_support_contacts: tenant.employer_support_contacts,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

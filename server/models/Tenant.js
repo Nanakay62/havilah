@@ -186,6 +186,52 @@ const ResourceLinkSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const PHONE_VALUE_RE = /^\+?[0-9\s\-()]{3,30}$/;
+const EMAIL_VALUE_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const EmployerSupportContactSchema = new mongoose.Schema(
+  {
+    label: {
+      type: String,
+      required: [true, 'Contact label is required'],
+      trim: true,
+      maxlength: [80, 'Contact label must be 80 characters or fewer'],
+    },
+    phone: {
+      type: String,
+      trim: true,
+      maxlength: [30, 'Phone number must be 30 characters or fewer'],
+      default: '',
+      validate: {
+        validator(v) {
+          return !v || PHONE_VALUE_RE.test(v);
+        },
+        message: 'Phone number contains invalid characters',
+      },
+    },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      maxlength: [120, 'Email must be 120 characters or fewer'],
+      default: '',
+      validate: {
+        validator(v) {
+          return !v || EMAIL_VALUE_RE.test(v);
+        },
+        message: 'Support contact email must be a valid email address',
+      },
+    },
+    hours: {
+      type: String,
+      trim: true,
+      maxlength: [80, 'Hours must be 80 characters or fewer'],
+      default: '',
+    },
+  },
+  { _id: false }
+);
+
 const SubscriptionSchema = new mongoose.Schema(
   {
     tier: {
@@ -361,6 +407,16 @@ const TenantSchema = new mongoose.Schema(
     resource_links: {
       type: [ResourceLinkSchema],
       default: () => [],
+    },
+    employer_support_contacts: {
+      type: [EmployerSupportContactSchema],
+      default: () => [],
+      validate: {
+        validator(v) {
+          return !Array.isArray(v) || v.length <= 5;
+        },
+        message: 'employer_support_contacts cannot exceed 5 entries',
+      },
     },
     activeAssessorId: {
       type: mongoose.Schema.Types.ObjectId,

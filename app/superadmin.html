@@ -614,22 +614,51 @@
     .sidebar {
       width: 100%;
       height: auto;
-      position: static;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      overflow: visible;
       border-right: none;
       border-bottom: 1px solid var(--border);
     }
+    .sidebar-header {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .sidebar-brand-badge {
+      margin-bottom: 0;
+    }
+    .sidebar-title {
+      font-size: 16px;
+    }
     .sidebar-nav {
       flex-direction: row;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
       gap: 6px;
-      padding: 12px;
+      padding: 8px 12px;
     }
     .nav-item {
+      flex-shrink: 0;
+      white-space: nowrap;
       padding: 8px 12px;
       font-size: 13px;
     }
+    .sidebar-footer {
+      padding: 8px 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .sidebar-footer .btn-signout {
+      margin-bottom: 0 !important;
+    }
     .main-content {
       padding: 20px 16px;
+      overflow-y: visible;
     }
     .stats-grid {
       grid-template-columns: 1fr;

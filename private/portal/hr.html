@@ -47,7 +47,7 @@
   }
   
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; width: 100%; max-width: 100vw; overflow-x: hidden; font-size: 15px; }
+  html { scroll-behavior: smooth; width: 100%; max-width: 100vw; overflow-x: clip; font-size: 15px; }
   body, button, input, select, textarea {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -62,7 +62,7 @@
     color: var(--text);
     line-height: 1.5;
     font-size: 14px;
-    overflow-x: hidden;
+    overflow-x: clip;
     width: 100%;
     max-width: 100vw;
     min-height: 100vh;
@@ -216,8 +216,8 @@
   }
 
   /* ============ MAIN ============ */
-  main { max-width: 1440px; width: 100%; margin: 0 auto; padding: 0 24px; box-sizing: border-box; overflow-x: hidden; }
-  .view { display: none; width: 100%; max-width: 100%; overflow-x: hidden; animation: fadeUp 0.35s var(--ease-out); }
+  main { max-width: 1440px; width: 100%; margin: 0 auto; padding: 0 24px; box-sizing: border-box; overflow-x: clip; }
+  .view { display: none; width: 100%; max-width: 100%; overflow-x: clip; animation: fadeUp 0.35s var(--ease-out); }
   .view.active { display: block; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -3478,6 +3478,7 @@ const App = (() => {
   };
 
   function openSettings() {
+    closeAllDropdowns();
     const s = state.settings || {};
     const nSize = s.nSizeThreshold || 5;
     const body = `
@@ -3651,6 +3652,7 @@ const App = (() => {
   }
 
   function openProfileSettings() {
+    closeAllDropdowns();
     const u = state.user || {};
     const name = u.name || 'HR Admin';
     const email = u.email || 'admin@havilah.app';
@@ -3978,7 +3980,8 @@ const App = (() => {
     document.addEventListener('click', (e) => {
       const pd = document.querySelector('#profileDropdown');
       const pb = document.querySelector('#profileBtn');
-      if (pd && pb && !pd.contains(e.target) && !pb.contains(e.target)) {
+      const clickedMenuItem = e.target && typeof e.target.closest === 'function' && e.target.closest('#profileDropdown .dropdown-item');
+      if (pd && (clickedMenuItem || (pb && !pd.contains(e.target) && !pb.contains(e.target)))) {
         closeAllDropdowns();
       }
     });

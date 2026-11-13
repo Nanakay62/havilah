@@ -87,28 +87,14 @@ export default {
     const path = url.pathname;
     let targetPath = path;
 
-    if (path === '/app/dashboard' || path === '/dashboard' || path === '/dashboard.html') {
-      targetPath = '/app/dashboard.html';
-    } else if (path === '/portal/hr' || path === '/hr' || path === '/hr.html') {
-      targetPath = '/portal/hr.html';
-    } else if (path === '/app/superadmin' || path === '/superadmin' || path === '/superadmin.html') {
-      targetPath = '/app/superadmin.html';
-    } else if (path === '/portal/clinical' || path === '/portal/clinical.html' || path === '/clinical' || path === '/clinical-portal' || path === '/clinical-portal.html') {
-      targetPath = '/clinical-portal.html';
-    } else if (path === '/login') {
-      targetPath = '/login.html';
-    } else if (path === '/register') {
-      targetPath = '/register.html';
-    } else if (path === '/activate') {
-      targetPath = '/activate.html';
-    } else if (path === '/reset-password') {
-      targetPath = '/reset-password.html';
-    } else if (path === '/privacy') {
-      targetPath = '/privacy.html';
-    } else if (path === '/terms') {
-      targetPath = '/terms.html';
-    } else if (path === '/') {
-      targetPath = '/index.html';
+    if (path === '/dashboard' || path === '/dashboard.html') {
+      targetPath = '/app/dashboard';
+    } else if (path === '/hr' || path === '/hr.html') {
+      targetPath = '/portal/hr';
+    } else if (path === '/superadmin' || path === '/superadmin.html') {
+      targetPath = '/app/superadmin';
+    } else if (path === '/portal/clinical' || path === '/portal/clinical.html' || path === '/clinical' || path === '/clinical-portal') {
+      targetPath = '/clinical-portal';
     } else if (path.startsWith('/js/')) {
       targetPath = '/public' + path;
     } else if (path.startsWith('/css/')) {

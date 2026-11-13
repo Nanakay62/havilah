@@ -35,7 +35,15 @@ export default {
       headers.set('X-Forwarded-Proto', 'https');
       const clientIp = request.headers.get('CF-Connecting-IP');
       if (clientIp) {
+        headers.set('X-Real-Client-IP', clientIp);
         headers.set('X-Forwarded-For', clientIp);
+      } else {
+        headers.delete('X-Real-Client-IP');
+      }
+      if (env && env.WORKER_PROXY_SECRET) {
+        headers.set('X-Worker-Secret', env.WORKER_PROXY_SECRET);
+      } else {
+        headers.delete('X-Worker-Secret');
       }
 
       const method = request.method.toUpperCase();

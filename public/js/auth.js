@@ -101,13 +101,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                        currentPath === '/' ||
                        currentPath === '/index.html';
 
+  // Public auth/landing pages do not need a background /auth/me check
+  if (isPublicPage) {
+    return;
+  }
+
   const token = Auth.getToken();
 
-  // If no token exists and on a protected page, redirect to login
+  // If no token exists on a protected page, redirect to login
   if (!token) {
-    if (!isPublicPage) {
-      window.location.href = '/login.html';
-    }
+    window.location.href = '/login.html';
     return;
   }
 
@@ -128,6 +131,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (res.status === 401 || res.status === 403) {
       console.warn('Session expired or unauthorized');
       Auth.logout();
+      return;
+    }
+
+    if (res.status === 429) {
+      console.warn('Rate limited during session check, keeping local session active.');
       return;
     }
 

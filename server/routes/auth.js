@@ -13,8 +13,8 @@ const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
 const { validate } = require('../middleware/validate');
 const { LoginSchema, RegisterSchema } = require('../schemas/auth.schema');
 
-// POST /api/v1/auth/login - Rate limited (max 5 attempts per window)
-router.post('/login', sensitiveRateLimiter(5), validate(LoginSchema), async (req, res, next) => {
+// POST /api/v1/auth/login - Rate limited (max 15 failed attempts per 15m window; successful logins do not count)
+router.post('/login', sensitiveRateLimiter(5, { skipSuccessfulRequests: true }), validate(LoginSchema), async (req, res, next) => {
   try {
     const { email, password } = req.body;
 

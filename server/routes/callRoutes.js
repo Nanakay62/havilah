@@ -5,6 +5,7 @@ const router = express.Router();
 const Referral = require('../models/Referral');
 const logger = require('../utils/logger');
 const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
+const { resolveWebSocketSignalUrl } = require('../utils/runtimeConfig');
 
 const STUN_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
@@ -95,16 +96,12 @@ router.get('/ice-config', sensitiveRateLimiter(60), async (req, res) => {
       }
     }
 
-    const defaultSignalUrl = isProduction
-      ? 'wss://havilah-api.onrender.com/api/v1/calls/ws'
-      : null;
-
     res.json({
       success: true,
       iceServers: [...STUN_SERVERS, ...(relayServers || [])],
       relayConfigured: !!relayServers,
       signalPort: parseInt(process.env.CALL_SIGNAL_PORT, 10) || 3001,
-      signalUrl: process.env.CALL_SIGNAL_URL || defaultSignalUrl,
+      signalUrl: resolveWebSocketSignalUrl(req),
     });
   } catch (err) {
     logger.warn({ err: err.message }, '[CallRoutes] Error fetching ICE config');

@@ -198,8 +198,10 @@
         return `${wsProtocol}//${hostname}:3001?ref=${encodeURIComponent(this.referenceCode)}&role=${this.role}&token=${encodeURIComponent(this.token)}`;
       }
 
-      // Production single-port Render host via HTTP server upgrade handler on standard port 443
-      return `wss://havilah-api.onrender.com/api/v1/calls/ws?ref=${encodeURIComponent(this.referenceCode)}&role=${this.role}&token=${encodeURIComponent(this.token)}`;
+      // Derive production WebSocket signaling endpoint from Worker-injected backend URL or current origin
+      const apiOrigin = (window.__HAVILAH_BACKEND_URL__ || window.API_BASE_URL || window.location.origin).replace(/\/+$/, '');
+      const wsBase = apiOrigin.replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:');
+      return `${wsBase}/api/v1/calls/ws?ref=${encodeURIComponent(this.referenceCode)}&role=${this.role}&token=${encodeURIComponent(this.token)}`;
     }
 
     /**

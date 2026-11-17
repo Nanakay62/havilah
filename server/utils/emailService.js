@@ -1,11 +1,12 @@
 'use strict';
 
 const { sendEmail } = require('./mailer');
+const { resolveAppBaseUrl, getNotificationRecipients } = require('./runtimeConfig');
 
 const CLINICAL_EMAIL = process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || null;
 const CLINICAL_HOTLINE = process.env.DEFAULT_CLINICAL_HOTLINE || null;
 const NOTIFICATION_RECIPIENT = process.env.DEFAULT_NOTIFICATION_RECIPIENT || null;
-const APP_BASE_URL = (process.env.APP_BASE_URL || process.env.CLIENT_ORIGIN || 'https://havilah.dic20016.workers.dev').replace(/\/$/, '');
+const APP_BASE_URL = resolveAppBaseUrl();
 
 /**
  * Sends email using Brevo Transactional Email REST API.
@@ -29,7 +30,12 @@ async function sendMail({ to, subject, html, from }) {
  * @param {string} [opts.to] - Assessor email recipient
  */
 async function sendClinicalDispatch({ referenceCode, companyName, to, priority = 'standard' }) {
-  const recipient = to || process.env.CLINICAL_INTAKE_EMAIL || process.env.DEFAULT_CLINICAL_PARTNER_EMAIL || 'clinical@havilah.app';
+  const recipient = to || getNotificationRecipients().clinicalIntake;
+  if (!recipient) {
+    console.warn('[EmailService] Skipping clinical dispatch alert: CLINICAL_INTAKE_EMAIL / DEFAULT_CLINICAL_PARTNER_EMAIL not configured.');
+    return { skipped: true, reason: 'CLINICAL_RECIPIENT_UNCONFIGURED' };
+  }
+  const appBaseUrl = resolveAppBaseUrl();
   const resolvedCompany = companyName || 'Client Organization';
   const isCrisis = priority === 'crisis';
   const isUrgent = priority === 'urgent' || isCrisis;
@@ -82,7 +88,7 @@ async function sendClinicalDispatch({ referenceCode, companyName, to, priority =
           </p>
 
           <div style="text-align: center; margin: 28px 0 16px;">
-            <a href="${APP_BASE_URL}/clinical-portal.html" style="background: linear-gradient(135deg, #0d9488, #0f766e); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: 700; font-size: 13.5px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(13,148,136,0.3);">
+            <a href="${appBaseUrl}/clinical-portal.html" style="background: linear-gradient(135deg, #0d9488, #0f766e); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: 700; font-size: 13.5px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(13,148,136,0.3);">
               🩺 Access Clinical Hub &amp; Review Queue
             </a>
           </div>
@@ -168,7 +174,12 @@ async function sendInterventionAlert({ surveyType, severityBand, department, to 
  * @param {string} [opts.to] - Override recipient
  */
 async function sendWhistleblowerAlert({ reportId, companyName, to }) {
-  const recipient = to || process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || process.env.DEFAULT_NOTIFICATION_RECIPIENT || 'compliance@havilah.app';
+  const recipient = to || getNotificationRecipients().whistleblower;
+  if (!recipient) {
+    console.warn('[EmailService] Skipping whistleblower alert: WHISTLEBLOWER_NOTIFICATION_EMAIL / DEFAULT_NOTIFICATION_RECIPIENT not configured.');
+    return { skipped: true, reason: 'WHISTLEBLOWER_RECIPIENT_UNCONFIGURED' };
+  }
+  const appBaseUrl = resolveAppBaseUrl();
   const timestamp = new Date().toUTCString();
 
   const html = `
@@ -203,7 +214,7 @@ async function sendWhistleblowerAlert({ reportId, companyName, to }) {
           </p>
 
           <div style="text-align: center; margin: 28px 0 16px;">
-            <a href="${APP_BASE_URL}/login.html" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: 700; font-size: 13.5px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(99,102,241,0.3);">
+            <a href="${appBaseUrl}/login.html" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: 700; font-size: 13.5px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(99,102,241,0.3);">
               🔐 Authenticate &amp; Access Dashboard
             </a>
           </div>
@@ -228,6 +239,7 @@ async function sendWhistleblowerAlert({ reportId, companyName, to }) {
  * Sends a welcome email containing HR credentials and activation codes to newly provisioned HR Admin.
  */
 async function sendHrWelcomeEmail({ to, companyName, password, loginUrl, activationUrl, activationCodes }) {
+  const appBaseUrl = resolveAppBaseUrl();
   const codesListHtml = (activationCodes || []).map(c => `<li style="font-family: monospace; font-weight: bold; color: #34d399; margin-bottom: 4px;">${c}</li>`).join('');
 
   const html = `
@@ -246,7 +258,7 @@ async function sendHrWelcomeEmail({ to, companyName, password, loginUrl, activat
           <!-- Login Credentials Card -->
           <div style="background-color: #131318; border: 1px solid #222228; border-radius: 8px; padding: 18px; margin: 20px 0;">
             <h3 style="margin: 0 0 12px 0; color: #38bdf8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">🔑 HR Admin Login Credentials</h3>
-            <p style="margin: 6px 0; font-size: 14px;"><strong>Portal URL:</strong> <a href="${loginUrl || `${APP_BASE_URL}/login.html`}" style="color: #38bdf8; text-decoration: underline;">${loginUrl || `${APP_BASE_URL}/login.html`}</a></p>
+            <p style="margin: 6px 0; font-size: 14px;"><strong>Portal URL:</strong> <a href="${loginUrl || `${appBaseUrl}/login.html`}" style="color: #38bdf8; text-decoration: underline;">${loginUrl || `${appBaseUrl}/login.html`}</a></p>
             <p style="margin: 6px 0; font-size: 14px;"><strong>Email:</strong> <span style="font-family: monospace; font-weight: bold; color: #ffffff;">${to}</span></p>
             <p style="margin: 6px 0; font-size: 14px;"><strong>Password:</strong> <span style="font-family: monospace; font-weight: bold; color: #ffffff;">${password}</span></p>
           </div>
@@ -255,7 +267,7 @@ async function sendHrWelcomeEmail({ to, companyName, password, loginUrl, activat
           ${activationCodes && activationCodes.length > 0 ? `
           <div style="background-color: #131318; border: 1px solid #222228; border-radius: 8px; padding: 18px; margin: 20px 0;">
             <h3 style="margin: 0 0 10px 0; color: #34d399; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">🎫 Employee Activation Codes</h3>
-            <p style="margin: 0 0 12px 0; font-size: 13px; color: #94a3b8;">Share these codes with participating employees to register at <a href="${activationUrl || `${APP_BASE_URL}/register.html`}" style="color: #38bdf8;">${activationUrl || `${APP_BASE_URL}/register.html`}</a>:</p>
+            <p style="margin: 0 0 12px 0; font-size: 13px; color: #94a3b8;">Share these codes with participating employees to register at <a href="${activationUrl || `${appBaseUrl}/register.html`}" style="color: #38bdf8;">${activationUrl || `${appBaseUrl}/register.html`}</a>:</p>
             <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
               ${codesListHtml}
             </ul>

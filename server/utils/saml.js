@@ -7,6 +7,7 @@
 
 const { SAML } = require('@node-saml/node-saml');
 const logger = require('./logger');
+const { resolveAppBaseUrl } = require('./runtimeConfig');
 
 /**
  * Formats a raw base64 or single-line certificate into standard PEM format.
@@ -33,7 +34,7 @@ function formatPemCertificate(cert) {
  */
 function createSamlClient(tenant, req) {
   const ssoConfig = (tenant && tenant.sso_config) || {};
-  const origin = process.env.CLIENT_ORIGIN || (req ? `${req.protocol}://${req.get('host')}` : 'https://havilah.app');
+  const origin = resolveAppBaseUrl(req);
 
   const entityId = ssoConfig.entity_id || `${origin}/api/v1/sso/metadata`;
   const callbackUrl = ssoConfig.acs_url || `${origin}/api/v1/sso/callback`;
@@ -140,7 +141,7 @@ function extractUserProfile(profile = {}) {
  * @returns {string} XML string
  */
 function generateSpMetadata(tenant, req) {
-  const origin = process.env.CLIENT_ORIGIN || (req ? `${req.protocol}://${req.get('host')}` : 'https://havilah.app');
+  const origin = resolveAppBaseUrl(req);
   const entityId = (tenant?.sso_config?.entity_id) || `${origin}/api/v1/sso/metadata`;
   const acsUrl = (tenant?.sso_config?.acs_url) || `${origin}/api/v1/sso/callback`;
 

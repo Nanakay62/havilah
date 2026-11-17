@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /login
+Allow: /register
+Allow: /assets/
+Allow: /css/
+Allow: /js/
+Allow: /site.webmanifest
+Disallow: /api/
+Disallow: /app/
+Disallow: /portal/
+Disallow: /private/
+Disallow: /dashboard
+Disallow: /hr
+Disallow: /superadmin
+Disallow: /clinical
+Disallow: /clinical-portal
+Disallow: /activate
+Disallow: /reset-password
+
+Sitemap: https://havilah.dic20016.workers.dev/sitemap.xml

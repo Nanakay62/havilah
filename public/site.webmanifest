@@ -1,0 +1,17 @@
+{
+  "name": "Havilah Workplace Wellbeing",
+  "short_name": "Havilah",
+  "description": "Confidential employee psychosocial check-ins, anonymous group insight (N >= 5), and clinical occupational health referrals.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0F766E",
+  "icons": [
+    {
+      "src": "/assets/havilah-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

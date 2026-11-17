@@ -6,7 +6,8 @@ const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const PendingNotification = require('../models/PendingNotification');
 const { decryptField } = require('../utils/crypto');
-const { sendMail } = require('../utils/emailService');
+const emailService = require('../utils/emailService');
+const { resolveAppBaseUrl } = require('../utils/runtimeConfig');
 const { DateTime } = require('luxon');
 const logger = require('../utils/logger');
 
@@ -179,9 +180,9 @@ class WorkingHoursScheduler {
           });
 
           const label = names[notif.survey_type] || notif.survey_type.toUpperCase();
-          const origin = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
+          const origin = resolveAppBaseUrl();
 
-          await sendMail({
+          await emailService.sendMail({
             to: email,
             subject: `📋 Your ${label} is Available`,
             html: `
@@ -265,7 +266,6 @@ if (process.env.REDIS_URL) {
 async function processTrialReminders(now = new Date()) {
   const Tenant = require('../models/Tenant');
   const User = require('../models/User');
-  const { sendMail } = require('../utils/emailService');
   const { decryptField } = require('../utils/crypto');
 
   const tenants = await Tenant.find({
@@ -317,7 +317,7 @@ async function processTrialReminders(now = new Date()) {
       const bodyMsg = checkpoint === 'expired'
         ? `Your Havilah 30-day Pro trial for <strong>${tenant.company_name}</strong> has ended. Open HR Billing to upgrade via Paystack, request a corporate invoice, or submit a trial extension request.`
         : `Your Havilah Pro trial for <strong>${tenant.company_name}</strong> expires in <strong>${daysRemaining} day(s)</strong> (${new Date(trialEndsAt).toDateString()}).`;
-      await sendMail({ to: recipientEmail, subject, html: `<p>${bodyMsg}</p>` }).catch(() => {});
+      await emailService.sendMail({ to: recipientEmail, subject, html: `<p>${bodyMsg}</p>` }).catch(() => {});
     }
 
     if (!tenant.subscription) tenant.subscription = {};

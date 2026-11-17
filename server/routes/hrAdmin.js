@@ -264,6 +264,8 @@ router.get('/departments', async (req, res, next) => {
 });
 
 // POST /api/v1/hr/generate-invite
+const { resolveAppBaseUrl } = require('../utils/runtimeConfig');
+
 router.post('/generate-invite', async (req, res, next) => {
   try {
     const { department_name, emails } = req.body;
@@ -313,31 +315,7 @@ router.post('/generate-invite', async (req, res, next) => {
     });
     await newInvitation.save();
 
-    // Resolve client base URL dynamically from request headers or production fallback
-    const clientBaseUrl = (() => {
-      if (process.env.APP_BASE_URL && !process.env.APP_BASE_URL.includes('localhost')) {
-        return process.env.APP_BASE_URL.replace(/\/+$/, '');
-      }
-      if (process.env.CLIENT_ORIGIN && !process.env.CLIENT_ORIGIN.includes('localhost')) {
-        return process.env.CLIENT_ORIGIN.replace(/\/+$/, '');
-      }
-      if (process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost')) {
-        return process.env.CLIENT_URL.replace(/\/+$/, '');
-      }
-      if (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost')) {
-        return process.env.FRONTEND_URL.replace(/\/+$/, '');
-      }
-      const origin = req.get('origin') || req.get('referer');
-      if (origin && !origin.includes('localhost')) {
-        try { return new URL(origin).origin; } catch (e) {}
-      }
-      const fwdHost = req.get('x-forwarded-host');
-      if (fwdHost && !fwdHost.includes('onrender.com') && !fwdHost.includes('localhost')) {
-        const proto = req.get('x-forwarded-proto') || 'https';
-        return `${proto}://${fwdHost}`;
-      }
-      return 'https://havilah.dic20016.workers.dev';
-    })();
+    const clientBaseUrl = resolveAppBaseUrl(req);
 
     const magicLink = `${clientBaseUrl}/register.html?invite=${generatedCode}`;
 

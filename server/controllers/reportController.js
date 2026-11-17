@@ -10,6 +10,7 @@ const Report = require('../models/Report');
 const Tenant = require('../models/Tenant');
 const { validateSession, requireRole, superAdminGuard } = require('../middleware/auth');
 const { sendWhistleblowerAlert } = require('../utils/emailService');
+const { getNotificationRecipients } = require('../utils/runtimeConfig');
 const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
 
 const jwt = require('jsonwebtoken');
@@ -128,9 +129,9 @@ router.post('/submit', async (req, res, next) => {
       message: 'Your report has been submitted anonymously. Please save your Tracking Code and PIN to access updates.',
     });
 
-    // Dispatch background email alert
-    const recipientEmail = process.env.WHISTLEBLOWER_NOTIFICATION_EMAIL || process.env.DEFAULT_NOTIFICATION_RECIPIENT || 'compliance@havilah.app';
-    if (sendWhistleblowerAlert) {
+    // Dispatch background email alert (skip cleanly if no operational recipient env var is configured)
+    const recipientEmail = getNotificationRecipients().whistleblower;
+    if (sendWhistleblowerAlert && recipientEmail) {
       setImmediate(async () => {
         try {
           await sendWhistleblowerAlert({
@@ -142,6 +143,8 @@ router.post('/submit', async (req, res, next) => {
           console.warn('[Whistleblower] Background mail dispatch error:', mailErr.message);
         }
       });
+    } else if (!recipientEmail) {
+      console.warn('[Whistleblower] Skipping alert email: WHISTLEBLOWER_NOTIFICATION_EMAIL / DEFAULT_NOTIFICATION_RECIPIENT / ADMIN_EMAIL not configured.');
     }
   } catch (err) {
     next(err);

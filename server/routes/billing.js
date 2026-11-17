@@ -11,6 +11,7 @@ const { withTransaction } = require('../utils/dbTransaction');
 const paystack = require('../utils/paystack');
 const crypto = require('crypto');
 const { sendMail } = require('../utils/emailService');
+const { resolveAppBaseUrl } = require('../utils/runtimeConfig');
 
 // Tier specifications and ISO 45003 feature entitlements (in GHS)
 const TIERS = {
@@ -426,7 +427,7 @@ async function handleInitializePayment(req, res, next) {
     }
 
     const payerEmail = email || tenant.admin_email || `billing-${company_id.slice(0, 8)}@wellframe.internal`;
-    const defaultCallback = `${req.protocol}://${req.get('host')}/dashboard?checkout=success`;
+    const defaultCallback = `${resolveAppBaseUrl(req)}/dashboard?checkout=success`;
     const amountInPesewas = Math.round(tierConfig.priceMonthlyGhs * 100);
 
     const transactionData = await paystack.initializeTransaction({

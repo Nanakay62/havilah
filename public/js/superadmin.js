@@ -150,7 +150,7 @@ async function fetchTenants() {
         const isActive = t.lifecycle_state === 'active';
 
         // 1. Subdomain Slug Subtitle
-        const slugDisplay = t.slug ? `${t.slug}.havilah.app` : 'unassigned.havilah.app';
+        const slugDisplay = t.slug ? `Slug: ${t.slug}` : 'Unassigned slug';
 
         // 2. Billing Tier Pill
         const tierDisplay = (t.billing_tier || 'trial').toUpperCase();

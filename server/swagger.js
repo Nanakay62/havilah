@@ -1,6 +1,7 @@
 'use strict';
 
 const swaggerJsdoc = require('swagger-jsdoc');
+const { resolveAppBaseUrl } = require('./utils/runtimeConfig');
 
 const options = {
   definition: {
@@ -19,7 +20,7 @@ const options = {
       `,
       contact: {
         name: 'Havilah Health Platform Operations',
-        url: 'https://havilah.app',
+        url: resolveAppBaseUrl(),
       },
     },
     servers: [

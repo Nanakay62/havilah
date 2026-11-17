@@ -51,6 +51,7 @@ const { initCallSignaling } = require('./services/callSignaling');
 const logger = require('./utils/logger');
 const pinoHttp = require('pino-http');
 const { cspNonceMiddleware } = require('./middleware/cspNonce');
+const { getAllowedOrigins, getCspConnectSources, getNotificationRecipients } = require('./utils/runtimeConfig');
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -106,15 +107,8 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: [
         "'self'",
-        process.env.CLIENT_ORIGIN || '',
-        "https://havilah.dic20016.workers.dev",
-        "https://havilah-api.onrender.com",
-        "wss://havilah-api.onrender.com",
-        "wss://havilah-api.onrender.com:3001",
-        "ws://localhost:3001",
-        "ws://127.0.0.1:3001",
-        "https://*.metered.ca",
-      ].filter(Boolean),
+        ...getCspConnectSources().filter((src) => src !== "'self'"),
+      ],
       frameSrc: ["'self'"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
@@ -132,14 +126,12 @@ app.use(helmet({
 }));
 
 // Strictly locked CORS Configuration (Principle 10)
-const allowedOrigins = [
-  'https://havilah.dic20016.workers.dev',
-  ...(process.env.CLIENT_ORIGIN ? [process.env.CLIENT_ORIGIN] : []),
-  ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5000', 'http://127.0.0.1:5000'] : [])
-];
-
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const allowed = getAllowedOrigins();
+    return callback(null, allowed.includes(origin));
+  },
   credentials: true
 }));
 
@@ -199,8 +191,80 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 }));
 
 // Explicit fallback route for register.html, clinical-portal, and favicon
-app.get('/favicon.ico', (req, res) => res.status(204).end());
-app.get('/register.html', (req, res) => {
+app.use((req, res, next) => {
+  const p = (req.path || '/').toLowerCase();
+  if (
+    p.startsWith('/api/') ||
+    p.startsWith('/app/') ||
+    p.startsWith('/portal/') ||
+    p === '/dashboard' ||
+    p === '/hr' ||
+    p === '/superadmin' ||
+    p === '/clinical-portal' ||
+    p.startsWith('/activate') ||
+    p.startsWith('/reset-password')
+  ) {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  }
+  next();
+});
+
+app.get('/robots.txt', (req, res) => {
+  const baseOrigin = (process.env.APP_BASE_URL || process.env.CLIENT_ORIGIN || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+  res.type('text/plain').send([
+    'User-agent: *',
+    'Allow: /',
+    'Allow: /privacy',
+    'Allow: /terms',
+    'Allow: /login',
+    'Allow: /register',
+    'Allow: /assets/',
+    'Allow: /css/',
+    'Allow: /js/',
+    'Allow: /site.webmanifest',
+    'Disallow: /api/',
+    'Disallow: /app/',
+    'Disallow: /portal/',
+    'Disallow: /private/',
+    'Disallow: /dashboard',
+    'Disallow: /hr',
+    'Disallow: /superadmin',
+    'Disallow: /clinical',
+    'Disallow: /clinical-portal',
+    'Disallow: /activate',
+    'Disallow: /reset-password',
+    '',
+    `Sitemap: ${baseOrigin}/sitemap.xml`,
+    '',
+  ].join('\n'));
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  const baseOrigin = (process.env.APP_BASE_URL || process.env.CLIENT_ORIGIN || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+  const paths = [
+    { path: '/', changefreq: 'weekly', priority: '1.0' },
+    { path: '/privacy', changefreq: 'monthly', priority: '0.6' },
+    { path: '/terms', changefreq: 'monthly', priority: '0.6' },
+    { path: '/login', changefreq: 'monthly', priority: '0.5' },
+    { path: '/register', changefreq: 'monthly', priority: '0.5' },
+  ];
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${paths
+    .map((p) => `  <url>\n    <loc>${baseOrigin}${p.path}</loc>\n    <lastmod>2026-11-17</lastmod>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>\n  </url>`)
+    .join('\n')}\n</urlset>\n`;
+  res.type('application/xml').send(xml);
+});
+
+app.get('/site.webmanifest', (req, res) => {
+  res.type('application/manifest+json').sendFile(path.join(__dirname, '../public', 'site.webmanifest'));
+});
+
+app.get('/favicon.ico', (req, res) => {
+  res.type('image/svg+xml').sendFile(path.join(__dirname, '../public/assets', 'havilah-mark.svg'));
+});
+app.get(['/login', '/login.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', 'login.html'));
+});
+app.get(['/register', '/register.html'], (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'register.html'));
 });
 app.get(['/privacy', '/privacy.html'], (req, res) => {
@@ -243,13 +307,17 @@ app.post('/api/v1/demo-request', sensitiveRateLimiter(5), async (req, res, next)
     // 1. Save lead to DB
     await DemoLead.create({ email: email.trim().toLowerCase(), requestedAt: new Date() });
 
-    // 2. Dispatch email notification (API Key strictly in process.env)
-    await sendMail({
-      from: '"Wellframe Platform" <no-reply@wellframe.app>',
-      to: process.env.ADMIN_EMAIL || 'admin@wellframe.app',
-      subject: '🔥 New Demo Request Submitted',
-      html: `<p>A new prospect requested a demo: <b>${cleanEmail.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}</b></p>`
-    });
+    // 2. Dispatch email notification only when an operational admin recipient is configured
+    const adminRecipient = getNotificationRecipients().admin;
+    if (adminRecipient) {
+      await sendMail({
+        to: adminRecipient,
+        subject: 'New Demo Request Submitted',
+        html: `<p>A new prospect requested a demo: <b>${cleanEmail.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}</b></p>`
+      });
+    } else {
+      logger.warn('[DemoRequest] Lead saved to DB; ADMIN_EMAIL / SUPERADMIN_EMAIL / DEFAULT_NOTIFICATION_RECIPIENT not configured for alert email.');
+    }
 
     res.json({ success: true, message: "Thank you! We'll reach out shortly." });
   } catch (err) {

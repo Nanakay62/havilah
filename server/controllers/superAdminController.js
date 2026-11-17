@@ -360,25 +360,8 @@ async function manualProvisionTenant(req, res, next) {
     }
 
     // Dispatch background email
-    const clientBaseUrl = (() => {
-      if (process.env.APP_BASE_URL && !process.env.APP_BASE_URL.includes('localhost')) {
-        return process.env.APP_BASE_URL.replace(/\/+$/, '');
-      }
-      if (process.env.CLIENT_ORIGIN && !process.env.CLIENT_ORIGIN.includes('localhost')) {
-        return process.env.CLIENT_ORIGIN.replace(/\/+$/, '');
-      }
-      if (process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost')) {
-        return process.env.CLIENT_URL.replace(/\/+$/, '');
-      }
-      if (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost')) {
-        return process.env.FRONTEND_URL.replace(/\/+$/, '');
-      }
-      const origin = req.get('origin') || req.get('referer');
-      if (origin && !origin.includes('localhost')) {
-        try { return new URL(origin).origin; } catch (e) {}
-      }
-      return 'https://havilah.dic20016.workers.dev';
-    })();
+    const { resolveAppBaseUrl } = require('../utils/runtimeConfig');
+    const clientBaseUrl = resolveAppBaseUrl(req);
 
     if (hrAdminResult && hrAdminResult.email) {
       setImmediate(async () => {

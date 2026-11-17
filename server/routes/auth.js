@@ -15,6 +15,7 @@ const Doctor = require('../models/Doctor');
 const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
 const { validateSession, revokeUserSession, clearUserSessionRevocation } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
+const { resolveAppBaseUrl } = require('../utils/runtimeConfig');
 const { LoginSchema, RegisterSchema } = require('../schemas/auth.schema');
 
 function buildUserTokenPayload(user, isSuperOverride) {
@@ -688,7 +689,7 @@ router.post('/forgot-password', sensitiveRateLimiter(5), async (req, res, next) 
     await user.save();
 
     // Construct reset link
-    const appBaseUrl = (process.env.APP_BASE_URL || process.env.CLIENT_ORIGIN || 'https://havilah.dic20016.workers.dev').replace(/\/$/, '');
+    const appBaseUrl = resolveAppBaseUrl(req);
     const resetUrl = `${appBaseUrl}/reset-password.html?token=${rawResetToken}&email=${encodeURIComponent(normalised)}`;
 
     // Dispatch email asynchronously

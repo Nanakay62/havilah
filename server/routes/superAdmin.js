@@ -10,6 +10,7 @@ const Invitation = require('../models/Invitation');
 const PersonalWellnessLog = require('../models/PersonalWellnessLog');
 const { encryptField, hashField, decryptField, validatePasswordStrength } = require('../utils/crypto');
 const { validateSession, superAdminGuard, invalidateTenantSessionCache } = require('../middleware/auth');
+const { resolveAppBaseUrl } = require('../utils/runtimeConfig');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const superAdminController = require('../controllers/superAdminController');
@@ -390,31 +391,7 @@ router.post('/tenants', async (req, res, next) => {
       email_sent: true
     });
 
-    // Resolve client base URL dynamically from request headers or production fallback
-    const clientBaseUrl = (() => {
-      if (process.env.APP_BASE_URL && !process.env.APP_BASE_URL.includes('localhost')) {
-        return process.env.APP_BASE_URL.replace(/\/+$/, '');
-      }
-      if (process.env.CLIENT_ORIGIN && !process.env.CLIENT_ORIGIN.includes('localhost')) {
-        return process.env.CLIENT_ORIGIN.replace(/\/+$/, '');
-      }
-      if (process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost')) {
-        return process.env.CLIENT_URL.replace(/\/+$/, '');
-      }
-      if (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost')) {
-        return process.env.FRONTEND_URL.replace(/\/+$/, '');
-      }
-      const origin = req.get('origin') || req.get('referer');
-      if (origin && !origin.includes('localhost')) {
-        try { return new URL(origin).origin; } catch (e) {}
-      }
-      const fwdHost = req.get('x-forwarded-host');
-      if (fwdHost && !fwdHost.includes('onrender.com') && !fwdHost.includes('localhost')) {
-        const proto = req.get('x-forwarded-proto') || 'https';
-        return `${proto}://${fwdHost}`;
-      }
-      return 'https://havilah.dic20016.workers.dev';
-    })();
+    const clientBaseUrl = resolveAppBaseUrl(req);
 
     // 2. Automatically send credentials & activation codes straight to HR email in background
     if (hrAdminResult && hrAdminResult.email) {

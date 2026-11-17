@@ -752,11 +752,7 @@
   .notif-dismiss-btn { background: transparent; color: var(--text-3); border: 1px solid var(--border); border-radius: var(--radius-control); padding: 5px 10px; font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: all 0.15s ease; }
   .notif-dismiss-btn:hover { color: var(--text-1); background: var(--surface); border-color: var(--border-strong); }
 
-  /* Transient Assessment Cycle Banner (Industry-standard crisp card) */
-  @keyframes bannerCountdown {
-    from { transform: scaleX(1); }
-    to { transform: scaleX(0); }
-  }
+  /* Transient Assessment Cycle Banner (Borderless clean card) */
   .assessment-cycle-banner {
     position: relative;
     display: flex;
@@ -764,26 +760,24 @@
     justify-content: space-between;
     gap: 16px;
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--brand);
+    border: none;
+    outline: none;
     border-radius: var(--radius-card);
-    padding: 12px 16px;
+    padding: 14px 18px;
     margin: 0 0 16px 0;
-    box-shadow: var(--shadow-card);
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
     overflow: hidden;
     max-height: 220px;
-    animation: bannerSlideIn 0.3s var(--ease-out);
-    transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease, border-width 0.3s ease;
+    animation: bannerSlideIn 0.35s var(--ease-out);
+    transition: opacity 0.5s ease, transform 0.5s ease, max-height 0.4s ease, margin 0.4s ease, padding 0.4s ease;
   }
   .assessment-cycle-banner.is-collapsing {
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateY(-4px);
     max-height: 0;
     padding-top: 0;
     padding-bottom: 0;
     margin-bottom: 0;
-    border-top-width: 0;
-    border-bottom-width: 0;
   }
   .cycle-banner-main {
     display: flex;
@@ -904,24 +898,6 @@
     color: var(--text-1);
   }
   .cycle-banner-close svg { width: 15px; height: 15px; }
-  .cycle-banner-progress {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 2px;
-    background: rgba(15, 118, 110, 0.1);
-  }
-  .cycle-banner-progress-bar {
-    height: 100%;
-    width: 100%;
-    background: var(--brand);
-    transform-origin: left center;
-    animation: bannerCountdown 6s linear forwards;
-  }
-  .assessment-cycle-banner:hover .cycle-banner-progress-bar {
-    animation-play-state: paused;
-  }
   .notif-icon svg { width: 16px; height: 16px; }
   .notif-content { flex: 1; min-width: 0; }
   .notif-title { font-size: 0.875rem; font-weight: 500; margin-bottom: 2px; }
@@ -3381,7 +3357,7 @@ async function apiFetch(url, options = {}) {
 }
 
 // ═══ Active Assessment Cycle Banner & Notification Sync (HR → Employee) ═══
-const TRANSIENT_BANNER_DURATION_MS = 6000;
+const TRANSIENT_BANNER_DURATION_MS = 10000;
 
 function getSessionShownBanners() {
   try {
@@ -3407,7 +3383,7 @@ function collapseBannerElement(banner) {
   banner.classList.add('is-collapsing');
   setTimeout(() => {
     banner.remove();
-  }, 300);
+  }, 500);
 }
 
 function attachBannerAutoDismiss(banner, bannerKey, durationMs = TRANSIENT_BANNER_DURATION_MS) {
@@ -3527,9 +3503,6 @@ async function fetchActiveCycles() {
           <button type="button" class="cycle-banner-close" onclick="window.dismissTransientBanner(this, '${bannerKey}')" title="Dismiss" aria-label="Dismiss notification">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
-        </div>
-        <div class="cycle-banner-progress" aria-hidden="true">
-          <div class="cycle-banner-progress-bar"></div>
         </div>
       `;
 

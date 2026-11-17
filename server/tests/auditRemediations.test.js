@@ -1073,4 +1073,85 @@ describe('Audit Remediation Regression Suite (All 4 Phases)', () => {
       expect(hrJs).toContain('const safeDeptName = escapeHrHtml(invite.department_name)');
     });
   });
+
+  describe('HR Severity Trends & Horizontal Portal Navigation', () => {
+    it('filters /api/v1/hr/severity-trends by metric (including copsoq group), department, and days, returning status OK & totals', async () => {
+      const hrToken = jwt.sign(
+        { userId: 'hr-sev-1', companyId: 'comp-sev', role: 'hr_admin', status: 'active' },
+        SECRET,
+        { expiresIn: '1h' }
+      );
+      vi.spyOn(Tenant, 'findOne').mockImplementation(() =>
+        createMockQuery({ company_id: 'comp-sev', lifecycle_state: 'active', used_seats: 10, max_allowed_seats: 25 })
+      );
+      vi.spyOn(AnonHazardLog, 'countDocuments').mockResolvedValue(12);
+      vi.spyOn(Department, 'find').mockImplementation(() =>
+        createMockQuery([{ department_id: 'dept-eng', name: 'Engineering', is_active: true }])
+      );
+
+      let capturedQuery = null;
+      vi.spyOn(AnonHazardLog, 'find').mockImplementation((query) => {
+        capturedQuery = query;
+        return createMockQuery([
+          { period_year: 2026, period_week: 44, severity_band: 'healthy' },
+          { period_year: 2026, period_week: 44, severity_band: 'healthy' },
+          { period_year: 2026, period_week: 44, severity_band: 'mild' },
+          { period_year: 2026, period_week: 44, severity_band: 'moderate' },
+          { period_year: 2026, period_week: 44, severity_band: 'severe' }
+        ]);
+      });
+
+      const res = await request(app)
+        .get('/api/v1/hr/severity-trends?metric=copsoq&department=Engineering&days=90')
+        .set('Authorization', `Bearer ${hrToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('OK');
+      expect(res.body.labels).toEqual(['2026-W44']);
+      expect(res.body.totals).toEqual([5]);
+      expect(capturedQuery.survey_type).toEqual({ $in: ['copsoq3_core', 'copsoq3_middle', 'copsoq3_long'] });
+      expect(capturedQuery.department_id).toBe('dept-eng');
+      expect(capturedQuery.submitted_at.$gte).toBeInstanceOf(Date);
+    });
+
+    it('suppresses /api/v1/hr/severity-trends when filtered logs < 5 even if company total >= 5', async () => {
+      const hrToken = jwt.sign(
+        { userId: 'hr-sev-2', companyId: 'comp-sev', role: 'hr_admin', status: 'active' },
+        SECRET,
+        { expiresIn: '1h' }
+      );
+      vi.spyOn(Tenant, 'findOne').mockImplementation(() =>
+        createMockQuery({ company_id: 'comp-sev', lifecycle_state: 'active', used_seats: 10, max_allowed_seats: 25 })
+      );
+      vi.spyOn(AnonHazardLog, 'countDocuments').mockResolvedValue(20);
+      vi.spyOn(AnonHazardLog, 'find').mockImplementation(() =>
+        createMockQuery([
+          { period_year: 2026, period_week: 44, severity_band: 'healthy' },
+          { period_year: 2026, period_week: 44, severity_band: 'mild' }
+        ])
+      );
+
+      const res = await request(app)
+        .get('/api/v1/hr/severity-trends?metric=gad7&days=30')
+        .set('Authorization', `Bearer ${hrToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('SUPPRESSED');
+      expect(res.body.labels).toEqual([]);
+    });
+
+    it('portal/hr.html mirrors private/portal/hr.html, uses horizontal top nav, removes fake chart generator & duplicate banner', () => {
+      const rootDir = path.resolve(__dirname, '../..');
+      const hrPortal = fs.readFileSync(path.join(rootDir, 'portal/hr.html'), 'utf8');
+      const privateHrPortal = fs.readFileSync(path.join(rootDir, 'private/portal/hr.html'), 'utf8');
+
+      expect(hrPortal).toBe(privateHrPortal);
+      expect(hrPortal).not.toContain('generateSeverityData');
+      expect(hrPortal).not.toContain('generateRadarData');
+      expect(hrPortal).not.toContain('id="appSidebar"');
+      expect(hrPortal).toContain('/api/v1/hr/severity-trends');
+      expect(hrPortal).toContain('class="hr-top-nav"');
+      expect(hrPortal.match(/id="hrTrialBannerText"/g)).toHaveLength(1);
+    });
+  });
 });

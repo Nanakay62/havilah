@@ -598,12 +598,24 @@ router.get('/radar', async (req, res, next) => {
   }
 });
 
+const SEVERITY_METRIC_FILTERS = {
+  phq9: 'phq9',
+  gad7: 'gad7',
+  pss10: 'pss10',
+  fas10: 'fas10',
+  copsoq: { $in: ['copsoq3_core', 'copsoq3_middle', 'copsoq3_long'] },
+  copsoq3_core: 'copsoq3_core',
+  copsoq3_middle: 'copsoq3_middle',
+  copsoq3_long: 'copsoq3_long'
+};
+
 // GET /api/v1/hr/severity-trends
 router.get('/severity-trends', async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;
     const AnonHazardLog = require('../models/AnonHazardLog');
-    
+    const Department = require('../models/Department');
+
     const totalCount = await AnonHazardLog.countDocuments({ company_id });
     if (totalCount < 5) {
       return res.json({
@@ -611,26 +623,64 @@ router.get('/severity-trends', async (req, res, next) => {
         status: 'SUPPRESSED',
         labels: [],
         datasets: { healthy: [], mild: [], moderate: [], severe: [] },
+        totals: [],
         privacy_notice: 'Severity trend metrics suppressed due to insufficient company response count (N < 5).'
       });
     }
 
-    const eightWeeksAgo = new Date(Date.now() - 8 * 7 * 24 * 60 * 60 * 1000);
-    const logs = await AnonHazardLog.find({ 
-       company_id, 
-       submitted_at: { $gte: eightWeeksAgo } 
-    }).sort({ period_year: 1, period_week: 1 }).lean();
-    
+    const daysParsed = parseInt(req.query.days, 10);
+    const days = Number.isFinite(daysParsed) ? Math.max(7, Math.min(daysParsed, 365)) : 56;
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const query = {
+      company_id,
+      submitted_at: { $gte: cutoffDate }
+    };
+
+    const rawMetric = req.query.metric !== undefined ? req.query.metric : req.query.survey_type;
+    const metricRaw = typeof rawMetric === 'string' ? rawMetric.trim().toLowerCase() : 'all';
+    if (metricRaw && metricRaw !== 'all') {
+      query.survey_type = SEVERITY_METRIC_FILTERS[metricRaw] || '__unknown_metric__';
+    }
+
+    const rawDept = req.query.department !== undefined ? req.query.department : req.query.department_id;
+    const targetDept = typeof rawDept === 'string' ? rawDept.trim() : '';
+    if (targetDept && targetDept !== 'all') {
+      const depts = await Department.find({ company_id, is_active: true }).lean();
+      const deptMatch = depts.find(
+        d => (d.name && d.name.toLowerCase() === targetDept.toLowerCase()) || d.department_id === targetDept
+      );
+      query.department_id = deptMatch ? deptMatch.department_id : '__unmatched_department__';
+    }
+
+    const logs = await AnonHazardLog.find(query)
+      .sort({ period_year: 1, period_week: 1 })
+      .lean();
+
+    if (logs.length < 5) {
+      return res.json({
+        success: true,
+        status: 'SUPPRESSED',
+        labels: [],
+        datasets: { healthy: [], mild: [], moderate: [], severe: [] },
+        totals: [],
+        privacy_notice: 'Severity trend metrics suppressed due to insufficient matching response count (N < 5).'
+      });
+    }
+
     const weeks = {};
     logs.forEach(log => {
-       const weekKey = `${log.period_year}-W${log.period_week}`;
-       if (!weeks[weekKey]) {
-          weeks[weekKey] = { healthy: 0, mild: 0, moderate: 0, severe: 0, total: 0 };
-       }
-       weeks[weekKey][log.severity_band]++;
-       weeks[weekKey].total++;
+      if (!log || log.period_year == null || log.period_week == null) return;
+      const weekKey = log.period_year + '-W' + log.period_week;
+      if (!weeks[weekKey]) {
+        weeks[weekKey] = { healthy: 0, mild: 0, moderate: 0, severe: 0, total: 0 };
+      }
+      if (Object.prototype.hasOwnProperty.call(weeks[weekKey], log.severity_band)) {
+        weeks[weekKey][log.severity_band]++;
+      }
+      weeks[weekKey].total++;
     });
-    
+
     const labels = Object.keys(weeks).filter(w => weeks[w].total >= 5);
     if (labels.length === 0) {
       return res.json({
@@ -638,24 +688,28 @@ router.get('/severity-trends', async (req, res, next) => {
         status: 'SUPPRESSED',
         labels: [],
         datasets: { healthy: [], mild: [], moderate: [], severe: [] },
+        totals: [],
         privacy_notice: 'Weekly severity trend metrics suppressed (N < 5 per reporting week).'
       });
     }
+
     const datasets = { healthy: [], mild: [], moderate: [], severe: [] };
-    
+    const totals = [];
+
     labels.forEach(w => {
-       const tot = weeks[w].total || 1;
-       const h = Math.round((weeks[w].healthy / tot) * 100);
-       const mi = Math.round((weeks[w].mild / tot) * 100);
-       const mo = Math.round((weeks[w].moderate / tot) * 100);
-       const s = Math.max(0, 100 - (h + mi + mo));
-       datasets.healthy.push(h);
-       datasets.mild.push(mi);
-       datasets.moderate.push(mo);
-       datasets.severe.push(s);
+      const tot = weeks[w].total || 1;
+      const h = Math.round((weeks[w].healthy / tot) * 100);
+      const mi = Math.round((weeks[w].mild / tot) * 100);
+      const mo = Math.round((weeks[w].moderate / tot) * 100);
+      const s = Math.max(0, 100 - (h + mi + mo));
+      datasets.healthy.push(h);
+      datasets.mild.push(mi);
+      datasets.moderate.push(mo);
+      datasets.severe.push(s);
+      totals.push(weeks[w].total);
     });
-    
-    res.json({ success: true, labels, datasets });
+
+    res.json({ success: true, status: 'OK', labels, datasets, totals });
   } catch (err) {
     next(err);
   }

@@ -60,6 +60,89 @@
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
   }
+
+  /* Horizontal Topbar Layout Overrides (replaces 240px left sidebar with compact top nav) */
+  .app-shell {
+    display: block !important;
+    min-height: 100vh;
+  }
+  .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-width: 0;
+  }
+  .app-topbar {
+    height: auto !important;
+    min-height: 60px;
+    padding: 8px 24px !important;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: var(--surface, #ffffff);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .hr-top-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 2px 0;
+  }
+  .hr-top-nav::-webkit-scrollbar { display: none; }
+  .hr-nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    min-height: 38px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-2, #5A5C63);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .hr-nav-tab:hover {
+    background: rgba(15, 118, 110, 0.06);
+    color: var(--text-1, #1A1B1E);
+  }
+  .hr-nav-tab.active {
+    background: rgba(15, 118, 110, 0.10);
+    color: #0F766E;
+    font-weight: 600;
+    border-color: rgba(15, 118, 110, 0.22);
+  }
+  .hr-nav-tab svg {
+    flex-shrink: 0;
+  }
+  @media (max-width: 960px) {
+    .app-topbar {
+      padding: 10px 16px !important;
+      gap: 10px;
+    }
+    .topbar-left {
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .hr-top-nav {
+      width: 100%;
+      order: 3;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+    }
+  }
   body {
     background: var(--bg);
     color: var(--text);
@@ -575,62 +658,40 @@
 <body>
 
 <div class="app-shell">
-  <!-- Mobile Sidebar Backdrop -->
-  <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
-
-  <!-- 240px Left Sidebar -->
-  <aside class="app-sidebar" id="appSidebar" aria-label="Sidebar navigation">
-    <div class="app-sidebar-header">
-      <button class="brand" onclick="App.navigate('landing')" aria-label="Havilah home" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:0;">
-        <img src="/assets/havilah-logo.svg" alt="Havilah" style="height: 30px; width: auto; display: block;">
-      </button>
-    </div>
-    <nav class="app-sidebar-nav" role="navigation" aria-label="Primary navigation">
-      <button class="sidebar-nav-item active" id="hr-tab-analytics" onclick="window.switchHrViewTab('analytics')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-        <span>HR Analytics</span>
-      </button>
-      <button class="sidebar-nav-item" id="hr-tab-billing" onclick="window.switchHrViewTab('billing')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-        <span>Clinical Billing</span>
-      </button>
-      <button class="sidebar-nav-item" id="hr-tab-ethics" onclick="window.switchHrViewTab('ethics')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-        <span>Ethics &amp; Reports</span>
-      </button>
-      <button class="sidebar-nav-item" id="hr-tab-invites" onclick="window.switchHrViewTab('invites')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-        <span>Employee Invitations</span>
-      </button>
-    </nav>
-    <div class="sidebar-footer">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background-color:var(--success);" aria-hidden="true"></span>
-        <span style="font-size:var(--text-xs);color:var(--text-subtle);font-weight:500;">Secure Portal</span>
-      </div>
-    </div>
-  </aside>
-
   <!-- Main Content Wrapper -->
   <div class="app-main">
     <!-- 30-DAY PRO TRIAL BANNER -->
     <div id="hrTrialBanner" style="display: none; background: var(--brand); color: #ffffff; padding: 8px 24px; font-size: 0.8125rem; font-weight: 500; text-align: center; width: 100%;">
       <div style="max-width: 1440px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
         <span id="hrTrialBannerText"><strong>30-Day Pro Reverse Trial Active:</strong> You have full access to all Pro features including whistleblower isolation &amp; clinical routing.</span>
-        <span id="hrTrialBannerText"><strong>30-Day Pro Reverse Trial Active:</strong> You have full access to all Pro features including whistleblower isolation &amp; clinical routing.</span>
         <a href="#" onclick="event.preventDefault(); if (window.switchHrViewTab) window.switchHrViewTab('billing');" style="background: #ffffff; color: var(--brand); border-radius: 99px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">Upgrade / Request Extension</a>
-        <a href="/index.html#pricing" target="_blank" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); border-radius: 99px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">View Plans &rarr;</a>
+        <a href="/#pricing" target="_blank" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); border-radius: 99px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">View Plans &rarr;</a>
       </div>
     </div>
-    <!-- App Topbar with Hamburger Toggle & Header Actions -->
+    <!-- App Topbar with Brand, Horizontal Navigation & Header Actions -->
     <header class="app-topbar" role="banner">
       <div class="topbar-left">
-        <button id="sidebarToggleBtn" class="hamburger-btn" aria-label="Toggle navigation drawer" aria-expanded="false">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-        </button>
-        <div class="topbar-brand" style="display:none; align-items:center; gap:8px;">
+        <button class="brand" onclick="App.navigate('landing')" aria-label="Havilah home" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:0;flex-shrink:0;">
           <img src="/assets/havilah-logo.svg" alt="Havilah" style="height: 28px; width: auto; display: block;">
-        </div>
+        </button>
+        <nav class="hr-top-nav" role="navigation" aria-label="Primary navigation">
+          <button class="hr-nav-tab active" id="hr-tab-analytics" onclick="window.switchHrViewTab('analytics')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            <span>HR Analytics</span>
+          </button>
+          <button class="hr-nav-tab" id="hr-tab-billing" onclick="window.switchHrViewTab('billing')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            <span>Clinical Billing</span>
+          </button>
+          <button class="hr-nav-tab" id="hr-tab-ethics" onclick="window.switchHrViewTab('ethics')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <span>Ethics &amp; Reports</span>
+          </button>
+          <button class="hr-nav-tab" id="hr-tab-invites" onclick="window.switchHrViewTab('invites')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>Employee Invitations</span>
+          </button>
+        </nav>
       </div>
       <div class="topbar-right">
         <button class="icon-btn" id="searchBtn" aria-label="Search (Ctrl+K)" title="Search (Ctrl+K)">
@@ -758,6 +819,7 @@
       <label for="timeFilter" class="form-label" style="margin-bottom: 0; font-size: var(--text-xs); color: var(--text-subtle);">Time window</label>
       <select class="form-select form-select-sm" id="timeFilter" onchange="App.applyFilters()">
         <option value="30">Last 30 days</option>
+        <option value="56" selected>Last 8 weeks</option>
         <option value="90">Last 90 days</option>
         <option value="180">Last 6 months</option>
         <option value="365">Last 12 months</option>
@@ -765,7 +827,8 @@
     </div>
     <div style="flex: 1 1 auto;"></div>
     <div class="segmented-control" role="tablist" aria-label="Assessment metric">
-      <button class="segmented-item filter-pill active" data-metric="phq9" onclick="App.setMetric(this, 'phq9')" role="tab" aria-selected="true">PHQ-9</button>
+      <button class="segmented-item filter-pill active" data-metric="all" onclick="App.setMetric(this, 'all')" role="tab" aria-selected="true">All</button>
+      <button class="segmented-item filter-pill" data-metric="phq9" onclick="App.setMetric(this, 'phq9')" role="tab" aria-selected="false">PHQ-9</button>
       <button class="segmented-item filter-pill" data-metric="gad7" onclick="App.setMetric(this, 'gad7')" role="tab" aria-selected="false">GAD-7</button>
       <button class="segmented-item filter-pill" data-metric="pss10" onclick="App.setMetric(this, 'pss10')" role="tab" aria-selected="false">PSS-10</button>
       <button class="segmented-item filter-pill" data-metric="fas10" onclick="App.setMetric(this, 'fas10')" role="tab" aria-selected="false">FAS-10</button>
@@ -2005,9 +2068,10 @@ const App = (() => {
     hrFilters: {
       department: 'all',
       role: 'all',
-      time: '30',
-      metric: 'phq9'
+      time: '56',
+      metric: 'all'
     },
+    severityTrends: null,
     charts: {},
     cmdSelectedIndex: 0,
     cmdItems: []
@@ -2760,22 +2824,17 @@ const App = (() => {
     state.hrFilters.department = $('#deptFilter').value;
     state.hrFilters.role = $('#roleFilter').value;
     state.hrFilters.time = $('#timeFilter').value;
-    
+
     // Update subtitle
     const dept = state.hrFilters.department === 'all' ? 'All departments' : state.hrFilters.department;
     const days = state.hrFilters.time;
     const subEl = $('#hrSubtitle');
     if (subEl) subEl.textContent = `Showing: ${dept} · Last ${days} days · Auto-refreshed`;
-    
-    // Re-render charts with filter-aware data
-    if (state.charts.severity) {
-       state.charts.severity.data.datasets.forEach((ds, i) => {
-        ds.data = generateSeverityData(i, days);
-      });
-      state.charts.severity.update();
-    }
+
+    // Re-fetch real severity trends and refresh charts
+    fetchSeverityTrends();
     if (state.charts.radar) {
-      state.charts.radar.data.datasets[0].data = generateRadarData(state.hrFilters.department);
+      state.charts.radar.data.datasets[0].data = getRadarData();
       state.charts.radar.update();
     }
     renderHeatmap();
@@ -2786,59 +2845,166 @@ const App = (() => {
 
   function setMetric(btn, metric) {
     state.hrFilters.metric = metric;
-    $$('.filter-pill').forEach(p => p.classList.toggle('active', p.dataset.metric === metric));
-    $('#severitySubtitle').textContent = `${metric.toUpperCase()} distribution across 4 severity bands, last 8 weeks`;
-    state._severityCacheKey = null;
-    if (state.charts.severity) {
-      state.charts.severity.data.datasets.forEach((ds, i) => {
-        ds.data = generateSeverityData(i, state.hrFilters.time);
-      });
-      state.charts.severity.update();
-    }
-    toast('Metric switched', `Now viewing ${metric.toUpperCase()} distribution`, 'info');
+    $$('.filter-pill').forEach(p => {
+      const isMatch = p.dataset.metric === metric;
+      p.classList.toggle('active', isMatch);
+      p.setAttribute('aria-selected', isMatch ? 'true' : 'false');
+    });
+    const label = metric === 'all' ? 'All assessments' : metric.toUpperCase();
+    const subEl = $('#severitySubtitle');
+    if (subEl) subEl.textContent = `${label} distribution across 4 severity bands · Loading...`;
+    fetchSeverityTrends();
+    toast('Metric switched', `Now viewing ${label} distribution`, 'info');
   }
 
-  function generateSeverityData(datasetIdx, days) {
-    const cacheKey = `${state.hrFilters.metric}_${state.hrFilters.department}_${days}`;
-    if (!state._severityCache || state._severityCacheKey !== cacheKey) {
-      const base = [
-        [65, 65, 66, 67, 68, 68, 69, 70], // healthy
-        [22, 22, 21, 20, 20, 19, 19, 18], // mild
-        [9, 9, 9, 9, 8, 9, 8, 8],          // moderate
-        [4, 4, 4, 4, 4, 4, 4, 4]           // severe
-      ];
-      const matrix = [[], [], [], []];
+  function renderSeverityChart(trendData) {
+    const container = document.getElementById('risk-trends-container');
+    if (!container) return;
 
-      for (let w = 0; w < 8; w++) {
-        let h = base[0][w];
-        let mi = base[1][w];
-        let mo = base[2][w];
-        let s = base[3][w];
+    const metricLabel = (!state.hrFilters || state.hrFilters.metric === 'all')
+      ? 'All assessments'
+      : state.hrFilters.metric.toUpperCase();
+    const windowLabel = (state.hrFilters && state.hrFilters.time === '56')
+      ? 'last 8 weeks'
+      : `last ${(state.hrFilters && state.hrFilters.time) || 56} days`;
 
-        if (state.hrFilters.metric === 'gad7') { h -= 2; mi += 1; mo += 1; }
-        if (state.hrFilters.metric === 'pss10') { mo += 2; s += 1; h -= 3; }
-        if (state.hrFilters.metric === 'fas10') { mi += 2; h -= 2; }
+    const hasValidData = trendData && trendData.status !== 'SUPPRESSED'
+      && Array.isArray(trendData.labels) && trendData.labels.length > 0;
 
-        h = Math.max(5, h);
-        mi = Math.max(3, mi);
-        mo = Math.max(2, mo);
-        s = Math.max(1, s);
-
-        const total = h + mi + mo + s;
-        const hPct = Math.round((h / total) * 100);
-        const miPct = Math.round((mi / total) * 100);
-        const moPct = Math.round((mo / total) * 100);
-        const sPct = Math.max(0, 100 - (hPct + miPct + moPct));
-
-        matrix[0].push(hPct);
-        matrix[1].push(miPct);
-        matrix[2].push(moPct);
-        matrix[3].push(sPct);
+    if (!hasValidData) {
+      if (state.charts.severity) {
+        state.charts.severity.destroy();
+        state.charts.severity = null;
       }
-      state._severityCache = matrix;
-      state._severityCacheKey = cacheKey;
+      const noticeMsg = (trendData && trendData.privacy_notice)
+        ? trendData.privacy_notice
+        : 'Trend charts and weekly severity bars activate automatically once at least 5 employee responses exist within a reporting week.';
+      container.innerHTML = `
+        <div class="chart-head">
+          <div>
+            <div class="chart-title">Risk severity trends</div>
+            <div class="chart-subtitle" id="severitySubtitle">${metricLabel} · ${windowLabel} · Weekly N ≥ 5 enforced</div>
+          </div>
+        </div>
+        <div class="empty-state" style="padding: var(--space-8) var(--space-4); text-align: center; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-card); margin: var(--space-3) 0;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); margin-bottom: var(--space-2); color: var(--text-subtle);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <h4 style="margin: 0 0 var(--space-1) 0; color: var(--text); font-weight: var(--weight-semibold); font-size: var(--text-sm);">Privacy threshold active (N &lt; 5)</h4>
+          <p style="margin: 0; color: var(--text-subtle); font-size: var(--text-xs); max-width: 440px; margin-inline: auto;"></p>
+        </div>
+      `;
+      const pEl = container.querySelector('.empty-state p');
+      if (pEl) pEl.textContent = noticeMsg;
+      return;
     }
-    return state._severityCache[datasetIdx];
+
+    let ctx = $('#severityChart');
+    if (!ctx) {
+      container.innerHTML = `
+        <div class="chart-head">
+          <div><div class="chart-title">Risk severity trends</div><div class="chart-subtitle" id="severitySubtitle">${metricLabel} distribution across 4 severity bands, ${windowLabel}</div></div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="background: #15803D;"></span>Healthy</span>
+            <span class="legend-item"><span class="legend-dot" style="background: #0F766E;"></span>Mild</span>
+            <span class="legend-item"><span class="legend-dot" style="background: #B45309;"></span>Moderate</span>
+            <span class="legend-item"><span class="legend-dot" style="background: #B91C1C;"></span>Severe</span>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="severityChart"></canvas></div>
+      `;
+      ctx = $('#severityChart');
+    } else {
+      const subEl = $('#severitySubtitle');
+      if (subEl) subEl.textContent = `${metricLabel} distribution across 4 severity bands, ${windowLabel}`;
+    }
+    if (!ctx) return;
+
+    const ds = trendData.datasets || {};
+    const labels = trendData.labels;
+    const totals = Array.isArray(trendData.totals) ? trendData.totals : [];
+    const healthyData = Array.isArray(ds.healthy) ? ds.healthy : [];
+    const mildData = Array.isArray(ds.mild) ? ds.mild : [];
+    const moderateData = Array.isArray(ds.moderate) ? ds.moderate : [];
+    const severeData = Array.isArray(ds.severe) ? ds.severe : [];
+
+    if (state.charts.severity) {
+      state.charts.severity.data.labels = labels;
+      state.charts.severity.data.datasets[0].data = healthyData;
+      state.charts.severity.data.datasets[1].data = mildData;
+      state.charts.severity.data.datasets[2].data = moderateData;
+      state.charts.severity.data.datasets[3].data = severeData;
+      state.charts.severity._weekTotals = totals;
+      state.charts.severity.update();
+      return;
+    }
+
+    state.charts.severity = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Healthy', data: healthyData, backgroundColor: '#15803D', borderRadius: 0, borderSkipped: false, stack: 's' },
+          { label: 'Mild', data: mildData, backgroundColor: '#0F766E', borderRadius: 0, borderSkipped: false, stack: 's' },
+          { label: 'Moderate', data: moderateData, backgroundColor: '#B45309', borderRadius: 0, borderSkipped: false, stack: 's' },
+          { label: 'Severe', data: severeData, backgroundColor: '#B91C1C', borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, stack: 's' }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(26, 27, 30, 0.95)', padding: 12, cornerRadius: 10,
+            titleFont: { family: 'Segoe UI', weight: '600', size: 13 }, bodyFont: { family: 'Segoe UI', size: 12 },
+            callbacks: {
+              title: (items) => {
+                if (!items || !items.length) return '';
+                const idx = items[0].dataIndex;
+                const n = state.charts.severity && state.charts.severity._weekTotals && state.charts.severity._weekTotals[idx];
+                return n ? `${items[0].label} (N = ${n})` : items[0].label;
+              },
+              label: (c) => `${c.dataset.label}: ${c.raw}%`
+            }
+          }
+        },
+        scales: {
+          y: { stacked: true, min: 0, max: 100, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, ticks: { color: '#8A8D94', font: { family: 'Segoe UI', size: 11 }, callback: (v) => v + '%' } },
+          x: { stacked: true, grid: { display: false }, ticks: { color: '#8A8D94', font: { family: 'Segoe UI', size: 11 } } }
+        },
+        animation: { duration: 700, easing: 'easeOutQuart' }
+      }
+    });
+    state.charts.severity._weekTotals = totals;
+  }
+
+  async function fetchSeverityTrends() {
+    const token = localStorage.getItem('session_token') || localStorage.getItem('token') || '';
+    if (!token) {
+      renderSeverityChart(null);
+      return null;
+    }
+    const params = new URLSearchParams();
+    const metric = (state.hrFilters && state.hrFilters.metric) || 'all';
+    const dept = (state.hrFilters && state.hrFilters.department) || 'all';
+    const days = (state.hrFilters && state.hrFilters.time) || '56';
+    if (metric && metric !== 'all') params.set('metric', metric);
+    if (dept && dept !== 'all') params.set('department', dept);
+    if (days) params.set('days', String(days));
+    try {
+      const resp = await apiFetch('/api/v1/hr/severity-trends?' + params.toString(), {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await resp.json();
+      if (data && data.success) {
+        state.severityTrends = data;
+        renderSeverityChart(data);
+        return data;
+      }
+    } catch (e) {
+      console.warn('[SeverityTrends] Load notice:', e.message);
+    }
+    return null;
   }
 
   function getRadarData() {
@@ -2881,9 +3047,11 @@ const App = (() => {
         trend: avgHint
       },
       {
-        label: 'Response rate',
-        value: totalResponses > 0 ? totalResponses.toLocaleString() : '0%',
-        trend: totalResponses > 0 ? 'Total submissions across org' : '0 responses'
+        label: 'Total submissions',
+        value: totalResponses.toLocaleString(),
+        trend: usedSeats > 0
+          ? `Avg ${(totalResponses / usedSeats).toFixed(1)} check-ins per active user`
+          : (totalResponses > 0 ? 'Total submissions across org' : '0 submissions yet')
       },
       {
         label: 'Active risk alerts',
@@ -2905,62 +3073,16 @@ const App = (() => {
   }
 
   function initSeverityChart() {
-    const isColdStart = !state.analytics || state.analytics.is_empty || (state.analytics.total_responses || 0) < 5;
-    const container = document.getElementById('risk-trends-container');
-    if (isColdStart && container) {
-      container.innerHTML = `
-        <div class="chart-head">
-          <div><div class="chart-title">Risk severity trends</div><div class="chart-subtitle">Distribution across 4 severity bands</div></div>
-        </div>
-        ${emptyStateCardHtml}
-      `;
+    if (state.severityTrends) {
+      renderSeverityChart(state.severityTrends);
       return;
     }
-    let ctx = $('#severityChart');
-    if (!ctx && container) {
-      container.innerHTML = `
-        <div class="chart-head">
-          <div><div class="chart-title">Risk severity trends</div><div class="chart-subtitle" id="severitySubtitle">Distribution across 4 severity bands, last 8 weeks</div></div>
-          <div class="chart-legend">
-            <span class="legend-item"><span class="legend-dot" style="background: #15803D;"></span>Healthy</span>
-            <span class="legend-item"><span class="legend-dot" style="background: #0F766E;"></span>Mild</span>
-            <span class="legend-item"><span class="legend-dot" style="background: #D97706;"></span>Moderate</span>
-            <span class="legend-item"><span class="legend-dot" style="background: #DC2626;"></span>High</span>
-          </div>
-        </div>
-        <div class="chart-canvas-wrap"><canvas id="severityChart"></canvas></div>
-      `;
-      ctx = $('#severityChart');
+    const isColdStart = !state.analytics || state.analytics.is_empty || (state.analytics.total_responses || 0) < 5;
+    if (isColdStart) {
+      renderSeverityChart(null);
+      return;
     }
-    if (!ctx || state.charts.severity) return;
-    state.charts.severity = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'Wk 6', 'Wk 7', 'Wk 8'],
-        datasets: [
-          { label: 'Healthy', data: generateSeverityData(0, 30), backgroundColor: '#15803D', borderRadius: 0, borderSkipped: false, stack: 's' },
-          { label: 'Mild', data: generateSeverityData(1, 30), backgroundColor: '#0F766E', borderRadius: 0, borderSkipped: false, stack: 's' },
-          { label: 'Moderate', data: generateSeverityData(2, 30), backgroundColor: '#B45309', borderRadius: 0, borderSkipped: false, stack: 's' },
-          { label: 'Severe', data: generateSeverityData(3, 30), backgroundColor: '#B91C1C', borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, stack: 's' }
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(26, 27, 30, 0.95)', padding: 12, cornerRadius: 10,
-            titleFont: { family: 'Segoe UI', weight: '600', size: 13 }, bodyFont: { family: 'Segoe UI', size: 12 },
-            callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}%` }
-          }
-        },
-        scales: {
-          y: { stacked: true, min: 0, max: 100, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, ticks: { color: '#8A8D94', font: { family: 'Segoe UI', size: 11 }, callback: (v) => v + '%' } },
-          x: { stacked: true, grid: { display: false }, ticks: { color: '#8A8D94', font: { family: 'Segoe UI', size: 11 } } }
-        },
-        animation: { duration: 1200, easing: 'easeOutQuart' }
-      }
-    });
+    fetchSeverityTrends();
   }
 
   function initRadarChart() {
@@ -3034,7 +3156,7 @@ const App = (() => {
         } else {
           initRadarChart();
         }
-        initSeverityChart();
+        fetchSeverityTrends();
         renderHeatmap();
         renderDeptList();
         renderAlerts();
@@ -4440,9 +4562,6 @@ document.addEventListener('DOMContentLoaded', App.init);
 <script src="/js/tour.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    if (window.HavilahUI && typeof HavilahUI.initMobileDrawer === 'function') {
-      HavilahUI.initMobileDrawer('appSidebar', 'sidebarToggleBtn', 'sidebarBackdrop');
-    }
     setTimeout(function() {
       HavilahTour.init({
         tourId: 'hr-analytics-portal',

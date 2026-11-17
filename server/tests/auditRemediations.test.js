@@ -1153,5 +1153,34 @@ describe('Audit Remediation Regression Suite (All 4 Phases)', () => {
       expect(hrPortal).toContain('class="hr-top-nav"');
       expect(hrPortal.match(/id="hrTrialBannerText"/g)).toHaveLength(1);
     });
+
+    it('declutters clinical-portal header into account-name Sign Out dropdown and separates HR Platform Subscription from Clinical Billing', () => {
+      const rootDir = path.resolve(__dirname, '../..');
+      const clinicalRoot = fs.readFileSync(path.join(rootDir, 'clinical-portal.html'), 'utf8');
+      const clinicalPublic = fs.readFileSync(path.join(rootDir, 'public/clinical-portal.html'), 'utf8');
+      const assessorJs = fs.readFileSync(path.join(rootDir, 'public/js/assessorPortal.js'), 'utf8');
+      const hrPortal = fs.readFileSync(path.join(rootDir, 'portal/hr.html'), 'utf8');
+      const hrJs = fs.readFileSync(path.join(rootDir, 'public/js/hrDashboard.js'), 'utf8');
+
+      // Clinical portal header declutter & mirror parity
+      expect(clinicalRoot).toBe(clinicalPublic);
+      expect(clinicalRoot).not.toContain('Clinical Hub');
+      expect(clinicalRoot).not.toContain('id="assessorOrgDisplay"');
+      expect(clinicalRoot).toContain('id="assessorUserMenuBtn"');
+      expect(clinicalRoot).toContain('id="assessorUserMenu"');
+      expect(assessorJs).not.toContain('assessorOrgDisplay');
+      expect(assessorJs).toContain('window.toggleAssessorUserMenu');
+
+      // HR portal subscription vs clinical billing separation
+      const billingIdx = hrPortal.indexOf('id="hr-section-billing"');
+      const subscriptionSectionIdx = hrPortal.indexOf('id="hr-section-subscription"');
+      const subscriptionCardIdx = hrPortal.indexOf('id="hrSubscriptionBillingCard"');
+      expect(billingIdx).toBeGreaterThan(-1);
+      expect(subscriptionSectionIdx).toBeGreaterThan(billingIdx);
+      expect(subscriptionCardIdx).toBeGreaterThan(subscriptionSectionIdx);
+      expect(hrPortal).toContain('id="hr-tab-subscription"');
+      expect(hrPortal).toContain("window.switchHrViewTab('subscription')");
+      expect(hrJs).toContain("tabName === 'subscription'");
+    });
   });
 });

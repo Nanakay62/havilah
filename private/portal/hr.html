@@ -664,7 +664,7 @@
     <div id="hrTrialBanner" style="display: none; background: var(--brand); color: #ffffff; padding: 8px 24px; font-size: 0.8125rem; font-weight: 500; text-align: center; width: 100%;">
       <div style="max-width: 1440px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
         <span id="hrTrialBannerText"><strong>30-Day Pro Reverse Trial Active:</strong> You have full access to all Pro features including whistleblower isolation &amp; clinical routing.</span>
-        <a href="#" onclick="event.preventDefault(); if (window.switchHrViewTab) window.switchHrViewTab('billing');" style="background: #ffffff; color: var(--brand); border-radius: 99px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">Upgrade / Request Extension</a>
+        <a href="#" onclick="event.preventDefault(); if (window.switchHrViewTab) window.switchHrViewTab('subscription');" style="background: #ffffff; color: var(--brand); border-radius: 99px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">Upgrade / Request Extension</a>
         <a href="/#pricing" target="_blank" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); border-radius: 99px; padding: 2px 10px; font-size: 0.75rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">View Plans &rarr;</a>
       </div>
     </div>
@@ -690,6 +690,10 @@
           <button class="hr-nav-tab" id="hr-tab-invites" onclick="window.switchHrViewTab('invites')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             <span>Employee Invitations</span>
+          </button>
+          <button class="hr-nav-tab" id="hr-tab-subscription" onclick="window.switchHrViewTab('subscription')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+            <span>Plan &amp; Billing</span>
           </button>
         </nav>
       </div>
@@ -725,6 +729,10 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0 1.51 1z"/></svg>
               Settings
               <span class="dropdown-item-shortcut">⌘,</span>
+            </button>
+            <button class="dropdown-item" onclick="if (window.switchHrViewTab) window.switchHrViewTab('subscription');" role="menuitem">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              Plan &amp; Billing
             </button>
             <div class="dropdown-divider"></div>
             <div class="dropdown-section-label">Help</div>
@@ -1103,6 +1111,54 @@
     </div>
   </div>
 
+  <!-- Billing Table Card with Mobile Stacked Cards Layout -->
+  <div class="data-table-container">
+    <div class="data-table-header">
+      <div>
+        <h2 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text); margin: 0;">Referral billing records</h2>
+        <p style="font-size: var(--text-xs); color: var(--text-subtle); margin: 2px 0 0 0;">Direct ledger of occupational health assessments and billed fees</p>
+      </div>
+    </div>
+    <div style="overflow-x: auto; width: 100%;">
+      <table class="data-table table-to-cards" aria-label="Clinical referral billing records">
+        <thead>
+          <tr>
+            <th scope="col">Reference code</th>
+            <th scope="col">Department</th>
+            <th scope="col">Date</th>
+            <th scope="col">Age</th>
+            <th scope="col">Status</th>
+            <th scope="col" style="text-align: right;">Amount (GHS)</th>
+            <th scope="col">Billed</th>
+          </tr>
+        </thead>
+        <tbody id="hrBillingTableBody">
+          <tr class="empty-row">
+            <td colspan="7" style="padding: 32px; text-align: center; color: var(--text-subtle);">
+              Loading billing records...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PLATFORM SUBSCRIPTION & PLAN VIEW ============ -->
+<div id="hr-section-subscription" style="display: none;">
+  <div class="page-header">
+    <div class="page-header-titles">
+      <h1 class="page-title">Plan &amp; Platform Subscription</h1>
+      <p class="page-header-desc">Manage your organization's Havilah SaaS plan tier, Paystack checkout, corporate proforma invoices, and trial extensions.</p>
+    </div>
+    <div class="page-header-actions">
+      <button class="btn btn-secondary btn-sm" onclick="if (window.fetchSubscriptionBilling) window.fetchSubscriptionBilling();">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        Refresh plan
+      </button>
+    </div>
+  </div>
+
   <!-- Platform Subscription, Trial Extension & Corporate Invoicing -->
   <div id="hrSubscriptionBillingCard" class="data-table-container" style="margin-bottom: var(--space-6); padding: 20px;">
     <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px;">
@@ -1195,38 +1251,6 @@
         <tbody id="hrInvoicesTableBody">
           <tr>
             <td colspan="6" style="padding: 18px; text-align: center; color: var(--text-subtle); font-size: var(--text-xs);">No corporate invoices requested yet.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Billing Table Card with Mobile Stacked Cards Layout -->
-  <div class="data-table-container">
-    <div class="data-table-header">
-      <div>
-        <h2 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text); margin: 0;">Referral billing records</h2>
-        <p style="font-size: var(--text-xs); color: var(--text-subtle); margin: 2px 0 0 0;">Direct ledger of occupational health assessments and billed fees</p>
-      </div>
-    </div>
-    <div style="overflow-x: auto; width: 100%;">
-      <table class="data-table table-to-cards" aria-label="Clinical referral billing records">
-        <thead>
-          <tr>
-            <th scope="col">Reference code</th>
-            <th scope="col">Department</th>
-            <th scope="col">Date</th>
-            <th scope="col">Age</th>
-            <th scope="col">Status</th>
-            <th scope="col" style="text-align: right;">Amount (GHS)</th>
-            <th scope="col">Billed</th>
-          </tr>
-        </thead>
-        <tbody id="hrBillingTableBody">
-          <tr class="empty-row">
-            <td colspan="7" style="padding: 32px; text-align: center; color: var(--text-subtle);">
-              Loading billing records...
-            </td>
           </tr>
         </tbody>
       </table>

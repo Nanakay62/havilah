@@ -220,14 +220,10 @@
       state.assessor.isClinicAdmin = isClinicAdmin;
 
       const nameDisplay = document.getElementById('assessorNameDisplay');
-      const orgDisplay = document.getElementById('assessorOrgDisplay');
       const manageStaffBtn = document.getElementById('manageStaffBtn');
       const doctorFilterSelect = document.getElementById('doctorFilterSelect');
 
       if (nameDisplay) nameDisplay.textContent = res.assessor.name;
-      if (orgDisplay) {
-        orgDisplay.innerHTML = `${escapeHtml(res.assessor.organization || 'Clinical Practice')} &bull; <span class="badge ${isClinicAdmin ? 'badge-admin-role' : 'badge-specialty'}">${isClinicAdmin ? 'Clinic Admin' : escapeHtml(res.assessor.specialty || 'Staff Doctor')}</span>`;
-      }
 
       if (manageStaffBtn) manageStaffBtn.style.display = isClinicAdmin ? 'inline-flex' : 'none';
       if (doctorFilterSelect) doctorFilterSelect.style.display = isClinicAdmin ? 'inline-block' : 'none';
@@ -546,6 +542,35 @@
       }
     }
   };
+
+  window.closeAssessorUserMenu = () => {
+    const menu = document.getElementById('assessorUserMenu');
+    const btn = document.getElementById('assessorUserMenuBtn');
+    if (menu) menu.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  };
+
+  window.toggleAssessorUserMenu = (event) => {
+    if (event) event.stopPropagation();
+    const menu = document.getElementById('assessorUserMenu');
+    const btn = document.getElementById('assessorUserMenuBtn');
+    if (!menu || !btn) return;
+    const isOpen = menu.classList.toggle('open');
+    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  };
+
+  document.addEventListener('click', (e) => {
+    const wrap = document.getElementById('assessorUserMenuWrap');
+    if (wrap && !wrap.contains(e.target)) {
+      window.closeAssessorUserMenu();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      window.closeAssessorUserMenu();
+    }
+  });
 
   window.logoutAssessor = () => {
     openModal('assessorSignOutModal');
@@ -2247,9 +2272,6 @@
         ...state.assessor,
         ...res.data,
       };
-
-      const orgDisplay = document.getElementById('assessorOrgDisplay');
-      if (orgDisplay) orgDisplay.textContent = state.assessor.organization || 'Medical Assessor';
 
       closeModal('clinicSettingsModal');
       showToast('Clinic settings and billing preferences saved successfully.');

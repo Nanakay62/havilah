@@ -99,25 +99,11 @@
       box-shadow: var(--shadow-sm);
     }
 
-    .brand-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.70rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: var(--radius-sm);
-      background: var(--brand-subtle);
-      color: var(--brand);
-      border: 1px solid var(--border);
-    }
-
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .security-timer-badge {
@@ -145,28 +131,87 @@
       to { opacity: 0.7; }
     }
 
-    .user-pill {
+    .user-menu-wrap {
+      position: relative;
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding-left: 12px;
+      padding-left: 10px;
       border-left: 1px solid var(--border);
     }
 
-    .user-info {
-      text-align: right;
+    .user-menu-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-1);
+      font-family: inherit;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .user-menu-trigger:hover,
+    .user-menu-trigger[aria-expanded="true"] {
+      background: var(--surface-canvas);
+      border-color: var(--border);
     }
 
     .user-name {
-      font-weight: 700;
-      font-size: 0.88rem;
+      font-weight: 600;
+      font-size: 0.875rem;
       color: var(--text-1);
+      white-space: nowrap;
     }
 
-    .user-org {
-      font-size: 0.75rem;
-      color: var(--brand);
+    .user-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 170px;
+      background: var(--surface-card, #ffffff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm, 8px);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+      padding: 6px;
+      z-index: 200;
+    }
+
+    .user-dropdown.open {
+      display: block;
+    }
+
+    .user-dropdown-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-1);
+      font-family: inherit;
+      font-size: 0.84rem;
       font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.12s ease, color 0.12s ease;
+    }
+
+    .user-dropdown-item:hover {
+      background: var(--surface-canvas);
+    }
+
+    .user-dropdown-item.danger {
+      color: #B91C1C;
+    }
+
+    .user-dropdown-item.danger:hover {
+      background: #FEF2F2;
     }
 
     /* Buttons */
@@ -893,7 +938,6 @@
     <a href="/clinical-portal" class="brand">
       <img src="/assets/havilah-mark.svg" alt="Havilah" style="height: 28px; width: auto; display: block;">
       <span>Havilah Assessor Portal</span>
-      <span class="brand-tag">Clinical Hub</span>
     </a>
     <div id="authHeaderControls" style="display: none;">
       <div class="header-actions">
@@ -915,12 +959,26 @@
           Clinic Settings
         </button>
 
-        <div class="user-pill">
-          <div class="user-info">
-            <div class="user-name" id="assessorNameDisplay">Dr. Practitioner</div>
-            <div class="user-org" id="assessorOrgDisplay">Clinical Practice</div>
+        <div class="user-menu-wrap" id="assessorUserMenuWrap">
+          <button
+            type="button"
+            class="user-menu-trigger"
+            id="assessorUserMenuBtn"
+            aria-haspopup="true"
+            aria-expanded="false"
+            onclick="toggleAssessorUserMenu(event)"
+          >
+            <span class="user-name" id="assessorNameDisplay">Dr. Practitioner</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div class="user-dropdown" id="assessorUserMenu" role="menu" aria-labelledby="assessorUserMenuBtn">
+            <button type="button" class="user-dropdown-item danger" role="menuitem" onclick="closeAssessorUserMenu(); logoutAssessor();">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              Sign Out
+            </button>
           </div>
-          <button class="btn btn-ghost btn-sm" onclick="logoutAssessor()">Sign Out</button>
         </div>
       </div>
     </div>

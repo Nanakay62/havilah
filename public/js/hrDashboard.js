@@ -465,10 +465,12 @@
     const billingTabBtn = document.getElementById('hr-tab-billing');
     const ethicsTabBtn = document.getElementById('hr-tab-ethics');
     const invitesTabBtn = document.getElementById('hr-tab-invites');
+    const subscriptionTabBtn = document.getElementById('hr-tab-subscription');
     const analyticsSection = document.getElementById('hr-section-analytics');
     const billingSection = document.getElementById('hr-section-billing');
     const ethicsSection = document.getElementById('hr-section-ethics');
     const invitesSection = document.getElementById('hr-section-invites');
+    const subscriptionSection = document.getElementById('hr-section-subscription');
 
     // Close mobile drawer if open
     const sidebar = document.getElementById('appSidebar');
@@ -482,13 +484,16 @@
     }
 
     // Reset all tabs
-    [analyticsTabBtn, billingTabBtn, ethicsTabBtn, invitesTabBtn].forEach(btn => btn && btn.classList.remove('active'));
-    [analyticsSection, billingSection, ethicsSection, invitesSection].forEach(sec => sec && (sec.style.display = 'none'));
+    [analyticsTabBtn, billingTabBtn, ethicsTabBtn, invitesTabBtn, subscriptionTabBtn].forEach(btn => btn && btn.classList.remove('active'));
+    [analyticsSection, billingSection, ethicsSection, invitesSection, subscriptionSection].forEach(sec => sec && (sec.style.display = 'none'));
 
     if (tabName === 'billing') {
       if (billingTabBtn) billingTabBtn.classList.add('active');
       if (billingSection) billingSection.style.display = 'block';
       fetchClinicalBilling();
+    } else if (tabName === 'subscription') {
+      if (subscriptionTabBtn) subscriptionTabBtn.classList.add('active');
+      if (subscriptionSection) subscriptionSection.style.display = 'block';
       fetchSubscriptionBilling();
     } else if (tabName === 'ethics') {
       if (ethicsTabBtn) ethicsTabBtn.classList.add('active');
@@ -1165,6 +1170,8 @@
     }
   }
 
+  window.fetchSubscriptionBilling = fetchSubscriptionBilling;
+
   window.initializePaystackCheckout = async (tier) => {
     try {
       const data = await apiFetch('/api/v1/billing/initialize', {
@@ -1249,7 +1256,9 @@
     const hash = (window.location.hash || '').replace('#', '');
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
-    if (hash === 'billing' || tabParam === 'billing' || hash === 'sample') {
+    if (hash === 'subscription' || tabParam === 'subscription') {
+      window.switchHrViewTab('subscription');
+    } else if (hash === 'billing' || tabParam === 'billing' || hash === 'sample') {
       window.switchHrViewTab('billing');
     }
   });

@@ -255,7 +255,6 @@ router.post('/daily-pulse', async (req, res, next) => {
 const jwt = require('jsonwebtoken');
 const AuditLog = require('../models/AuditLog');
 const Tenant = require('../models/Tenant');
-const { computeAuditHash } = require('../utils/crypto');
 
 router.post('/accept-consent', async (req, res, next) => {
   try {
@@ -306,20 +305,13 @@ router.post('/accept-consent', async (req, res, next) => {
         user.consent_token_expires_at = undefined;
         await user.save();
 
-        // Audit Log for GDPR compliance
-        const lastAudit = await AuditLog.findOne({ company_id: user.company_id }).sort({ created_at: -1 });
-        const prevHash = lastAudit ? lastAudit.sha256_hash : 'GENESIS';
-        const payload = { event: 'consent_accepted', user_id: user.user_id, role: user.role };
-        const newHash = computeAuditHash(prevHash, payload);
-
-        await AuditLog.create({
+        // Atomic Audit Log for GDPR compliance
+        await AuditLog.append({
           company_id: user.company_id,
           actor_user_id: user.user_id,
           actor_role: user.role,
           event_type: 'consent_accepted',
-          event_payload: payload,
-          previous_hash: prevHash,
-          sha256_hash: newHash
+          event_payload: { event: 'consent_accepted', user_id: user.user_id, role: user.role }
         });
       } catch (auditErr) {
         console.warn('[accept-consent] DB/Audit log warning:', auditErr.message);
@@ -574,11 +566,11 @@ router.get('/dashboard-data', async (req, res, next) => {
         const normType = (surveyType || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
         if (normType.includes('PHQ9')) {
           maxScore = maxScore || 27;
-          if (clinicalScore === undefined) clinicalScore = Math.round((overallIndex / 100) * 27);
+          if (clinicalScore === undefined) clinicalScore = Math.round((1 - (overallIndex / 100)) * 27);
           severityLabel = severityLabel || (clinicalScore >= 20 ? 'Severe Depression' : clinicalScore >= 15 ? 'Moderately Severe' : clinicalScore >= 10 ? 'Moderate Depression' : clinicalScore >= 5 ? 'Mild Depression' : 'Minimal');
         } else if (normType.includes('GAD7')) {
           maxScore = maxScore || 21;
-          if (clinicalScore === undefined) clinicalScore = Math.round((overallIndex / 100) * 21);
+          if (clinicalScore === undefined) clinicalScore = Math.round((1 - (overallIndex / 100)) * 21);
           severityLabel = severityLabel || (clinicalScore >= 15 ? 'Severe Anxiety' : clinicalScore >= 10 ? 'Moderate Anxiety' : clinicalScore >= 5 ? 'Mild Anxiety' : 'Minimal');
         } else if (normType.includes('PSS10')) {
           maxScore = maxScore || 40;

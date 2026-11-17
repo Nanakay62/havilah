@@ -161,11 +161,14 @@ async function buildNSizeAggregation(companyId, options = {}) {
     });
   }
 
-  // Process departments BELOW threshold - attempt parent roll-up
+  // Process departments BELOW threshold cleanly into disjoint roll-up buckets
+  // so that already-exposed cohorts can NEVER be subtracted to recover < N individuals.
   if (belowThreshold.length > 0) {
-    // Group below-threshold departments by parent_department_id
+    const exposedDeptIds = new Set(meetingThreshold.map((d) => d.department_id));
+
     /** @type {Map<string, Array>} */
     const parentGroups = new Map();
+    const residualCompanyPool = [];
 
     for (const dept of belowThreshold) {
       const parentId = dept.parent_department_id || '__company_root__';
@@ -176,31 +179,28 @@ async function buildNSizeAggregation(companyId, options = {}) {
     }
 
     for (const [parentId, children] of parentGroups) {
-      if (parentId === '__company_root__') {
-        // No parent to roll up to - go company-wide
-        const companyRollup = await rollUpToCompany(companyId, matchStage, nSizeThreshold, children);
-        finalResults.push(companyRollup);
+      if (parentId === '__company_root__' || exposedDeptIds.has(parentId)) {
+        residualCompanyPool.push(...children);
         continue;
       }
 
-      // Re-aggregate at the parent level: include all children of the parent
+      // Aggregate ONLY the below-threshold sibling IDs (exclude any sibling already in meetingThreshold)
+      const belowChildIds = children.map((c) => c.department_id);
+      const belowSum = children.reduce((acc, c) => acc + (c.count || 0), 0);
+
+      if (belowSum < nSizeThreshold) {
+        residualCompanyPool.push(...children);
+        continue;
+      }
+
       const parentMatchStage = { ...matchStage };
       delete parentMatchStage.department_id;
-
-      // Find all sibling department_ids under this parent
-      const siblings = await Department.find({
-        company_id: companyId,
-        parent_department_id: parentId,
-        is_active: true,
-      }).select('department_id').lean();
-
-      const siblingIds = siblings.map((s) => s.department_id);
 
       const parentPipeline = [
         {
           $match: {
             ...parentMatchStage,
-            department_id: { $in: siblingIds },
+            department_id: { $in: belowChildIds },
           },
         },
         {
@@ -219,13 +219,10 @@ async function buildNSizeAggregation(companyId, options = {}) {
       const parentAgg = await AnonHazardLog.aggregate(parentPipeline);
 
       if (parentAgg.length > 0 && parentAgg[0].count >= nSizeThreshold) {
-        // Parent-level roll-up meets threshold
         const parentDept = await Department.findOne({
           company_id: companyId,
           department_id: parentId,
         }).select('name department_id').lean();
-
-        const childDeptIds = children.map((c) => c.department_id);
 
         finalResults.push({
           department_id: parentId,
@@ -234,17 +231,24 @@ async function buildNSizeAggregation(companyId, options = {}) {
           meets_n_size: true,
           metrics: computeMetrics(parentAgg[0]),
           rolled_up: true,
-          rolled_up_from: childDeptIds,
+          rolled_up_from: belowChildIds,
           roll_up_level: 'parent',
           privacy_notice: `Data rolled up to parent department to meet minimum sample size of ${nSizeThreshold}.`,
         });
       } else {
-        // Parent-level still insufficient - roll up to company-wide
-        const childDeptIds = children.map((c) => c.department_id);
-        const companyRollup = await rollUpToCompany(companyId, matchStage, nSizeThreshold, children);
-        companyRollup.rolled_up_from = childDeptIds;
-        finalResults.push(companyRollup);
+        residualCompanyPool.push(...children);
       }
+    }
+
+    if (residualCompanyPool.length > 0) {
+      const companyRollup = await rollUpToCompany(
+        companyId,
+        matchStage,
+        nSizeThreshold,
+        residualCompanyPool,
+        exposedDeptIds.size > 0
+      );
+      finalResults.push(companyRollup);
     }
   }
 
@@ -252,19 +256,22 @@ async function buildNSizeAggregation(companyId, options = {}) {
 }
 
 /**
- * Rolls up metrics to the company-wide level when both department and parent
- * levels fail the n-size threshold.
+ * Rolls up remaining below-threshold departments into a single disjoint pooled aggregate.
+ * Never mixes already-exposed departments into the roll-up pool, preventing differencing attacks.
  *
  * @param {string} companyId
  * @param {object} baseMatch - Original match criteria (excluding department_id).
  * @param {number} nSizeThreshold
- * @param {Array}  failedDepts - Departments that failed the threshold.
+ * @param {Array}  failedDepts - Disjoint suppressed departments to pool.
+ * @param {boolean} [hasExposedDepts=false] - Whether other departments met threshold separately.
  * @returns {Promise<object>}
  */
-async function rollUpToCompany(companyId, baseMatch, nSizeThreshold, failedDepts) {
+async function rollUpToCompany(companyId, baseMatch, nSizeThreshold, failedDepts, hasExposedDepts = false) {
+  const failedDeptIds = failedDepts.map((d) => d.department_id);
   const companyMatch = { ...baseMatch };
   delete companyMatch.department_id;
   companyMatch.company_id = companyId;
+  companyMatch.department_id = { $in: failedDeptIds };
 
   const companyPipeline = [
     { $match: companyMatch },
@@ -282,33 +289,33 @@ async function rollUpToCompany(companyId, baseMatch, nSizeThreshold, failedDepts
   ];
 
   const companyAgg = await AnonHazardLog.aggregate(companyPipeline);
-  const failedDeptIds = failedDepts.map((d) => d.department_id);
+  const poolLabel = hasExposedDepts ? 'Combined Small Departments Aggregate' : 'Company-Wide Aggregate';
 
   if (companyAgg.length > 0 && companyAgg[0].count >= nSizeThreshold) {
     return {
       department_id: '__company_wide__',
-      department_name: 'Company-Wide Aggregate',
+      department_name: poolLabel,
       response_count: companyAgg[0].count,
       meets_n_size: true,
       metrics: computeMetrics(companyAgg[0]),
       rolled_up: true,
       rolled_up_from: failedDeptIds,
       roll_up_level: 'company',
-      privacy_notice: `Data rolled up to company-wide level to meet minimum sample size of ${nSizeThreshold}.`,
+      privacy_notice: `Data rolled up across suppressed cohorts to meet minimum sample size of ${nSizeThreshold}.`,
     };
   }
 
-  // Even company-wide doesn't meet threshold - suppress entirely
+  // Pooled total still below threshold - suppress metrics completely
   return {
     department_id: '__company_wide__',
-    department_name: 'Company-Wide Aggregate',
+    department_name: poolLabel,
     response_count: companyAgg.length > 0 ? companyAgg[0].count : 0,
     meets_n_size: false,
     metrics: null,
     rolled_up: true,
     rolled_up_from: failedDeptIds,
     roll_up_level: 'company',
-    privacy_notice: `Insufficient responses (< ${nSizeThreshold}) even at company-wide level. Metrics are suppressed to protect anonymity.`,
+    privacy_notice: `Insufficient responses (< ${nSizeThreshold}) across suppressed cohorts. Metrics are suppressed to protect anonymity.`,
   };
 }
 

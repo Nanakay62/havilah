@@ -10,6 +10,7 @@ const Report = require('../models/Report');
 const Tenant = require('../models/Tenant');
 const { validateSession, requireRole, superAdminGuard } = require('../middleware/auth');
 const { sendWhistleblowerAlert } = require('../utils/emailService');
+const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
 
 const jwt = require('jsonwebtoken');
 
@@ -35,11 +36,12 @@ async function resolveTenantId(req) {
       const t = await Tenant.findById(tenantIdInput).select('_id company_name company_id slug').lean();
       if (t) return t;
     }
+    const escapedTenant = String(tenantIdInput).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const tByCompanyId = await Tenant.findOne({
       $or: [
         { company_id: tenantIdInput },
         { slug: String(tenantIdInput).toLowerCase() },
-        { company_name: new RegExp(`^${tenantIdInput}$`, 'i') }
+        { company_name: new RegExp(`^${escapedTenant}$`, 'i') }
       ],
     })
       .select('_id company_name company_id slug')
@@ -90,8 +92,8 @@ router.post('/submit', async (req, res, next) => {
     const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
     const trackingCode = `WBL-${randomHex}`;
 
-    // Generate 4-digit numeric PIN
-    const pin = Math.floor(1000 + Math.random() * 9000).toString();
+    // Generate cryptographically random 6-digit numeric PIN
+    const pin = String(crypto.randomInt(100000, 1000000));
     const pinHash = await bcrypt.hash(pin, 10);
 
     const isConflict = Boolean(involvesLeadershipOrHR);
@@ -151,7 +153,7 @@ router.post('/submit', async (req, res, next) => {
  * @desc    Anonymous Case Lookup & Thread Retrieval using Tracking Code + PIN
  * @access  Public
  */
-router.post('/track', async (req, res, next) => {
+router.post('/track', sensitiveRateLimiter(5, { strictLimit: true, skipSuccessfulRequests: true }), async (req, res, next) => {
   try {
     const { trackingCode, pin } = req.body;
 
@@ -208,7 +210,7 @@ router.post('/track', async (req, res, next) => {
  * @desc    Anonymous Whistleblower Two-Way Message Reply
  * @access  Public
  */
-router.post('/reply', async (req, res, next) => {
+router.post('/reply', sensitiveRateLimiter(5, { strictLimit: true, skipSuccessfulRequests: true }), async (req, res, next) => {
   try {
     const { trackingCode, pin, message } = req.body;
 

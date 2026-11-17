@@ -154,7 +154,7 @@ router.get('/trends', async (req, res, next) => {
     };
 
     if (survey_type && survey_type !== 'all') {
-      matchQuery.survey_type = { $regex: new RegExp(`^${survey_type}`, 'i') };
+      matchQuery.survey_type = { $regex: new RegExp(`^${String(survey_type).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i') };
     }
 
     const targetDept = department || department_id;

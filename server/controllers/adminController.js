@@ -6,7 +6,6 @@ const Tenant = require('../models/Tenant');
 const AnonHazardLog = require('../models/AnonHazardLog');
 const AuditLog = require('../models/AuditLog');
 const crypto = require('crypto');
-const { computeAuditHash } = require('../utils/crypto');
 
 const router = express.Router();
 
@@ -88,26 +87,18 @@ router.patch('/tenants/:company_id', async (req, res, next) => {
 
     await tenant.save();
 
-    // Audit logs for critical changes
+    // Atomic audit log for critical changes
     if (stateChanged || limitChanged) {
-      const lastAudit = await AuditLog.findOne({ company_id }).sort({ created_at: -1 });
-      const prevHash = lastAudit ? lastAudit.sha256_hash : 'GENESIS';
-      
-      const payload = {
-        event: stateChanged ? 'tenant_state_changed' : 'seat_limit_changed',
-        details: updates
-      };
-      
-      const newHash = computeAuditHash(prevHash, payload);
-      
-      await AuditLog.create({
+      const eventType = stateChanged ? 'tenant_state_changed' : 'seat_limit_changed';
+      await AuditLog.append({
         company_id,
-        actor_user_id: 'SUPER_ADMIN',
+        actor_user_id: req.sessionData?.user_id || 'SUPER_ADMIN',
         actor_role: 'super_admin',
-        event_type: stateChanged ? 'tenant_state_changed' : 'seat_limit_changed',
-        event_payload: payload,
-        previous_hash: prevHash,
-        sha256_hash: newHash
+        event_type: eventType,
+        event_payload: {
+          event: eventType,
+          details: updates
+        }
       });
     }
 

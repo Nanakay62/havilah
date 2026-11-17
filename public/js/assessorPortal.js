@@ -31,6 +31,36 @@
 
   const API_BASE = '/api/v1/assessor';
 
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function escapeJsAttr(str) {
+    const jsEscaped = String(str == null ? '' : str)
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '\\"')
+      .replace(/\r|\n/g, ' ')
+      .replace(/</g, '\\x3c')
+      .replace(/>/g, '\\x3e');
+    return escapeHtml(jsEscaped);
+  }
+
+  function sanitizeSafeHref(rawHref, options = {}) {
+    if (!rawHref || typeof rawHref !== 'string') return '#';
+    const trimmed = rawHref.trim();
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (options.allowData && /^data:(application\/pdf|image\/(png|jpeg|jpg|gif|webp)|text\/plain);base64,[A-Za-z0-9+/=\s]+$/i.test(trimmed)) {
+      return trimmed;
+    }
+    return '#';
+  }
+
   // --- Auto-Lock Security Watcher (HIPAA Compliance: 15-min inactivity timeout) ---
   const INACTIVITY_TIMEOUT_SEC = 15 * 60; // 900 seconds (15 mins)
   const WARNING_THRESHOLD_SEC = 60; // 60 seconds warning
@@ -196,7 +226,7 @@
 
       if (nameDisplay) nameDisplay.textContent = res.assessor.name;
       if (orgDisplay) {
-        orgDisplay.innerHTML = `${res.assessor.organization || 'Clinical Practice'} &bull; <span class="badge ${isClinicAdmin ? 'badge-admin-role' : 'badge-specialty'}">${isClinicAdmin ? 'Clinic Admin' : (res.assessor.specialty || 'Staff Doctor')}</span>`;
+        orgDisplay.innerHTML = `${escapeHtml(res.assessor.organization || 'Clinical Practice')} &bull; <span class="badge ${isClinicAdmin ? 'badge-admin-role' : 'badge-specialty'}">${isClinicAdmin ? 'Clinic Admin' : escapeHtml(res.assessor.specialty || 'Staff Doctor')}</span>`;
       }
 
       if (manageStaffBtn) manageStaffBtn.style.display = isClinicAdmin ? 'inline-flex' : 'none';
@@ -242,7 +272,7 @@
       let filterOpts = '<option value="all">All Clinicians</option><option value="unassigned">Unassigned Only</option>';
       state.doctors.forEach(doc => {
         if (doc.active) {
-          filterOpts += `<option value="${doc._id}">${doc.fullName} (${doc.specialty || 'General'})</option>`;
+          filterOpts += `<option value="${escapeHtml(doc._id)}">${escapeHtml(doc.fullName)} (${escapeHtml(doc.specialty || 'General')})</option>`;
         }
       });
       filterSelect.innerHTML = filterOpts;
@@ -254,7 +284,7 @@
       let assignOpts = '<option value="">-- Unassigned (Practice Queue) --</option>';
       state.doctors.forEach(doc => {
         if (doc.active) {
-          assignOpts += `<option value="${doc._id}">${doc.fullName} (${doc.specialty || 'General'})${doc.role === 'clinic_admin' ? ' [Lead]' : ''}</option>`;
+          assignOpts += `<option value="${escapeHtml(doc._id)}">${escapeHtml(doc.fullName)} (${escapeHtml(doc.specialty || 'General')})${doc.role === 'clinic_admin' ? ' [Lead]' : ''}</option>`;
         }
       });
       assignSelect.innerHTML = assignOpts;
@@ -323,14 +353,14 @@
 
       return `
         <tr>
-          <td style="font-weight: 700; color: var(--text-1);">${doc.fullName}${isCurrent ? ' (You)' : ''}</td>
-          <td style="color: var(--text-2); font-size: 0.82rem;">${doc.specialty || 'General Practitioner'}</td>
+          <td style="font-weight: 700; color: var(--text-1);">${escapeHtml(doc.fullName)}${isCurrent ? ' (You)' : ''}</td>
+          <td style="color: var(--text-2); font-size: 0.82rem;">${escapeHtml(doc.specialty || 'General Practitioner')}</td>
           <td>${roleBadge}</td>
-          <td><span style="font-weight: 700; color: var(--accent);">${doc.activeCaseCount || 0}</span> active cases</td>
-          <td style="font-size: 0.8rem; color: var(--text-2);">${doc.email}<br/><span style="color: var(--text-muted);">${doc.phone || 'No phone'}</span></td>
+          <td><span style="font-weight: 700; color: var(--accent);">${Number(doc.activeCaseCount || 0)}</span> active cases</td>
+          <td style="font-size: 0.8rem; color: var(--text-2);">${escapeHtml(doc.email)}<br/><span style="color: var(--text-muted);">${escapeHtml(doc.phone || 'No phone')}</span></td>
           <td>${statusBadge}</td>
           <td>
-            <button type="button" class="btn btn-outline btn-sm" onclick="toggleDoctorStatus('${doc._id}')" style="font-size: 0.72rem; padding: 3px 8px;" ${isCurrent ? 'disabled' : ''}>
+            <button type="button" class="btn btn-outline btn-sm" onclick="toggleDoctorStatus('${escapeJsAttr(doc._id)}')" style="font-size: 0.72rem; padding: 3px 8px;" ${isCurrent ? 'disabled' : ''}>
               ${doc.active ? 'Deactivate' : 'Activate'}
             </button>
           </td>
@@ -681,7 +711,7 @@
 
     let optionsHtml = '<option value="all">All Client Companies</option>';
     companies.forEach((name, id) => {
-      optionsHtml += `<option value="${id}">${name}</option>`;
+      optionsHtml += `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`;
     });
 
     select.innerHTML = optionsHtml;
@@ -944,8 +974,8 @@
       // Clinician Column
       let clinicianHtml = '';
       if (r.assignedDoctorId) {
-        const docName = r.assignedDoctorId.fullName || 'Attending Clinician';
-        const docSpec = r.assignedDoctorId.specialty ? `<span style="font-size:0.7rem; color:var(--text-muted); margin-left:4px;">· ${r.assignedDoctorId.specialty}</span>` : '';
+        const docName = escapeHtml(r.assignedDoctorId.fullName || 'Attending Clinician');
+        const docSpec = r.assignedDoctorId.specialty ? `<span style="font-size:0.7rem; color:var(--text-muted); margin-left:4px;">· ${escapeHtml(r.assignedDoctorId.specialty)}</span>` : '';
         clinicianHtml = `
           <div style="margin-top:3px;">
             <span class="badge badge-clinician">${docName}</span>${docSpec}
@@ -956,7 +986,7 @@
           clinicianHtml = `
             <div style="display:inline-flex; align-items:center; gap:4px; margin-top:3px;">
               <span class="badge badge-unassigned">Unassigned</span>
-              <button class="btn btn-outline btn-sm" onclick="openCaseDetail('${r._id}')" style="padding:1px 6px; font-size:0.68rem;" title="Triage & Delegate">Assign</button>
+              <button class="btn btn-outline btn-sm" onclick="openCaseDetail('${escapeJsAttr(r._id)}')" style="padding:1px 6px; font-size:0.68rem;" title="Triage & Delegate">Assign</button>
             </div>
           `;
         } else {
@@ -967,11 +997,11 @@
       // Appointment date badge
       let appointmentStr = '<span style="color:var(--text-muted); font-size:0.78rem;">Appt: Not set</span>';
       if (r.scheduledAt) {
-        appointmentStr = `<span style="font-weight:700; color:var(--brand); font-size:0.8rem;">Appt: ${new Date(r.scheduledAt).toLocaleDateString()}</span>`;
+        appointmentStr = `<span style="font-weight:700; color:var(--brand); font-size:0.8rem;">Appt: ${escapeHtml(new Date(r.scheduledAt).toLocaleDateString())}</span>`;
       }
 
       // Billing Amount
-      const currency = r.billing?.currency || state.assessor?.billingSettings?.defaultCurrency || 'GHS';
+      const currency = escapeHtml(r.billing?.currency || state.assessor?.billingSettings?.defaultCurrency || 'GHS');
       const amountStr = r.billing?.isBilled
         ? `<strong class="tabular-nums" style="font-size:0.84rem; color:var(--text-1);">${currency} ${(r.billing.amount || 0).toFixed(2)}</strong>`
         : '<span style="color:var(--text-muted); font-size:0.78rem;">Unbilled</span>';
@@ -980,9 +1010,9 @@
       let settlementPill = '';
       const settlement = r.billing?.settlementStatus || (r.billing?.isBilled ? 'pending_payment' : 'unbilled');
       if (settlement === 'settled') {
-        settlementPill = `<span class="settlement-pill settlement-settled" onclick="toggleSettlementStatus('${r._id}', 'settled')" title="Click to toggle settlement">Settled</span>`;
+        settlementPill = `<span class="settlement-pill settlement-settled" onclick="toggleSettlementStatus('${escapeJsAttr(r._id)}', 'settled')" title="Click to toggle settlement">Settled</span>`;
       } else if (settlement === 'pending_payment') {
-        settlementPill = `<span class="settlement-pill settlement-pending" onclick="toggleSettlementStatus('${r._id}', 'pending_payment')" title="Click to mark Settled / Paid">Pending Payment</span>`;
+        settlementPill = `<span class="settlement-pill settlement-pending" onclick="toggleSettlementStatus('${escapeJsAttr(r._id)}', 'pending_payment')" title="Click to mark Settled / Paid">Pending Payment</span>`;
       } else {
         settlementPill = '<span class="settlement-pill settlement-unbilled">Unbilled</span>';
       }
@@ -990,45 +1020,51 @@
       // Action links for contact
       const isEmail = patientContact.includes('@');
       const isPhone = !isEmail && patientContact.length >= 7;
-      let contactHtml = `<span style="color:var(--text-2); font-size:0.76rem;">${patientContact}</span>`;
+      const safeContact = escapeHtml(patientContact);
+      let contactHtml = `<span style="color:var(--text-2); font-size:0.76rem;">${safeContact}</span>`;
       if (isPhone) {
-        contactHtml = `<a href="tel:${patientContact.replace(/\s+/g, '')}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.76rem; display:inline-flex; align-items:center; gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${patientContact}</a>`;
+        const cleanTel = patientContact.replace(/[^+\d]/g, '');
+        contactHtml = `<a href="tel:${escapeHtml(cleanTel)}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.76rem; display:inline-flex; align-items:center; gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${safeContact}</a>`;
       } else if (isEmail) {
-        const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${r.referenceCode}]`);
-        contactHtml = `<a href="mailto:${patientContact}?subject=${mailtoSubj}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.76rem; display:inline-flex; align-items:center; gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>${patientContact}</a>`;
+        const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${r.referenceCode || ''}]`);
+        const safeMailAddr = encodeURIComponent(patientContact).replace(/%40/g, '@');
+        contactHtml = `<a href="mailto:${escapeHtml(safeMailAddr)}?subject=${mailtoSubj}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.76rem; display:inline-flex; align-items:center; gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>${safeContact}</a>`;
       }
 
       const isCompleted = r.status === 'completed';
       const isOnline = window.HavilahCall ? window.HavilahCall.isPeerOnline(r.referenceCode) : false;
       const dotColor = isOnline ? 'var(--success)' : 'var(--border-strong)';
       const dotTitle = isOnline ? 'Patient is Online now' : 'Patient is Offline';
-      const safePatientName = (patientName || 'Patient').replace(/'/g, "\\'");
+      const safeRefAttr = escapeHtml(r.referenceCode || '');
+      const safeRefJs = escapeJsAttr(r.referenceCode || '');
+      const safeIdJs = escapeJsAttr(r._id || '');
+      const safePatientNameJs = escapeJsAttr(patientName || 'Patient');
 
       tr.innerHTML = `
         <td data-label="Reference & Client">
           <div>
             <div style="font-family:monospace; font-weight:700; color:var(--accent); font-size:0.84rem; white-space:nowrap;">
-              <span id="presence-dot-${r.referenceCode}" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${dotColor}; margin-right:5px; vertical-align:middle; transition:background 0.3s;" title="${dotTitle}"></span>${r.referenceCode}
+              <span id="presence-dot-${safeRefAttr}" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${dotColor}; margin-right:5px; vertical-align:middle; transition:background 0.3s;" title="${dotTitle}"></span>${escapeHtml(r.referenceCode)}
             </div>
-            <div class="cell-sub" style="font-weight:600; color:var(--text-1);">${companyName}</div>
+            <div class="cell-sub" style="font-weight:600; color:var(--text-1);">${escapeHtml(companyName)}</div>
           </div>
         </td>
         <td data-label="Patient & Contact">
           <div>
-            <div class="cell-primary">${patientName}</div>
+            <div class="cell-primary">${escapeHtml(patientName)}</div>
             <div class="cell-sub">${contactHtml}</div>
           </div>
         </td>
         <td data-label="Dept & Clinician">
           <div>
-            <div style="font-size:0.8rem; font-weight:600; color:var(--text-2);">${deptName}</div>
+            <div style="font-size:0.8rem; font-weight:600; color:var(--text-2);">${escapeHtml(deptName)}</div>
             ${clinicianHtml}
           </div>
         </td>
         <td data-label="Schedule & Intake">
           <div>
             <div>${appointmentStr}</div>
-            <div class="cell-sub">Intake: ${dateStr}</div>
+            <div class="cell-sub">Intake: ${escapeHtml(dateStr)}</div>
           </div>
         </td>
         <td data-label="Status">
@@ -1046,24 +1082,24 @@
         </td>
         <td data-label="Actions" style="text-align:right; white-space:nowrap;">
           <div class="row-actions-group">
-            <button class="btn btn-outline btn-sm" onclick="openCaseDetail('${r._id}')" style="padding:4px 9px; font-size:0.75rem;">View</button>
-            ${!isCompleted && st !== 'archived' ? `<button class="btn btn-primary btn-sm" onclick="openCompleteModal('${r._id}')" style="padding:4px 9px; font-size:0.75rem;">Complete</button>` : ''}
+            <button class="btn btn-outline btn-sm" onclick="openCaseDetail('${safeIdJs}')" style="padding:4px 9px; font-size:0.75rem;">View</button>
+            ${!isCompleted && st !== 'archived' ? `<button class="btn btn-primary btn-sm" onclick="openCompleteModal('${safeIdJs}')" style="padding:4px 9px; font-size:0.75rem;">Complete</button>` : ''}
             <div class="row-menu-wrap">
-              <button type="button" class="row-menu-trigger" onclick="toggleRowActionMenu(event, 'row-menu-${r._id}')" title="More actions" aria-label="More actions">
+              <button type="button" class="row-menu-trigger" onclick="toggleRowActionMenu(event, 'row-menu-${safeIdJs}')" title="More actions" aria-label="More actions">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
               </button>
-              <div class="row-action-dropdown" id="row-menu-${r._id}">
+              <div class="row-action-dropdown" id="row-menu-${escapeHtml(r._id)}">
                 ${!isCompleted && st !== 'archived' ? `
-                <button type="button" class="row-action-item" onclick="closeAllRowActionMenus(); quickCallCase('${r.referenceCode}', '${safePatientName}')">
+                <button type="button" class="row-action-item" onclick="closeAllRowActionMenus(); quickCallCase('${safeRefJs}', '${safePatientNameJs}')">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                   Call Patient
                 </button>` : ''}
-                <button type="button" class="row-action-item" onclick="closeAllRowActionMenus(); quickArchiveCase('${r._id}', ${st === 'archived'})">
+                <button type="button" class="row-action-item" onclick="closeAllRowActionMenus(); quickArchiveCase('${safeIdJs}', ${st === 'archived'})">
                   ${st === 'archived'
                     ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> Restore Case'
                     : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> Archive Case'}
                 </button>
-                <button type="button" class="row-action-item danger" onclick="closeAllRowActionMenus(); quickDeleteCase('${r._id}', '${r.referenceCode}')">
+                <button type="button" class="row-action-item danger" onclick="closeAllRowActionMenus(); quickDeleteCase('${safeIdJs}', '${safeRefJs}')">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   Delete Case
                 </button>
@@ -1151,39 +1187,38 @@
     // Direct phone/email action links
     const isEmail = pContact.includes('@');
     const isPhone = !isEmail && pContact.length >= 7;
-    let contactAction = pContact;
+    const safePContact = escapeHtml(pContact);
+    let contactAction = safePContact;
     if (isPhone) {
-      contactAction = `<a href="tel:${pContact.replace(/\s+/g, '')}" style="color:var(--brand); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call ${pContact}</a>`;
+      const cleanTel = pContact.replace(/[^+\d]/g, '');
+      contactAction = `<a href="tel:${escapeHtml(cleanTel)}" style="color:var(--brand); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call ${safePContact}</a>`;
     } else if (isEmail) {
-      const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${item.referenceCode}]`);
-      contactAction = `<a href="mailto:${pContact}?subject=${mailtoSubj}" style="color:var(--brand); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Email ${pContact}</a>`;
+      const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${item.referenceCode || ''}]`);
+      const safeMail = encodeURIComponent(pContact).replace(/%40/g, '@');
+      contactAction = `<a href="mailto:${escapeHtml(safeMail)}?subject=${mailtoSubj}" style="color:var(--brand); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Email ${safePContact}</a>`;
     }
-
-    const assignedDocText = item.assignedDoctorId
-      ? `Dr. ${item.assignedDoctorId.fullName || item.assignedDoctorId}${item.assignedDoctorId.specialty ? ` (${item.assignedDoctorId.specialty})` : ''}`
-      : 'Unassigned';
 
     body.innerHTML = `
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; background:#F8FAFC; padding:14px; border-radius:8px; border:1px solid var(--border);">
-        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">CLIENT COMPANY</span><div style="font-weight:700; color:var(--text-1);">${compName}</div></div>
-        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">DEPARTMENT</span><div style="font-weight:600; color:var(--text-1);">${pDept}</div></div>
-        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">PATIENT NAME</span><div style="font-weight:700; color:var(--text-1); font-size:0.95rem;">${pName}</div></div>
+        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">CLIENT COMPANY</span><div style="font-weight:700; color:var(--text-1);">${escapeHtml(compName)}</div></div>
+        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">DEPARTMENT</span><div style="font-weight:600; color:var(--text-1);">${escapeHtml(pDept)}</div></div>
+        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">PATIENT NAME</span><div style="font-weight:700; color:var(--text-1); font-size:0.95rem;">${escapeHtml(pName)}</div></div>
         <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">DIRECT CONTACT</span><div>${contactAction}</div></div>
-        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">PREFERRED SCHEDULE</span><div style="font-weight:600; color:var(--text-1);">${pSchedule}</div></div>
-        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">CASE STATUS</span><div style="font-weight:700; text-transform:uppercase; color:var(--accent);">${item.status}</div></div>
+        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">PREFERRED SCHEDULE</span><div style="font-weight:600; color:var(--text-1);">${escapeHtml(pSchedule)}</div></div>
+        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">CASE STATUS</span><div style="font-weight:700; text-transform:uppercase; color:var(--accent);">${escapeHtml(item.status)}</div></div>
       </div>
 
       <div>
         <span style="color:var(--text-2); font-size:0.78rem; font-weight:700; text-transform:uppercase;">Intake Consultation Reason / Notes</span>
-        <div style="background:#F8FAFC; padding:12px; border-radius:8px; margin-top:4px; border:1px solid var(--border); font-size:0.86rem; color:var(--text-1); white-space:pre-wrap;">${intakeNotes}</div>
+        <div style="background:#F8FAFC; padding:12px; border-radius:8px; margin-top:4px; border:1px solid var(--border); font-size:0.86rem; color:var(--text-1); white-space:pre-wrap;">${escapeHtml(intakeNotes)}</div>
       </div>
 
       ${isCompleted ? `
         <div>
           <span style="color:var(--text-2); font-size:0.78rem; font-weight:700; text-transform:uppercase;">Assessor Case Notes &amp; Fee</span>
           <div style="background:#F8FAFC; padding:12px; border-radius:8px; margin-top:4px; border:1px solid var(--border); font-size:0.86rem; color:var(--text-1);">
-            <div style="margin-bottom:6px;"><strong>Amount Billed:</strong> ${item.billing?.currency || 'GHS'} ${(item.billing?.amount || 0).toFixed(2)} (${item.billing?.billedAt ? new Date(item.billing.billedAt).toLocaleDateString() : 'Settled'})</div>
-            <div><strong>Clinical Notes:</strong> ${assessorNotes}</div>
+            <div style="margin-bottom:6px;"><strong>Amount Billed:</strong> ${escapeHtml(item.billing?.currency || 'GHS')} ${(item.billing?.amount || 0).toFixed(2)} (${escapeHtml(item.billing?.billedAt ? new Date(item.billing.billedAt).toLocaleDateString() : 'Settled')})</div>
+            <div><strong>Clinical Notes:</strong> ${escapeHtml(assessorNotes)}</div>
           </div>
         </div>
       ` : ''}
@@ -1370,21 +1405,24 @@
         ? new Date(att.uploadedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
         : 'Recently';
 
+      const safeFileName = escapeHtml(att.fileName || 'Clinical_Document');
+      const safeFileHref = escapeHtml(sanitizeSafeHref(att.fileData || att.fileUrl || '', { allowData: true }));
+
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; background: var(--surface-card); border: 1px solid var(--border); padding: 10px 14px; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); gap: 10px;">
           <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
             <div style="flex-shrink: 0; display: flex; align-items: center;">${iconSvg}</div>
             <div style="min-width: 0; flex: 1;">
-              <div style="font-weight: 700; color: var(--text-1); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${att.fileName || 'Clinical_Document'}</div>
+              <div style="font-weight: 700; color: var(--text-1); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${safeFileName}</div>
               <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                <span>${timeStr}</span>
-                ${sizeStr ? `<span>•</span><span>${sizeStr}</span>` : ''}
+                <span>${escapeHtml(timeStr)}</span>
+                ${sizeStr ? `<span>•</span><span>${escapeHtml(sizeStr)}</span>` : ''}
                 <span style="color: var(--success); font-weight: 600;">• Verified</span>
               </div>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-            <a href="${att.fileData}" download="${att.fileName}" class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+            <a href="${safeFileHref}" download="${safeFileName}" class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               <span>Download</span>
             </a>
@@ -1480,7 +1518,7 @@
     container.innerHTML = thread.map(msg => {
       const isAssessor = msg.sender === 'assessor';
       const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-      const safeMsg = (msg.message || '').replace(/</g, '&lt;');
+      const safeMsg = escapeHtml(msg.message || '');
 
       return `
         <div style="display:flex;flex-direction:column;align-items:${isAssessor ? 'flex-end' : 'flex-start'};gap:2px;margin-bottom:6px;">
@@ -2094,7 +2132,7 @@
     const box = document.getElementById('assessor2faRecoveryBox');
     const list = document.getElementById('assessor2faRecoveryList');
     if (box && list && Array.isArray(codes) && codes.length) {
-      list.innerHTML = codes.map(c => `<div>${c}</div>`).join('');
+      list.innerHTML = codes.map(c => `<div>${escapeHtml(c)}</div>`).join('');
       box.style.display = 'block';
     }
   }

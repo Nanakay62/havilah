@@ -9,6 +9,7 @@ const Invitation = require('../models/Invitation');
 const PersonalWellnessLog = require('../models/PersonalWellnessLog');
 const PendingNotification = require('../models/PendingNotification');
 const AuditLog = require('../models/AuditLog');
+const { revokeUserSession } = require('../middleware/auth');
 
 const HR_MAX_ACCOUNT_AGE_DAYS = 30;
 
@@ -157,6 +158,7 @@ async function removeUser({ target, actor = {}, reason }) {
     }
 
     await User.deleteOne({ user_id: target.user_id }, opts);
+    revokeUserSession(target.user_id);
 
     const deletedWellnessLogs = wellnessRes?.deletedCount || 0;
     const deletedNotifications = notifRes?.deletedCount || 0;

@@ -30,7 +30,14 @@ async function requireAssessorAuth(req, res, next) {
 
     let decoded;
     try {
-      const secret = process.env.JWT_SECRET || 'wellframe-test-jwt-secret-2026';
+      const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'wellframe-test-jwt-secret-2026');
+      if (!secret) {
+        return res.status(500).json({
+          success: false,
+          error: 'SERVER_MISCONFIGURED',
+          message: 'Authentication secret is not configured',
+        });
+      }
       decoded = jwt.verify(token, secret);
     } catch (jwtErr) {
       return res.status(401).json({

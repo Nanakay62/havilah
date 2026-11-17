@@ -4,10 +4,20 @@ const express = require('express');
 const router = express.Router();
 const PersonalWellnessLog = require('../models/PersonalWellnessLog');
 const AssessmentCycle = require('../models/AssessmentCycle');
-const { validateSession } = require('../middleware/auth');
+const { validateSession, requireRole } = require('../middleware/auth');
 
 // Active SSE client connections indexed by tenant_id
 const sseClientsByTenant = new Map(); // tenant_id -> Set of Express res objects
+const MAX_SSE_CLIENTS_PER_TENANT = 200;
+const MAX_SSE_CLIENTS_TOTAL = 2000;
+
+function getTotalSseClients() {
+  let total = 0;
+  sseClientsByTenant.forEach((set) => {
+    total += set.size;
+  });
+  return total;
+}
 
 /**
  * Helper to extract standard instrument codes from an active cycles map
@@ -74,7 +84,15 @@ async function broadcastTenantAvailability(tenantId) {
  */
 router.get('/stream-availability', async (req, res, next) => {
   try {
-    const tenantId = req.query.tenant_id || (req.sessionData && req.sessionData.company_id) || 'ten-123';
+    const tenantId = (req.sessionData && req.sessionData.company_id) || req.query.tenant_id || 'ten-123';
+
+    if (getTotalSseClients() >= MAX_SSE_CLIENTS_TOTAL) {
+      return res.status(503).json({
+        success: false,
+        error: 'SSE_CAPACITY_EXCEEDED',
+        message: 'Too many active assessment availability streams.'
+      });
+    }
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -86,6 +104,13 @@ router.get('/stream-availability', async (req, res, next) => {
       sseClientsByTenant.set(tenantId, new Set());
     }
     const tenantClients = sseClientsByTenant.get(tenantId);
+    if (tenantClients.size >= MAX_SSE_CLIENTS_PER_TENANT) {
+      const oldest = tenantClients.values().next().value;
+      if (oldest) {
+        tenantClients.delete(oldest);
+        try { oldest.end(); } catch (_) {}
+      }
+    }
     tenantClients.add(res);
 
     // Send initial snapshot on connection
@@ -212,8 +237,18 @@ router.get('/completed-status', validateSession, async (req, res, next) => {
  */
 async function handleToggleAssessment(req, res, next) {
   try {
-    const tenantId = req.body.tenant_id || (req.sessionData && req.sessionData.company_id) || 'ten-123';
+    const isSuperAdmin = req.sessionData?.isSystemSuperAdmin === true || req.sessionData?.role === 'super_admin';
+    const tenantId = (isSuperAdmin && req.body.tenant_id) ? req.body.tenant_id : req.sessionData?.company_id;
     const userId = (req.sessionData && req.sessionData.user_id) || 'hr_admin';
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'TENANT_SCOPE_MISSING',
+        message: 'Authenticated tenant session is required.'
+      });
+    }
+
     const { instrument_code, survey_type, status, department_id, deadline, copsoq_depth } = req.body;
 
     const rawCode = (survey_type || instrument_code || 'phq9').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -282,7 +317,7 @@ async function handleToggleAssessment(req, res, next) {
  * @route   POST /api/v1/assessments/toggle
  * @desc    HR Admin toggle assessment availability endpoint
  */
-router.post('/toggle', handleToggleAssessment);
+router.post('/toggle', validateSession, requireRole('hr_admin', 'tenant_admin', 'super_admin'), handleToggleAssessment);
 
 module.exports = {
   router,

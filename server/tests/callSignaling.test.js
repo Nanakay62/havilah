@@ -388,10 +388,13 @@ describe('WebRTC Call Routes & Signaling Integration', () => {
     expect(res.status).toBe(401);
   });
 
-  it('GET /api/v1/referrals/my-active resolves active case for authenticated user', async () => {
+  it('GET /api/v1/referrals/my-active resolves active case for authenticated user from DB email and ignores query/header spoofing', async () => {
     const Tenant = require('../models/Tenant');
+    const User = require('../models/User');
     const Referral = require('../models/Referral');
+    const { encryptField } = require('../utils/crypto');
     const origTenantFindOne = Tenant.findOne;
+    const origUserFindOne = User.findOne;
     const origReferralFindOne = Referral.findOne;
 
     Tenant.findOne = () => ({
@@ -400,19 +403,40 @@ describe('WebRTC Call Routes & Signaling Integration', () => {
       })
     });
 
-    Referral.findOne = () => ({
-      sort: () => ({
-        select: () => ({
-          lean: () => Promise.resolve({
-            referenceCode: 'REF-ACT1234',
-            status: 'scheduled',
-            clinicalDetails: { patientName: 'Jane Doe' },
-            scheduledAt: new Date(),
-            createdAt: new Date()
-          })
+    User.findOne = () => ({
+      select: () => ({
+        lean: () => Promise.resolve({
+          user_id: '00000000-0000-4000-8000-000000000001',
+          status: 'active',
+          role: 'employee',
+          email_encrypted: JSON.stringify(encryptField('test@example.com')),
         })
+      }),
+      lean: () => Promise.resolve({
+        user_id: '00000000-0000-4000-8000-000000000001',
+        status: 'active',
+        role: 'employee',
+        email_encrypted: JSON.stringify(encryptField('test@example.com')),
       })
     });
+
+    let capturedFilter = null;
+    Referral.findOne = (filter) => {
+      capturedFilter = filter;
+      return {
+        sort: () => ({
+          select: () => ({
+            lean: () => Promise.resolve({
+              referenceCode: 'REF-ACT1234',
+              status: 'scheduled',
+              clinicalDetails: { patientName: 'Jane Doe' },
+              scheduledAt: new Date(),
+              createdAt: new Date()
+            })
+          })
+        })
+      };
+    };
 
     try {
       const testSecret = process.env.JWT_SECRET || 'wellframe-test-jwt-secret-2026';
@@ -423,14 +447,22 @@ describe('WebRTC Call Routes & Signaling Integration', () => {
       );
 
       const res = await request(app)
-        .get('/api/v1/referrals/my-active?email=test%40example.com')
+        .get('/api/v1/referrals/my-active?email=coworker%40example.com')
+        .set('X-User-Email', 'coworker@example.com')
         .set('Authorization', `Bearer ${testToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.referenceCode).toBe('REF-ACT1234');
+      // Ensure query filter strictly matches caller's DB email and ignores spoofed coworker email
+      const contactRegex = capturedFilter.$and[1]['clinicalDetails.patientContact'];
+      expect(contactRegex).toBeInstanceOf(RegExp);
+      expect(contactRegex.test('test@example.com')).toBe(true);
+      expect(contactRegex.test('coworker@example.com')).toBe(false);
+      expect(contactRegex.test('attacker-test@example.com')).toBe(false);
     } finally {
       Tenant.findOne = origTenantFindOne;
+      User.findOne = origUserFindOne;
       Referral.findOne = origReferralFindOne;
     }
   });

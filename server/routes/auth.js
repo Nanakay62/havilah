@@ -13,8 +13,43 @@ const { generateTotpSecret, verifyTotpCode, getOtpAuthUrl, generateRecoveryCodes
 const Assessor = require('../models/Assessor');
 const Doctor = require('../models/Doctor');
 const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
+const { validateSession, revokeUserSession, clearUserSessionRevocation } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { LoginSchema, RegisterSchema } = require('../schemas/auth.schema');
+
+function buildUserTokenPayload(user, isSuperOverride) {
+  const isSuper = typeof isSuperOverride === 'boolean'
+    ? isSuperOverride
+    : (user.isSystemSuperAdmin === true || user.role === 'super_admin' || user.role === 'superadmin');
+  return {
+    userId: user.user_id,
+    companyId: user.company_id,
+    departmentId: user.department_id,
+    role: user.role,
+    status: user.status,
+    isSystemSuperAdmin: isSuper,
+    tv: user.token_version || 0,
+  };
+}
+
+function setAuthCookies(res, token, refreshToken) {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/',
+  });
+  if (refreshToken) {
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+  }
+}
 
 // POST /api/v1/auth/login - Rate limited (max 15 failed attempts per 15m window; successful logins do not count)
 router.post('/login', sensitiveRateLimiter(5, { skipSuccessfulRequests: true }), validate(LoginSchema), async (req, res, next) => {
@@ -38,6 +73,14 @@ router.post('/login', sensitiveRateLimiter(5, { skipSuccessfulRequests: true }),
         success: false,
         error: 'ACCOUNT_DEACTIVATED',
         message: 'This account has been deactivated',
+      });
+    }
+
+    if (!user.passwordHash) {
+      return res.status(401).json({
+        success: false,
+        error: 'INVALID_CREDENTIALS',
+        message: 'Invalid email or password',
       });
     }
 
@@ -70,14 +113,7 @@ router.post('/login', sensitiveRateLimiter(5, { skipSuccessfulRequests: true }),
       }
     }
 
-    const payload = {
-      userId: user.user_id,
-      companyId: user.company_id,
-      departmentId: user.department_id,
-      role: user.role,
-      status: user.status,
-      isSystemSuperAdmin: isSuper,
-    };
+    const payload = buildUserTokenPayload(user, isSuper);
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '24h',
@@ -117,24 +153,11 @@ router.post('/login', sensitiveRateLimiter(5, { skipSuccessfulRequests: true }),
     user.refresh_token_hash = hashField(refreshToken);
     user.refresh_token_expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000,
-      path: '/'
-    });
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/'
-    });
+    setAuthCookies(res, token, refreshToken);
 
     user.last_login_at = new Date();
     await user.save();
+    clearUserSessionRevocation(user.user_id);
 
     return res.json({
       success: true,
@@ -310,21 +333,40 @@ const handleRegistration = async (req, res, next) => {
     const { iv, encrypted, authTag } = encryptField(email.trim().toLowerCase());
     const email_encrypted = JSON.stringify({ iv, encrypted, authTag });
 
-    // Create User & update seat usage
-    const passwordHash = await bcrypt.hash(password, 10);
-    const user = await User.create({
-      email_encrypted,
-      email_hash,
-      passwordHash,
-      full_name: name,
-      role: 'employee',
-      status: 'active',
-      company_id: targetCompanyId,
-      department_id: targetDepartmentId
-    });
+    // Atomically reserve a seat before creating the user to prevent concurrent over-allocation
+    const seatClaim = await Tenant.updateOne(
+      { company_id: targetCompanyId, $expr: { $lt: ['$used_seats', '$max_allowed_seats'] } },
+      { $inc: { used_seats: 1 } }
+    );
+    if ((seatClaim?.modifiedCount ?? seatClaim?.nModified ?? 0) < 1) {
+      return res.status(400).json({
+        success: false,
+        error: 'SEAT_LIMIT_EXCEEDED',
+        message: 'This organization has reached its maximum seat limit. Please contact your HR administrator.'
+      });
+    }
 
-    // Atomically increment seat usage
-    await Tenant.updateOne({ company_id: targetCompanyId }, { $inc: { used_seats: 1 } });
+    // Create User; roll back seat reservation if creation fails
+    const passwordHash = await bcrypt.hash(password, 10);
+    let user;
+    try {
+      user = await User.create({
+        email_encrypted,
+        email_hash,
+        passwordHash,
+        full_name: name,
+        role: 'employee',
+        status: 'active',
+        company_id: targetCompanyId,
+        department_id: targetDepartmentId
+      });
+    } catch (createErr) {
+      await Tenant.updateOne(
+        { company_id: targetCompanyId, used_seats: { $gt: 0 } },
+        { $inc: { used_seats: -1 } }
+      ).catch(() => {});
+      throw createErr;
+    }
 
     // Update invite usage count
     if (matchedInvite) {
@@ -333,14 +375,7 @@ const handleRegistration = async (req, res, next) => {
       await matchedInvite.save();
     }
 
-    const payload = {
-      userId: user.user_id,
-      companyId: user.company_id,
-      departmentId: user.department_id,
-      role: user.role,
-      status: user.status,
-      isSystemSuperAdmin: false
-    };
+    const payload = buildUserTokenPayload(user, false);
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '24h',
@@ -368,7 +403,6 @@ const authController = require('../controllers/authController');
 router.post('/register-tenant', sensitiveRateLimiter(5), authController.registerTenant);
 
 // GET /api/v1/auth/me - Validate bearer token freshness and return user profile
-const { validateSession } = require('../middleware/auth');
 router.get('/me', validateSession, async (req, res, next) => {
   try {
     const userId = req.sessionData ? req.sessionData.user_id : null;
@@ -470,26 +504,13 @@ router.post('/refresh', sensitiveRateLimiter(20), async (req, res, next) => {
       return res.status(401).json({ success: false, error: 'REFRESH_TOKEN_INVALID', message: 'Refresh token is expired or has been revoked' });
     }
 
-    const payload = {
-      userId: user.user_id,
-      companyId: user.company_id,
-      departmentId: user.department_id,
-      role: user.role,
-      status: user.status,
-      isSystemSuperAdmin: user.isSystemSuperAdmin || false
-    };
+    const payload = buildUserTokenPayload(user);
 
     const newToken = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '24h'
     });
 
-    res.cookie('token', newToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000,
-      path: '/'
-    });
+    setAuthCookies(res, newToken);
 
     res.json({ success: true, token: newToken });
   } catch (err) {
@@ -529,8 +550,9 @@ router.post('/erase-account', sensitiveRateLimiter(3), validateSession, async (r
 
     // 3. Note: AnonHazardLog documents are deliberately preserved because they have NO user_id or IP linkage (Zero-PII)
 
-    // 4. Delete the User account record completely
+    // 4. Delete the User account record completely & immediately revoke active sessions
     await User.deleteOne({ user_id: user.user_id });
+    revokeUserSession(user.user_id);
 
     // 5. Clear all session and refresh cookies
     res.clearCookie('token', { path: '/' });
@@ -564,7 +586,7 @@ router.post('/change-password', sensitiveRateLimiter(5), validateSession, async 
       return res.status(404).json({ success: false, error: 'USER_NOT_FOUND', message: 'User not found.' });
     }
 
-    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    const isMatch = user.passwordHash ? await bcrypt.compare(currentPassword, user.passwordHash) : false;
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -584,11 +606,31 @@ router.post('/change-password', sensitiveRateLimiter(5), validateSession, async 
 
     const salt = await bcrypt.genSalt(10);
     user.passwordHash = await bcrypt.hash(newPassword, salt);
+    user.token_version = (user.token_version || 0) + 1;
+    user.token_invalidated_at = new Date();
+
+    const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'wellframe-test-jwt-secret-2026');
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || secret;
+    const newToken = secret ? jwt.sign(buildUserTokenPayload(user), secret, { expiresIn: '24h' }) : null;
+    const newRefreshToken = refreshSecret ? jwt.sign({ userId: user.user_id }, refreshSecret, { expiresIn: '7d' }) : null;
+    if (newRefreshToken) {
+      user.refresh_token_hash = hashField(newRefreshToken);
+      user.refresh_token_expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    }
+
     await user.save();
+    // Revoke all previous token versions while allowing the freshly issued replacement token
+    revokeUserSession(user.user_id, { minTokenVersion: user.token_version });
+
+    if (newToken) {
+      setAuthCookies(res, newToken, newRefreshToken);
+    }
 
     return res.json({
       success: true,
       message: 'Password updated successfully.',
+      ...(newToken ? { token: newToken } : {}),
+      ...(newRefreshToken ? { refreshToken: newRefreshToken } : {}),
     });
   } catch (err) {
     next(err);
@@ -733,7 +775,10 @@ router.post('/reset-password', sensitiveRateLimiter(5), async (req, res, next) =
     user.password_reset_expires_at = null;
     user.refresh_token_hash = null;
     user.refresh_token_expires_at = null;
+    user.token_version = (user.token_version || 0) + 1;
+    user.token_invalidated_at = new Date();
     await user.save();
+    if (user.user_id) revokeUserSession(user.user_id);
 
     return res.json({
       success: true,
@@ -807,14 +852,7 @@ router.post('/login/verify-2fa', sensitiveRateLimiter(5), async (req, res, next)
     }
 
     const isSuper = user.isSystemSuperAdmin === true || user.role === 'super_admin' || user.role === 'superadmin';
-    const payload = {
-      userId: user.user_id,
-      companyId: user.company_id,
-      departmentId: user.department_id,
-      role: user.role,
-      status: user.status,
-      isSystemSuperAdmin: isSuper,
-    };
+    const payload = buildUserTokenPayload(user, isSuper);
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
     const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
@@ -823,14 +861,9 @@ router.post('/login/verify-2fa', sensitiveRateLimiter(5), async (req, res, next)
     user.refresh_token_expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     user.last_login_at = new Date();
     await user.save();
+    clearUserSessionRevocation(user.user_id);
 
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/',
-    });
+    setAuthCookies(res, token, refreshToken);
 
     return res.json({
       success: true,
@@ -875,8 +908,13 @@ router.post('/2fa/setup', validateSession, async (req, res, next) => {
 
     let accountLabel = user.full_name || user.user_id;
     try {
-      if (user.email_encrypted && user.email_encrypted.encrypted) {
-        accountLabel = decryptField(user.email_encrypted);
+      if (user.email_encrypted) {
+        const enc = typeof user.email_encrypted === 'string'
+          ? JSON.parse(user.email_encrypted)
+          : user.email_encrypted;
+        if (enc && enc.encrypted && enc.iv && enc.authTag) {
+          accountLabel = decryptField(enc);
+        }
       }
     } catch (_) {}
 

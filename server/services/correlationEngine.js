@@ -141,8 +141,11 @@ function generateInsights(aggregateMetrics = {}) {
 
   const getDimScore = (dim) => copsoqDimensions[dim] !== undefined ? copsoqDimensions[dim] : null;
 
+  // Note: AnonHazardLog clinical composite scores represent severity percentage (0 = healthy, 100 = max severity):
+  //   PHQ-9 >= 10/27 (~37.0%), GAD-7 >= 10/21 (~47.6%), PSS-10 >= 27/40 (67.5%), FAS-10 >= (22-10)/40 (30.0%).
+
   // A. PHQ-9 (Depression Index)
-  if (aggregateMetrics.phq9 && aggregateMetrics.phq9.avg_composite_score >= 10) {
+  if (aggregateMetrics.phq9 && aggregateMetrics.phq9.avg_composite_score >= 37) {
     insights.push({
       clinical_indicator: 'PHQ-9 (Depression Index)',
       flag: 'Moderate-to-Severe',
@@ -157,7 +160,7 @@ function generateInsights(aggregateMetrics = {}) {
   }
 
   // B. GAD-7 (Anxiety Index)
-  if (aggregateMetrics.gad7 && aggregateMetrics.gad7.avg_composite_score >= 10) {
+  if (aggregateMetrics.gad7 && aggregateMetrics.gad7.avg_composite_score >= 47.6) {
     insights.push({
       clinical_indicator: 'GAD-7 (Anxiety Index)',
       flag: 'Moderate-to-Severe',
@@ -172,7 +175,7 @@ function generateInsights(aggregateMetrics = {}) {
   }
 
   // C. PSS-10 (Perceived Stress)
-  if (aggregateMetrics.pss10 && aggregateMetrics.pss10.avg_composite_score >= 27) {
+  if (aggregateMetrics.pss10 && aggregateMetrics.pss10.avg_composite_score >= 67.5) {
     insights.push({
       clinical_indicator: 'PSS-10 (Perceived Stress)',
       flag: 'High',
@@ -187,7 +190,7 @@ function generateInsights(aggregateMetrics = {}) {
   }
 
   // D. FAS-10 (Fatigue Assessment)
-  if (aggregateMetrics.fas10 && aggregateMetrics.fas10.avg_composite_score >= 22) {
+  if (aggregateMetrics.fas10 && aggregateMetrics.fas10.avg_composite_score >= 30) {
     insights.push({
       clinical_indicator: 'FAS-10 (Fatigue Assessment)',
       flag: 'Substantial Fatigue',

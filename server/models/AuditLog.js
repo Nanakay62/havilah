@@ -28,7 +28,20 @@ const EVENT_TYPES = [
   'invite_revoked',
   'invite_deleted',
   'user_removed',
-  'support_contacts_updated'
+  'support_contacts_updated',
+  // SuperAdmin & HR governance events
+  'HR_IMPERSONATION_STARTED',
+  'DATA_RETENTION_PURGE_EXECUTED',
+  'TENANT_LOCKED',
+  'TENANT_STATUS_CHANGED',
+  'TENANT_BILLING_TIER_UPDATED',
+  'TENANT_ACCESS_EXTENDED',
+  'TENANT_PERMANENTLY_DELETED',
+  'TENANT_MODULE_PERMISSIONS_UPDATED',
+  'REFERRAL_REASSIGNED',
+  'TENANT_SUBSCRIPTION_OVERRIDE',
+  'TENANT_ASSESSOR_REASSIGNED',
+  'TENANT_COPSOQ_DEPTH_UPDATED'
 ];
 
 const AuditLogSchema = new mongoose.Schema(

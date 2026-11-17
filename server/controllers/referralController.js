@@ -11,6 +11,7 @@ const User = require('../models/User');
 const { decryptField } = require('../utils/crypto');
 const { validateSession, requireRole } = require('../middleware/auth');
 const { enforceTenantScope } = require('../middleware/tenantIsolation');
+const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
 const { sendClinicalDispatch } = require('../utils/emailService');
 
 const router = express.Router();
@@ -300,45 +301,40 @@ router.get(
 router.get('/my-active', validateSession, enforceTenantScope, async (req, res, next) => {
   try {
     const companyId = req.tenantScope?.company_id || req.sessionData?.company_id;
-    let userEmail = (req.query.email || req.headers['x-user-email'] || req.user?.email || req.session?.email || '').trim();
+    let userEmail = (req.user?.email || req.session?.email || '').trim();
 
     if (!userEmail && req.sessionData?.user_id) {
-      try {
-        const user = await User.findOne({ user_id: req.sessionData.user_id }).lean();
-        if (user && user.email_encrypted) {
-          const parsed = typeof user.email_encrypted === 'string' ? JSON.parse(user.email_encrypted) : user.email_encrypted;
-          userEmail = decryptField(parsed);
+      const canQueryUser = mongoose.connection?.readyState === 1 || User.findOne !== mongoose.Model.findOne;
+      if (canQueryUser) {
+        try {
+          const queryObj = User.findOne({ user_id: req.sessionData.user_id });
+          const user = queryObj && typeof queryObj.lean === 'function' ? await queryObj.lean() : await queryObj;
+          if (user && user.email_encrypted) {
+            const parsed = typeof user.email_encrypted === 'string' ? JSON.parse(user.email_encrypted) : user.email_encrypted;
+            userEmail = decryptField(parsed);
+          }
+        } catch (e) {
+          userEmail = '';
         }
-      } catch (e) {
-        // Fall back to tenant query
       }
     }
 
     let referral = null;
 
-    // 1. If userEmail is known, look for referral with matching patient contact
-    if (userEmail) {
-      const escapedEmail = userEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-      referral = await Referral.findOne({
-        'clinicalDetails.patientContact': new RegExp(escapedEmail, 'i'),
-        status: { $in: ['pending', 'scheduled', 'in_review'] }
-      })
-        .sort({ createdAt: -1 })
-        .select('referenceCode status scheduledAt appointmentNotes preferredTime createdAt clinicalDetails.meetingLink clinicalDetails.patientName')
-        .lean();
-    }
-
-    // 2. Fallback to active referral matching tenant scope
-    if (!referral && companyId) {
-      const tenantOrClauses = [
-        { company_id: companyId }
-      ];
+    // Strictly match the authenticated caller's own email within their tenant scope.
+    // Never accept client-supplied email overrides or fall back to tenant-wide referrals.
+    if (userEmail && companyId) {
+      const escapedEmail = userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const tenantOrClauses = [{ company_id: companyId }];
       if (mongoose.isValidObjectId(companyId)) {
         tenantOrClauses.push({ tenantId: new mongoose.Types.ObjectId(companyId) });
       }
       referral = await Referral.findOne({
-        $or: tenantOrClauses,
-        status: { $in: ['pending', 'scheduled', 'in_review'] }
+        $and: [
+          { $or: tenantOrClauses },
+          { 'clinicalDetails.patientContact': new RegExp(`^${escapedEmail}$`, 'i') },
+          { status: { $in: ['pending', 'scheduled', 'in_review'] } }
+        ]
       })
         .sort({ createdAt: -1 })
         .select('referenceCode status scheduledAt appointmentNotes preferredTime createdAt clinicalDetails.meetingLink clinicalDetails.patientName')
@@ -370,7 +366,7 @@ router.get('/my-active', validateSession, enforceTenantScope, async (req, res, n
  * @desc    Employee status lookup & two-way clinical messaging thread
  * @access  Public / Employee (Zero-Knowledge, authenticated by Reference Code)
  */
-router.get('/status/:referenceCode', async (req, res, next) => {
+router.get('/status/:referenceCode', sensitiveRateLimiter(10, { strictLimit: true, skipSuccessfulRequests: true }), async (req, res, next) => {
   try {
     const rawCode = (req.params.referenceCode || '').toString().trim().toUpperCase();
     if (!rawCode) {
@@ -427,7 +423,7 @@ router.get('/status/:referenceCode', async (req, res, next) => {
  * @desc    Employee sends reply to Medical Assessor in the two-way clinical thread
  * @access  Public / Employee (Zero-Knowledge, authenticated by Reference Code)
  */
-router.post('/status/:referenceCode/message', async (req, res, next) => {
+router.post('/status/:referenceCode/message', sensitiveRateLimiter(10, { strictLimit: true, skipSuccessfulRequests: true }), async (req, res, next) => {
   try {
     const rawCode = (req.params.referenceCode || '').toString().trim().toUpperCase();
     const { message } = req.body;

@@ -153,17 +153,22 @@ async function checkTenantStatus(req, res, next) {
     }
     if (token) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (decoded && decoded.companyId) {
-          company_id = decoded.companyId;
+        const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'wellframe-test-jwt-secret-2026');
+        const decoded = secret ? jwt.verify(token, secret) : null;
+        const decodedCompanyId = decoded && (decoded.companyId !== undefined ? decoded.companyId : decoded.company_id);
+        const decodedUserId = decoded && (decoded.userId || decoded.user_id);
+        const decodedDeptId = decoded && (decoded.departmentId !== undefined ? decoded.departmentId : decoded.department_id);
+        if (decoded && decodedCompanyId) {
+          company_id = decodedCompanyId;
           if (!req.sessionData) {
             req.sessionData = {
-              user_id: decoded.userId,
-              company_id: decoded.companyId,
-              department_id: decoded.departmentId,
+              user_id: decodedUserId,
+              company_id: decodedCompanyId,
+              department_id: decodedDeptId,
               role: decoded.role,
-              status: 'active',
+              status: decoded.status || 'active',
               isSystemSuperAdmin: !!decoded.isSystemSuperAdmin || decoded.role === 'super_admin' || decoded.role === 'superadmin',
+              ...(decoded.is_impersonating ? { is_impersonating: true } : {}),
             };
           }
         }

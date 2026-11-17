@@ -195,8 +195,19 @@ router.post('/callback', sensitiveRateLimiter(20), async (req, res, next) => {
       });
     }
 
+    // Verify SAML email domain matches tenant.domain when configured
+    const cleanEmail = email.trim().toLowerCase();
+    const emailDomain = cleanEmail.split('@')[1] || '';
+    if (tenant.domain && emailDomain !== tenant.domain.trim().toLowerCase()) {
+      return res.status(403).json({
+        success: false,
+        error: 'SSO_DOMAIN_MISMATCH',
+        message: 'Your email domain is not authorized for this organization\'s SSO configuration.',
+      });
+    }
+
     // 5. Look Up Existing User or Just-In-Time (JIT) Auto-Provision
-    const emailHash = hashField(email);
+    const emailHash = hashField(cleanEmail);
     let user = await User.findOne({
       company_id: tenant.company_id,
       email_hash: emailHash,
@@ -214,7 +225,7 @@ router.post('/callback', sensitiveRateLimiter(20), async (req, res, next) => {
       user.last_login_at = new Date();
       await user.save();
     } else {
-      // JIT Provisioning: Check seat limit first
+      // JIT Provisioning: Fast capacity check then atomic conditional seat claim before creating user
       if (tenant.used_seats >= tenant.max_allowed_seats) {
         return res.status(403).json({
           success: false,
@@ -223,27 +234,49 @@ router.post('/callback', sensitiveRateLimiter(20), async (req, res, next) => {
         });
       }
 
-      // Provision new user
-      const { iv, encrypted, authTag } = encryptField(email);
-      const email_encrypted = JSON.stringify({ iv, encrypted, authTag });
-      const dummyPassword = crypto.randomBytes(32).toString('hex') + 'Aa1!';
-      const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash(dummyPassword, salt);
+      const seatClaim = await Tenant.updateOne(
+        {
+          company_id: tenant.company_id,
+          $expr: { $lt: ['$used_seats', '$max_allowed_seats'] },
+        },
+        { $inc: { used_seats: 1 } }
+      );
+      if ((seatClaim?.modifiedCount ?? seatClaim?.nModified ?? 0) < 1) {
+        return res.status(403).json({
+          success: false,
+          error: 'SEAT_LIMIT_REACHED',
+          message: 'Your organization has reached its allocated employee seat capacity. Please contact your HR administrator.',
+        });
+      }
 
-      user = await User.create({
-        user_id: uuidv4(),
-        company_id: tenant.company_id,
-        department_id: 'unassigned',
-        full_name: fullName || email.split('@')[0],
-        role: 'employee',
-        status: 'active', // Corporate IdP authenticated identity is trusted and active
-        email_encrypted,
-        email_hash: emailHash,
-        passwordHash,
-        last_login_at: new Date(),
-      });
+      // Provision new user; roll back seat reservation on failure
+      try {
+        const { iv, encrypted, authTag } = encryptField(cleanEmail);
+        const email_encrypted = JSON.stringify({ iv, encrypted, authTag });
+        const dummyPassword = crypto.randomBytes(32).toString('hex') + 'Aa1!';
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(dummyPassword, salt);
 
-      await Tenant.updateOne({ company_id: tenant.company_id }, { $inc: { used_seats: 1 } });
+        user = await User.create({
+          user_id: uuidv4(),
+          company_id: tenant.company_id,
+          department_id: 'unassigned',
+          full_name: fullName || cleanEmail.split('@')[0],
+          role: 'employee',
+          status: 'active', // Corporate IdP authenticated identity is trusted and active
+          email_encrypted,
+          email_hash: emailHash,
+          passwordHash,
+          last_login_at: new Date(),
+        });
+      } catch (provisionErr) {
+        await Tenant.updateOne(
+          { company_id: tenant.company_id, used_seats: { $gt: 0 } },
+          { $inc: { used_seats: -1 } }
+        ).catch(() => {});
+        throw provisionErr;
+      }
+
       logger.info({ userId: user.user_id, company_id: tenant.company_id }, '[SSO] JIT employee auto-provisioned successfully');
     }
 
@@ -255,10 +288,14 @@ router.post('/callback', sensitiveRateLimiter(20), async (req, res, next) => {
       role: user.role || 'employee',
       status: user.status || 'active',
       isSystemSuperAdmin: user.isSystemSuperAdmin || false,
+      tv: user.token_version || 0,
       auth_type: 'saml_sso',
     };
 
-    const secret = process.env.JWT_SECRET || 'wellframe-test-jwt-secret-2026';
+    const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'wellframe-test-jwt-secret-2026');
+    if (!secret) {
+      return res.status(500).json({ success: false, error: 'SERVER_MISCONFIGURED', message: 'JWT secret is not configured.' });
+    }
     const token = jwt.sign(payload, secret, {
       expiresIn: '24h',
     });

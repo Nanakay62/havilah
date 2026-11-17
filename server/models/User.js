@@ -85,7 +85,12 @@ const UserSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: [true, 'passwordHash is required'],
+      required: [
+        function () {
+          return this.status !== 'pending_consent';
+        },
+        'passwordHash is required',
+      ],
     },
     timezone: {
       type: String,
@@ -147,6 +152,27 @@ const UserSchema = new mongoose.Schema(
     totp_recovery_codes_hashes: {
       type: [String],
       default: [],
+    },
+    token_invalidated_at: {
+      type: Date,
+      default: null,
+    },
+    token_version: {
+      type: Number,
+      default: 0,
+    },
+    consent_token: {
+      type: String,
+      default: null,
+      index: { sparse: true },
+    },
+    consent_token_expires_at: {
+      type: Date,
+      default: null,
+    },
+    consent_accepted_at: {
+      type: Date,
+      default: null,
     },
   },
   {

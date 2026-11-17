@@ -1,12 +1,12 @@
 'use strict';
 
 const express = require('express');
-const { requireTenantAdmin } = require('../middleware/auth');
+const { validateSession, requireRole } = require('../middleware/auth');
 const Tenant = require('../models/Tenant');
 const Department = require('../models/Department');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
-const { encryptEmail, hashIdentifier, computeAuditHash } = require('../utils/crypto');
+const { encryptField, hashField } = require('../utils/crypto');
 const crypto = require('crypto');
 
 const router = express.Router();
@@ -57,7 +57,7 @@ async function ensureDepartmentsExist(companyId, pathStr) {
  * POST /api/v1/onboarding/bulk-import
  * HR/Tenant Admin imports a list of employees, generating departments and pending users.
  */
-router.post('/bulk-import', requireTenantAdmin, async (req, res, next) => {
+router.post('/bulk-import', validateSession, requireRole('hr_admin', 'tenant_admin'), async (req, res, next) => {
   try {
     const { employees } = req.body;
     const companyId = req.sessionData.company_id;
@@ -89,7 +89,8 @@ router.post('/bulk-import', requireTenantAdmin, async (req, res, next) => {
 
     for (const emp of employees) {
       try {
-        const emailHash = hashIdentifier(emp.email);
+        const cleanEmail = emp.email.trim().toLowerCase();
+        const emailHash = hashField(cleanEmail);
         
         // Check for duplicates
         const existingUser = await User.findOne({ company_id: companyId, email_hash: emailHash });
@@ -113,7 +114,7 @@ router.post('/bulk-import', requireTenantAdmin, async (req, res, next) => {
           company_id: companyId,
           department_id: deptId,
           email_hash: emailHash,
-          email_encrypted: encryptEmail(emp.email),
+          email_encrypted: JSON.stringify(encryptField(cleanEmail)),
           full_name: emp.full_name,
           role: emp.role,
           status: 'pending_consent',
@@ -162,9 +163,9 @@ router.post('/accept-consent', async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'INVALID_OR_EXPIRED_TOKEN' });
     }
 
-    // Increment tenant seat usage atomically
+    // Increment tenant seat usage atomically using $expr field-to-field comparison
     const tenant = await Tenant.findOneAndUpdate(
-      { company_id: user.company_id, used_seats: { $lt: '$max_allowed_seats' } },
+      { company_id: user.company_id, $expr: { $lt: ['$used_seats', '$max_allowed_seats'] } },
       { $inc: { used_seats: 1 } },
       { new: true }
     );
@@ -173,27 +174,28 @@ router.post('/accept-consent', async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'NO_AVAILABLE_SEATS' });
     }
 
-    // Update user
+    // Update user; roll back seat increment on failure
     user.status = 'active';
     user.consent_accepted_at = new Date();
     user.consent_token = undefined;
     user.consent_token_expires_at = undefined;
-    await user.save();
+    try {
+      await user.save();
+    } catch (saveErr) {
+      await Tenant.updateOne(
+        { company_id: user.company_id, used_seats: { $gt: 0 } },
+        { $inc: { used_seats: -1 } }
+      ).catch(() => {});
+      throw saveErr;
+    }
 
-    // Audit Log
-    const lastAudit = await AuditLog.findOne({ company_id: user.company_id }).sort({ created_at: -1 });
-    const prevHash = lastAudit ? lastAudit.sha256_hash : 'GENESIS';
-    const payload = { event: 'consent_accepted', user_id: user.user_id, role: user.role };
-    const newHash = computeAuditHash(prevHash, payload);
-
-    await AuditLog.create({
+    // Atomic Audit Log
+    await AuditLog.append({
       company_id: user.company_id,
       actor_user_id: user.user_id,
       actor_role: user.role,
       event_type: 'consent_accepted',
-      event_payload: payload,
-      previous_hash: prevHash,
-      sha256_hash: newHash
+      event_payload: { event: 'consent_accepted', user_id: user.user_id, role: user.role }
     });
 
     res.status(200).json({ success: true, message: 'Consent accepted. You may now log in.' });
@@ -221,20 +223,13 @@ router.post('/reject-consent', async (req, res, next) => {
     user.consent_token_expires_at = undefined;
     await user.save();
 
-    // Audit Log
-    const lastAudit = await AuditLog.findOne({ company_id: user.company_id }).sort({ created_at: -1 });
-    const prevHash = lastAudit ? lastAudit.sha256_hash : 'GENESIS';
-    const payload = { event: 'consent_rejected', user_id: user.user_id };
-    const newHash = computeAuditHash(prevHash, payload);
-
-    await AuditLog.create({
+    // Atomic Audit Log
+    await AuditLog.append({
       company_id: user.company_id,
       actor_user_id: user.user_id,
       actor_role: user.role,
       event_type: 'consent_rejected',
-      event_payload: payload,
-      previous_hash: prevHash,
-      sha256_hash: newHash
+      event_payload: { event: 'consent_rejected', user_id: user.user_id }
     });
 
     res.status(200).json({ success: true });

@@ -5,12 +5,14 @@
  * Uses Redis when REDIS_URL is provided, with seamless in-memory fallback for standalone or local environments.
  */
 
+const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const { RedisStore } = require('rate-limit-redis');
 const Redis = require('ioredis');
 
 let redisClient = null;
 let limiterCounter = 0;
+let warnedMissingWorkerSecret = false;
 
 if (process.env.REDIS_URL) {
   try {
@@ -122,6 +124,13 @@ function firstNonCloudflareIp(headerValue) {
   return candidates.find((ip) => !isCloudflareProxyIp(ip)) || candidates[0] || '';
 }
 
+function safeEqualSecret(a, b) {
+  if (!a || !b) return false;
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+}
+
 /**
  * Extracts the genuine client IP address from proxy and Cloudflare headers.
  */
@@ -130,15 +139,27 @@ function getClientIp(req) {
 
   // 1. Trusted Worker secret (when configured in both Worker and Render env)
   const workerSecret = process.env.WORKER_PROXY_SECRET;
-  if (workerSecret && headers['x-worker-secret'] === workerSecret) {
-    const realIp = normalizeIp(headers['x-real-client-ip']);
-    if (realIp) return realIp;
-    const xffIp = firstNonCloudflareIp(headers['x-forwarded-for']);
-    if (xffIp) return xffIp;
+  if (workerSecret) {
+    if (safeEqualSecret(headers['x-worker-secret'], workerSecret)) {
+      const realIp = normalizeIp(headers['x-real-client-ip']);
+      if (realIp) return realIp;
+      const xffIp = firstNonCloudflareIp(headers['x-forwarded-for']);
+      if (xffIp) return xffIp;
+    }
+    const cfDirect = normalizeIp(headers['cf-connecting-ip']);
+    if (cfDirect) {
+      // Alert once if traffic is arriving via Cloudflare proxy without X-Worker-Secret (env drift indicator)
+      if (!warnedMissingWorkerSecret && isCloudflareProxyIp(cfDirect) && headers['x-real-client-ip'] && !headers['x-worker-secret']) {
+        warnedMissingWorkerSecret = true;
+        console.warn('[RateLimiter] Cloudflare proxy traffic arrived with X-Real-Client-IP but no X-Worker-Secret while WORKER_PROXY_SECRET is set. Ensure Cloudflare Worker/Pages env defines WORKER_PROXY_SECRET.');
+      }
+      return cfDirect;
+    }
+    return normalizeIp(req?.ip || req?.socket?.remoteAddress) || '127.0.0.1';
   }
 
-  // 2. CF-Connecting-IP: authoritative for direct requests, but overwritten with Worker
-  // egress IP on Worker -> Cloudflare-proxied Render hops. Unwrap forwarded visitor IP then.
+  // 2. CF-Connecting-IP (when WORKER_PROXY_SECRET is not set): authoritative for direct requests,
+  // or unwrapped on Worker -> Cloudflare-proxied Render hops.
   const cfIp = normalizeIp(headers['cf-connecting-ip']);
   if (cfIp) {
     if (!isCloudflareProxyIp(cfIp)) {
@@ -176,8 +197,11 @@ function sensitiveRateLimiter(maxAttempts = 5, options = {}) {
   const prefix = options.prefix || `rl:sensitive:${++limiterCounter}:`;
   return rateLimit({
     windowMs,
-    keyGenerator: (req) => getClientIp(req),
+    keyGenerator: typeof options.keyGenerator === 'function' ? options.keyGenerator : (req) => getClientIp(req),
     max: (req) => {
+      if (options.strictLimit) {
+        return Math.max(1, maxAttempts);
+      }
       const ip = getClientIp(req);
       const isLocalhost = (ip === '127.0.0.1' || ip === '::1') && process.env.NODE_ENV !== 'production';
       return isLocalhost ? Math.max(maxAttempts * 6, 30) : Math.max(maxAttempts, 15);
@@ -205,12 +229,12 @@ function sensitiveRateLimiter(maxAttempts = 5, options = {}) {
  * General API rate limiter across all /api/v1/ routes.
  * Limit: max 3000 requests per 15 minutes per unique client IP.
  */
-function apiRateLimiter(maxRequests = 3000) {
+function apiRateLimiter(maxRequests = 3000, options = {}) {
   const windowMs = 15 * 60 * 1000;
   const prefix = `rl:api:${++limiterCounter}:`;
   return rateLimit({
     windowMs,
-    keyGenerator: (req) => getClientIp(req),
+    keyGenerator: typeof options.keyGenerator === 'function' ? options.keyGenerator : (req) => getClientIp(req),
     max: maxRequests,
     standardHeaders: true,
     legacyHeaders: false,
@@ -222,9 +246,6 @@ function apiRateLimiter(maxRequests = 3000) {
         p.includes('/health') ||
         p.includes('/status') ||
         p.includes('/queue') ||
-        p.includes('/message') ||
-        p.includes('/reply') ||
-        p.includes('/track') ||
         p.includes('/live') ||
         p.includes('/auth/me') ||
         p.endsWith('/me')

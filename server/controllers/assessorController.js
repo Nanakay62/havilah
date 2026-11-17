@@ -532,6 +532,21 @@ router.patch('/referrals/:id/assign-doctor', requireAssessorAuth, requireClinicA
   }
 });
 
+function isClinicAdminRequest(req) {
+  return !req.doctor || req.assessorUser?.role === 'clinic_admin' || req.doctor?.role === 'clinic_admin';
+}
+
+function canAccessReferral(req, referral) {
+  if (!referral || !req.assessor) return false;
+  if (String(referral.assignedAssessorId) !== String(req.assessor._id)) return false;
+  if (!isClinicAdminRequest(req) && req.doctor) {
+    if (!referral.assignedDoctorId || String(referral.assignedDoctorId) !== String(req.doctor._id)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * @route   GET /api/v1/assessor/queue
  * @desc    Get clinical referral queue with triage filtering, search, date range, settlement, and pagination
@@ -588,7 +603,7 @@ router.get('/queue', requireAssessorAuth, async (req, res, next) => {
 
     // Search query filter
     if (req.query.search && req.query.search.trim()) {
-      const s = req.query.search.trim();
+      const s = req.query.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(s, 'i');
       query.$or = [
         { referenceCode: regex },
@@ -666,7 +681,7 @@ router.patch('/referrals/:id/schedule', requireAssessorAuth, async (req, res, ne
       return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Referral case not found.' });
     }
 
-    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+    if (!canAccessReferral(req, referral)) {
       return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this case.' });
     }
 
@@ -727,7 +742,7 @@ router.post('/referrals/:id/message', requireAssessorAuth, async (req, res, next
       return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Referral case not found.' });
     }
 
-    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+    if (!canAccessReferral(req, referral)) {
       return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this case.' });
     }
 
@@ -779,7 +794,7 @@ router.patch('/referrals/:id/settlement', requireAssessorAuth, async (req, res, 
       return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Referral case not found.' });
     }
 
-    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+    if (!canAccessReferral(req, referral)) {
       return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this case.' });
     }
 
@@ -823,7 +838,7 @@ router.post('/referrals/:id/attachments', requireAssessorAuth, async (req, res, 
       return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Referral case not found.' });
     }
 
-    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+    if (!canAccessReferral(req, referral)) {
       return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this case.' });
     }
 
@@ -868,7 +883,7 @@ router.delete('/referrals/:id/attachments/:attachmentIndex', requireAssessorAuth
       return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Referral case not found.' });
     }
 
-    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+    if (!canAccessReferral(req, referral)) {
       return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this case.' });
     }
 
@@ -912,8 +927,8 @@ router.patch('/referrals/:id/complete', requireAssessorAuth, async (req, res, ne
       });
     }
 
-    // Verify this case belongs to the authenticated assessor
-    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+    // Verify this case belongs to the authenticated assessor and assigned clinician
+    if (!canAccessReferral(req, referral)) {
       return res.status(403).json({
         success: false,
         error: 'FORBIDDEN',
@@ -993,7 +1008,7 @@ router.patch('/referrals/:id/archive', requireAssessorAuth, async (req, res, nex
       return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Referral not found.' });
     }
 
-    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+    if (!canAccessReferral(req, referral)) {
       return res.status(403).json({ success: false, error: 'UNAUTHORIZED_ACCESS', message: 'Unauthorized to modify this referral.' });
     }
 
@@ -1023,7 +1038,7 @@ router.patch('/referrals/:id/archive', requireAssessorAuth, async (req, res, nex
  * @desc    Permanently delete / clear a referral case (for testing or clinical cleanup)
  * @access  Assessor Authenticated
  */
-router.delete('/referrals/:id', requireAssessorAuth, async (req, res, next) => {
+router.delete('/referrals/:id', requireAssessorAuth, requireClinicAdmin, async (req, res, next) => {
   try {
     const referralId = req.params.id;
     const referral = await Referral.findById(referralId);
@@ -1031,7 +1046,7 @@ router.delete('/referrals/:id', requireAssessorAuth, async (req, res, next) => {
       return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Referral not found.' });
     }
 
-    if (referral.assignedAssessorId.toString() !== req.assessor._id.toString()) {
+    if (!canAccessReferral(req, referral)) {
       return res.status(403).json({ success: false, error: 'UNAUTHORIZED_ACCESS', message: 'Unauthorized to delete this referral.' });
     }
 
@@ -1102,35 +1117,6 @@ router.post('/login/verify-2fa', async (req, res, next) => {
       }
       if (!ok) {
         return res.status(401).json({ success: false, error: 'INVALID_2FA_CODE', message: 'Invalid authenticator or recovery code.' });
-      }
-
-      if (doctor.totp_enabled && doctor.totp_secret) {
-        const challengeToken = jwt.sign(
-          {
-            purpose: '2fa_login',
-            entityType: 'doctor',
-            assessorId: practice._id.toString(),
-            doctorId: doctor._id.toString(),
-            email: doctor.email,
-            name: doctor.fullName,
-            role: doctor.role || 'doctor',
-          },
-          process.env.JWT_SECRET,
-          { expiresIn: '5m' }
-        );
-        return res.json({
-          success: true,
-          requires_2fa: true,
-          temp_token: challengeToken,
-          assessor: {
-            id: practice._id,
-            doctorId: doctor._id,
-            name: doctor.fullName,
-            email: doctor.email,
-            role: doctor.role || 'doctor',
-          },
-          message: 'Two-factor authentication code required.',
-        });
       }
 
       const token = jwt.sign(

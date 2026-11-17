@@ -68,29 +68,47 @@ router.get('/recommended', async (req, res, next) => {
     }).select('-content_markdown').lean();
 
     // Determine high-risk trigger tags
+    // Note: In PersonalWellnessLog, composite_score / dimension_scores are normalized 0-100 wellbeing
+    // (100 = healthiest, 0 = most severe), while clinical_score holds raw scale points (0 = minimal).
     const targetCategories = new Set();
     recentLogs.forEach(log => {
       const type = (log.survey_type || '').toLowerCase();
       const dims = log.dimension_scores || {};
-      const comp = log.composite_score || 0;
+      const clinical = log.clinical_score;
 
-      if (type.includes('pss') && (dims.stress > 60 || comp > 25)) {
-        targetCategories.add('stress');
-        targetCategories.add('resilience');
+      if (type.includes('pss')) {
+        const isHighStress = (typeof dims.stress === 'number' && dims.stress < 40) ||
+          (typeof clinical === 'number' && clinical >= 27);
+        if (isHighStress) {
+          targetCategories.add('stress');
+          targetCategories.add('resilience');
+        }
       }
-      if (type.includes('phq') && (dims.mood < 40 || comp > 9)) {
-        targetCategories.add('burnout');
-        targetCategories.add('crisis_support');
+      if (type.includes('phq')) {
+        const isDepressed = (typeof dims.mood === 'number' && dims.mood < 40) ||
+          (typeof clinical === 'number' && clinical > 9);
+        if (isDepressed) {
+          targetCategories.add('burnout');
+          targetCategories.add('crisis_support');
+        }
       }
-      if (type.includes('gad') && (dims.calm < 40 || comp > 9)) {
-        targetCategories.add('anxiety');
-        targetCategories.add('stress');
+      if (type.includes('gad')) {
+        const isAnxious = (typeof dims.calm === 'number' && dims.calm < 40) ||
+          (typeof clinical === 'number' && clinical > 9);
+        if (isAnxious) {
+          targetCategories.add('anxiety');
+          targetCategories.add('stress');
+        }
       }
-      if (type.includes('fas') && (dims.energy < 40 || comp > 21)) {
-        targetCategories.add('sleep');
-        targetCategories.add('burnout');
+      if (type.includes('fas')) {
+        const isFatigued = (typeof dims.energy === 'number' && dims.energy < 40) ||
+          (typeof clinical === 'number' && clinical > 21);
+        if (isFatigued) {
+          targetCategories.add('sleep');
+          targetCategories.add('burnout');
+        }
       }
-      if (type.includes('copsoq') && dims.work_fit < 50) {
+      if (type.includes('copsoq') && typeof dims.work_fit === 'number' && dims.work_fit < 50) {
         targetCategories.add('work_life_balance');
         targetCategories.add('burnout');
       }
@@ -142,7 +160,7 @@ router.get('/articles', async (req, res, next) => {
     }
 
     if (search && typeof search === 'string' && search.trim()) {
-      const q = search.trim();
+      const q = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
         { title: { $regex: q, $options: 'i' } },
         { summary: { $regex: q, $options: 'i' } },

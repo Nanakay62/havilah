@@ -231,7 +231,9 @@ app.get('/superadmin', requireViewRole('super_admin'), (req, res) => {
 app.post('/api/v1/demo-request', sensitiveRateLimiter(5), async (req, res, next) => {
   try {
     const { email } = req.body;
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
+    const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const emailPattern = /^[^\s@<>'"`&;]+@[^\s@<>'"`&;]+\.[^\s@<>'"`&;]{2,}$/;
+    if (!cleanEmail || cleanEmail.length > 254 || !emailPattern.test(cleanEmail)) {
       return res.status(400).json({ success: false, error: "Please enter a valid work email." });
     }
 
@@ -246,7 +248,7 @@ app.post('/api/v1/demo-request', sensitiveRateLimiter(5), async (req, res, next)
       from: '"Wellframe Platform" <no-reply@wellframe.app>',
       to: process.env.ADMIN_EMAIL || 'admin@wellframe.app',
       subject: '🔥 New Demo Request Submitted',
-      html: `<p>A new prospect requested a demo: <b>${email}</b></p>`
+      html: `<p>A new prospect requested a demo: <b>${cleanEmail.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}</b></p>`
     });
 
     res.json({ success: true, message: "Thank you! We'll reach out shortly." });

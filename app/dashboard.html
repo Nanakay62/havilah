@@ -3953,7 +3953,7 @@ window.lookupVaultReport = async function() {
   }
 
   if (!code || !pin) {
-    const msg = 'Enter both your tracking code and 4-digit PIN.';
+    const msg = 'Enter both your tracking code and access PIN.';
     if (errEl) { errEl.style.display = 'block'; errEl.textContent = msg; }
     return;
   }
@@ -4511,6 +4511,20 @@ window.lookupConsultationReport = async function(codeOverride) {
   }
 };
 
+function isSafeHttpUrl(url) {
+  return typeof url === 'string' && /^https?:\/\//i.test(url.trim());
+}
+
+function sanitizeSafeAttachmentHref(url) {
+  if (typeof url !== 'string') return '#';
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^data:(application\/pdf|image\/(png|jpeg|jpg|gif|webp)|text\/plain);base64,[A-Za-z0-9+/=\s]+$/i.test(trimmed)) {
+    return trimmed;
+  }
+  return '#';
+}
+
 function renderConsultationTrackView(data) {
   if (!data) return;
 
@@ -4552,11 +4566,12 @@ function renderConsultationTrackView(data) {
   if (data.meetingLink || data.status === 'scheduled' || data.status === 'pending') {
     if (telehealthBanner) telehealthBanner.style.display = 'flex';
     if (joinBtn) {
-      if (data.meetingLink) {
+      if (isSafeHttpUrl(data.meetingLink)) {
         joinBtn.style.display = 'inline-flex';
-        joinBtn.href = data.meetingLink;
+        joinBtn.href = data.meetingLink.trim();
       } else {
         joinBtn.style.display = 'none';
+        joinBtn.removeAttribute('href');
       }
     }
     if (schedTimeText) {
@@ -4592,6 +4607,7 @@ function renderConsultationAttachments(attachments) {
       : '';
     const timeStr = att.uploadedAt ? formatHelpShortDate(att.uploadedAt) : 'Recently';
     const fileName = escapeHelpHtml(att.fileName || 'Medical_Certificate');
+    const safeDataHref = escapeHelpHtml(sanitizeSafeAttachmentHref(att.fileData || att.fileUrl || ''));
 
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:1px solid var(--border);padding:12px;border-radius:var(--radius-control);gap:12px;flex-wrap:wrap;">
@@ -4599,7 +4615,7 @@ function renderConsultationAttachments(attachments) {
           <div style="font-weight:600;color:var(--text);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fileName}</div>
           <div class="help-meta-text" style="margin-top:2px;">Issued ${escapeHelpHtml(timeStr)}${sizeStr ? ' · ' + escapeHelpHtml(sizeStr) : ''}</div>
         </div>
-        <a href="${att.fileData}" download="${fileName}" class="help-btn help-btn--secondary">Download</a>
+        <a href="${safeDataHref}" download="${fileName}" class="help-btn help-btn--secondary">Download</a>
       </div>
     `;
   }).join('');
@@ -4619,11 +4635,11 @@ function renderConsultationThreadOnly(data) {
 
   const telehealthBanner = document.getElementById('consultTelehealthBanner');
   const joinBtn = document.getElementById('consultJoinMeetingBtn');
-  if (data.meetingLink) {
+  if (isSafeHttpUrl(data.meetingLink)) {
     if (telehealthBanner) telehealthBanner.style.display = 'flex';
     if (joinBtn) {
       joinBtn.style.display = 'inline-flex';
-      joinBtn.href = data.meetingLink;
+      joinBtn.href = data.meetingLink.trim();
     }
   }
 
@@ -6450,13 +6466,8 @@ const App = (() => {
         let savedRef = localStorage.getItem('havilah_last_consult_ref');
         if (!savedRef) {
           const token = localStorage.getItem('token') || localStorage.getItem('havilah_token') || '';
-          const activeEmail = (localStorage.getItem('wf_user_email') || '').trim();
-          const queryParam = activeEmail ? `?email=${encodeURIComponent(activeEmail)}` : '';
-          const headers = {
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-            ...(activeEmail ? { 'X-User-Email': activeEmail } : {})
-          };
-          const res = await fetch(`/api/v1/referrals/my-active${queryParam}`, { headers });
+          const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+          const res = await fetch('/api/v1/referrals/my-active', { headers });
           const data = await res.json().catch(() => null);
           if (data && data.success && data.data && data.data.referenceCode) {
             savedRef = data.data.referenceCode;
@@ -8186,8 +8197,8 @@ window.App = App;
             <div id="vaultAccessCode" class="help-mono" style="font-size:18px;font-weight:600;color:var(--text);margin-top:4px;">WBL-XXXXXX</div>
           </div>
           <div>
-            <div style="font-size:13px;color:var(--text-muted);">4-digit PIN</div>
-            <div id="vaultAccessPin" class="help-mono" style="font-size:18px;font-weight:600;color:var(--text);margin-top:4px;">••••</div>
+            <div style="font-size:13px;color:var(--text-muted);">Access PIN</div>
+            <div id="vaultAccessPin" class="help-mono" style="font-size:18px;font-weight:600;color:var(--text);margin-top:4px;">••••••</div>
           </div>
         </div>
 
@@ -8211,7 +8222,7 @@ window.App = App;
       <button type="button" aria-label="Close dialog" onclick="window.closeVaultTrackModal()" style="position:absolute;top:16px;right:16px;background:var(--bg);border:1px solid var(--border);width:32px;height:32px;border-radius:var(--radius-control);color:var(--text-muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>
 
       <h3 style="margin:0 0 6px;font-size:20px;font-weight:600;color:var(--text);">Track a report</h3>
-      <p style="margin:0 0 18px;font-size:14px;color:var(--text-muted);">Enter your tracking code and 4-digit PIN to check updates or message investigators.</p>
+      <p style="margin:0 0 18px;font-size:14px;color:var(--text-muted);">Enter your tracking code and access PIN to check updates or message investigators.</p>
 
       <div id="trackAuthErrorMsg" class="help-alert-error" style="display:none;" role="alert"></div>
 
@@ -8221,8 +8232,8 @@ window.App = App;
       </div>
 
       <div class="help-form-group">
-        <label for="trackPinInput" class="help-form-label">4-digit PIN</label>
-        <input type="password" maxlength="4" id="trackPinInput" aria-label="Whistleblower 4-digit PIN" placeholder="••••" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" class="help-form-control help-mono" style="letter-spacing:4px;">
+        <label for="trackPinInput" class="help-form-label">Access PIN</label>
+        <input type="password" maxlength="12" id="trackPinInput" aria-label="Whistleblower access PIN" placeholder="••••••" onkeydown="if(event.key==='Enter')window.lookupVaultReport()" class="help-form-control help-mono" style="letter-spacing:4px;">
       </div>
 
       <button type="button" id="trackLookupBtn" onclick="window.lookupVaultReport()" class="help-btn help-btn--primary" style="width:100%;">Open report</button>

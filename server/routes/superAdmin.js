@@ -9,7 +9,7 @@ const User = require('../models/User');
 const Invitation = require('../models/Invitation');
 const PersonalWellnessLog = require('../models/PersonalWellnessLog');
 const { encryptField, hashField, decryptField, validatePasswordStrength } = require('../utils/crypto');
-const { validateSession, superAdminGuard } = require('../middleware/auth');
+const { validateSession, superAdminGuard, invalidateTenantSessionCache } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const superAdminController = require('../controllers/superAdminController');
@@ -462,14 +462,22 @@ router.post('/impersonate', async (req, res, next) => {
       event_payload: { company_name: tenant.company_name, company_id, impersonated_by: superAdminId }
     }).catch(e => {});
 
-    const secret = process.env.JWT_SECRET;
-    
-    // Explicit 15-minute expiration & impersonatedBy tracking
+    const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'wellframe-test-jwt-secret-2026');
+    if (!secret) {
+      return res.status(500).json({ success: false, error: 'SERVER_MISCONFIGURED', message: 'JWT secret is not configured.' });
+    }
+    const impersonatedUserId = `IMPERSONATED_HR_${superAdminId}`;
+
+    // Explicit 15-minute expiration & impersonatedBy tracking (emit both camelCase & snake_case claims)
     const token = jwt.sign({
-      user_id: `IMPERSONATED_HR_${superAdminId}`,
+      userId: impersonatedUserId,
+      companyId: tenant.company_id,
+      departmentId: null,
+      user_id: impersonatedUserId,
       company_id: tenant.company_id,
       department_id: null,
       role: 'hr_admin',
+      status: 'active',
       is_impersonating: true,
       impersonatedBy: superAdminId,
       impersonated_company: tenant.company_name
@@ -516,7 +524,12 @@ router.post('/purge-data', async (req, res, next) => {
     cutoffDate.setMonth(cutoffDate.getMonth() - months);
 
     const PersonalWellnessLog = require('../models/PersonalWellnessLog');
-    const result = await PersonalWellnessLog.deleteMany({ created_at: { $lt: cutoffDate } });
+    const AnonHazardLog = require('../models/AnonHazardLog');
+    const [pwlResult, anonResult] = await Promise.all([
+      PersonalWellnessLog.deleteMany({ submitted_at: { $lt: cutoffDate } }),
+      AnonHazardLog.deleteMany({ submitted_at: { $lt: cutoffDate } }),
+    ]);
+    const totalPurged = (pwlResult.deletedCount || 0) + (anonResult.deletedCount || 0);
 
     const AuditLog = require('../models/AuditLog');
     await AuditLog.append({
@@ -524,12 +537,17 @@ router.post('/purge-data', async (req, res, next) => {
       actor_user_id: req.sessionData ? req.sessionData.user_id : 'SUPERADMIN',
       actor_role: 'super_admin',
       event_type: 'DATA_RETENTION_PURGE_EXECUTED',
-      event_payload: { retention_months: months, purged_count: result.deletedCount || 0 }
+      event_payload: {
+        retention_months: months,
+        purged_count: totalPurged,
+        personal_wellness_purged: pwlResult.deletedCount || 0,
+        anon_hazard_purged: anonResult.deletedCount || 0,
+      }
     }).catch(e => {});
 
     res.json({
       success: true,
-      purged_count: result.deletedCount || 0,
+      purged_count: totalPurged,
       cutoff_date: cutoffDate.toISOString()
     });
   } catch (err) {
@@ -559,6 +577,7 @@ router.patch('/tenants/:id/status', async (req, res, next) => {
     if (!tenant) {
       return res.status(404).json({ success: false, error: 'Tenant not found' });
     }
+    invalidateTenantSessionCache(req.params.id);
 
     // Extend any active assessment cycles whose deadline passed during suspension
     if (lifecycle_state === 'active' && tenant.access_expires_at && new Date(tenant.access_expires_at) > new Date()) {
@@ -687,6 +706,7 @@ router.post('/tenants/:id/extend-access', async (req, res, next) => {
       updateFields,
       { new: true }
     );
+    invalidateTenantSessionCache(req.params.id);
 
     // Also extend any active assessment cycles whose deadline passed during the outage
     const AssessmentCycle = require('../models/AssessmentCycle');
@@ -856,12 +876,39 @@ router.delete('/tenants/:id', async (req, res, next) => {
     if (!tenant) return res.status(404).json({ success: false, error: 'Tenant not found' });
 
     const companyId = tenant.company_id;
+    const tenantObjectId = tenant._id;
     const companyName = tenant.company_name;
 
-    // Cascading deletion of users, invitations, and tenant record
-    await User.deleteMany({ company_id: companyId });
-    await Invitation.deleteMany({ company_id: companyId });
+    const Department = require('../models/Department');
+    const DepartmentSnapshot = require('../models/DepartmentSnapshot');
+    const PersonalWellnessLog = require('../models/PersonalWellnessLog');
+    const AnonHazardLog = require('../models/AnonHazardLog');
+    const AssessmentCycle = require('../models/AssessmentCycle');
+    const Alert = require('../models/Alert');
+    const Referral = require('../models/Referral');
+    const Report = require('../models/Report');
+    const WhistleblowerReport = require('../models/WhistleblowerReport');
+    const PendingNotification = require('../models/PendingNotification');
+    const PulseResponse = require('../models/PulseResponse');
+
+    // Cascading deletion across all tenant-scoped collections
+    await Promise.all([
+      User.deleteMany({ company_id: companyId }),
+      Invitation.deleteMany({ company_id: companyId }),
+      Department.deleteMany({ company_id: companyId }),
+      DepartmentSnapshot.deleteMany({ company_id: companyId }),
+      PersonalWellnessLog.deleteMany({ company_id: companyId }),
+      AnonHazardLog.deleteMany({ company_id: companyId }),
+      AssessmentCycle.deleteMany({ company_id: companyId }),
+      Alert.deleteMany({ company_id: companyId }),
+      Referral.deleteMany({ $or: [{ company_id: companyId }, { tenantId: tenantObjectId }] }),
+      Report.deleteMany({ tenantId: tenantObjectId }),
+      WhistleblowerReport.deleteMany({ company_id: companyId }),
+      PendingNotification.deleteMany({ company_id: companyId }),
+      PulseResponse.deleteMany({ company_id: companyId }),
+    ]);
     await Tenant.deleteOne({ company_id: companyId });
+    invalidateTenantSessionCache(companyId);
 
     // Audit log entry
     const AuditLog = require('../models/AuditLog');
@@ -941,31 +988,21 @@ const updateTenantModulesHandler = async (req, res, next) => {
     if (!tenant) {
       return res.status(404).json({ success: false, error: 'Tenant not found' });
     }
+    invalidateTenantSessionCache(tenant.company_id);
 
     tenant.allowed_modules = allowedModules;
     await tenant.save();
 
-    // Log audit record
+    // Log audit record via atomic AuditLog.append
     try {
       const AuditLog = require('../models/AuditLog');
-      if (AuditLog.append) {
-        await AuditLog.append({
-          company_id: tenant.company_id,
-          actor_user_id: req.sessionData ? req.sessionData.user_id : 'SUPERADMIN',
-          actor_role: 'super_admin',
-          event_type: 'TENANT_MODULE_PERMISSIONS_UPDATED',
-          event_payload: { allowed_modules: allowedModules }
-        });
-      } else {
-        await AuditLog.create({
-          tenant_id: tenant.company_id,
-          company_id: tenant.company_id,
-          actor_role: 'super_admin',
-          event_type: 'TENANT_MODULE_PERMISSIONS_UPDATED',
-          details: { allowed_modules: allowedModules },
-          timestamp: new Date()
-        });
-      }
+      await AuditLog.append({
+        company_id: tenant.company_id,
+        actor_user_id: req.sessionData ? req.sessionData.user_id : 'SUPERADMIN',
+        actor_role: 'super_admin',
+        event_type: 'TENANT_MODULE_PERMISSIONS_UPDATED',
+        event_payload: { allowed_modules: allowedModules }
+      });
     } catch (auditErr) {
       console.warn('[AuditLog Warning]', auditErr.message);
     }
@@ -1448,6 +1485,7 @@ router.post('/tenants/:id/invoices/:invoiceNumber/mark-paid', async (req, res, n
     if (!tenant) {
       return res.status(404).json({ success: false, error: 'Tenant not found' });
     }
+    invalidateTenantSessionCache(req.params.id);
 
     const invoices = tenant.subscription?.invoices || [];
     const invoice = invoices.find(inv => inv.invoiceNumber === invoiceNumber);

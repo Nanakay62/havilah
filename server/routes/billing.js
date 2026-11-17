@@ -77,6 +77,30 @@ const TIERS = {
   }
 };
 
+function getPaystackPlanCode(data) {
+  if (!data) return null;
+  if (typeof data.plan === 'string' && data.plan.trim()) return data.plan.trim();
+  if (data.plan && typeof data.plan.plan_code === 'string' && data.plan.plan_code.trim()) {
+    return data.plan.plan_code.trim();
+  }
+  if (data.plan_object && typeof data.plan_object.plan_code === 'string' && data.plan_object.plan_code.trim()) {
+    return data.plan_object.plan_code.trim();
+  }
+  return null;
+}
+
+function isValidPaystackTierPayment(data, tierConfig) {
+  if (!data || !tierConfig || tierConfig.tier === 'free') return false;
+  const planCode = getPaystackPlanCode(data);
+  const configuredPlanCode = tierConfig.planCode || process.env[`PAYSTACK_PLAN_${tierConfig.tier.toUpperCase()}`] || null;
+  if (configuredPlanCode && planCode && planCode === configuredPlanCode) {
+    return true;
+  }
+  const currency = String(data.currency || 'GHS').toUpperCase();
+  const expectedMinPesewas = Math.round(tierConfig.priceMonthlyGhs * 100);
+  return currency === 'GHS' && Number(data.amount || 0) >= expectedMinPesewas;
+}
+
 // ---------------------------------------------------------------------------
 // 1. Paystack Webhook (Unauthenticated - uses HMAC-SHA512 signature verification)
 // ---------------------------------------------------------------------------
@@ -105,11 +129,26 @@ router.post('/webhook', async (req, res) => {
         const data = event.data || {};
         const reference = data.reference;
         const companyId = data.metadata?.company_id;
-        const tierKey = (data.metadata?.tier || 'pro').toLowerCase();
-        const tierConfig = TIERS[tierKey] || TIERS.pro;
+        const planCode = getPaystackPlanCode(data);
+        const planMatchedTier = planCode
+          ? Object.values(TIERS).find((t) => {
+              const code = t.planCode || process.env[`PAYSTACK_PLAN_${t.tier.toUpperCase()}`];
+              return code && code === planCode;
+            })?.tier
+          : null;
+        const tierKey = (data.metadata?.tier || planMatchedTier || 'pro').toLowerCase();
+        const tierConfig = TIERS[tierKey];
 
         if (!companyId) {
           logger.warn({ reference }, '[Paystack Webhook] charge.success missing metadata.company_id');
+          break;
+        }
+
+        if (!tierConfig || tierKey === 'free' || !isValidPaystackTierPayment(data, tierConfig)) {
+          logger.warn(
+            { reference, companyId, tierKey, amount: data.amount, currency: data.currency, planCode },
+            '[Paystack Webhook] charge.success failed tier/amount/plan validation'
+          );
           break;
         }
 
@@ -587,15 +626,78 @@ router.get('/verify/:reference', async (req, res, next) => {
       return res.status(503).json({ success: false, error: 'BILLING_DISABLED' });
     }
 
-    const data = await paystack.verifyTransaction(reference);
+    if (!reference || typeof reference !== 'string' || !reference.trim()) {
+      return res.status(400).json({ success: false, error: 'INVALID_REFERENCE' });
+    }
+
+    const cleanRef = reference.trim();
+
+    // Prevent cross-tenant replay or double-redemption of an already recorded Paystack reference
+    const existingHolder = await Tenant.findOne({ 'subscription.transactionReferences': cleanRef })
+      .select('company_id subscription.transactionReferences')
+      .lean();
+    const isAlreadyRecorded = Boolean(
+      existingHolder &&
+      Array.isArray(existingHolder.subscription?.transactionReferences) &&
+      existingHolder.subscription.transactionReferences.includes(cleanRef)
+    );
+    if (isAlreadyRecorded && String(existingHolder.company_id) !== String(company_id)) {
+      return res.status(403).json({
+        success: false,
+        error: 'REFERENCE_ALREADY_REDEEMED',
+        message: 'This payment reference belongs to another organization.',
+      });
+    }
+
+    const data = await paystack.verifyTransaction(cleanRef);
 
     if (data.status === 'success') {
-      const tierKey = (data.metadata?.tier || 'pro').toLowerCase();
-      const tierConfig = TIERS[tierKey] || TIERS.pro;
+      // Strictly bind verified payment metadata to the authenticated caller's tenant
+      const metaCompanyId = data.metadata?.company_id;
+      if (!metaCompanyId || String(metaCompanyId) !== String(company_id)) {
+        return res.status(403).json({
+          success: false,
+          error: 'TENANT_MISMATCH',
+          message: 'Transaction tenant metadata does not match your organization.',
+        });
+      }
+
+      const tierKey = String(data.metadata?.tier || '').toLowerCase();
+      const tierConfig = TIERS[tierKey];
+      if (!tierConfig || tierKey === 'free') {
+        return res.status(400).json({
+          success: false,
+          error: 'INVALID_TIER',
+          message: 'Verified transaction does not specify a valid paid subscription tier.',
+        });
+      }
+
+      if (!isValidPaystackTierPayment(data, tierConfig)) {
+        return res.status(400).json({
+          success: false,
+          error: 'AMOUNT_MISMATCH',
+          message: 'Verified transaction amount is below the required plan price.',
+        });
+      }
+
+      if (isAlreadyRecorded) {
+        return res.json({
+          success: true,
+          status: data.status,
+          reference: data.reference,
+          amount: data.amount,
+          currency: data.currency,
+          already_applied: true,
+        });
+      }
+
       const nextPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
       await Tenant.findOneAndUpdate(
-        { company_id },
+        {
+          company_id,
+          'subscription.transactionReferences': { $ne: cleanRef },
+        },
         {
           $set: {
             'subscription.tier': tierKey,
@@ -612,7 +714,7 @@ router.get('/verify/:reference', async (req, res, next) => {
             access_expires_at: nextPeriodEnd
           },
           $addToSet: {
-            'subscription.transactionReferences': reference
+            'subscription.transactionReferences': cleanRef
           }
         }
       );

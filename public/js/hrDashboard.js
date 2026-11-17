@@ -53,25 +53,29 @@
       const redemptions = invite.usage_count || (invite.status === 'used' ? 1 : 0);
       const isRevokable = invite.status === 'active' || invite.status === 'pending';
 
+      const safeCodeText = escapeHrHtml(invite.activation_code);
+      const safeCodeAttr = String(invite.activation_code || '').replace(/[^A-Za-z0-9_-]/g, '');
+      const safeDeptName = escapeHrHtml(invite.department_name);
+
       tr.innerHTML = `
         <td data-label="Code">
-          <div style="font-family: monospace; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; white-space: nowrap;">${invite.activation_code}</div>
+          <div style="font-family: monospace; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; white-space: nowrap;">${safeCodeText}</div>
         </td>
-        <td data-label="Department" style="font-weight: var(--weight-medium); color: var(--text);">${invite.department_name}</td>
-        <td data-label="Redemptions" style="font-size: var(--text-sm); color: var(--text-muted); font-variant-numeric: tabular-nums;">${redemptions}</td>
+        <td data-label="Department" style="font-weight: var(--weight-medium); color: var(--text);">${safeDeptName}</td>
+        <td data-label="Redemptions" style="font-size: var(--text-sm); color: var(--text-muted); font-variant-numeric: tabular-nums;">${Number(redemptions) || 0}</td>
         <td data-label="Status">${statusBadge}</td>
         <td data-label="Expires" style="color: var(--text-muted); font-size: var(--text-sm); font-variant-numeric: tabular-nums; white-space: nowrap;">${new Date(invite.expires_at).toLocaleDateString()}</td>
         <td data-label="Actions" style="text-align: right;">
           <div style="display: inline-flex; gap: var(--space-1); align-items: center; justify-content: flex-end;">
-            <button class="btn btn-secondary btn-sm" onclick="window.copyHrInviteLink('${invite.activation_code}')" title="Copy registration link" style="padding: 4px 8px; font-size: var(--text-xs);">
+            <button class="btn btn-secondary btn-sm" onclick="window.copyHrInviteLink('${safeCodeAttr}')" title="Copy registration link" style="padding: 4px 8px; font-size: var(--text-xs);">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               <span>Copy</span>
             </button>
             ${isRevokable ? `
-            <button class="btn btn-ghost btn-sm" onclick="window.revokeHrInvite('${invite.activation_code}')" style="color: var(--danger); padding: 4px 6px;" title="Revoke code" aria-label="Revoke code">
+            <button class="btn btn-ghost btn-sm" onclick="window.revokeHrInvite('${safeCodeAttr}')" style="color: var(--danger); padding: 4px 6px;" title="Revoke code" aria-label="Revoke code">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
             </button>` : ''}
-            <button class="btn btn-ghost btn-sm" onclick="window.deleteHrInvite('${invite.activation_code}')" style="color: var(--danger); padding: 4px 6px;" title="Delete invitation" aria-label="Delete invitation">
+            <button class="btn btn-ghost btn-sm" onclick="window.deleteHrInvite('${safeCodeAttr}')" style="color: var(--danger); padding: 4px 6px;" title="Delete invitation" aria-label="Delete invitation">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
           </div>
@@ -218,10 +222,10 @@
 
       tr.innerHTML = `
         <td data-label="Reference code" style="font-family: monospace; font-weight: 600; font-size: var(--text-sm); letter-spacing: 0.02em;">
-          ${r.referenceCode || '—'}
+          ${escapeHrHtml(r.referenceCode || '—')}
         </td>
         <td data-label="Department" style="font-weight: 500;">
-          ${r.departmentName || 'General'}
+          ${escapeHrHtml(r.departmentName || 'General')}
         </td>
         <td data-label="Date" style="color: var(--text-muted);">
           ${dateStr}
@@ -378,21 +382,23 @@
       const st = statusBadges[r.status] || { label: r.status, badgeClass: 'badge-neutral' };
       const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
+      const safeReportId = String(r._id || '').replace(/[^A-Za-z0-9_-]/g, '');
+
       return `
         <tr>
           <td data-label="Tracking code">
-            <span style="font-family: monospace; font-weight: var(--weight-semibold); color: var(--brand); font-variant-numeric: tabular-nums;">${r.trackingCode || '—'}</span>
+            <span style="font-family: monospace; font-weight: var(--weight-semibold); color: var(--brand); font-variant-numeric: tabular-nums;">${escapeHrHtml(r.trackingCode || '—')}</span>
           </td>
-          <td data-label="Category" style="font-weight: var(--weight-medium); color: var(--text);">${r.category || 'General'}</td>
+          <td data-label="Category" style="font-weight: var(--weight-medium); color: var(--text);">${escapeHrHtml(r.category || 'General')}</td>
           <td data-label="Urgency">
-            <span class="badge ${urgencyBadgeClass}">${r.urgency || 'Standard'}</span>
+            <span class="badge ${urgencyBadgeClass}">${escapeHrHtml(r.urgency || 'Standard')}</span>
           </td>
-          <td data-label="Submitted date" style="color: var(--text-muted); font-variant-numeric: tabular-nums;">${dateStr}</td>
+          <td data-label="Submitted date" style="color: var(--text-muted); font-variant-numeric: tabular-nums;">${escapeHrHtml(dateStr)}</td>
           <td data-label="Status">
-            <span class="badge ${st.badgeClass}">${st.label}</span>
+            <span class="badge ${st.badgeClass}">${escapeHrHtml(st.label)}</span>
           </td>
           <td data-label="Actions" style="text-align: right;">
-            <button onclick="window.openHrReportModal('${r._id}')" class="btn btn-secondary btn-sm">
+            <button onclick="window.openHrReportModal('${safeReportId}')" class="btn btn-secondary btn-sm">
               View &amp; respond
             </button>
           </td>
@@ -622,7 +628,7 @@
             ${isInvestigator ? investigatorSender : whistleblowerSender} • ${timeStr}
           </div>
           <div style="max-width: 85%; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); font-size: var(--text-sm); line-height: 1.4; background: ${isInvestigator ? 'var(--brand)' : 'var(--bg)'}; color: ${isInvestigator ? '#ffffff' : 'var(--text)'}; border: ${isInvestigator ? 'none' : '1px solid var(--border)'}; word-break: break-word;">
-            ${(msg.message || '').replace(/</g, '&lt;')}
+            ${escapeHrHtml(msg.message || '').replace(/\n/g, '<br>')}
           </div>
         </div>
       `;

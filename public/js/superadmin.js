@@ -167,9 +167,9 @@ async function fetchTenants() {
         let ssoHtml = '';
         if (t.sso_config && t.sso_config.enabled) {
           const provider = (t.sso_config.provider || 'SAML').toUpperCase();
-          ssoHtml = `<span class="badge badge-sso-active">${provider} Active</span>`;
+          ssoHtml = `<span class="badge badge-sso-active">${escapeHtmlSafe(provider)} Active</span>`;
         } else if (t.domain) {
-          ssoHtml = `<span class="badge badge-sso-none">${t.domain}</span>`;
+          ssoHtml = `<span class="badge badge-sso-none">${escapeHtmlSafe(t.domain)}</span>`;
         } else {
           ssoHtml = `<span class="text-xs text-slate-400 italic">No domain linked</span>`;
         }
@@ -222,7 +222,7 @@ async function fetchTenants() {
         const nextState = isActive ? 'suspended' : 'active';
         const btnClass = isActive ? 'suspend' : 'activate';
         const btnText = isActive ? 'Lock' : 'Unlock';
-        const extendBtn = `<button onclick="openExtendModal('${t.company_id}', '${t.company_name}', '${t.access_expires_at || ''}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:6px 12px;color:#a78bfa;font-size:11px;cursor:pointer;">Extend</button>`;
+        const extendBtn = `<button onclick="openExtendModal('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(t.company_name)}', '${escapeJsAttrSafe(t.access_expires_at || '')}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:6px 12px;color:#a78bfa;font-size:11px;cursor:pointer;">Extend</button>`;
 
         tr.setAttribute('data-company', (t.company_name + ' ' + (t.slug || '') + ' ' + (t.domain || '')).toLowerCase());
         tr.setAttribute('data-tier', (t.billing_tier || 'trial').toLowerCase());
@@ -230,11 +230,11 @@ async function fetchTenants() {
 
         tr.innerHTML = `
           <td>
-            <div class="company-cell-title">${t.company_name}</div>
-            <div class="company-cell-sub">${slugDisplay}</div>
+            <div class="company-cell-title">${escapeHtmlSafe(t.company_name)}</div>
+            <div class="company-cell-sub">${escapeHtmlSafe(slugDisplay)}</div>
           </td>
           <td>
-            <select class="tier-select-dropdown" onchange="changeTenantTier('${t.company_id}', '${t.company_name}', '${t.billing_tier || 'trial'}', this.value, this)" style="padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; cursor: pointer; border: 1px solid var(--border); background: var(--bg-elev); color: var(--accent);">
+            <select class="tier-select-dropdown" onchange="changeTenantTier('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(t.company_name)}', '${escapeJsAttrSafe(t.billing_tier || 'trial')}', this.value, this)" style="padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; cursor: pointer; border: 1px solid var(--border); background: var(--bg-elev); color: var(--accent);">
               <option value="trial" ${t.billing_tier === 'trial' ? 'selected' : ''}>TRIAL</option>
               <option value="starter" ${t.billing_tier === 'starter' ? 'selected' : ''}>STARTER</option>
               <option value="professional" ${t.billing_tier === 'professional' ? 'selected' : ''}>PROFESSIONAL</option>
@@ -245,7 +245,7 @@ async function fetchTenants() {
             <div class="seat-meter-container">
               <div class="seat-count-label" style="display: flex; align-items: center; justify-content: space-between;">
                 <span>${used.toLocaleString()} / <strong>${max.toLocaleString()}</strong></span>
-                <button onclick="editSeatCapacity('${t.company_id}', '${t.company_name}', ${max})" style="border: none; background: transparent; cursor: pointer; color: var(--accent); font-weight: 700; font-size: 11px;" title="Edit Max Seats">Edit</button>
+                <button onclick="editSeatCapacity('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(t.company_name)}', ${Number(max) || 0})" style="border: none; background: transparent; cursor: pointer; color: var(--accent); font-weight: 700; font-size: 11px;" title="Edit Max Seats">Edit</button>
               </div>
               <div class="seat-progress-bar">
                 <div class="seat-progress-fill ${colorClass}" style="width: ${pct}%"></div>
@@ -261,18 +261,18 @@ async function fetchTenants() {
           </td>
           <td>
             <div style="display: flex; gap: 6px; align-items: center; position: relative; flex-wrap: wrap;">
-              <button class="btn-action-toggle ${btnClass}" onclick="toggleStatus('${t.company_id}', '${nextState}')">${btnText}</button>
-              <button class="btn-action-toggle" style="background:#EEF2FF; color:#4F46E5; border-color:#C7D2FE;" onclick="impersonateHR('${t.company_id}')">Impersonate</button>
+              <button class="btn-action-toggle ${btnClass}" onclick="toggleStatus('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(nextState)}')">${escapeHtmlSafe(btnText)}</button>
+              <button class="btn-action-toggle" style="background:#EEF2FF; color:#4F46E5; border-color:#C7D2FE;" onclick="impersonateHR('${escapeJsAttrSafe(t.company_id)}')">Impersonate</button>
               ${extendBtn}
-              <button class="btn-action-toggle" style="background:var(--bg-base); color:var(--text-1); border-color:var(--border);" onclick="toggleActionMenu('menu-${t.company_id}', event)">•••</button>
+              <button class="btn-action-toggle" style="background:var(--bg-base); color:var(--text-1); border-color:var(--border);" onclick="toggleActionMenu('menu-${escapeJsAttrSafe(t.company_id)}', event)">•••</button>
               
-              <div id="menu-${t.company_id}" class="action-popover" style="display: none; position: absolute; right: 0; background: #FFFFFF; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 500; min-width: 190px; padding: 4px 0;">
-                <a onclick="extendTrial14Days('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Extend Trial (+14 Days)</a>
-                <a onclick="editSeatCapacity('${t.company_id}', '${t.company_name}', ${max})" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Edit Seat Limit</a>
-                <a onclick="resetHRCredentials('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Set HR Password</a>
-                <a onclick="openGenerateCodesModal('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Generate Codes</a>
-                <a onclick="openModuleFlagsModal('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Module Flags</a>
-                <a onclick="deleteTenant('${t.company_id}', '${t.company_name}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: #DC2626; cursor: pointer; border-top: 1px solid var(--border-light);">Delete Tenant</a>
+              <div id="menu-${escapeHtmlSafe(t.company_id)}" class="action-popover" style="display: none; position: absolute; right: 0; background: #FFFFFF; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 500; min-width: 190px; padding: 4px 0;">
+                <a onclick="extendTrial14Days('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(t.company_name)}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Extend Trial (+14 Days)</a>
+                <a onclick="editSeatCapacity('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(t.company_name)}', ${Number(max) || 0})" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Edit Seat Limit</a>
+                <a onclick="resetHRCredentials('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(t.company_name)}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Set HR Password</a>
+                <a onclick="openGenerateCodesModal('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(t.company_name)}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Generate Codes</a>
+                <a onclick="openModuleFlagsModal('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(t.company_name)}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: var(--text-1); cursor: pointer;">Module Flags</a>
+                <a onclick="deleteTenant('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(t.company_name)}')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; color: #DC2626; cursor: pointer; border-top: 1px solid var(--border-light);">Delete Tenant</a>
               </div>
             </div>
           </td>
@@ -383,13 +383,17 @@ function showToast(title, desc = '', type = 'success') {
   toast.innerHTML = `
     <div style="flex-shrink:0; display:flex; align-items:center;">${iconSvg}</div>
     <div style="flex: 1; min-width: 0;">
-      <div style="font-weight: 700; font-size: 0.875rem; color: var(--text-1);">${title}</div>
-      ${desc ? `<div style="font-size: 0.8125rem; color: var(--text-2); margin-top: 2px;">${desc}</div>` : ''}
+      <div class="toast-title-el" style="font-weight: 700; font-size: 0.875rem; color: var(--text-1);"></div>
+      ${desc ? `<div class="toast-desc-el" style="font-size: 0.8125rem; color: var(--text-2); margin-top: 2px;"></div>` : ''}
     </div>
     <button onclick="this.parentElement.remove()" style="border:none; background:transparent; color:var(--text-muted); cursor:pointer; font-size:1rem; padding:0;">×</button>
   `;
 
   container.appendChild(toast);
+  const titleEl = toast.querySelector('.toast-title-el');
+  if (titleEl) titleEl.textContent = String(title == null ? '' : title);
+  const descEl = toast.querySelector('.toast-desc-el');
+  if (descEl) descEl.textContent = String(desc == null ? '' : desc);
   requestAnimationFrame(() => {
     toast.style.opacity = '1';
     toast.style.transform = 'translateY(0)';
@@ -1077,7 +1081,7 @@ function openProvisionSuccessModal(data) {
         const chip = document.createElement('span');
         chip.style.cssText = 'background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #10b981; font-family: monospace; font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;';
         chip.title = 'Click to copy code';
-        chip.innerHTML = `${c}`;
+        chip.textContent = c;
         chip.onclick = () => copyToClipboard(c, `Copied activation code: ${c}`);
         container.appendChild(chip);
       });
@@ -1292,16 +1296,16 @@ function renderAssessorsTable(assessors) {
       : '<span style="background:rgba(239,68,68,0.12); color:#dc2626; border:1px solid #fecaca; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">Inactive</span>';
 
     const dateStr = a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '—';
-    const escapedName = (a.name || '').replace(/'/g, "\\'");
+    const safeIdJs = escapeJsAttrSafe(a._id);
 
     tr.innerHTML = `
-      <td style="font-weight:700; color:var(--text-1); font-size:13px;">${a.name}</td>
-      <td style="font-family:monospace; color:#0284c7; font-size:12px; font-weight:600;">${a.email}</td>
-      <td style="color:var(--text-1); font-size:13px;">${a.organization || 'Independent Practice'}</td>
+      <td style="font-weight:700; color:var(--text-1); font-size:13px;">${escapeHtmlSafe(a.name)}</td>
+      <td style="font-family:monospace; color:#0284c7; font-size:12px; font-weight:600;">${escapeHtmlSafe(a.email)}</td>
+      <td style="color:var(--text-1); font-size:13px;">${escapeHtmlSafe(a.organization || 'Independent Practice')}</td>
       <td>${statusBadge}</td>
       <td style="color:var(--text-2); font-size:12px;">${dateStr}</td>
       <td>
-        <button class="btn-action-danger" style="padding:4px 10px; font-size:11px; background:#ef4444; color:#ffffff; border:none; border-radius:6px; font-weight:600; cursor:pointer;" onclick="deleteAssessor('${a._id}', '${escapedName}')">
+        <button class="btn-action-danger" style="padding:4px 10px; font-size:11px; background:#ef4444; color:#ffffff; border:none; border-radius:6px; font-weight:600; cursor:pointer;" onclick="deleteAssessor('${safeIdJs}', '${escapeJsAttrSafe(a.name || '')}')">
           Delete
         </button>
       </td>
@@ -1366,7 +1370,7 @@ function renderTenantAssessorTable(tenants) {
     const tr = document.createElement('tr');
     const activeAssessor = t.activeAssessorId;
     const currentAssessorName = (typeof activeAssessor === 'object' && activeAssessor)
-      ? `<span style="font-weight:600; color:var(--text-1);">${activeAssessor.name}</span> <span style="font-size:11px; color:var(--text-2);">(${activeAssessor.organization || activeAssessor.email})</span>`
+      ? `<span style="font-weight:600; color:var(--text-1);">${escapeHtmlSafe(activeAssessor.name)}</span> <span style="font-size:11px; color:var(--text-2);">(${escapeHtmlSafe(activeAssessor.organization || activeAssessor.email)})</span>`
       : '<span style="color:var(--warning); font-weight:600;">Unassigned</span>';
 
     // Build select options for available assessors
@@ -1377,19 +1381,19 @@ function renderTenantAssessorTable(tenants) {
     let selectOptions = '<option value="">-- No Assessor (Unassigned) --</option>';
     globalAssessorsList.forEach(a => {
       const isSelected = String(a._id) === String(currentAssessorId) ? 'selected' : '';
-      selectOptions += `<option value="${a._id}" ${isSelected}>${a.name} (${a.organization || a.email})</option>`;
+      selectOptions += `<option value="${escapeHtmlSafe(a._id)}" ${isSelected}>${escapeHtmlSafe(a.name)} (${escapeHtmlSafe(a.organization || a.email)})</option>`;
     });
 
     tr.innerHTML = `
-      <td style="font-weight:700; color:var(--text-1); font-size:13px;">${t.company_name}</td>
-      <td style="font-family:monospace; font-size:12px; color:var(--text-2);">${t.slug || t.company_id}</td>
+      <td style="font-weight:700; color:var(--text-1); font-size:13px;">${escapeHtmlSafe(t.company_name)}</td>
+      <td style="font-family:monospace; font-size:12px; color:var(--text-2);">${escapeHtmlSafe(t.slug || t.company_id)}</td>
       <td>${currentAssessorName}</td>
       <td>
         <div style="display:flex; align-items:center; gap:8px;">
-          <select id="tenant-assessor-select-${t.company_id}" style="padding:6px 10px; background:#ffffff; border:1px solid var(--border); border-radius:6px; color:var(--text-1); font-size:12px;">
+          <select id="tenant-assessor-select-${escapeHtmlSafe(t.company_id)}" style="padding:6px 10px; background:#ffffff; border:1px solid var(--border); border-radius:6px; color:var(--text-1); font-size:12px;">
             ${selectOptions}
           </select>
-          <button class="btn-action-primary" style="padding:5px 10px; font-size:11px;" onclick="saveTenantAssessor('${t.company_id}')">
+          <button class="btn-action-primary" style="padding:5px 10px; font-size:11px;" onclick="saveTenantAssessor('${escapeJsAttrSafe(t.company_id)}')">
             Save Route
           </button>
         </div>
@@ -1465,15 +1469,15 @@ function renderStaleReferralsTable(staleList) {
     if (r.reassignedFrom) {
       const fromName = r.reassignedFrom.name || 'Previous Assessor';
       const when = r.reassignedAt ? new Date(r.reassignedAt).toLocaleDateString() : '';
-      reassignHistory = `<span style="font-size:11px; color:#d97706; font-weight:600;">From ${fromName} (${when})</span>`;
+      reassignHistory = `<span style="font-size:11px; color:#d97706; font-weight:600;">From ${escapeHtmlSafe(fromName)} (${escapeHtmlSafe(when)})</span>`;
     }
 
     tr.innerHTML = `
-      <td style="font-family:monospace; font-weight:700; color:var(--accent); font-size:13px;">${r.referenceCode}</td>
-      <td style="font-weight:700; color:var(--text-1);">${companyName}</td>
-      <td style="color:#dc2626; font-weight:600;">${assessorName}</td>
-      <td style="color:var(--text-1);">${r.departmentName || 'General'}</td>
-      <td style="font-size:12px; color:var(--text-2);">${r.preferredTime || 'As soon as available'}</td>
+      <td style="font-family:monospace; font-weight:700; color:var(--accent); font-size:13px;">${escapeHtmlSafe(r.referenceCode)}</td>
+      <td style="font-weight:700; color:var(--text-1);">${escapeHtmlSafe(companyName)}</td>
+      <td style="color:#dc2626; font-weight:600;">${escapeHtmlSafe(assessorName)}</td>
+      <td style="color:var(--text-1);">${escapeHtmlSafe(r.departmentName || 'General')}</td>
+      <td style="font-size:12px; color:var(--text-2);">${escapeHtmlSafe(r.preferredTime || 'As soon as available')}</td>
       <td>
         <span style="background:rgba(239,68,68,0.12); color:#dc2626; border:1px solid #fca5a5; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">
           ⏱️ ${r.hoursPending || 48}+ hrs
@@ -1481,7 +1485,7 @@ function renderStaleReferralsTable(staleList) {
       </td>
       <td>${reassignHistory}</td>
       <td>
-        <button class="btn-action-primary" style="padding:4px 10px; font-size:12px; background:#dc2626;" onclick="openReassignModal('${r._id}')">
+        <button class="btn-action-primary" style="padding:4px 10px; font-size:12px; background:#dc2626;" onclick="openReassignModal('${escapeJsAttrSafe(r._id)}')">
           Reassign Case
         </button>
       </td>
@@ -1652,7 +1656,7 @@ async function loadConflictReports() {
       renderConflictReports();
     } else {
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: #ef4444;">Error: ${data.error || 'Failed to load inquiries'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: #ef4444;">Error: ${escapeHtmlSafe(data.error || 'Failed to load inquiries')}</td></tr>`;
       }
     }
   } catch (err) {
@@ -1702,22 +1706,22 @@ function renderConflictReports() {
       action_taken: '<span class="badge badge-state-active">Action Taken</span>',
       closed: '<span class="badge" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1;">Closed</span>',
     };
-    const stBadge = statusMap[r.status] || `<span class="badge badge-billing">${r.status}</span>`;
+    const stBadge = statusMap[r.status] || `<span class="badge badge-billing">${escapeHtmlSafe(r.status)}</span>`;
     const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
     return `
       <tr>
         <td>
           <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; font-weight: 700; background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; padding: 4px 8px; border-radius: 6px; display: inline-block;">
-            ${r.trackingCode || '—'}
+            ${escapeHtmlSafe(r.trackingCode || '—')}
           </span>
         </td>
         <td>
-          <div class="company-cell-title">${orgName}</div>
-          <div class="company-cell-sub">${orgSlug}</div>
+          <div class="company-cell-title">${escapeHtmlSafe(orgName)}</div>
+          <div class="company-cell-sub">${escapeHtmlSafe(orgSlug)}</div>
         </td>
         <td>
-          <span class="badge badge-billing">${r.category || 'General'}</span>
+          <span class="badge badge-billing">${escapeHtmlSafe(r.category || 'General')}</span>
         </td>
         <td>
           ${urgencyBadge}
@@ -1727,7 +1731,7 @@ function renderConflictReports() {
           ${stBadge}
         </td>
         <td>
-          <button class="btn-action-primary" onclick="openSuperAdminReportModal('${r._id}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; gap: 4px;">
+          <button class="btn-action-primary" onclick="openSuperAdminReportModal('${escapeJsAttrSafe(r._id)}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; gap: 4px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <span>Investigate &amp; Reply</span>
           </button>
@@ -1840,7 +1844,7 @@ function renderSuperAdminModalThread(thread) {
   container.innerHTML = thread.map(msg => {
     const isInvestigator = msg.sender === 'investigator';
     const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-    const safeMsg = (msg.message || '').replace(/</g, '&lt;');
+    const safeMsg = escapeHtmlSafe(msg.message || '').replace(/\n/g, '<br>');
 
     if (isInvestigator) {
       // SuperAdmin Ombudsman -> Right aligned, Indigo
@@ -1965,6 +1969,17 @@ function escapeHtmlSafe(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function escapeJsAttrSafe(str) {
+  const jsEscaped = String(str == null ? '' : str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/\r|\n/g, ' ')
+    .replace(/</g, '\\x3c')
+    .replace(/>/g, '\\x3e');
+  return escapeHtmlSafe(jsEscaped);
 }
 
 async function lookupUserAccount() {

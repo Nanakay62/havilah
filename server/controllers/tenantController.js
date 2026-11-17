@@ -30,8 +30,40 @@ router.get(
         });
       }
 
-      const tenantData = tenant.toObject();
-      tenantData.effectiveTier = tenant.getEffectiveTier();
+      const rawTenant = typeof tenant.toObject === 'function' ? tenant.toObject() : tenant;
+      const effectiveTier = typeof tenant.getEffectiveTier === 'function'
+        ? tenant.getEffectiveTier()
+        : (rawTenant.billing_tier || 'free');
+
+      // Project only safe, non-sensitive tenant settings (redact Paystack tokens, invoices, IdP certs, admin emails)
+      const sub = rawTenant.subscription || {};
+      const tenantData = {
+        company_id: rawTenant.company_id,
+        company_name: rawTenant.company_name,
+        slug: rawTenant.slug,
+        domain: rawTenant.domain,
+        billing_tier: rawTenant.billing_tier,
+        lifecycle_state: rawTenant.lifecycle_state,
+        hotline_config: rawTenant.hotline_config || {},
+        employer_support_contacts: rawTenant.employer_support_contacts || [],
+        resource_links: rawTenant.resource_links || [],
+        settings: rawTenant.settings || {},
+        allowed_modules: rawTenant.allowed_modules || [],
+        active_modules: rawTenant.active_modules || rawTenant.allowed_modules || [],
+        effectiveTier,
+        subscription: {
+          tier: sub.tier || rawTenant.billing_tier || 'free',
+          status: sub.status || 'active',
+          trialEndsAt: sub.trialEndsAt || null,
+          currentPeriodEnd: sub.currentPeriodEnd || rawTenant.access_expires_at || null,
+          cancelAtPeriodEnd: Boolean(sub.cancelAtPeriodEnd),
+          maxEmployees: sub.maxEmployees || rawTenant.max_allowed_seats || null,
+        },
+        sso_config: {
+          enabled: Boolean(rawTenant.sso_config?.enabled),
+          provider: rawTenant.sso_config?.provider || null,
+        },
+      };
 
       return res.status(200).json({
         success: true,

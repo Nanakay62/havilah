@@ -5,7 +5,7 @@ const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const PendingNotification = require('../models/PendingNotification');
-const { computeAuditHash, decryptField } = require('../utils/crypto');
+const { decryptField } = require('../utils/crypto');
 const { sendMail } = require('../utils/emailService');
 const { DateTime } = require('luxon');
 const logger = require('../utils/logger');
@@ -138,20 +138,13 @@ class WorkingHoursScheduler {
       }
     }
 
-    // Log the audit event
-    const lastAudit = await AuditLog.findOne({ company_id: tenantId }).sort({ created_at: -1 });
-    const prevHash = lastAudit ? lastAudit.sha256_hash : 'GENESIS';
-    const payload = { event: 'survey_dispatched', survey_type: surveyType, target_date: targetDate, groups };
-    const newHash = computeAuditHash(prevHash, payload);
-
-    await AuditLog.create({
+    // Log the audit event atomically
+    await AuditLog.append({
       company_id: tenantId,
       actor_user_id: 'SYSTEM_SCHEDULER',
       actor_role: 'system',
       event_type: 'survey_dispatched',
-      event_payload: payload,
-      previous_hash: prevHash,
-      sha256_hash: newHash
+      event_payload: { event: 'survey_dispatched', survey_type: surveyType, target_date: targetDate, groups }
     });
 
     return { scheduled: true, groups };
@@ -233,9 +226,6 @@ async function logControlActivation(tenantId, actorUserId, controlType, controlI
   const control = controlGroup.find(c => c.id === controlId);
   if (!control) throw new Error('Invalid control ID');
 
-  const lastAudit = await AuditLog.findOne({ company_id: tenantId }).sort({ created_at: -1 });
-  const prevHash = lastAudit ? lastAudit.sha256_hash : 'GENESIS';
-  
   const payload = Object.freeze({
     event: 'control_activated',
     control_type: controlType,
@@ -243,17 +233,13 @@ async function logControlActivation(tenantId, actorUserId, controlType, controlI
     control_name: control.name,
     details
   });
-  
-  const newHash = computeAuditHash(prevHash, payload);
 
-  const entry = await AuditLog.create({
+  const entry = await AuditLog.append({
     company_id: tenantId,
     actor_user_id: actorUserId,
-    actor_role: 'hr_admin', // simplified
+    actor_role: 'hr_admin',
     event_type: 'control_activated',
-    event_payload: payload,
-    previous_hash: prevHash,
-    sha256_hash: newHash
+    event_payload: payload
   });
 
   return entry;
@@ -312,8 +298,15 @@ async function processTrialReminders(now = new Date()) {
         role: { $in: ['hr_admin', 'tenant_admin'] },
         status: 'active'
       });
-      if (hrUser?.email_encrypted?.encrypted) {
-        try { recipientEmail = decryptField(hrUser.email_encrypted); } catch (_) {}
+      if (hrUser && hrUser.email_encrypted) {
+        try {
+          const enc = typeof hrUser.email_encrypted === 'string'
+            ? JSON.parse(hrUser.email_encrypted)
+            : hrUser.email_encrypted;
+          if (enc && enc.encrypted && enc.iv && enc.authTag) {
+            recipientEmail = decryptField(enc);
+          }
+        } catch (_) {}
       }
     }
 

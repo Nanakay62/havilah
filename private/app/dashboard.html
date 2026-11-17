@@ -159,9 +159,15 @@
   .icon-btn:hover { background: var(--bg-elev); color: var(--text-1); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
   .icon-btn svg { width: 17px; height: 17px; }
   .badge-dot {
-    position: absolute; top: 8px; right: 8px;
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--critical); border: 2px solid #fff;
+    position: absolute; top: -5px; right: -5px;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 9999px;
+    background: var(--critical); color: #FFFFFF;
+    border: 2px solid var(--surface);
+    font-size: 0.6875rem; font-weight: 700; line-height: 1;
+    font-variant-numeric: tabular-nums;
+    display: none; align-items: center; justify-content: center;
+    pointer-events: none;
   }
   .profile {
     display: flex; align-items: center; gap: 10px;
@@ -711,7 +717,7 @@
     backdrop-filter: blur(4px); z-index: 1050;
     opacity: 0; pointer-events: none; transition: opacity 0.3s;
   }
-  .panel-backdrop.open { opacity: 1; pointer-events: auto; }
+  .panel-backdrop.open, .panel-backdrop.show { opacity: 1; pointer-events: auto; }
   .panel {
     position: fixed; top: 0; right: 0; bottom: 0;
     width: 100%; max-width: 420px; background: var(--surface);
@@ -728,11 +734,194 @@
   .panel-foot { padding: 16px 24px; border-top: 1px solid var(--border); }
 
   /* Notification item */
-  .notif-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .notif-item { display: flex; gap: 12px; padding: 14px 10px; border-bottom: 1px solid var(--border); border-radius: 8px; transition: background 0.15s ease; }
+  .notif-item:hover { background: var(--bg); }
   .notif-item:last-child { border-bottom: none; }
-  .notif-item.unread .notif-title { font-weight: 700; }
-  .notif-item.unread::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-top: 6px; flex-shrink: 0; }
-  .notif-icon { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .notif-item.unread .notif-title { font-weight: 600; color: var(--text-1); }
+  .notif-item.unread::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-top: 7px; flex-shrink: 0; }
+  .notif-icon { width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--brand-subtle); color: var(--brand); border: 1px solid rgba(15, 118, 110, 0.14); }
+  .notif-icon svg { width: 16px; height: 16px; }
+  .notif-content { flex: 1; min-width: 0; }
+  .notif-title { font-size: 0.875rem; font-weight: 500; margin-bottom: 3px; color: var(--text-1); }
+  .notif-desc { font-size: 0.8125rem; color: var(--text-2); margin-bottom: 6px; line-height: 1.45; }
+  .notif-meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .notif-time { font-size: 0.75rem; color: var(--text-3); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .notif-cta-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .notif-cta-btn { background: var(--brand); color: #FFFFFF; border: none; border-radius: var(--radius-control); padding: 6px 12px; font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: background 0.15s ease; }
+  .notif-cta-btn:hover { background: var(--brand-hover); }
+  .notif-dismiss-btn { background: transparent; color: var(--text-3); border: 1px solid var(--border); border-radius: var(--radius-control); padding: 5px 10px; font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: all 0.15s ease; }
+  .notif-dismiss-btn:hover { color: var(--text-1); background: var(--surface); border-color: var(--border-strong); }
+
+  /* Transient Assessment Cycle Banner (Industry-standard crisp card) */
+  @keyframes bannerCountdown {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+  }
+  .assessment-cycle-banner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--brand);
+    border-radius: var(--radius-card);
+    padding: 12px 16px;
+    margin: 0 0 16px 0;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    max-height: 220px;
+    animation: bannerSlideIn 0.3s var(--ease-out);
+    transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease, border-width 0.3s ease;
+  }
+  .assessment-cycle-banner.is-collapsing {
+    opacity: 0;
+    transform: translateY(-6px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+  }
+  .cycle-banner-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  .cycle-banner-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 7px;
+    background: var(--brand-subtle);
+    color: var(--brand);
+    border: 1px solid rgba(15, 118, 110, 0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .cycle-banner-icon svg { width: 18px; height: 18px; }
+  .cycle-banner-body { min-width: 0; flex: 1; }
+  .cycle-banner-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 3px;
+  }
+  .cycle-banner-tag {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--brand);
+    background: var(--brand-subtle);
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .cycle-banner-due {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--warning);
+    background: var(--warning-bg);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .cycle-banner-privacy {
+    font-size: 0.75rem;
+    color: var(--text-3);
+  }
+  .cycle-banner-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-1);
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+  }
+  .cycle-banner-desc {
+    font-size: 0.8125rem;
+    color: var(--text-2);
+    line-height: 1.4;
+    margin-top: 1px;
+  }
+  .cycle-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .cycle-banner-cta {
+    background: var(--brand);
+    color: #FFFFFF;
+    border: none;
+    border-radius: var(--radius-control);
+    padding: 7px 14px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    white-space: nowrap;
+  }
+  .cycle-banner-cta:hover { background: var(--brand-hover); }
+  .cycle-banner-snooze {
+    background: transparent;
+    color: var(--text-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    padding: 6px 11px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .cycle-banner-snooze:hover {
+    background: var(--bg);
+    color: var(--text-1);
+    border-color: var(--border-strong);
+  }
+  .cycle-banner-close {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-control);
+    color: var(--text-3);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+  }
+  .cycle-banner-close:hover {
+    background: var(--bg);
+    color: var(--text-1);
+  }
+  .cycle-banner-close svg { width: 15px; height: 15px; }
+  .cycle-banner-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: rgba(15, 118, 110, 0.1);
+  }
+  .cycle-banner-progress-bar {
+    height: 100%;
+    width: 100%;
+    background: var(--brand);
+    transform-origin: left center;
+    animation: bannerCountdown 6s linear forwards;
+  }
+  .assessment-cycle-banner:hover .cycle-banner-progress-bar {
+    animation-play-state: paused;
+  }
   .notif-icon svg { width: 16px; height: 16px; }
   .notif-content { flex: 1; min-width: 0; }
   .notif-title { font-size: 0.875rem; font-weight: 500; margin-bottom: 2px; }
@@ -893,23 +1082,17 @@
     .assessment-cycle-banner {
       flex-direction: column !important;
       align-items: stretch !important;
-      padding: 16px 14px !important;
+      padding: 14px !important;
       gap: 12px !important;
       max-height: none !important;
       width: 100% !important;
       box-sizing: border-box !important;
     }
-    .assessment-cycle-banner > div:first-child {
-      padding-right: 0 !important;
-    }
-    .assessment-cycle-banner > div:last-child {
+    .cycle-banner-actions {
       width: 100% !important;
-      display: flex !important;
       flex-wrap: wrap !important;
-      gap: 8px !important;
-      align-items: center !important;
     }
-    .assessment-cycle-banner button {
+    .cycle-banner-cta, .cycle-banner-snooze {
       flex: 1 1 auto !important;
       text-align: center !important;
       justify-content: center !important;
@@ -2983,6 +3166,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
 </div>
 
 <!-- ============ NOTIFICATIONS PANEL ============ -->
+<div class="panel-backdrop" id="notifBackdrop" onclick="App.closeNotifications()"></div>
 <aside class="panel" id="notifPanel" role="dialog" aria-label="Notifications">
   <div class="panel-head">
     <div class="panel-title">Notifications</div>
@@ -3196,21 +3380,61 @@ async function apiFetch(url, options = {}) {
   return response;
 }
 
-// ═══ Active Assessment Cycle Banner (HR → Employee) ═══
-function getDismissedBanners() {
+// ═══ Active Assessment Cycle Banner & Notification Sync (HR → Employee) ═══
+const TRANSIENT_BANNER_DURATION_MS = 6000;
+
+function getSessionShownBanners() {
   try {
-    return JSON.parse(localStorage.getItem('dismissed_wellness_banners') || '[]');
+    return JSON.parse(sessionStorage.getItem('shown_transient_cycle_banners') || '[]');
   } catch (e) {
     return [];
   }
 }
 
-function saveDismissedBanner(bannerId) {
-  const dismissed = getDismissedBanners();
-  if (!dismissed.includes(bannerId)) {
-    dismissed.push(bannerId);
-    localStorage.setItem('dismissed_wellness_banners', JSON.stringify(dismissed));
-  }
+function markSessionBannerShown(bannerKey) {
+  try {
+    const shown = getSessionShownBanners();
+    if (!shown.includes(bannerKey)) {
+      shown.push(bannerKey);
+      sessionStorage.setItem('shown_transient_cycle_banners', JSON.stringify(shown));
+    }
+  } catch (e) {}
+}
+
+function collapseBannerElement(banner) {
+  if (!banner || banner.dataset.collapsing === 'true') return;
+  banner.dataset.collapsing = 'true';
+  banner.classList.add('is-collapsing');
+  setTimeout(() => {
+    banner.remove();
+  }, 300);
+}
+
+function attachBannerAutoDismiss(banner, bannerKey, durationMs = TRANSIENT_BANNER_DURATION_MS) {
+  let remaining = durationMs;
+  let startedAt = Date.now();
+  let timerId = null;
+
+  const schedule = () => {
+    clearTimeout(timerId);
+    startedAt = Date.now();
+    timerId = setTimeout(() => {
+      markSessionBannerShown(bannerKey);
+      collapseBannerElement(banner);
+    }, remaining);
+  };
+
+  banner.addEventListener('mouseenter', () => {
+    clearTimeout(timerId);
+    remaining = Math.max(400, remaining - (Date.now() - startedAt));
+  });
+
+  banner.addEventListener('mouseleave', () => {
+    if (banner.dataset.collapsing === 'true') return;
+    schedule();
+  });
+
+  schedule();
 }
 
 async function fetchActiveCycles() {
@@ -3218,7 +3442,18 @@ async function fetchActiveCycles() {
     const resp = await apiFetch('/api/v1/wellness/active-cycles');
     if (!resp.ok) return;
     const data = await resp.json();
-    if (!data.success || !data.active_cycles || data.active_cycles.length === 0) return;
+    const cycles = (data && data.success && Array.isArray(data.active_cycles)) ? data.active_cycles : [];
+
+    // Sync active/completed cycles into the header Notification Center & numeric badge
+    if (window.App && typeof window.App.setCycleNotifications === 'function') {
+      window.App.setCycleNotifications(cycles);
+    }
+
+    if (cycles.length === 0) {
+      const existingContainer = document.getElementById('activeCycleBanners');
+      if (existingContainer) existingContainer.innerHTML = '';
+      return;
+    }
 
     const surveyNames = {
       phq9: 'PHQ-9 (Depression Screening)',
@@ -3241,135 +3476,84 @@ async function fetchActiveCycles() {
     }
 
     bannerContainer.innerHTML = '';
-    const dismissedList = getDismissedBanners();
+    const sessionShown = getSessionShownBanners();
 
-    data.active_cycles.forEach(cycle => {
-      const isCompleted = cycle.completed;
-      const bannerId = `completed_${cycle.survey_type}_${cycle.cycle_id || 'cycle'}`;
-
-      // Skip completed banners that the user has already dismissed
-      if (isCompleted && (dismissedList.includes(bannerId) || dismissedList.includes(`completed_${cycle.survey_type}`))) {
-        return;
-      }
+    cycles.forEach(cycle => {
+      if (cycle.completed) return;
 
       // Skip snoozed active assessment reminders
       const snoozeKey = `snooze_${cycle.survey_type}`;
       const snoozedUntil = localStorage.getItem(snoozeKey);
-      if (!isCompleted && snoozedUntil && new Date() < new Date(snoozedUntil)) return;
+      if (snoozedUntil && new Date() < new Date(snoozedUntil)) return;
+
+      // Only show the transient arrival banner once per session per cycle
+      const bannerKey = `active_${cycle.survey_type}_${cycle.cycle_id || 'cycle'}`;
+      if (sessionShown.includes(bannerKey)) return;
 
       const name = surveyNames[cycle.survey_type] || cycle.survey_type.toUpperCase();
+      const deadlineStr = cycle.deadline
+        ? new Date(cycle.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : '';
 
       const banner = document.createElement('div');
       banner.className = 'assessment-cycle-banner';
-      banner.dataset.bannerId = bannerId;
-      banner.style.cssText = `
-        position: relative;
-        background: ${isCompleted ? 'rgba(34,197,94,0.08)' : 'rgba(99,102,241,0.08)'};
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid ${isCompleted ? 'rgba(34,197,94,0.25)' : 'rgba(99,102,241,0.25)'};
-        border-radius: 16px;
-        padding: 20px 28px;
-        margin: 0 0 16px 0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        box-shadow: 0 0 30px ${isCompleted ? 'rgba(34,197,94,0.06)' : 'rgba(99,102,241,0.06)'};
-        animation: bannerSlideIn 0.4s ease;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        max-height: 200px;
-        overflow: hidden;
+      banner.dataset.bannerKey = bannerKey;
+      banner.setAttribute('role', 'status');
+      banner.setAttribute('aria-live', 'polite');
+
+      banner.innerHTML = `
+        <div class="cycle-banner-main">
+          <div class="cycle-banner-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+              <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+              <path d="M9 12h6"></path>
+              <path d="M9 16h4"></path>
+            </svg>
+          </div>
+          <div class="cycle-banner-body">
+            <div class="cycle-banner-meta">
+              <span class="cycle-banner-tag">Assessment Unlocked</span>
+              ${deadlineStr ? `<span class="cycle-banner-due">Due ${deadlineStr}</span>` : ''}
+              <span class="cycle-banner-privacy">Anonymous · N &ge; 5</span>
+            </div>
+            <div class="cycle-banner-title">${name}</div>
+            <div class="cycle-banner-desc">Available now in your wellness check-ins and saved to your notification bell.</div>
+          </div>
+        </div>
+        <div class="cycle-banner-actions">
+          <button type="button" class="cycle-banner-cta" onclick="window.openSurveyFromBanner('${cycle.survey_type}', '${bannerKey}')">Take Assessment</button>
+          <button type="button" class="cycle-banner-snooze" onclick="window.snoozeAssessment('${cycle.survey_type}', this, '${bannerKey}')" title="Snooze reminder for 24 hours">Remind tomorrow</button>
+          <button type="button" class="cycle-banner-close" onclick="window.dismissTransientBanner(this, '${bannerKey}')" title="Dismiss" aria-label="Dismiss notification">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="cycle-banner-progress" aria-hidden="true">
+          <div class="cycle-banner-progress-bar"></div>
+        </div>
       `;
 
-      if (isCompleted) {
-        banner.innerHTML = `
-          <div style="display:flex;align-items:center;gap:14px;padding-right:32px;">
-            <span style="font-size:24px;">✅</span>
-            <div>
-              <div style="font-weight:600;color:#22c55e;font-size:15px;">Completed: ${name}</div>
-              <div style="color:#9ca3af;font-size:13px;margin-top:2px;">Thank you for completing this assessment cycle.</div>
-            </div>
-          </div>
-          <button onclick="window.dismissCompletedBanner('${cycle.survey_type}', '${bannerId}', this)" 
-                  style="position:absolute;top:12px;right:16px;background:none;border:none;color:#22c55e;opacity:0.6;font-size:20px;line-height:1;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all 0.2s;" 
-                  onmouseover="this.style.opacity='1';this.style.background='rgba(34,197,94,0.15)'" 
-                  onmouseout="this.style.opacity='0.6';this.style.background='none'" 
-                  title="Dismiss message" aria-label="Dismiss completed banner">&times;</button>
-        `;
-      } else {
-        const deadlineStr = cycle.deadline ? new Date(cycle.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-        banner.innerHTML = `
-          <div style="display:flex;align-items:center;gap:14px;flex:1;padding-right:12px;">
-            <span style="font-size:24px;">📋</span>
-            <div>
-              <div style="font-weight:600;color:#a78bfa;font-size:15px;">Active Assessment Unlocked: ${name}</div>
-              <div style="color:#9ca3af;font-size:13px;margin-top:2px;line-height:1.5;">Your HR team has unlocked a periodic assessment cycle. Submissions remain strictly anonymous (N ≥ 5).${deadlineStr ? ' <span style="color:#f59e0b;">Due: ' + deadlineStr + '</span>' : ''}</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:10px;flex-shrink:0;align-items:center;">
-            <button onclick="window.openSurveyFromBanner('${cycle.survey_type}')" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;">
-              Take Assessment
-            </button>
-            <button onclick="window.snoozeAssessment('${cycle.survey_type}', this)" style="background:rgba(255,255,255,0.06);color:#9ca3af;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 16px;font-size:12px;cursor:pointer;transition:all 0.2s;" title="Snooze until tomorrow">
-              ⏰ Snooze
-            </button>
-            <button onclick="window.snoozeAssessment('${cycle.survey_type}', this)" 
-                    style="background:none;border:none;color:#a78bfa;opacity:0.6;font-size:18px;line-height:1;cursor:pointer;padding:4px 6px;border-radius:6px;transition:all 0.2s;" 
-                    onmouseover="this.style.opacity='1';this.style.background='rgba(167,139,250,0.15)'" 
-                    onmouseout="this.style.opacity='0.6';this.style.background='none'" 
-                    title="Dismiss reminder" aria-label="Dismiss active assessment banner">&times;</button>
-          </div>
-        `;
-      }
-
       bannerContainer.appendChild(banner);
+      attachBannerAutoDismiss(banner, bannerKey, TRANSIENT_BANNER_DURATION_MS);
     });
   } catch (err) {
     console.warn('[ActiveCycles] Failed to fetch:', err.message);
   }
 }
 
-window.dismissCompletedBanner = function(surveyType, bannerId, btnEl) {
-  saveDismissedBanner(bannerId);
-  saveDismissedBanner(`completed_${surveyType}`);
+window.dismissTransientBanner = function(btnEl, bannerKey) {
+  if (bannerKey) markSessionBannerShown(bannerKey);
   const banner = btnEl ? btnEl.closest('.assessment-cycle-banner') : null;
-  if (banner) {
-    banner.style.opacity = '0';
-    banner.style.transform = 'translateY(-10px)';
-    banner.style.maxHeight = '0px';
-    banner.style.paddingTop = '0px';
-    banner.style.paddingBottom = '0px';
-    banner.style.marginTop = '0px';
-    banner.style.marginBottom = '0px';
-    banner.style.border = 'none';
-    setTimeout(() => {
-      banner.remove();
-    }, 300);
-  }
-  if (typeof showToast === 'function') {
-    showToast('Dismissed', 'Completed assessment message hidden.', 'info');
-  }
+  if (banner) collapseBannerElement(banner);
 };
 
-window.snoozeAssessment = function(surveyType, btnEl) {
+window.snoozeAssessment = function(surveyType, btnEl, bannerKey) {
   const snoozeUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   localStorage.setItem(`snooze_${surveyType}`, snoozeUntil);
-  const banner = (btnEl && btnEl.closest) ? btnEl.closest('.assessment-cycle-banner') : (event ? event.target.closest('.assessment-cycle-banner') : null);
-  if (banner) {
-    banner.style.opacity = '0';
-    banner.style.transform = 'translateY(-10px)';
-    banner.style.maxHeight = '0px';
-    banner.style.paddingTop = '0px';
-    banner.style.paddingBottom = '0px';
-    banner.style.marginTop = '0px';
-    banner.style.marginBottom = '0px';
-    banner.style.border = 'none';
-    setTimeout(() => {
-      banner.remove();
-    }, 300);
-  }
-  if (typeof showToast === 'function') showToast('Snoozed', 'Assessment reminder snoozed until tomorrow.', 'info');
+  if (bannerKey) markSessionBannerShown(bannerKey);
+  const banner = (btnEl && btnEl.closest) ? btnEl.closest('.assessment-cycle-banner') : null;
+  if (banner) collapseBannerElement(banner);
+  if (typeof showToast === 'function') showToast('Reminder Snoozed', 'You can still access this assessment in your notification bell.', 'info');
 };
 
 // ═══ Helper functions for worker context & instrument code normalization ═══
@@ -3439,7 +3623,14 @@ function getWorkerDepartmentCode() {
   return (typeof App !== 'undefined' && App.state && App.state.user && App.state.user.department) || 'ENG';
 }
 
-window.openSurveyFromBanner = function(surveyType) {
+window.openSurveyFromBanner = function(surveyType, bannerKey) {
+  if (bannerKey && typeof markSessionBannerShown === 'function') {
+    markSessionBannerShown(bannerKey);
+    const activeBanner = document.querySelector(`.assessment-cycle-banner[data-banner-key="${bannerKey}"]`);
+    if (activeBanner && typeof collapseBannerElement === 'function') {
+      collapseBannerElement(activeBanner);
+    }
+  }
   const normCode = normalizeInstrumentCode(surveyType);
   const surveyCards = document.querySelectorAll('[data-survey-type], [data-instrument-code]');
   for (const card of surveyCards) {
@@ -5309,6 +5500,9 @@ const App = (() => {
       updateTrendChart();
       renderEmployeeDashboard();
     }
+    if (typeof fetchActiveCycles === 'function') {
+      fetchActiveCycles();
+    }
 
     // Show result to user
     const providerName = (state.clinicalProvider && state.clinicalProvider.name) ? state.clinicalProvider.name : 'Dr. Edith Clarke (FZ Safety and Health)';
@@ -6411,6 +6605,9 @@ const App = (() => {
     });
 
     renderSurveyCards();
+    if (typeof fetchActiveCycles === 'function') {
+      fetchActiveCycles();
+    }
   }
   window.updateAssessmentCardStates = updateAssessmentCardStates;
 
@@ -7645,20 +7842,169 @@ const App = (() => {
       closeModal('genericBackdrop');
     },
     closeNotifications: () => {
-      document.getElementById('notifPanel').classList.remove('open');
+      document.getElementById('notifPanel')?.classList.remove('open');
       closeModal('notifBackdrop');
     },
     toggleNotifications: () => {
       const panel = document.getElementById('notifPanel');
+      if (!panel) return;
       if (panel.classList.contains('open')) {
         panel.classList.remove('open');
         closeModal('notifBackdrop');
       } else {
+        App.renderNotifications();
         panel.classList.add('open');
         openModal('notifBackdrop');
-        const badge = document.getElementById('notifBadge');
-        if (badge) badge.style.display = 'none';
       }
+    },
+    setCycleNotifications: (cycles = []) => {
+      const surveyNames = {
+        phq9: 'PHQ-9 (Depression Screening)',
+        gad7: 'GAD-7 (Anxiety Assessment)',
+        pss10: 'PSS-10 (Perceived Stress Scale)',
+        fas10: 'FAS-10 (Fatigue Assessment)',
+        copsoq3: 'COPSOQ III (Psychosocial Hazard Assessment)'
+      };
+      let readIds = [];
+      try { readIds = JSON.parse(localStorage.getItem('wf_read_notifications') || '[]'); } catch (e) {}
+
+      const mapped = (Array.isArray(cycles) ? cycles : []).map(cycle => {
+        const cycleKey = `${cycle.survey_type}_${cycle.cycle_id || 'cycle'}`;
+        const id = cycle.completed ? `cycle_done_${cycleKey}` : `cycle_active_${cycleKey}`;
+        const name = surveyNames[cycle.survey_type] || String(cycle.survey_type || '').toUpperCase();
+        const deadlineStr = cycle.deadline
+          ? new Date(cycle.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : '';
+        return {
+          id,
+          type: cycle.completed ? 'completed' : 'assessment',
+          surveyType: cycle.survey_type,
+          title: cycle.completed ? `Completed: ${name}` : `Assessment Unlocked: ${name}`,
+          desc: cycle.completed
+            ? 'Thank you for completing this periodic wellness check-in.'
+            : 'Periodic check-in opened by HR. Submissions remain strictly anonymous (N ≥ 5).',
+          deadlineStr,
+          read: cycle.completed ? true : readIds.includes(id)
+        };
+      });
+
+      state.notifications = mapped;
+      App.updateNotifBadge();
+      if (document.getElementById('notifPanel')?.classList.contains('open')) {
+        App.renderNotifications();
+      }
+    },
+    updateNotifBadge: () => {
+      const badge = document.getElementById('notifBadge');
+      const btn = document.getElementById('notifBtn');
+      const unreadCount = (state.notifications || []).filter(n => !n.read).length;
+      if (badge) {
+        if (unreadCount > 0) {
+          badge.textContent = unreadCount > 9 ? '9+' : String(unreadCount);
+          badge.style.display = 'inline-flex';
+        } else {
+          badge.textContent = '';
+          badge.style.display = 'none';
+        }
+      }
+      if (btn) {
+        btn.setAttribute('aria-label', unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications');
+        btn.setAttribute('title', unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications');
+      }
+    },
+    renderNotifications: () => {
+      const body = document.getElementById('notifBody');
+      if (!body) return;
+      const items = state.notifications || [];
+      if (items.length === 0) {
+        body.innerHTML = `
+          <div style="padding: 48px 20px; text-align: center; color: var(--text-3);">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--bg); color: var(--text-3); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+            </div>
+            <div style="font-size: 0.9375rem; font-weight: 600; color: var(--text-1); margin-bottom: 4px;">You're all caught up</div>
+            <p style="font-size: 0.8125rem; color: var(--text-2); margin: 0;">Unlocked assessments and wellness updates will appear here.</p>
+          </div>
+        `;
+        return;
+      }
+
+      body.innerHTML = '';
+      items.forEach(n => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'notif-item' + (n.read ? '' : ' unread');
+
+        const isCompleted = n.type === 'completed';
+        const iconStyle = isCompleted
+          ? 'background: var(--success-bg); color: var(--success); border-color: rgba(21,128,61,0.18);'
+          : '';
+        const iconSvg = isCompleted
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect><path d="M9 12h6"></path><path d="M9 16h4"></path></svg>';
+
+        const ctaHtml = !isCompleted ? `
+          <div class="notif-cta-row">
+            <button type="button" class="notif-cta-btn" data-action="take">Take Assessment</button>
+            ${!n.read ? '<button type="button" class="notif-dismiss-btn" data-action="read">Mark read</button>' : ''}
+          </div>
+        ` : '';
+
+        itemEl.innerHTML = `
+          <div class="notif-icon" style="${iconStyle}" aria-hidden="true">${iconSvg}</div>
+          <div class="notif-content">
+            <div class="notif-title">${n.title}</div>
+            <div class="notif-desc">${n.desc}</div>
+            <div class="notif-meta-row">
+              ${n.deadlineStr ? `<span class="cycle-banner-due">Due ${n.deadlineStr}</span>` : ''}
+              <span class="notif-time">${isCompleted ? 'Completed' : (n.read ? 'Read' : 'Pending action')}</span>
+            </div>
+            ${ctaHtml}
+          </div>
+        `;
+
+        const takeBtn = itemEl.querySelector('[data-action="take"]');
+        if (takeBtn) {
+          takeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            App.markNotifRead(n.id);
+            App.closeNotifications();
+            window.openSurveyFromBanner(n.surveyType);
+          });
+        }
+        const readBtn = itemEl.querySelector('[data-action="read"]');
+        if (readBtn) {
+          readBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            App.markNotifRead(n.id);
+          });
+        }
+        body.appendChild(itemEl);
+      });
+    },
+    markNotifRead: (id) => {
+      if (!id) return;
+      let readIds = [];
+      try { readIds = JSON.parse(localStorage.getItem('wf_read_notifications') || '[]'); } catch (e) {}
+      if (!readIds.includes(id)) {
+        readIds.push(id);
+        try { localStorage.setItem('wf_read_notifications', JSON.stringify(readIds)); } catch (e) {}
+      }
+      (state.notifications || []).forEach(n => {
+        if (n.id === id) n.read = true;
+      });
+      App.updateNotifBadge();
+      App.renderNotifications();
+    },
+    markAllRead: () => {
+      let readIds = [];
+      try { readIds = JSON.parse(localStorage.getItem('wf_read_notifications') || '[]'); } catch (e) {}
+      (state.notifications || []).forEach(n => {
+        n.read = true;
+        if (!readIds.includes(n.id)) readIds.push(n.id);
+      });
+      try { localStorage.setItem('wf_read_notifications', JSON.stringify(readIds)); } catch (e) {}
+      App.updateNotifBadge();
+      App.renderNotifications();
     },
     openSearch: () => {
       const modal = document.getElementById('cmdPalette');
@@ -7690,7 +8036,6 @@ const App = (() => {
       const isOpen = dropdown.classList.toggle('open');
       if (btn) btn.setAttribute('aria-expanded', String(isOpen));
     },
-    markAllRead: () => {},
     
     openLegal: (type) => {
       const titleEl = document.getElementById('genericPanelTitle');

@@ -1113,10 +1113,39 @@
 
   <!-- Billing Table Card with Mobile Stacked Cards Layout -->
   <div class="data-table-container">
-    <div class="data-table-header">
+    <div class="data-table-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-3);">
       <div>
-        <h2 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text); margin: 0;">Referral billing records</h2>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <h2 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text); margin: 0;">Referral billing records</h2>
+          <span id="billingPeriodLabel" class="badge badge-neutral" style="font-size: 11px;">Current month</span>
+        </div>
         <p style="font-size: var(--text-xs); color: var(--text-subtle); margin: 2px 0 0 0;">Direct ledger of occupational health assessments and billed fees</p>
+      </div>
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2);" role="group" aria-label="Billing period filter">
+        <label for="billingPeriodMode" class="form-label" style="margin-bottom: 0; font-size: var(--text-xs); color: var(--text-subtle);">Period</label>
+        <select id="billingPeriodMode" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('billing')" style="width: auto;">
+          <option value="single" selected>Single month</option>
+          <option value="range">Month range</option>
+          <option value="year">Full year (Jan–Dec)</option>
+        </select>
+
+        <div id="billingSingleControls" style="display: inline-flex; align-items: center; gap: 6px;">
+          <select id="billingSingleMonth" aria-label="Billing month" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('billing')" style="width: auto;"></select>
+          <select id="billingSingleYear" aria-label="Billing year" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('billing')" style="width: auto;"></select>
+        </div>
+
+        <div id="billingRangeControls" style="display: none; align-items: center; flex-wrap: wrap; gap: 6px;">
+          <span style="font-size: var(--text-xs); color: var(--text-subtle);">From</span>
+          <select id="billingFromMonth" aria-label="Billing start month" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('billing')" style="width: auto;"></select>
+          <select id="billingFromYear" aria-label="Billing start year" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('billing')" style="width: auto;"></select>
+          <span style="font-size: var(--text-xs); color: var(--text-subtle);">to</span>
+          <select id="billingToMonth" aria-label="Billing end month" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('billing')" style="width: auto;"></select>
+          <select id="billingToYear" aria-label="Billing end year" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('billing')" style="width: auto;"></select>
+        </div>
+
+        <div id="billingYearControls" style="display: none; align-items: center; gap: 6px;">
+          <select id="billingFullYear" aria-label="Billing full year" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('billing')" style="width: auto;"></select>
+        </div>
       </div>
     </div>
     <div style="overflow-x: auto; width: 100%;">
@@ -1306,16 +1335,46 @@
     </div>
   </div>
 
-  <!-- Reports Table Card with Urgency Filter -->
+  <!-- Reports Table Card with Period & Urgency Filters -->
   <div class="chart-card">
     <div class="chart-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-3);">
       <div>
-        <div class="chart-title">Incident ledger</div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div class="chart-title">Incident ledger</div>
+          <span id="ethicsPeriodLabel" class="badge badge-neutral" style="font-size: 11px;">Current month</span>
+        </div>
         <div class="chart-subtitle">Workplace safety concerns and investigator dialogue</div>
       </div>
-      <div style="display: flex; align-items: center; gap: var(--space-2);">
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2);">
+        <div style="display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px;" role="group" aria-label="Ethics period filter">
+          <label for="ethicsPeriodMode" class="form-label" style="margin-bottom: 0; font-size: var(--text-xs); color: var(--text-subtle);">Period</label>
+          <select id="ethicsPeriodMode" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('ethics')" style="width: auto;">
+            <option value="single" selected>Single month</option>
+            <option value="range">Month range</option>
+            <option value="year">Full year (Jan–Dec)</option>
+          </select>
+
+          <div id="ethicsSingleControls" style="display: inline-flex; align-items: center; gap: 6px;">
+            <select id="ethicsSingleMonth" aria-label="Ethics month" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('ethics')" style="width: auto;"></select>
+            <select id="ethicsSingleYear" aria-label="Ethics year" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('ethics')" style="width: auto;"></select>
+          </div>
+
+          <div id="ethicsRangeControls" style="display: none; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <span style="font-size: var(--text-xs); color: var(--text-subtle);">From</span>
+            <select id="ethicsFromMonth" aria-label="Ethics start month" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('ethics')" style="width: auto;"></select>
+            <select id="ethicsFromYear" aria-label="Ethics start year" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('ethics')" style="width: auto;"></select>
+            <span style="font-size: var(--text-xs); color: var(--text-subtle);">to</span>
+            <select id="ethicsToMonth" aria-label="Ethics end month" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('ethics')" style="width: auto;"></select>
+            <select id="ethicsToYear" aria-label="Ethics end year" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('ethics')" style="width: auto;"></select>
+          </div>
+
+          <div id="ethicsYearControls" style="display: none; align-items: center; gap: 6px;">
+            <select id="ethicsFullYear" aria-label="Ethics full year" class="form-select form-select-sm" onchange="window.onPeriodFilterChange('ethics')" style="width: auto;"></select>
+          </div>
+        </div>
+
         <label for="ethicsUrgencyFilter" class="form-label" style="margin-bottom: 0; font-size: var(--text-xs); color: var(--text-subtle);">Urgency</label>
-        <select id="ethicsUrgencyFilter" class="form-select form-select-sm" onchange="window.filterEthicsByUrgency(this.value)">
+        <select id="ethicsUrgencyFilter" class="form-select form-select-sm" onchange="window.filterEthicsByUrgency(this.value)" style="width: auto;">
           <option value="all">All urgencies</option>
           <option value="Critical">Critical</option>
           <option value="Urgent">Urgent</option>

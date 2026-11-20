@@ -13,6 +13,7 @@ const { validateSession, requireRole } = require('../middleware/auth');
 const { enforceTenantScope } = require('../middleware/tenantIsolation');
 const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
 const { sendClinicalDispatch } = require('../utils/emailService');
+const { parseMonthRangeQuery } = require('../utils/dateRangeFilter');
 
 const router = express.Router();
 
@@ -252,6 +253,19 @@ router.get(
         query.tenantId = tenant._id;
       }
 
+      const dateFilter = parseMonthRangeQuery(req.query);
+      if (dateFilter.error) {
+        return res.status(400).json({
+          success: false,
+          error: 'INVALID_DATE_RANGE',
+          message: dateFilter.error,
+        });
+      }
+
+      if (dateFilter.active) {
+        query.createdAt = dateFilter.range;
+      }
+
       // Explicitly exclude clinicalDetails and assignedAssessorId via .select()
       // HR must never receive patient-identifying fields in the response payload
       const referrals = await Referral.find(query)
@@ -285,6 +299,7 @@ router.get(
       res.json({
         success: true,
         count: data.length,
+        ...(dateFilter.active ? { period: { from: dateFilter.from, to: dateFilter.to } } : {}),
         data,
       });
     } catch (err) {

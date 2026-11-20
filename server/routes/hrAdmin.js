@@ -812,11 +812,25 @@ router.get('/reports', async (req, res, next) => {
       }).select('_id').lean();
     }
 
+    const { parseMonthRangeQuery } = require('../utils/dateRangeFilter');
+    const dateFilter = parseMonthRangeQuery(req.query);
+    if (dateFilter.error) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_DATE_RANGE',
+        message: dateFilter.error,
+      });
+    }
+
     let query = { involvesLeadershipOrHR: false };
     if (tenant) {
       query.tenantId = tenant._id;
     } else if (req.sessionData.role !== 'super_admin' && !req.sessionData.isSystemSuperAdmin) {
       return res.status(404).json({ success: false, error: 'TENANT_NOT_FOUND', message: 'Tenant not found.' });
+    }
+
+    if (dateFilter.active) {
+      query.createdAt = dateFilter.range;
     }
 
     // Critical: Exclude any reports where involvesLeadershipOrHR === true
@@ -827,6 +841,7 @@ router.get('/reports', async (req, res, next) => {
     res.json({
       success: true,
       count: reports.length,
+      ...(dateFilter.active ? { period: { from: dateFilter.from, to: dateFilter.to } } : {}),
       reports,
     });
   } catch (err) {

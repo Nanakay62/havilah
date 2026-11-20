@@ -1004,7 +1004,12 @@
                 <label class="form-label" for="assessorPasswordInput" style="margin-bottom:0;">Password</label>
                 <a href="/reset-password.html" style="font-size:0.75rem; color:var(--accent); font-weight:600; text-decoration:none;">Forgot password?</a>
               </div>
-              <input type="password" id="assessorPasswordInput" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+              <div style="position: relative;">
+                <input type="password" id="assessorPasswordInput" class="form-input" placeholder="••••••••" required autocomplete="current-password" style="padding-right: 40px;">
+                <button type="button" onclick="togglePasswordVisibility('assessorPasswordInput', this)" aria-label="Show password" aria-pressed="false" title="Show password" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 4px; color: var(--text-3, #64748b); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
             </div>
           </div>
           <div id="assessor2faGroup" style="display:none; margin-bottom:12px;">
@@ -1622,7 +1627,12 @@
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="form-group">
               <label class="form-label" for="newDocPassword">Initial Password *</label>
-              <input type="password" id="newDocPassword" class="form-input" placeholder="Min. 6 characters" minlength="6" required />
+              <div style="position: relative;">
+                <input type="password" id="newDocPassword" class="form-input" placeholder="Min. 6 characters" minlength="6" required style="padding-right: 40px;" />
+                <button type="button" onclick="togglePasswordVisibility('newDocPassword', this)" aria-label="Show password" aria-pressed="false" title="Show password" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 4px; color: var(--text-3, #64748b); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label class="form-label" for="newDocSpecialty">Clinical Specialty *</label>

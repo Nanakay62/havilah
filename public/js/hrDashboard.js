@@ -1,4 +1,30 @@
 (() => {
+  const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const MONTH_SHORT = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  const _now = new Date();
+  const _currentYear = _now.getFullYear();
+  const _currentMonth = _now.getMonth() + 1; // 1..12
+
+  function createDefaultPeriodState() {
+    return {
+      mode: 'single', // 'single' | 'range' | 'year'
+      month: _currentMonth,
+      year: _currentYear,
+      fromMonth: 1,
+      fromYear: _currentYear,
+      toMonth: _currentMonth,
+      toYear: _currentYear,
+      fullYear: _currentYear
+    };
+  }
+
   const state = {
     heatmapData: [],
     invites: [],
@@ -6,7 +32,138 @@
     referralBilling: [],
     activeTab: 'analytics',
     ethicsReports: [],
-    ethicsUrgencyFilter: 'all'
+    ethicsUrgencyFilter: 'all',
+    periodFilters: {
+      billing: createDefaultPeriodState(),
+      ethics: createDefaultPeriodState()
+    }
+  };
+
+  function padMonth(m) {
+    return String(m).padStart(2, '0');
+  }
+
+  function getPeriodRange(section) {
+    const f = state.periodFilters[section] || createDefaultPeriodState();
+    if (f.mode === 'year') {
+      return { from: `${f.fullYear}-01`, to: `${f.fullYear}-12` };
+    }
+    if (f.mode === 'range') {
+      const from = `${f.fromYear}-${padMonth(f.fromMonth)}`;
+      const to = `${f.toYear}-${padMonth(f.toMonth)}`;
+      return from <= to ? { from, to } : { from, to: from };
+    }
+    const single = `${f.year}-${padMonth(f.month)}`;
+    return { from: single, to: single };
+  }
+
+  function formatPeriodLabel(section) {
+    const f = state.periodFilters[section] || createDefaultPeriodState();
+    if (f.mode === 'year') {
+      return `Jan – Dec ${f.fullYear}`;
+    }
+    if (f.mode === 'range') {
+      const fromLabel = `${MONTH_SHORT[f.fromMonth - 1]} ${f.fromYear}`;
+      const toLabel = `${MONTH_SHORT[f.toMonth - 1]} ${f.toYear}`;
+      return fromLabel === toLabel ? `${MONTH_NAMES[f.fromMonth - 1]} ${f.fromYear}` : `${fromLabel} – ${toLabel}`;
+    }
+    return `${MONTH_NAMES[f.month - 1]} ${f.year}`;
+  }
+
+  function buildPeriodQuery(section) {
+    const { from, to } = getPeriodRange(section);
+    return `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+  }
+
+  function populateMonthSelect(selectEl, selectedMonth) {
+    if (!selectEl) return;
+    selectEl.innerHTML = MONTH_NAMES.map((name, idx) =>
+      `<option value="${idx + 1}"${idx + 1 === selectedMonth ? ' selected' : ''}>${name}</option>`
+    ).join('');
+  }
+
+  function populateYearSelect(selectEl, selectedYear) {
+    if (!selectEl) return;
+    const years = [];
+    for (let y = _currentYear + 1; y >= _currentYear - 4; y--) {
+      years.push(y);
+    }
+    selectEl.innerHTML = years.map(y =>
+      `<option value="${y}"${y === selectedYear ? ' selected' : ''}>${y}</option>`
+    ).join('');
+  }
+
+  function syncPeriodControlVisibility(section) {
+    const f = state.periodFilters[section];
+    const singleEl = document.getElementById(`${section}SingleControls`);
+    const rangeEl = document.getElementById(`${section}RangeControls`);
+    const yearEl = document.getElementById(`${section}YearControls`);
+    const labelEl = document.getElementById(`${section}PeriodLabel`);
+
+    if (singleEl) singleEl.style.display = f.mode === 'single' ? 'inline-flex' : 'none';
+    if (rangeEl) rangeEl.style.display = f.mode === 'range' ? 'inline-flex' : 'none';
+    if (yearEl) yearEl.style.display = f.mode === 'year' ? 'inline-flex' : 'none';
+    if (labelEl) labelEl.textContent = formatPeriodLabel(section);
+  }
+
+  function initPeriodControls() {
+    ['billing', 'ethics'].forEach(section => {
+      const f = state.periodFilters[section];
+      const modeEl = document.getElementById(`${section}PeriodMode`);
+      if (modeEl) modeEl.value = f.mode;
+      populateMonthSelect(document.getElementById(`${section}SingleMonth`), f.month);
+      populateYearSelect(document.getElementById(`${section}SingleYear`), f.year);
+      populateMonthSelect(document.getElementById(`${section}FromMonth`), f.fromMonth);
+      populateYearSelect(document.getElementById(`${section}FromYear`), f.fromYear);
+      populateMonthSelect(document.getElementById(`${section}ToMonth`), f.toMonth);
+      populateYearSelect(document.getElementById(`${section}ToYear`), f.toYear);
+      populateYearSelect(document.getElementById(`${section}FullYear`), f.fullYear);
+      syncPeriodControlVisibility(section);
+    });
+  }
+
+  window.onPeriodFilterChange = (section) => {
+    const f = state.periodFilters[section];
+    if (!f) return;
+
+    const modeEl = document.getElementById(`${section}PeriodMode`);
+    if (modeEl) f.mode = modeEl.value;
+
+    const singleMonthEl = document.getElementById(`${section}SingleMonth`);
+    const singleYearEl = document.getElementById(`${section}SingleYear`);
+    const fromMonthEl = document.getElementById(`${section}FromMonth`);
+    const fromYearEl = document.getElementById(`${section}FromYear`);
+    const toMonthEl = document.getElementById(`${section}ToMonth`);
+    const toYearEl = document.getElementById(`${section}ToYear`);
+    const fullYearEl = document.getElementById(`${section}FullYear`);
+
+    if (singleMonthEl) f.month = Number(singleMonthEl.value) || _currentMonth;
+    if (singleYearEl) f.year = Number(singleYearEl.value) || _currentYear;
+    if (fromMonthEl) f.fromMonth = Number(fromMonthEl.value) || 1;
+    if (fromYearEl) f.fromYear = Number(fromYearEl.value) || _currentYear;
+    if (toMonthEl) f.toMonth = Number(toMonthEl.value) || _currentMonth;
+    if (toYearEl) f.toYear = Number(toYearEl.value) || _currentYear;
+    if (fullYearEl) f.fullYear = Number(fullYearEl.value) || _currentYear;
+
+    // Ensure From <= To when in range mode
+    if (f.mode === 'range') {
+      const fromKey = f.fromYear * 100 + f.fromMonth;
+      const toKey = f.toYear * 100 + f.toMonth;
+      if (fromKey > toKey) {
+        f.toYear = f.fromYear;
+        f.toMonth = f.fromMonth;
+        if (toYearEl) toYearEl.value = String(f.toYear);
+        if (toMonthEl) toMonthEl.value = String(f.toMonth);
+      }
+    }
+
+    syncPeriodControlVisibility(section);
+
+    if (section === 'billing') {
+      fetchClinicalBilling();
+    } else if (section === 'ethics') {
+      fetchEthicsReports();
+    }
   };
 
   async function apiFetch(url, options = {}) {
@@ -158,7 +315,8 @@
     if (staleCountEl) staleCountEl.innerText = staleCount;
 
     if (referrals.length === 0) {
-      tableBody.innerHTML = '<tr class="empty-row"><td colspan="7" style="padding: 32px; text-align: center; color: var(--text-subtle); font-size: var(--text-base);">No clinical referral records found for your organization.</td></tr>';
+      const periodText = escapeHrHtml(formatPeriodLabel('billing'));
+      tableBody.innerHTML = `<tr class="empty-row"><td colspan="7" style="padding: 32px; text-align: center; color: var(--text-subtle); font-size: var(--text-base);">No clinical referral billing records for ${periodText}.</td></tr>`;
       return;
     }
 
@@ -306,10 +464,17 @@
             billing: { amount: 550.00, currency: 'GHS', isBilled: true }
           }
         ];
+        const { from, to } = getPeriodRange('billing');
+        state.referralBilling = state.referralBilling.filter(item => {
+          if (!item.createdAt) return false;
+          const d = new Date(item.createdAt);
+          const ym = `${d.getUTCFullYear()}-${padMonth(d.getUTCMonth() + 1)}`;
+          return ym >= from && ym <= to;
+        });
         renderClinicalBilling();
         return;
       }
-      const res = await apiFetch('/api/v1/referrals/employer-billing');
+      const res = await apiFetch('/api/v1/referrals/employer-billing' + buildPeriodQuery('billing'));
       state.referralBilling = res.data || [];
       renderClinicalBilling();
     } catch (e) {
@@ -321,7 +486,7 @@
   // ── Anonymous Ethics & Hazard Reports ──
   async function fetchEthicsReports() {
     try {
-      const data = await apiFetch('/api/v1/hr/reports');
+      const data = await apiFetch('/api/v1/hr/reports' + buildPeriodQuery('ethics'));
       if (data && data.success) {
         state.ethicsReports = data.reports || [];
         renderEthicsReports();
@@ -349,7 +514,8 @@
     if (!tableBody) return;
 
     if (rawReports.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">No whistleblower or ethics reports submitted for your organization.</td></tr>';
+      const periodText = escapeHrHtml(formatPeriodLabel('ethics'));
+      tableBody.innerHTML = `<tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">No whistleblower or ethics reports for ${periodText}.</td></tr>`;
       return;
     }
 
@@ -548,7 +714,7 @@
       }
 
       try {
-        const data = await apiFetch('/api/v1/hr/reports');
+        const data = await apiFetch('/api/v1/hr/reports' + buildPeriodQuery('ethics'));
         if (data && data.success && Array.isArray(data.reports)) {
           state.ethicsReports = data.reports;
           const updated = data.reports.find(r => r._id === state.activeReport._id);
@@ -1252,6 +1418,7 @@
   };
 
   document.addEventListener('DOMContentLoaded', () => {
+    initPeriodControls();
     init();
     const hash = (window.location.hash || '').replace('#', '');
     const urlParams = new URLSearchParams(window.location.search);

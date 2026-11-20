@@ -303,7 +303,7 @@
             <h4 class="text-xl font-bold text-gray-800 mb-2">Check-in Complete</h4>
             <p class="text-sm text-gray-500 mb-6">Your secure response has been recorded.</p>
             <div class="flex flex-wrap items-center justify-center gap-3">
-                <button class="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium text-sm rounded-lg shadow-sm transition" onclick="if (window.generateAssessmentReportPdf) { window.generateAssessmentReportPdf({ surveyType: state.surveyState.type }); }">
+                <button class="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium text-sm rounded-lg shadow-sm transition" onclick="if (window.generateAssessmentReportPdf) { window.generateAssessmentReportPdf({ surveyType: state.surveyState.type, answers: state.surveyState.answers }); }">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                     <span>Download Confidential Report (PDF)</span>
                 </button>

@@ -248,7 +248,7 @@ export default {
     } else if (path === '/portal/clinical' || path === '/portal/clinical.html' || path === '/clinical' || path === '/clinical-portal') {
       targetPath = '/clinical-portal';
     } else if (path === '/verify' || path.startsWith('/verify/')) {
-      targetPath = '/public/verify.html';
+      targetPath = '/public/verify';
     } else if (path === '/favicon.ico') {
       targetPath = '/public/assets/havilah-mark.svg';
     } else if (path.startsWith('/js/')) {

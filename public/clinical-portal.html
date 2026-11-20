@@ -10,6 +10,8 @@
   <link rel="preload" href="/fonts/Roboto.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/tour.css">
+  <script src="/js/icons.js"></script>
   <script src="/js/vendor/jspdf.umd.min.js"></script>
   <script src="/js/vendor/qrcode-generator.min.js"></script>
   <script src="/js/pdf/pdfConfig.js"></script>
@@ -17,142 +19,217 @@
   <script src="/js/pdf/pdfComponents.js"></script>
   <script src="/js/excuseDutyPdf.js"></script>
   <style>
-    :root {
-    /* Compat aliases: tokens referenced by this page that tokens.css does not define */
-    --surface-card: var(--surface);
-    --surface-canvas: var(--bg);
-    --brand-subtle: #E6F4F2;
-    --border-subtle: #EEF0F3;
-    --border-strong: #C9CED6;
-    --success-subtle: var(--success-bg);
-    --success-border: #A7D7C0;
-    --warning-subtle: var(--warning-bg);
-    --warning-border: #F1C98A;
-    --danger-subtle: var(--danger-bg);
-    --danger-border: #F2B8B5;
-    --danger-hover: #A8201A;
-    --shadow-lg: var(--shadow-overlay);
-
-      --accent: var(--brand);
-      --accent-hover: var(--brand-hover);
-      --accent-light: var(--brand-subtle);
-      --accent-border: var(--border);
-      --bg-base: var(--surface-canvas);
-      --bg-elev: var(--surface-card);
-      --bg-card: var(--surface-card);
-      --text-1: var(--text);
-      --text-2: var(--text-muted);
-      --text-muted: var(--text-subtle);
-      --border-light: var(--border-subtle);
-      --radius-sm: var(--radius-control);
-      --radius-md: var(--radius-card);
-      --radius-lg: var(--radius-modal);
-      --shadow-sm: var(--shadow-card);
-      --shadow-md: var(--shadow-overlay);
+    /* ── Assessor Portal Layout & Token-Only Overrides ── */
+    html, body {
+      max-width: 100%;
+      overflow-x: clip;
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: var(--font-sans);
-      background: var(--bg-base);
-      color: var(--text-1);
+      background-color: var(--bg);
+      color: var(--text);
+      font-size: var(--text-base);
+      line-height: 1.5;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      font-size: 14px;
-      line-height: 1.5;
     }
 
-    .tabular-nums {
-      font-variant-numeric: tabular-nums;
+    .text-muted-sm {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
     }
 
-    /* Header */
-    header {
-      background: var(--bg-elev);
+    .text-subtle-xs {
+      font-size: var(--text-xs);
+      color: var(--text-subtle);
+    }
+
+    /* ── Top Horizontal Navigation Bar ── */
+    .portal-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      width: 100%;
+      background-color: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 14px 28px;
+    }
+
+    .portal-topbar-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 8px var(--space-4);
+      min-height: 56px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: var(--text-1);
-      text-decoration: none;
-    }
-
-    .brand-mark {
-      width: 34px;
-      height: 34px;
-      background: var(--brand);
-      border-radius: var(--radius-sm);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #FFFFFF;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      gap: var(--space-4);
       flex-wrap: wrap;
     }
 
-    .security-timer-badge {
+    @media (min-width: 768px) {
+      .portal-topbar-inner {
+        padding: 8px var(--space-6);
+      }
+    }
+
+    @media (min-width: 1280px) {
+      .portal-topbar-inner {
+        padding: 8px var(--space-8);
+      }
+    }
+
+    .portal-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .portal-brand {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      background: var(--surface-canvas);
+      gap: var(--space-3);
+      font-size: var(--text-md);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .portal-brand:hover {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .portal-top-nav {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding: 2px 0;
+    }
+
+    .portal-top-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .portal-nav-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      height: 36px;
+      padding: 0 var(--space-3);
+      border-radius: var(--radius-control);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: var(--text-base);
+      font-weight: var(--weight-medium);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .portal-nav-tab:hover {
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    .portal-nav-tab.active {
+      background-color: var(--brand-subtle);
+      color: var(--brand);
+      font-weight: var(--weight-semibold);
+    }
+
+    .portal-nav-tab svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .portal-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex-shrink: 0;
+    }
+
+    .topbar-icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-control);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 0.76rem;
-      font-weight: 600;
-      color: var(--text-2);
+      background-color: var(--surface);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
 
-    .security-timer-badge.warning {
-      background: var(--danger-subtle);
-      border-color: var(--danger-border);
-      color: var(--danger);
-      animation: pulseWarning 1s infinite alternate;
+    .topbar-icon-btn:hover {
+      background-color: var(--bg);
+      color: var(--text);
+      border-color: var(--text-subtle);
     }
 
-    @keyframes pulseWarning {
-      from { opacity: 1; }
-      to { opacity: 0.7; }
+    @media (max-width: 959px) {
+      .portal-topbar-left {
+        display: contents;
+      }
+      .portal-brand {
+        order: 1;
+      }
+      .portal-topbar-right {
+        order: 2;
+        margin-left: auto;
+      }
+      .portal-top-nav {
+        order: 3;
+        width: 100%;
+        border-top: 1px solid var(--border);
+        padding-top: var(--space-2);
+        margin-top: var(--space-1);
+      }
+      .portal-nav-tab {
+        min-height: 44px;
+      }
+      .topbar-icon-btn {
+        width: 44px;
+        height: 44px;
+      }
     }
 
+    @media (max-width: 479px) {
+      .portal-brand span {
+        font-size: var(--text-base);
+      }
+    }
+
+    /* ── User Menu ── */
     .user-menu-wrap {
       position: relative;
       display: flex;
       align-items: center;
-      padding-left: 10px;
-      border-left: 1px solid var(--border);
     }
 
     .user-menu-trigger {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--text-1);
+      gap: var(--space-2);
+      height: 36px;
+      padding: 0 var(--space-2);
+      border-radius: var(--radius-control);
+      border: 1px solid var(--border);
+      background-color: var(--surface);
+      color: var(--text);
       font-family: inherit;
       cursor: pointer;
       transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -160,278 +237,182 @@
 
     .user-menu-trigger:hover,
     .user-menu-trigger[aria-expanded="true"] {
-      background: var(--surface-canvas);
-      border-color: var(--border);
+      background-color: var(--bg);
+      border-color: var(--text-subtle);
+    }
+
+    @media (max-width: 767px) {
+      .user-menu-trigger {
+        min-height: 44px;
+      }
+    }
+
+    .user-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: var(--radius-full);
+      background-color: var(--brand);
+      color: var(--surface);
+      font-size: var(--text-xs);
+      font-weight: var(--weight-semibold);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
 
     .user-name {
-      font-weight: 600;
-      font-size: 0.875rem;
-      color: var(--text-1);
+      font-weight: var(--weight-medium);
+      font-size: var(--text-base);
+      color: var(--text);
       white-space: nowrap;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .user-dropdown {
+    @media (max-width: 639px) {
+      .user-name {
+        display: none;
+      }
+    }
+
+    .menu-popover {
       display: none;
       position: absolute;
       top: calc(100% + 6px);
       right: 0;
-      min-width: 170px;
-      background: var(--surface-card, #ffffff);
+      min-width: 224px;
+      background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm, 8px);
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
-      padding: 6px;
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-overlay);
+      padding: var(--space-2);
       z-index: 200;
     }
 
-    .user-dropdown.open {
+    .menu-popover.open {
       display: block;
     }
 
-    .user-dropdown-item {
+    .user-menu-account {
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: var(--space-1);
+    }
+
+    .user-menu-account-name {
+      font-size: var(--text-base);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+    }
+
+    .user-menu-account-email {
+      font-size: var(--text-xs);
+      color: var(--text-subtle);
+      word-break: break-word;
+    }
+
+    .user-menu-session {
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+    }
+
+    .menu-divider {
+      height: 1px;
+      background-color: var(--border);
+      margin: var(--space-1) 0;
+    }
+
+    .menu-item-btn {
       width: 100%;
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
       border: none;
-      border-radius: 6px;
+      border-radius: var(--radius-control);
       background: transparent;
-      color: var(--text-1);
+      color: var(--text);
       font-family: inherit;
-      font-size: 0.84rem;
-      font-weight: 600;
+      font-size: var(--text-base);
+      font-weight: var(--weight-medium);
       text-align: left;
       cursor: pointer;
-      transition: background-color 0.12s ease, color 0.12s ease;
+      transition: background-color 0.12s ease;
     }
 
-    .user-dropdown-item:hover {
-      background: var(--surface-canvas);
+    .menu-item-btn:hover {
+      background-color: var(--bg);
     }
 
-    .user-dropdown-item.danger {
-      color: #B91C1C;
+    .menu-item-btn.danger {
+      color: var(--danger);
     }
 
-    .user-dropdown-item.danger:hover {
-      background: #FEF2F2;
+    .menu-item-btn.danger:hover {
+      background-color: var(--danger-bg);
     }
 
-    /* Buttons */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-      text-decoration: none;
-      font-family: inherit;
-    }
-
-    .btn-primary {
-      background: var(--brand);
-      color: #FFFFFF;
-      border-color: var(--brand);
-    }
-    .btn-primary:hover {
-      background: var(--brand-hover);
-      border-color: var(--brand-hover);
-    }
-
-    .btn-outline {
-      background: var(--surface-card);
-      color: var(--text-1);
-      border: 1px solid var(--border);
-    }
-    .btn-outline:hover {
-      background: var(--surface-canvas);
-      border-color: var(--border-strong);
-    }
-
-    .btn-ghost {
-      background: transparent;
-      color: var(--text-2);
-      border: 1px solid var(--border);
-    }
-    .btn-ghost:hover {
-      background: var(--surface-canvas);
-      color: var(--text-1);
-    }
-
-    .btn-danger {
-      background: var(--danger);
-      color: #FFFFFF;
-      border-color: var(--danger);
-    }
-    .btn-danger:hover {
-      background: var(--danger-hover);
-      border-color: var(--danger-hover);
-    }
-
-    .btn-sm {
-      padding: 5px 10px;
-      font-size: 0.78rem;
-    }
-
-    /* Main Container */
-    main {
+    /* ── Main Content & Export Menu ── */
+    main.page-container {
       flex: 1;
-      max-width: 1380px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 28px 24px;
+      padding-bottom: var(--space-12);
     }
 
-    /* Login Box */
-    .auth-container {
-      max-width: 420px;
-      margin: 60px auto;
-      background: var(--surface-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 32px 28px;
-      box-shadow: var(--shadow-sm);
+    .export-menu-wrap {
+      position: relative;
+      display: inline-flex;
     }
 
-    .form-group {
-      margin-bottom: 18px;
+    /* ── Stat Cards Refinement for 320px+ ── */
+    .stat-card {
+      min-width: 0;
     }
 
-    .form-label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-2);
-      margin-bottom: 6px;
+    @media (max-width: 420px) {
+      .stat-grid {
+        gap: var(--space-2);
+      }
+      .stat-card {
+        padding: var(--space-3);
+      }
+      .stat-card-value,
+      .stat-value {
+        font-size: var(--text-lg);
+      }
     }
 
-    .form-input, .form-select, .form-textarea {
-      width: 100%;
-      padding: 9px 12px;
-      background: var(--surface-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text-1);
-      font-size: 0.88rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    /* ── Tabs & Retained Horizontal Filter Strip ── */
+    .controls-stack {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
     }
 
-    .form-input:focus, .form-select:focus, .form-textarea:focus {
-      border-color: var(--brand);
-      box-shadow: 0 0 0 2px var(--brand-subtle);
-    }
-
-    /* Card System */
-    .card, .kpi-card {
-      background: var(--surface-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-sm);
-      transition: border-color 0.15s ease;
-    }
-
-    /* KPI Cards */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .kpi-card {
-      padding: 18px 20px;
-    }
-
-    .kpi-card:hover {
-      border-color: var(--border-strong);
-    }
-
-    .kpi-label {
-      font-size: 0.74rem;
-      font-weight: 700;
-      color: var(--text-2);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 6px;
-    }
-
-    .kpi-value {
-      font-size: 1.55rem;
-      font-weight: 800;
-      color: var(--text-1);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .kpi-sub {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    .card {
-      padding: 22px;
-      margin-bottom: 24px;
-    }
-
-    .card-header {
+    .filter-strip {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .card-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: var(--text-1);
-    }
-
-    .card-subtitle {
-      font-size: 0.8rem;
-      color: var(--text-2);
-      margin-top: 2px;
-    }
-
-    /* Filter Bar */
-    .filter-bar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      gap: var(--space-2);
       flex-wrap: wrap;
       width: 100%;
-      background: var(--surface-canvas);
-      padding: 12px 16px;
-      border-radius: var(--radius-md);
+      background-color: var(--surface);
       border: 1px solid var(--border);
-      margin-bottom: 16px;
+      border-radius: var(--radius-card);
+      padding: var(--space-3);
+      box-shadow: var(--shadow-card);
     }
 
     .search-box {
-      flex: 1;
-      min-width: 220px;
+      flex: 1 1 240px;
+      min-width: 200px;
       position: relative;
     }
 
-    .search-box input {
-      width: 100%;
-      padding: 8px 12px 8px 34px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 0.84rem;
-      background: var(--surface-card);
-      color: var(--text-1);
+    .search-box .input {
+      padding-left: 34px;
     }
 
     .search-box-icon {
@@ -439,154 +420,255 @@
       left: 10px;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--text-muted);
+      color: var(--text-subtle);
       pointer-events: none;
       display: flex;
       align-items: center;
     }
 
-    /* Tables */
-    .table-container {
-      overflow-x: auto;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border);
-      background: var(--surface-card);
-      position: relative;
+    .filter-select {
+      width: auto;
+      min-width: 145px;
+      max-width: 240px;
+      flex: 0 0 auto;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    table {
+    .custom-date-range {
+      display: none;
+      align-items: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .custom-date-range .input {
+      width: auto;
+    }
+
+    @media (max-width: 767px) {
+      .filter-strip {
+        padding: var(--space-3);
+      }
+      .search-box,
+      .filter-select,
+      .custom-date-range,
+      .custom-date-range .input {
+        width: 100%;
+        min-width: 100%;
+      }
+    }
+
+    /* ── Active Filter Chips ── */
+    .filter-chips-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      height: 28px;
+      padding: 0 var(--space-2) 0 var(--space-3);
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-control);
+      font-size: var(--text-xs);
+      font-weight: var(--weight-medium);
+      color: var(--text);
+    }
+
+    .filter-chip-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border: none;
+      background: transparent;
+      color: var(--text-subtle);
+      border-radius: var(--radius-control);
+      cursor: pointer;
+    }
+
+    .filter-chip-remove:hover {
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    /* ── Referrals Table ── */
+    .referrals-table-scroll {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .referrals-table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
-      font-size: 0.84rem;
     }
 
-    thead th {
-      background: var(--surface-canvas);
-      padding: 11px 12px;
-      font-size: 0.71rem;
-      font-weight: 700;
-      color: var(--text-2);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    .referrals-table thead th {
+      height: 40px;
+      padding: 0 var(--space-3);
+      font-size: var(--text-xs);
+      font-weight: var(--weight-medium);
+      color: var(--text-subtle);
+      background-color: var(--bg);
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 2;
       white-space: nowrap;
       user-select: none;
     }
 
-    tbody td {
-      padding: 11px 12px;
-      border-bottom: 1px solid var(--border-light);
-      color: var(--text-1);
-      vertical-align: middle;
+    .th-sort-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      border: none;
+      background: transparent;
+      padding: var(--space-1) 0;
+      font-family: inherit;
+      font-size: var(--text-xs);
+      font-weight: var(--weight-medium);
+      color: var(--text-subtle);
+      cursor: pointer;
     }
 
-    tbody tr:last-child td {
+    .th-sort-btn:hover,
+    .referrals-table thead th[aria-sort="ascending"] .th-sort-btn,
+    .referrals-table thead th[aria-sort="descending"] .th-sort-btn {
+      color: var(--text);
+    }
+
+    .referrals-table tbody tr {
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      transition: background-color 0.1s ease;
+    }
+
+    .referrals-table tbody tr:hover {
+      background-color: var(--bg);
+    }
+
+    .referrals-table tbody tr:last-child {
       border-bottom: none;
     }
 
-    tbody tr:hover {
-      background: var(--surface-canvas);
+    .referrals-table tbody td {
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--text-base);
+      color: var(--text);
+      vertical-align: middle;
     }
 
-    /* Sticky first & last columns on desktop/tablet (> 900px) */
-    @media (min-width: 901px) {
-      #assessorDashboardSection .table-container thead th:first-child,
-      #assessorDashboardSection .table-container tbody td:first-child {
-        position: sticky;
-        left: 0;
-        z-index: 5;
-        background: var(--surface-card);
-      }
-
-      #assessorDashboardSection .table-container thead th:last-child,
-      #assessorDashboardSection .table-container tbody td:last-child {
-        position: sticky;
-        right: 0;
-        z-index: 5;
-        background: var(--surface-card);
-      }
-
-      #assessorDashboardSection .table-container thead th:first-child,
-      #assessorDashboardSection .table-container thead th:last-child {
-        z-index: 15;
-        background: var(--surface-canvas);
-      }
-
-      #assessorDashboardSection .table-container tbody tr:hover td:first-child,
-      #assessorDashboardSection .table-container tbody tr:hover td:last-child {
-        background: var(--surface-canvas);
-      }
-
-      /* Elevate active row's sticky cell when overflow menu is open so it renders above sibling rows */
-      #assessorDashboardSection .table-container tbody td.menu-open-cell {
-        z-index: 40 !important;
-      }
-    }
-
-    /* Stacked sub-line helpers inside merged columns */
     .cell-primary {
-      font-weight: 700;
-      color: var(--text-1);
-      line-height: 1.3;
+      font-weight: var(--weight-medium);
+      color: var(--text);
+      line-height: 1.35;
     }
 
-    .cell-sub {
-      font-size: 0.76rem;
-      color: var(--text-2);
-      margin-top: 3px;
-      line-height: 1.3;
-    }
-
-    /* Row Action Overflow Dropdown */
-    .row-actions-group {
+    .cell-ref-code {
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+      white-space: nowrap;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      position: relative;
     }
 
-    .row-menu-wrap {
-      position: relative;
+    .presence-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: var(--radius-full);
+      display: inline-block;
+      flex-shrink: 0;
+      background-color: var(--border);
+    }
+
+    .presence-dot.is-online {
+      background-color: var(--success);
+    }
+
+    .cell-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: 2px;
+      line-height: 1.35;
+    }
+
+    .contact-link {
+      color: var(--text-muted);
+      font-weight: var(--weight-regular);
+      text-decoration: none;
       display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .contact-link:hover {
+      color: var(--brand);
+      text-decoration: underline;
+    }
+
+    .inline-assign-select {
+      height: 32px;
+      min-width: 150px;
+      max-width: 190px;
+      font-size: var(--text-sm);
+      padding: 0 var(--space-2);
+    }
+
+    .status-cell-group {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-1);
+    }
+
+    .row-actions-group {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--space-2);
     }
 
     .row-menu-trigger {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       padding: 0;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-control);
       border: 1px solid var(--border);
-      background: var(--surface-card);
-      color: var(--text-2);
+      background-color: var(--surface);
+      color: var(--text-muted);
       cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
 
     .row-menu-trigger:hover {
-      background: var(--surface-canvas);
-      color: var(--text-1);
-      border-color: var(--border-strong);
+      background-color: var(--bg);
+      color: var(--text);
+      border-color: var(--text-subtle);
     }
 
     .row-action-dropdown {
       display: none;
-      position: absolute;
-      right: 0;
-      top: calc(100% + 4px);
-      min-width: 165px;
-      background: var(--surface-card);
+      position: fixed;
+      min-width: 184px;
+      background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-lg);
-      padding: 4px;
-      z-index: 60;
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-overlay);
+      padding: var(--space-1);
+      z-index: 1200;
       flex-direction: column;
       gap: 2px;
     }
@@ -598,23 +680,23 @@
     .row-action-item {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: var(--space-2);
       width: 100%;
-      padding: 7px 10px;
+      padding: var(--space-2) var(--space-3);
       border: none;
       background: transparent;
-      color: var(--text-1);
-      font-size: 0.78rem;
-      font-weight: 600;
+      color: var(--text);
+      font-family: inherit;
+      font-size: var(--text-sm);
+      font-weight: var(--weight-medium);
       text-align: left;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-control);
       cursor: pointer;
       white-space: nowrap;
-      transition: background 0.12s ease;
     }
 
     .row-action-item:hover {
-      background: var(--surface-canvas);
+      background-color: var(--bg);
     }
 
     .row-action-item.danger {
@@ -622,269 +704,245 @@
     }
 
     .row-action-item.danger:hover {
-      background: var(--danger-subtle);
+      background-color: var(--danger-bg);
     }
 
-    /* Responsive Stacked Card View (< 900px) - Zero Horizontal Scroll */
-    @media (max-width: 900px) {
-      #assessorDashboardSection .table-container {
+    .mobile-only-badge,
+    .mobile-only-cell {
+      display: none;
+    }
+
+    /* ── Mobile Referral Cards (< 768px) ── */
+    @media (max-width: 767px) {
+      .data-table-container {
+        background-color: transparent;
         border: none;
-        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+      }
+
+      .referrals-table-scroll {
         overflow-x: visible;
       }
 
-      #assessorDashboardSection .table-container table,
-      #assessorDashboardSection .table-container tbody {
+      .referrals-table,
+      .referrals-table tbody {
         display: block;
         width: 100%;
       }
 
-      #assessorDashboardSection .table-container thead {
+      .referrals-table thead {
         display: none;
       }
 
-      #assessorDashboardSection .table-container tbody tr {
-        display: block;
-        background: var(--surface-card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        padding: 12px 14px;
-        margin-bottom: 12px;
-        box-shadow: var(--shadow-sm);
+      .referrals-table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
       }
 
-      #assessorDashboardSection .table-container tbody td {
+      .referrals-table tbody tr {
+        display: block;
+        height: auto;
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card);
+        padding: var(--space-3);
+        box-shadow: var(--shadow-card);
+      }
+
+      .referrals-table tbody tr:hover {
+        background-color: var(--surface);
+      }
+
+      .referrals-table tbody td {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        gap: 12px;
-        padding: 8px 0;
-        border-bottom: 1px solid var(--border-light);
+        gap: var(--space-3);
+        padding: var(--space-2) 0;
+        border-bottom: 1px solid var(--border);
         text-align: right;
       }
 
-      #assessorDashboardSection .table-container tbody td:last-child {
-        border-bottom: none;
-        padding-top: 10px;
-        padding-bottom: 2px;
-      }
-
-      #assessorDashboardSection .table-container tbody td[data-label]::before {
+      .referrals-table tbody td[data-label]::before {
         content: attr(data-label);
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--text-muted);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-medium);
+        color: var(--text-subtle);
         text-align: left;
         flex-shrink: 0;
         padding-top: 2px;
       }
+
+      .referrals-table tbody td.col-ref {
+        padding-top: 0;
+        padding-bottom: var(--space-2);
+        align-items: center;
+      }
+
+      .referrals-table tbody td.col-ref::before {
+        display: none;
+        content: none;
+      }
+
+      .desktop-ref-company,
+      .referrals-table tbody td.col-status {
+        display: none;
+      }
+
+      .mobile-only-badge {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: var(--space-1);
+        justify-content: flex-end;
+      }
+
+      .referrals-table tbody td.mobile-only-cell {
+        display: flex;
+      }
+
+      .inline-assign-select {
+        width: 100%;
+        max-width: 210px;
+        height: 44px;
+        font-size: 16px;
+      }
+
+      .referrals-table tbody td.col-actions {
+        border-bottom: none;
+        padding-top: var(--space-3);
+        padding-bottom: 0;
+      }
+
+      .referrals-table tbody td.col-actions::before {
+        display: none;
+        content: none;
+      }
+
+      .row-actions-group {
+        width: 100%;
+      }
+
+      .row-actions-group .btn {
+        flex: 1;
+        min-height: 44px;
+      }
+
+      .row-menu-trigger {
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+      }
+
+      .referrals-table tbody tr.empty-row td {
+        display: block;
+        text-align: center;
+        border-bottom: none;
+        padding: var(--space-6) var(--space-3);
+      }
+
+      .referrals-table tbody tr.empty-row td::before {
+        display: none;
+        content: none;
+      }
     }
 
-    /* Badges (Status Column) - Flat, Clean, No Edge Borders */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 8px;
-      border-radius: var(--radius-sm);
-      font-size: 0.74rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      border: 1px solid transparent;
-      line-height: 1.4;
-    }
-
-    .badge-completed {
-      background: var(--success-subtle);
-      color: var(--success);
-      border-color: var(--success-border);
-    }
-
-    .badge-pending {
-      background: var(--warning-subtle);
-      color: var(--warning);
-      border-color: var(--warning-border);
-    }
-
-    .badge-scheduled {
-      background: #E0F2FE;
-      color: #0369A1;
-      border-color: #BAE6FD;
-    }
-
-    .badge-cancelled {
-      background: var(--danger-subtle);
-      color: var(--danger);
-      border-color: var(--danger-border);
-    }
-
-    .badge-stale {
-      background: var(--danger-subtle);
-      color: var(--danger);
-      border-color: var(--danger-border);
-      font-weight: 700;
-    }
-
-    /* Settlement Pills */
-    .settlement-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 8px;
-      border-radius: var(--radius-sm);
-      font-size: 0.74rem;
-      font-weight: 600;
-      cursor: pointer;
-      user-select: none;
-      border: 1px solid transparent;
-      transition: opacity 0.15s ease;
-    }
-
-    .settlement-settled {
-      background: var(--success-subtle);
-      color: var(--success);
-      border-color: var(--success-border);
-    }
-
-    .settlement-settled:hover {
-      opacity: 0.85;
-    }
-
-    .settlement-pending {
-      background: var(--warning-subtle);
-      color: var(--warning);
-      border-color: var(--warning-border);
-    }
-
-    .settlement-pending:hover {
-      opacity: 0.85;
-    }
-
-    .settlement-unbilled {
-      background: var(--surface-canvas);
-      color: var(--text-2);
-      border-color: var(--border);
-      cursor: default;
-    }
-
-    .badge-clinician {
-      background: var(--brand-subtle);
-      color: var(--brand);
-      border-color: var(--border);
-    }
-
-    .badge-unassigned {
-      background: var(--warning-subtle);
-      color: var(--warning);
-      border: 1px dashed var(--warning-border);
-      font-size: 0.72rem;
-      padding: 2px 7px;
-    }
-
-    .badge-specialty {
-      font-size: 0.68rem;
-      font-weight: 600;
-      padding: 1px 6px;
-      border-radius: var(--radius-sm);
-      background: var(--surface-canvas);
-      color: var(--text-2);
-      border: 1px solid var(--border);
-    }
-
-    .badge-admin-role {
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: var(--radius-sm);
-      background: var(--warning-subtle);
-      color: var(--warning);
-      border: 1px solid var(--warning-border);
-    }
-
-    /* Modals */
-    .modal-backdrop {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.5);
+    .empty-state-inline {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 100;
-      padding: 20px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
+      gap: var(--space-2);
+      padding: var(--space-8) var(--space-4);
+      text-align: center;
     }
 
+    .empty-state-inline strong {
+      font-size: var(--text-md);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+    }
+
+    .empty-state-inline p {
+      font-size: var(--text-base);
+      color: var(--text-muted);
+    }
+
+    /* ── Pagination Footer ── */
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: var(--space-4);
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .pagination-select {
+      width: auto;
+      height: 32px;
+      font-size: var(--text-sm);
+      padding: 0 var(--space-2);
+    }
+
+    /* ── Modals & Case Detail Split Workspace ── */
     .modal-backdrop.show {
-      opacity: 1;
-      pointer-events: auto;
+      display: flex;
     }
 
-    .modal {
-      background: var(--surface-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      max-width: 580px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 28px;
-      box-shadow: var(--shadow-lg);
-      position: relative;
+    .modal-dialog--sm {
+      max-width: 420px;
+    }
+
+    .modal-dialog--lg {
+      max-width: 780px;
+    }
+
+    .modal-dialog--workspace {
+      max-width: 1060px;
+      height: min(88vh, 800px);
     }
 
     .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      border-bottom: 1px solid var(--border-light);
-      padding-bottom: 14px;
+      height: auto;
+      min-height: 56px;
+      padding: var(--space-3) var(--space-4);
+      gap: var(--space-3);
+      flex-shrink: 0;
     }
 
-    .modal-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: var(--text-1);
-    }
-
-    .modal-close {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 4px;
-      line-height: 1;
-    }
-    .modal-close:hover { color: var(--text-1); }
-
-    /* ── Clinical Record 2-Column Workspace Modal ── */
-    .modal.modal--clinical-workspace {
-      max-width: 1080px;
-      width: 95vw;
-      height: min(88vh, 800px);
-      max-height: 92vh;
-      padding: 0;
+    .modal-header-main {
       display: flex;
       flex-direction: column;
-      overflow: hidden;
-      border-radius: 16px;
+      gap: 2px;
+      min-width: 0;
     }
 
-    .clinical-ws-header {
+    .modal-header-badges {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 16px 24px;
-      background: #FFFFFF;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
+      gap: var(--space-2);
       flex-wrap: wrap;
+    }
+
+    .ref-code-tag {
+      font-size: var(--text-xs);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: var(--radius-control);
     }
 
     .clinical-ws-body {
@@ -893,110 +951,118 @@
       flex: 1;
       min-height: 0;
       overflow: hidden;
-      background: #F8FAFC;
+      background-color: var(--surface);
     }
 
     .clinical-left-pane {
       display: flex;
       flex-direction: column;
       overflow-y: auto;
-      padding: 18px 20px;
+      padding: var(--space-4);
       border-right: 1px solid var(--border);
-      background: #F8FAFC;
-      gap: 14px;
+      background-color: var(--bg);
+      gap: var(--space-4);
     }
 
-    .clinical-pane-tabs {
+    .ws-section {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--space-4);
+    }
+
+    .ws-section-title {
+      font-size: var(--text-base);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+      margin-bottom: var(--space-3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+    }
+
+    .ws-kv-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 4px;
-      padding: 4px;
-      background: #E2E8F0;
-      border-radius: 10px;
+      gap: var(--space-3);
     }
 
-    .clinical-pane-tab {
-      border: none;
-      background: transparent;
-      color: #475569;
-      font-size: 0.8rem;
-      font-weight: 600;
-      padding: 7px 10px;
-      border-radius: 7px;
-      cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    .ws-kv-label {
+      font-size: var(--text-xs);
+      font-weight: var(--weight-medium);
+      color: var(--text-subtle);
+      margin-bottom: 2px;
     }
 
-    .clinical-pane-tab.active {
-      background: #FFFFFF;
-      color: #0F172A;
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    .ws-kv-value {
+      font-size: var(--text-base);
+      color: var(--text);
+      word-break: break-word;
     }
 
-    .clinical-section-card {
-      background: #FFFFFF;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
+    .ws-divider {
+      height: 1px;
+      background-color: var(--border);
+      margin: var(--space-3) 0;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+    }
+
+    @media (max-width: 639px) {
+      .form-grid-2,
+      .ws-kv-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     .clinical-chat-pane {
       display: flex;
       flex-direction: column;
       min-height: 0;
-      background: #FFFFFF;
+      background-color: var(--surface);
     }
 
     .clinical-chat-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      padding: 13px 20px;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
       border-bottom: 1px solid var(--border);
-      background: #FFFFFF;
       flex-shrink: 0;
     }
 
-    .clinical-ws-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 24px;
-      background: #FFFFFF;
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
-      flex-wrap: wrap;
-    }
-
-    /* ── Unified iMessage-Style Chat System ── */
     .imsg-thread {
       flex: 1;
       overflow-y: auto;
-      padding: 18px 20px;
+      padding: var(--space-4);
       display: flex;
       flex-direction: column;
       gap: 2px;
-      background: #FFFFFF;
+      background-color: var(--surface);
     }
 
     .imsg-date-divider {
       align-self: center;
-      font-size: 11px;
-      font-weight: 600;
-      color: #64748B;
-      background: #F1F5F9;
-      padding: 3px 10px;
-      border-radius: 999px;
-      margin: 10px 0 12px;
+      font-size: var(--text-xs);
+      font-weight: var(--weight-medium);
+      color: var(--text-subtle);
+      background-color: var(--bg);
+      padding: 2px 10px;
+      border-radius: var(--radius-control);
+      margin: var(--space-2) 0 var(--space-3);
     }
 
     .imsg-row {
       display: flex;
       flex-direction: column;
-      max-width: 74%;
-      margin-top: 12px;
+      max-width: 78%;
+      margin-top: var(--space-3);
     }
 
     .imsg-row.imsg-row--continued {
@@ -1014,62 +1080,59 @@
     }
 
     .imsg-sender {
-      font-size: 11px;
-      font-weight: 600;
-      color: #64748B;
+      font-size: var(--text-xs);
+      font-weight: var(--weight-medium);
+      color: var(--text-subtle);
       margin-bottom: 3px;
-      padding: 0 4px;
     }
 
     .imsg-bubble {
-      padding: 10px 14px;
-      font-size: 14px;
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--text-base);
       line-height: 1.45;
       word-break: break-word;
       white-space: pre-wrap;
+      border-radius: var(--radius-card);
     }
 
     .imsg-bubble--out {
-      background: #0F766E;
-      color: #FFFFFF;
-      border-radius: 18px 18px 4px 18px;
+      background-color: var(--brand);
+      color: var(--surface);
     }
 
     .imsg-bubble--in {
-      background: #EEF2F6;
-      color: #0F172A;
-      border-radius: 18px 18px 18px 4px;
+      background-color: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
     }
 
     .imsg-time {
-      font-size: 11px;
-      color: #94A3B8;
+      font-size: var(--text-xs);
+      color: var(--text-subtle);
       margin-top: 3px;
-      padding: 0 4px;
     }
 
     .imsg-composer-wrap {
-      padding: 12px 18px 14px;
+      padding: var(--space-3) var(--space-4);
       border-top: 1px solid var(--border);
-      background: #FFFFFF;
+      background-color: var(--surface);
       flex-shrink: 0;
     }
 
     .imsg-composer {
       display: flex;
       align-items: flex-end;
-      gap: 8px;
-      background: #F8FAFC;
-      border: 1px solid #CBD5E1;
-      border-radius: 22px;
-      padding: 6px 6px 6px 14px;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      gap: var(--space-2);
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: var(--space-2);
     }
 
     .imsg-composer:focus-within {
-      border-color: #0F766E;
-      background: #FFFFFF;
-      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+      border-color: var(--brand);
+      background-color: var(--surface);
+      box-shadow: 0 0 0 1px var(--brand);
     }
 
     .imsg-composer textarea {
@@ -1079,10 +1142,10 @@
       resize: none;
       outline: none;
       font-family: inherit;
-      font-size: 14px;
+      font-size: var(--text-base);
       line-height: 1.4;
-      color: #0F172A;
-      padding: 5px 0;
+      color: var(--text);
+      padding: 4px;
       max-height: 110px;
       min-height: 24px;
     }
@@ -1090,27 +1153,40 @@
     .imsg-send-btn {
       width: 34px;
       height: 34px;
-      border-radius: 50%;
-      border: none;
-      background: #0F766E;
-      color: #FFFFFF;
+      border-radius: var(--radius-control);
+      border: 1px solid var(--border);
+      background-color: var(--surface);
+      color: var(--brand);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       flex-shrink: 0;
-      transition: background 0.15s ease, transform 0.1s ease;
     }
 
-    .imsg-send-btn:hover { background: #115E59; }
-    .imsg-send-btn:active { transform: scale(0.95); }
-    .imsg-send-btn:disabled { background: #94A3B8; cursor: not-allowed; }
+    .imsg-send-btn:hover:not(:disabled) {
+      background-color: var(--brand-subtle);
+      border-color: var(--brand);
+    }
+
+    .imsg-send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .clinical-ws-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      border-top: 1px solid var(--border);
+      background-color: var(--surface);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
 
     @media (max-width: 900px) {
-      .modal.modal--clinical-workspace {
-        height: 92vh;
-        width: 96vw;
-      }
       .clinical-ws-body {
         grid-template-columns: 1fr;
         overflow-y: auto;
@@ -1121,110 +1197,130 @@
         overflow-y: visible;
       }
       .clinical-chat-pane {
-        min-height: 380px;
+        min-height: 360px;
       }
     }
 
-    /* Pagination */
-    .pagination-bar {
+    @media (max-width: 639px) {
+      .modal-dialog--workspace {
+        height: 100dvh;
+      }
+    }
+
+    /* ── Attachment Rows & Signature Previews ── */
+    .attachment-row {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      margin-top: 16px;
-      font-size: 0.82rem;
-      color: var(--text-2);
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .pagination-controls {
-      display: flex;
       align-items: center;
-      gap: 6px;
-    }
-
-    /* Toast - Uniform Border, NO Left Border Accent */
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: var(--surface-card);
+      background-color: var(--bg);
       border: 1px solid var(--border);
-      padding: 14px 20px;
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-md);
-      z-index: 200;
-      transform: translateY(100px);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-control);
+      gap: var(--space-3);
+    }
+
+    .info-notice {
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-control);
+      background-color: var(--brand-subtle);
+      border: 1px solid var(--border);
+      color: var(--brand-deep);
+      font-size: var(--text-sm);
+      font-weight: var(--weight-medium);
+    }
+
+    .summary-preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2);
+      padding: var(--space-3);
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      font-size: var(--text-sm);
+    }
+
+    /* ── Toast (Hidden Until .show) ── */
+    .portal-toast {
+      position: fixed;
+      bottom: var(--space-6);
+      right: var(--space-6);
+      z-index: 2000;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-overlay);
+      padding: var(--space-3) var(--space-4);
+      min-width: 260px;
+      max-width: 380px;
+      color: var(--text);
+      font-size: var(--text-base);
+      font-weight: var(--weight-medium);
       opacity: 0;
-      transition: transform 0.25s ease, opacity 0.25s ease;
-      color: var(--text-1);
+      pointer-events: none;
+      transform: translateY(16px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
     }
 
-    .toast.show {
-      transform: translateY(0);
+    .portal-toast.show {
       opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      header {
-        padding: 12px 16px;
-        flex-wrap: wrap;
-        gap: 12px;
+    @media (max-width: 639px) {
+      .portal-toast {
+        left: var(--space-4);
+        right: var(--space-4);
+        bottom: var(--space-4);
+        max-width: none;
       }
-      .header-actions {
-        flex-wrap: wrap;
-        gap: 8px;
-        width: 100%;
-        justify-content: flex-start;
-      }
-      main {
-        padding: 16px 12px;
-      }
-      .kpi-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
-      .filter-bar {
-        padding: 10px 12px;
-      }
-      .filter-bar select, .search-box {
-        width: 100% !important;
-        min-width: 100% !important;
-      }
-      .modal {
-        padding: 18px 16px;
-      }
+    }
+
+    /* Hide floating tour FAB so it never overlaps table actions, mobile cards, or modal buttons; tour remains accessible in user menu */
+    #tourFab,
+    .tour-fab {
+      display: none !important;
     }
   </style>
-<link rel="stylesheet" href="/css/tour.css">
 </head>
 <body>
 
-  <!-- Header -->
-  <header>
-    <a href="/clinical-portal" class="brand">
-      <img src="/assets/havilah-mark.svg" alt="Havilah" style="height: 28px; width: auto; display: block;">
-      <span>Havilah Assessor Portal</span>
-    </a>
-    <div id="authHeaderControls" style="display: none;">
-      <div class="header-actions">
-        <!-- Inactivity auto-lock indicator -->
-        <div class="security-timer-badge" id="securityTimerBadge" title="Automatic security lock after 15 mins of inactivity">
-          <span>Lock:</span>
-          <span id="autoLockTimer" class="tabular-nums" style="font-weight: 700;">15:00</span>
-        </div>
+  <!-- Top Horizontal Navigation Bar -->
+  <header class="portal-topbar" role="banner">
+    <div class="portal-topbar-inner">
+      <div class="portal-topbar-left">
+        <a href="/clinical-portal" class="portal-brand">
+          <img src="/assets/havilah-mark.svg" alt="Havilah" style="height: 28px; width: auto; display: block;">
+          <span>Havilah Assessor Portal</span>
+        </a>
 
-        <button class="btn btn-outline btn-sm" id="manageStaffBtn" onclick="openManageDoctorsModal()" style="display: none;">
-          Clinical Staff
-        </button>
+        <nav class="portal-top-nav" id="portalPrimaryNav" aria-label="Primary navigation" style="display: none;">
+          <button type="button" class="portal-nav-tab active" id="navReferralsBtn" onclick="focusReferralsView()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            <span>Referrals</span>
+          </button>
 
-        <button class="btn btn-outline btn-sm" onclick="openExportModal()">
-          Export Statement
-        </button>
+          <button type="button" class="portal-nav-tab" id="navBillingBtn" onclick="openExportModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            <span>Billing</span>
+          </button>
 
-        <button class="btn btn-outline btn-sm" onclick="openClinicSettingsModal()">
-          Clinic Settings
+          <button type="button" class="portal-nav-tab" id="manageStaffBtn" onclick="openManageDoctorsModal()" style="display: none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>Clinic staff</span>
+          </button>
+
+          <button type="button" class="portal-nav-tab" id="navSettingsBtn" onclick="openClinicSettingsModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span>Clinic settings</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="portal-topbar-right" id="authHeaderControls" style="display: none;">
+        <button type="button" class="topbar-icon-btn" id="topbarSearchBtn" onclick="focusReferralSearch()" aria-label="Search referrals" title="Search referrals (Ctrl+K)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </button>
 
         <div class="user-menu-wrap" id="assessorUserMenuWrap">
@@ -1232,19 +1328,32 @@
             type="button"
             class="user-menu-trigger"
             id="assessorUserMenuBtn"
-            aria-haspopup="true"
+            aria-haspopup="menu"
             aria-expanded="false"
             onclick="toggleAssessorUserMenu(event)"
           >
-            <span class="user-name" id="assessorNameDisplay">Dr. Practitioner</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <span class="user-avatar" id="assessorAvatarInitials" aria-hidden="true">DR</span>
+            <span class="user-name" id="assessorNameDisplay">Practitioner</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
-          <div class="user-dropdown" id="assessorUserMenu" role="menu" aria-labelledby="assessorUserMenuBtn">
-            <button type="button" class="user-dropdown-item danger" role="menuitem" onclick="closeAssessorUserMenu(); logoutAssessor();">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-              Sign Out
+          <div class="menu-popover" id="assessorUserMenu" role="menu" aria-labelledby="assessorUserMenuBtn">
+            <div class="user-menu-account">
+              <div class="user-menu-account-name" id="assessorMenuName">Practitioner</div>
+              <div class="user-menu-account-email" id="assessorMenuEmail">Clinical account</div>
+            </div>
+            <div class="user-menu-session">
+              Session expires in <span id="autoLockTimer" class="tabular-nums">15:00</span>
+            </div>
+            <div class="menu-divider" role="separator"></div>
+            <button type="button" class="menu-item-btn" role="menuitem" onclick="closeAssessorUserMenu(); if(window.HavilahTour) HavilahTour.start();">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <span>Portal tour</span>
+            </button>
+            <button type="button" class="menu-item-btn danger" role="menuitem" onclick="closeAssessorUserMenu(); logoutAssessor();">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              <span>Sign out</span>
             </button>
           </div>
         </div>
@@ -1252,740 +1361,225 @@
     </div>
   </header>
 
-  <main>
+  <main class="page-container">
     <!-- View 1: Assessor Login Form -->
     <div id="assessorLoginSection" style="display: none;">
-      <div class="auth-container">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <img src="/assets/havilah-logo.svg" alt="Havilah" style="height: 36px; width: auto; display: block; margin: 0 auto 14px;">
-          <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-1);">Medical Assessor Login</h2>
-          <p style="color: var(--text-2); font-size: 0.85rem; margin-top: 4px;">Multi-tenant clinical practitioner &amp; billing access</p>
-        </div>
-        <form id="assessorLoginForm" onsubmit="handleAssessorLogin(event)">
-          <div id="assessorCredsGroup">
-            <div class="form-group">
-              <label class="form-label" for="assessorEmailInput">Assessor Login Email</label>
-              <input type="email" id="assessorEmailInput" class="form-input" placeholder="e.g. clarke.edith@gmail.com" required autocomplete="email">
-            </div>
-            <div class="form-group">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <label class="form-label" for="assessorPasswordInput" style="margin-bottom:0;">Password</label>
-                <a href="/reset-password.html" style="font-size:0.75rem; color:var(--accent); font-weight:600; text-decoration:none;">Forgot password?</a>
-              </div>
-              <div style="position: relative;">
-                <input type="password" id="assessorPasswordInput" class="form-input" placeholder="••••••••" required autocomplete="current-password" style="padding-right: 40px;">
-                <button type="button" onclick="togglePasswordVisibility('assessorPasswordInput', this)" aria-label="Show password" aria-pressed="false" title="Show password" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 4px; color: var(--text-3, #64748b); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                </button>
-              </div>
-            </div>
+      <div class="auth-page" style="min-height: calc(100vh - 100px);">
+        <div class="auth-card">
+          <div class="auth-header">
+            <img src="/assets/havilah-logo.svg" alt="Havilah" style="height: 32px; width: auto; display: block; margin: 0 auto var(--space-4);">
+            <h1 class="auth-title">Medical Assessor Login</h1>
+            <p class="auth-subtitle">Clinical practitioner and billing portal</p>
           </div>
-          <div id="assessor2faGroup" style="display:none; margin-bottom:12px;">
-            <div style="padding:10px 12px; border-radius:8px; background:#EFF6FF; border:1px solid #BFDBFE; color:#1E40AF; font-size:0.78rem; margin-bottom:10px;">
-              Enter the 6-digit code from your authenticator app or an unused backup recovery code.
+
+          <form id="assessorLoginForm" onsubmit="handleAssessorLogin(event)">
+            <div id="assessorCredsGroup">
+              <div class="form-field">
+                <label class="form-label" for="assessorEmailInput">Assessor email</label>
+                <input type="email" id="assessorEmailInput" class="input" placeholder="name@clinic.com" required autocomplete="email">
+              </div>
+
+              <div class="form-field">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <label class="form-label" for="assessorPasswordInput">Password</label>
+                  <a href="/reset-password.html" style="font-size: var(--text-xs);">Forgot password?</a>
+                </div>
+                <div class="input-with-button">
+                  <input type="password" id="assessorPasswordInput" class="input" placeholder="Enter your password" required autocomplete="current-password">
+                  <button type="button" class="input-action-btn" onclick="togglePasswordVisibility('assessorPasswordInput', this)" aria-label="Show password" aria-pressed="false" title="Show password">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  </button>
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label" for="assessor2faCodeInput">Authenticator / Recovery Code</label>
-              <input type="text" id="assessor2faCodeInput" class="form-input" placeholder="123456 or A1B2-C3D4" autocomplete="one-time-code" style="letter-spacing:0.08em; font-weight:700;">
+
+            <div id="assessor2faGroup" style="display: none; margin-bottom: var(--space-4);">
+              <div class="alert-banner alert-banner-info">
+                <span>Enter the 6-digit code from your authenticator app or an unused recovery code.</span>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="assessor2faCodeInput">Authenticator or recovery code</label>
+                <input type="text" id="assessor2faCodeInput" class="input tabular-nums" placeholder="123456 or A1B2-C3D4" autocomplete="one-time-code">
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="resetAssessor2faStep()">Back to sign in</button>
             </div>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="resetAssessor2faStep()" style="padding:2px 0; font-size:0.75rem;">&larr; Back to login</button>
-          </div>
-          <button type="submit" class="btn btn-primary" id="assessorLoginBtn" style="width: 100%; padding: 11px; margin-top: 8px;">
-            Sign In to Clinical Console
-          </button>
-          
+
+            <button type="submit" class="btn btn-primary" id="assessorLoginBtn" style="width: 100%;">
+              Sign in
+            </button>
           </form>
+        </div>
       </div>
     </div>
 
     <!-- View 2: Assessor Queue Dashboard -->
     <div id="assessorDashboardSection" style="display: none;">
       <!-- Page Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-        <div>
-          <h1 style="font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em;">Assigned Clinical Referrals</h1>
-          <p style="color: var(--text-2); font-size: 0.85rem;">Manage appointments, review patient records, record certificates, and settle monthly invoices.</p>
+      <div class="page-header">
+        <div class="page-header-titles">
+          <h1>Referrals</h1>
+          <p class="page-header-desc">Manage appointments, case notes and billing for your clinic.</p>
         </div>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn btn-outline btn-sm" onclick="openExportModal()">
-            Export Statement (PDF / CSV)
+        <div class="page-header-actions">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="fetchAssessorQueue()" aria-label="Refresh referrals" title="Refresh referrals">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            <span>Refresh</span>
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="fetchAssessorQueue()" style="display: inline-flex; align-items: center; gap: 5px;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            Refresh Queue
-          </button>
-        </div>
-      </div>
 
-      <!-- KPI Summary -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-label">Active Cases</div>
-          <div class="kpi-value" id="kpiTotalAssigned">0</div>
-          <div class="kpi-sub">Total referrals in queue</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Pending / Scheduled</div>
-          <div class="kpi-value" id="kpiPending" style="color: #D97706;">0</div>
-          <div class="kpi-sub"><span id="kpiScheduledCount">0</span> appointments booked</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Completed &amp; Billed</div>
-          <div class="kpi-value" id="kpiCompleted" style="color: #059669;">0</div>
-          <div class="kpi-sub">Clinical consultations closed</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Total Invoiced Fees</div>
-          <div class="kpi-value" id="kpiTotalBilled" style="color: var(--accent);">GHS 0.00</div>
-          <div class="kpi-sub" id="kpiSettlementBreakdown">0 Settled · 0 Pending</div>
-        </div>
-      </div>
-
-      <!-- Queue Card -->
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">Patient Intake &amp; Case Ledger</div>
-            <div class="card-subtitle">Itemized clinical referrals assigned to your clinic practice</div>
-          </div>
-        </div>
-
-        <!-- Filter Controls Bar -->
-        <div class="filter-bar">
-          <div class="search-box">
-            <span class="search-box-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
-            <input type="text" id="searchInput" placeholder="Search reference, patient, phone, department..." oninput="handleSearchChange()">
-          </div>
-
-          <select class="form-select" id="companyFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 170px;">
-            <option value="all">All Client Companies</option>
-          </select>
-
-          <select class="form-select" id="doctorFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 160px; display: none;">
-            <option value="all">All Clinicians</option>
-            <option value="unassigned">Unassigned Only</option>
-          </select>
-
-          <select class="form-select" id="statusFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 140px;">
-            <option value="all">Active Cases (Default)</option>
-            <option value="pending">Pending</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="archived">Archived</option>
-            <option value="all_including_archived">All (Including Archived)</option>
-          </select>
-
-          <select class="form-select" id="settlementFilterSelect" onchange="applyQueueFilter()" style="width: auto; min-width: 150px;">
-            <option value="all">All Settlements</option>
-            <option value="settled">Settled / Paid</option>
-            <option value="pending_payment">Pending Payment</option>
-            <option value="unbilled">Unbilled</option>
-          </select>
-
-          <select class="form-select" id="datePresetSelect" onchange="handleDatePresetChange()" style="width: auto; min-width: 130px;">
-            <option value="all">All Dates</option>
-            <option value="this_month">This Month</option>
-            <option value="last_month">Last Month</option>
-            <option value="custom">Custom Range...</option>
-          </select>
-
-          <div id="customDateRangeContainer" style="display: none; align-items: center; gap: 6px;">
-            <input type="date" id="customStartDate" class="form-input" style="width: auto; padding: 6px 10px;" onchange="applyQueueFilter()">
-            <span>to</span>
-            <input type="date" id="customEndDate" class="form-input" style="width: auto; padding: 6px 10px;" onchange="applyQueueFilter()">
-          </div>
-        </div>
-
-        <!-- Table Container -->
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th onclick="sortTable('referenceCode')" style="cursor:pointer;">Reference &amp; Client ⇕</th>
-                <th onclick="sortTable('patientName')" style="cursor:pointer;">Patient &amp; Contact ⇕</th>
-                <th>Dept &amp; Clinician</th>
-                <th onclick="sortTable('createdAt')" style="cursor:pointer;">Schedule &amp; Intake ⇕</th>
-                <th>Status</th>
-                <th>Billing &amp; Settlement</th>
-                <th style="text-align: right;">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="assessorQueueTableBody">
-              <tr>
-                <td colspan="7" style="text-align: center; padding: 32px; color: var(--text-muted);">
-                  Loading assigned clinical cases...
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination Controls -->
-        <div class="pagination-bar">
-          <div id="paginationSummary">Showing 0-0 of 0 cases</div>
-          <div class="pagination-controls">
-            <label style="margin-right: 6px; font-size: 0.8rem;">Rows per page:</label>
-            <select class="form-select" id="pageSizeSelect" onchange="handlePageSizeChange()" style="width: auto; padding: 4px 8px; font-size: 0.8rem; margin-right: 12px;">
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-            <button class="btn btn-outline btn-sm" id="prevPageBtn" onclick="changePage(-1)">‹ Prev</button>
-            <span id="pageIndicator" style="font-weight: 600; padding: 0 8px;">Page 1 of 1</span>
-            <button class="btn btn-outline btn-sm" id="nextPageBtn" onclick="changePage(1)">Next ›</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Modal: View Clinical Case, Consultation Chat & Digital Excuse Duty -->
-  <div class="modal-backdrop" id="caseDetailModal">
-    <div class="modal modal--clinical-workspace">
-      <!-- Sticky Top Workspace Header -->
-      <div class="clinical-ws-header">
-        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span style="font-size: 0.7rem; font-weight: 700; color: #0F766E; text-transform: uppercase; letter-spacing: 0.05em;">Confidential Clinical Record</span>
-              <span id="modalCaseRefCode" style="font-family: monospace; font-size: 0.78rem; font-weight: 700; color: #334155; background: #F1F5F9; padding: 2px 8px; border-radius: 6px; border: 1px solid #E2E8F0;">REF-XXXXXXXX</span>
-              <span id="modalHeaderStatusBadge" class="badge" style="text-transform: uppercase;">PENDING</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap;">
-              <h2 id="modalHeaderPatientName" style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin: 0;">Patient Name</h2>
-              <span id="modalHeaderOrgDept" style="font-size: 0.8rem; color: #64748B;">Organization · Department</span>
-            </div>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span id="assessorPeerPresencePill" class="badge" style="background: var(--surface-canvas); color: var(--text-2); border: 1px solid var(--border);">Connecting...</span>
-          <button type="button" id="assessorStartCallBtn" class="btn btn-primary btn-sm" onclick="startAssessorCall()" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            <span>Voice Call</span>
-          </button>
-          <button class="modal-close" onclick="closeModal('caseDetailModal')" aria-label="Close clinical record">&times;</button>
-        </div>
-      </div>
-
-      <!-- 2-Column Split Workspace Body -->
-      <div class="clinical-ws-body">
-        <!-- LEFT PANE: Case Details, Scheduling & Digital Excuse Duty -->
-        <div class="clinical-left-pane">
-          <!-- Compact Patient Summary & Intake -->
-          <div id="modalCaseDetailBody" style="display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;">
-            <!-- Filled dynamically -->
-          </div>
-
-          <!-- Left Pane Navigation Tabs -->
-          <div class="clinical-pane-tabs" role="tablist">
-            <button type="button" class="clinical-pane-tab active" id="clinicalTabOverviewBtn" onclick="switchClinicalRecordTab('overview')" role="tab" aria-selected="true">
-              Case &amp; Schedule
+          <div class="export-menu-wrap" id="exportMenuWrap">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="exportMenuBtn"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              onclick="toggleExportMenu(event)"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Export statement</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
-            <button type="button" class="clinical-pane-tab" id="clinicalTabDocsBtn" onclick="switchClinicalRecordTab('documents')" role="tab" aria-selected="false">
-              Certificates &amp; Excuse Duty <span id="clinicalDocsCountBadge" style="font-size: 0.72rem; opacity: 0.8;">(0)</span>
-            </button>
-          </div>
-
-          <!-- TAB 1: Triage, Scheduling & Call Privacy -->
-          <div id="clinicalTabOverviewPanel" style="display: flex; flex-direction: column; gap: 12px;">
-            <!-- Clinical Triage & Doctor Delegation Panel (For Clinic Admins) -->
-            <div id="modalTriageSection" class="clinical-section-card" style="display: none;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px;">
-                <div style="font-weight: 700; color: var(--text-1); font-size: 0.84rem; display: flex; align-items: center; gap: 6px;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
-                  <span>Clinician Delegation</span>
-                </div>
-                <span id="modalTriageDelegatedBadge" class="badge" style="background: var(--surface-canvas); color: var(--text-muted); border: 1px solid var(--border);">Unassigned</span>
-              </div>
-              <div style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 170px;">
-                  <label class="form-label" style="font-size: 0.74rem; margin-bottom: 4px;">Attending Staff Clinician</label>
-                  <select id="modalDoctorAssignSelect" class="form-select" style="padding: 6px 10px; font-size: 0.83rem;">
-                    <option value="">-- Unassigned (Practice Queue) --</option>
-                  </select>
-                </div>
-                <button type="button" class="btn btn-primary btn-sm" id="modalAssignDoctorBtn" onclick="submitModalAssignDoctor()" style="padding: 7px 12px;">
-                  Delegate
-                </button>
-              </div>
-              <div id="modalDelegationMeta" style="font-size: 0.74rem; color: var(--brand); margin-top: 6px; display: none;"></div>
-            </div>
-
-            <!-- Direct Scheduling Form Container -->
-            <div id="schedulingSection" class="clinical-section-card">
-              <div style="font-weight: 700; color: var(--text-1); font-size: 0.84rem; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                <span>Appointment Scheduling</span>
-              </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                <div>
-                  <label class="form-label" style="font-size: 0.74rem;">Date *</label>
-                  <input type="date" id="scheduleDateInput" class="form-input" style="padding: 6px 8px; font-size: 0.82rem;">
-                </div>
-                <div>
-                  <label class="form-label" style="font-size: 0.74rem;">Time (Optional)</label>
-                  <input type="time" id="scheduleTimeInput" class="form-input" style="padding: 6px 8px; font-size: 0.82rem;">
-                </div>
-              </div>
-              <div style="margin-bottom: 8px;">
-                <label class="form-label" style="font-size: 0.74rem;">Video Meeting Link (Optional)</label>
-                <input type="url" id="scheduleMeetingLinkInput" class="form-input" placeholder="https://meet.google.com/... or Zoom" style="padding: 6px 10px; font-size: 0.82rem;">
-              </div>
-              <div style="margin-bottom: 10px;">
-                <label class="form-label" style="font-size: 0.74rem;">Appointment Note</label>
-                <input type="text" id="scheduleNotesInput" class="form-input" placeholder="e.g. Telehealth consultation, Clinic Room 3..." style="padding: 6px 10px; font-size: 0.82rem;">
-              </div>
-              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-                <button type="button" class="btn btn-outline btn-sm" onclick="submitScheduleAppointment()">
-                  Save Appointment
-                </button>
-                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; color: var(--text-2); cursor: pointer;" title="Routes all audio traffic through TURN relays, hiding clinician IP">
-                  <input type="checkbox" id="assessorIpShieldToggle" onchange="if(window.HavilahCall) window.HavilahCall.setIpShield(this.checked)">
-                  <span>Call IP Shield (Relay)</span>
-                </label>
-              </div>
-              <span id="assessorCallDurationBadge" class="badge" style="display: none; margin-top: 8px; background: var(--success-subtle); color: var(--success); border: 1px solid var(--success-border);">
-                Last call: <span id="assessorCallDurationText">0m 00s</span>
-              </span>
-            </div>
-          </div>
-
-          <!-- TAB 2: Clinical Documents & Digital Excuse Duty Generator -->
-          <div id="clinicalTabDocsPanel" style="display: none; flex-direction: column; gap: 12px;">
-            <!-- Digital Excuse Duty PDF Builder -->
-            <div class="clinical-section-card" id="excuseDutyBuilderCard">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px;">
-                <div>
-                  <div style="font-weight: 700; color: #0F172A; font-size: 0.86rem;">Issue Digital Excuse Duty (PDF)</div>
-                  <div style="font-size: 0.74rem; color: #64748B;">Generate &amp; attach an official HR-safe medical certificate directly to this patient's record.</div>
-                </div>
-              </div>
-
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                <div>
-                  <label class="form-label" for="excuseDutyTypeSelect" style="font-size: 0.74rem;">Certificate Type</label>
-                  <select id="excuseDutyTypeSelect" class="form-select" onchange="onExcuseDutyFormChange()" style="padding: 6px 8px; font-size: 0.82rem;">
-                    <option value="excuse_duty">Excuse Duty (Sick Leave)</option>
-                    <option value="light_duty">Fit for Light / Modified Duty</option>
-                    <option value="fit_to_return">Fit to Return to Work</option>
-                    <option value="attendance">Consultation Attendance Note</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="form-label" for="excuseDutyMdcInput" style="font-size: 0.74rem;">MDC Reg. Number (Optional)</label>
-                  <input type="text" id="excuseDutyMdcInput" class="form-input" placeholder="e.g. MDC/RN/12345" style="padding: 6px 8px; font-size: 0.82rem;">
-                </div>
-              </div>
-
-              <div id="excuseDutyDatesRow" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                <div>
-                  <label class="form-label" for="excuseDutyStartInput" style="font-size: 0.74rem;">From Date *</label>
-                  <input type="date" id="excuseDutyStartInput" class="form-input" onchange="onExcuseDutyFormChange()" style="padding: 6px 8px; font-size: 0.82rem;">
-                </div>
-                <div id="excuseDutyEndCol">
-                  <label class="form-label" for="excuseDutyEndInput" style="font-size: 0.74rem;">To Date (Inclusive) *</label>
-                  <input type="date" id="excuseDutyEndInput" class="form-input" onchange="onExcuseDutyFormChange()" style="padding: 6px 8px; font-size: 0.82rem;">
-                </div>
-              </div>
-
-              <div id="excuseDutySchedulePreview" style="font-size: 0.76rem; color: #0F766E; background: #F0FDFA; border: 1px solid #99F6E4; border-radius: 8px; padding: 7px 10px; margin-bottom: 8px; font-weight: 600;">
-                Duration: 1 Day | Return to duty: -
-              </div>
-
-              <div style="margin-bottom: 8px;">
-                <label class="form-label" for="excuseDutyRemarksInput" style="font-size: 0.74rem;">Clinical Recommendation / HR-Safe Remarks</label>
-                <textarea id="excuseDutyRemarksInput" class="form-input" rows="3" style="padding: 7px 10px; font-size: 0.8rem; resize: vertical;" placeholder="Medically assessed and advised rest from duties..."></textarea>
-              </div>
-
-              <label style="display: flex; align-items: center; gap: 7px; font-size: 0.75rem; color: #334155; margin-bottom: 10px; cursor: pointer;">
-                <input type="checkbox" id="excuseDutyPrivacyCheck" checked>
-                <span>HR-Safe Privacy Mode (omit confidential diagnosis on certificate)</span>
-              </label>
-
-              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button type="button" id="issueExcuseDutyBtn" class="btn btn-primary btn-sm" onclick="handleIssueExcuseDutyPdf()" style="flex: 1; justify-content: center;">
-                  Issue &amp; Send to Employee
-                </button>
-                <button type="button" class="btn btn-outline btn-sm" onclick="handlePreviewExcuseDutyPdf()">
-                  Preview PDF
-                </button>
-              </div>
-            </div>
-
-            <!-- Existing Attached Documents & Manual Upload -->
-            <div id="modalAttachmentsSection" class="clinical-section-card">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px;">
-                <div style="font-weight: 700; color: var(--text-1); font-size: 0.84rem;">Issued Documents &amp; Uploads</div>
-                <div>
-                  <input type="file" id="modalCaseAttachmentInput" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" style="display: none;" onchange="handleAssessorDirectUpload(event)" />
-                  <button type="button" class="btn btn-outline btn-sm" id="modalAttachDocBtn" onclick="document.getElementById('modalCaseAttachmentInput').click()" style="font-size: 0.76rem; padding: 5px 10px;">
-                    + Upload File
-                  </button>
-                </div>
-              </div>
-
-              <div id="modalAttachmentUploadStatus" style="display: none; padding: 6px 10px; margin-bottom: 8px; border-radius: 6px; font-size: 0.78rem; background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE;">
-                Uploading confidential medical document...
-              </div>
-
-              <div id="modalAttachmentsList" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem;">
-                <!-- Filled dynamically -->
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- RIGHT PANE: Full-Height Clinical Consultation Dialogue -->
-        <div class="clinical-chat-pane" id="modalDialogueSection">
-          <div class="clinical-chat-header">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-weight: 700; color: #0F172A; font-size: 0.92rem;">Patient Consultation Chat</span>
-              <span style="font-size: 0.68rem; background: #F0FDFA; color: #0F766E; border: 1px solid #CCFBF1; padding: 2px 8px; border-radius: 999px; font-weight: 600;">Encrypted</span>
-            </div>
-            <span style="font-size: 0.74rem; color: #64748B;">Press Enter to send</span>
-          </div>
-
-          <!-- Spacious iMessage-style Thread Container -->
-          <div id="modalCaseThreadContainer" class="imsg-thread">
-            <!-- Populated dynamically -->
-          </div>
-
-          <!-- iMessage-style Rounded Composer -->
-          <div class="imsg-composer-wrap">
-            <div class="imsg-composer">
-              <textarea id="modalCaseReplyInput" rows="1" placeholder="Message patient confidentially..." onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); submitAssessorCaseMessage();}"></textarea>
-              <button type="button" id="modalCaseSendReplyBtn" class="imsg-send-btn" onclick="submitAssessorCaseMessage()" aria-label="Send message" title="Send message">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+            <div class="menu-popover" id="exportMenuDropdown" role="menu" aria-labelledby="exportMenuBtn">
+              <button type="button" class="menu-item-btn" role="menuitem" onclick="closeExportMenu(); generatePDFInvoice();">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                <span>Export PDF</span>
+              </button>
+              <button type="button" class="menu-item-btn" role="menuitem" onclick="closeExportMenu(); generateCSVExport();">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg>
+                <span>Export CSV</span>
+              </button>
+              <div class="menu-divider" role="separator"></div>
+              <button type="button" class="menu-item-btn" role="menuitem" onclick="closeExportMenu(); openExportModal();">
+                <span>Statement options...</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Sticky Bottom Workspace Footer -->
-      <div class="clinical-ws-footer">
-        <button type="button" class="btn btn-outline btn-sm" id="modalDeleteCaseBtn" onclick="handleDeleteCurrentCase()" style="color: #DC2626; border-color: #FCA5A5;">
-          Delete Case
-        </button>
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button type="button" class="btn btn-outline btn-sm" id="modalArchiveCaseBtn" onclick="handleToggleArchiveCurrentCase()">
-            Archive Case
-          </button>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('caseDetailModal')">Close</button>
-          <button type="button" class="btn btn-primary btn-sm" id="modalCompleteCaseBtn" onclick="openCompleteFromDetail()">Complete &amp; Bill</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Complete Referral Case & Bill with Attachment -->
-  <div class="modal-backdrop" id="completeCaseModal">
-    <div class="modal">
-      <div class="modal-header">
-        <div>
-          <div style="font-size: 0.72rem; font-weight: 700; color: #059669; text-transform: uppercase;">SETTLE &amp; BILL CASE</div>
-          <div class="modal-title">Complete Clinical Referral</div>
-        </div>
-        <button class="modal-close" onclick="closeModal('completeCaseModal')">&times;</button>
-      </div>
-      <form id="completeCaseForm" onsubmit="handleCompleteCaseSubmit(event)">
-        <input type="hidden" id="completeReferralId" />
-        <div style="background: #F8FAFC; padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid var(--border);">
-          <div style="font-size: 0.8rem; color: var(--text-2);">Patient / Reference:</div>
-          <div style="font-weight: 700; color: var(--text-1); font-size: 0.95rem;" id="completePatientSummary">-</div>
+      <!-- Four Neutral Stat Cards -->
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-card-label">Active cases</div>
+          <div class="stat-card-value tabular-nums" id="kpiActiveCases">0</div>
+          <div class="stat-card-helper" id="kpiActiveCasesHelper">In your queue</div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="completeBillingAmount">Assessor Billing Fee *</label>
-          <div style="display: flex; gap: 8px;">
-            <select id="completeCurrencySelect" class="form-select" style="width: 90px;">
-              <option value="GHS">GHS</option>
-              <option value="USD">USD</option>
-              <option value="GBP">GBP</option>
-              <option value="EUR">EUR</option>
-            </select>
-            <input type="number" step="0.01" min="0" id="completeBillingAmount" class="form-input" placeholder="e.g. 450.00" required />
+        <div class="stat-card">
+          <div class="stat-card-label">Awaiting appointment</div>
+          <div class="stat-card-value tabular-nums" id="kpiAwaitingAppt">0</div>
+          <div class="stat-card-helper" id="kpiAwaitingApptHelper">Not yet scheduled</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-label">Completed this month</div>
+          <div class="stat-card-value tabular-nums" id="kpiCompletedMonth">0</div>
+          <div class="stat-card-helper" id="kpiCompletedMonthHelper">Closed this month</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-label" id="kpiOutstandingLabel">Outstanding (GHS)</div>
+          <div class="stat-card-value tabular-nums" id="kpiOutstandingAmount">0.00</div>
+          <div class="stat-card-helper" id="kpiOutstandingHelper">0 unsettled invoices</div>
+        </div>
+      </div>
+
+      <!-- Controls: Underline Status Tabs + Retained Horizontal Filter Bar + Chips -->
+      <div class="controls-stack">
+        <div class="tabs-underline" role="tablist" aria-label="Referral status views">
+          <button type="button" class="tab-underline-item active" id="statusTabActive" role="tab" aria-selected="true" onclick="selectStatusTab('active')">Active</button>
+          <button type="button" class="tab-underline-item" id="statusTabCompleted" role="tab" aria-selected="false" onclick="selectStatusTab('completed')">Completed</button>
+          <button type="button" class="tab-underline-item" id="statusTabAll" role="tab" aria-selected="false" onclick="selectStatusTab('all')">All</button>
+        </div>
+
+        <div class="filter-strip" aria-label="Filter referrals">
+          <div class="search-box">
+            <span class="search-box-icon" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input type="text" id="searchInput" class="input" placeholder="Search reference, patient, phone, department..." aria-label="Search referrals" oninput="handleSearchChange()">
           </div>
-          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Enter the consultation fee to invoice the employer.</div>
-        </div>
 
-        <div class="form-group">
-          <label class="form-label" for="completeAssessorNotes">Clinical Outcome &amp; Assessment Notes (Confidential)</label>
-          <textarea id="completeAssessorNotes" class="form-textarea" rows="3" placeholder="Consultation notes, ergonomic/medical recommendations, fitness-to-work outcome..."></textarea>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Attach Certificate / Medical Report (PDF, Image, Doc)</label>
-          <input type="file" id="completeAttachmentInput" class="form-input" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" style="padding: 6px 10px; font-size: 0.82rem;" />
-          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Optional. Stored securely under confidential medical privacy.</div>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button type="button" class="btn btn-ghost" onclick="closeModal('completeCaseModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="completeSubmitBtn">Mark Completed &amp; Bill</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal: Monthly Invoicing & Reconciliation Statement Export -->
-  <div class="modal-backdrop" id="exportStatementModal">
-    <div class="modal">
-      <div class="modal-header">
-        <div>
-          <div style="font-size: 0.72rem; font-weight: 700; color: var(--accent); text-transform: uppercase;">FINANCIAL RECONCILIATION</div>
-          <div class="modal-title">Export Invoicing Statement</div>
-        </div>
-        <button class="modal-close" onclick="closeModal('exportStatementModal')">&times;</button>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 14px;">
-        <div>
-          <label class="form-label">Client Company</label>
-          <select id="exportCompanySelect" class="form-select" onchange="updateExportPreview()">
-            <option value="all">All Client Companies</option>
+          <select class="select filter-select" id="companyFilterSelect" aria-label="Filter by client company" onchange="applyQueueFilter()">
+            <option value="all">All client companies</option>
           </select>
-        </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <div>
-            <label class="form-label">Billing Period</label>
-            <select id="exportPeriodSelect" class="form-select" onchange="handleExportPeriodChange()">
-              <option value="this_month">Current Month</option>
-              <option value="last_month">Previous Month</option>
-              <option value="all_time">All Time</option>
-              <option value="custom">Custom Date Range</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Settlement Filter</label>
-            <select id="exportSettlementSelect" class="form-select" onchange="updateExportPreview()">
-              <option value="all">All (Billed &amp; Unbilled)</option>
-              <option value="settled">Settled / Paid Only</option>
-              <option value="pending_payment">Pending Payment Only</option>
-            </select>
-          </div>
-        </div>
+          <select class="select filter-select" id="doctorFilterSelect" aria-label="Filter by clinician" onchange="applyQueueFilter()" style="display: none;">
+            <option value="all">All clinicians</option>
+            <option value="unassigned">Unassigned only</option>
+          </select>
 
-        <div id="exportCustomDateContainer" style="display: none; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <div>
-            <label class="form-label">Start Date</label>
-            <input type="date" id="exportStartDate" class="form-input" onchange="updateExportPreview()">
-          </div>
-          <div>
-            <label class="form-label">End Date</label>
-            <input type="date" id="exportEndDate" class="form-input" onchange="updateExportPreview()">
-          </div>
-        </div>
+          <select class="select filter-select" id="statusFilterSelect" aria-label="Filter by status" onchange="applyQueueFilter()">
+            <option value="active">Active cases</option>
+            <option value="pending">Pending</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="archived">Archived</option>
+            <option value="all">All active &amp; closed</option>
+            <option value="all_including_archived">All (including archived)</option>
+          </select>
 
-        <!-- Statement Summary Preview Card -->
-        <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-top: 6px;">
-          <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-1); margin-bottom: 8px;">Statement Summary Preview</div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem;">
-            <div><span style="color: var(--text-muted);">Matching Cases:</span> <strong id="exportCountPreview" style="color: var(--text-1);">0</strong></div>
-            <div><span style="color: var(--text-muted);">Subtotal Fees:</span> <strong id="exportSubtotalPreview" style="color: var(--text-1);">GHS 0.00</strong></div>
-            <div><span style="color: var(--text-muted);">Settled / Paid:</span> <strong id="exportSettledPreview" style="color: #15803D;">GHS 0.00</strong></div>
-            <div><span style="color: var(--text-muted);">Pending Disbursement:</span> <strong id="exportPendingPreview" style="color: #B45309;">GHS 0.00</strong></div>
+          <select class="select filter-select" id="settlementFilterSelect" aria-label="Filter by settlement status" onchange="applyQueueFilter()">
+            <option value="all">All settlements</option>
+            <option value="settled">Settled</option>
+            <option value="pending_payment">Pending payment</option>
+            <option value="unbilled">Unbilled</option>
+          </select>
+
+          <select class="select filter-select" id="datePresetSelect" aria-label="Filter by date range" onchange="handleDatePresetChange()">
+            <option value="all">All dates</option>
+            <option value="this_month">This month</option>
+            <option value="last_month">Last month</option>
+            <option value="custom">Custom range...</option>
+          </select>
+
+          <div id="customDateRangeContainer" class="custom-date-range">
+            <input type="date" id="customStartDate" class="input" aria-label="Start date" onchange="applyQueueFilter()">
+            <span class="text-muted-sm">to</span>
+            <input type="date" id="customEndDate" class="input" aria-label="End date" onchange="applyQueueFilter()">
           </div>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
-          <button type="button" class="btn btn-ghost" onclick="closeModal('exportStatementModal')">Cancel</button>
-          <button type="button" class="btn btn-outline" onclick="generateCSVExport()">
-            Export CSV (Excel)
-          </button>
-          <button type="button" class="btn btn-primary" onclick="generatePDFInvoice()">
-            Generate PDF Invoice
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Clinic Profile & Billing Settings -->
-  <div class="modal-backdrop" id="clinicSettingsModal">
-    <div class="modal">
-      <div class="modal-header">
-        <div>
-          <div style="font-size: 0.72rem; font-weight: 700; color: var(--accent); text-transform: uppercase;">PREFERENCES &amp; BILLING</div>
-          <div class="modal-title">Clinic Profile &amp; Settings</div>
-        </div>
-        <button class="modal-close" onclick="closeModal('clinicSettingsModal')">&times;</button>
+        <div class="filter-chips-row" id="activeFilterChips" style="display: none;"></div>
       </div>
 
-      <form id="clinicSettingsForm" onsubmit="handleSaveClinicSettings(event)">
-        <div class="form-group">
-          <label class="form-label" for="settingsClinicName">Clinic / Organization Name *</label>
-          <input type="text" id="settingsClinicName" class="form-input" placeholder="e.g. FZ Safety and Health Centre" required />
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <div class="form-group">
-            <label class="form-label" for="settingsPhone">Contact Phone</label>
-            <input type="text" id="settingsPhone" class="form-input" placeholder="+233 24 362 9870" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="settingsNotificationEmail">Notification Email</label>
-            <input type="email" id="settingsNotificationEmail" class="form-input" placeholder="intake@fzsafety.com" />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="settingsAddress">Clinic Physical / Postal Address</label>
-          <input type="text" id="settingsAddress" class="form-input" placeholder="Suite 402, Ridge Medical Tower, Accra, Ghana" />
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <div class="form-group">
-            <label class="form-label" for="settingsPracticeRegNumber">Practice Registration / License No.</label>
-            <input type="text" id="settingsPracticeRegNumber" class="form-input" placeholder="e.g. HEFRA/GH/2026/001" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="settingsMdcNumber">Clinician MDC Registration No.</label>
-            <input type="text" id="settingsMdcNumber" class="form-input" placeholder="e.g. MDC/RN/12345" />
-          </div>
-        </div>
-
-        <div class="form-group" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg);">
-          <label class="form-label" for="settingsSignatureInput">Clinician Signature (for Medical Certificates)</label>
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
-            <input type="file" id="settingsSignatureInput" accept="image/png,image/jpeg" onchange="handleSignatureFileSelected(event)" style="font-size: 0.78rem;" />
-            <button type="button" class="btn btn-outline btn-sm" onclick="handleClearSignature()" style="font-size: 0.75rem; padding: 4px 8px;">Remove</button>
-          </div>
-          <img id="settingsSignaturePreview" alt="Clinician signature preview" style="display: none; max-height: 44px; max-width: 220px; margin-bottom: 8px; border-bottom: 1px solid #CBD5E1; padding-bottom: 4px;" />
-          <label style="display: flex; align-items: center; gap: 7px; font-size: 0.78rem; color: var(--text-2); cursor: pointer;">
-            <input type="checkbox" id="settingsSignatureApproveCheck" />
-            <span>I approve this signature image for use on clinician-issued medical certificates</span>
-          </label>
-        </div>
-
-        <div class="form-group" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg);">
-          <label class="form-label" for="settingsStampInput">Official Clinic Stamp (for Medical Certificates)</label>
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
-            <input type="file" id="settingsStampInput" accept="image/png,image/jpeg" onchange="handleStampFileSelected(event)" style="font-size: 0.78rem;" />
-            <button type="button" class="btn btn-outline btn-sm" onclick="handleClearStamp()" style="font-size: 0.75rem; padding: 4px 8px;">Remove</button>
-          </div>
-          <img id="settingsStampPreview" alt="Official clinic stamp preview" style="display: none; max-height: 68px; max-width: 240px; margin-bottom: 8px; padding: 4px;" />
-          <label style="display: flex; align-items: center; gap: 7px; font-size: 0.78rem; color: var(--text-2); cursor: pointer;">
-            <input type="checkbox" id="settingsStampApproveCheck" />
-            <span>I approve this clinic stamp for use on clinician-issued medical certificates</span>
-          </label>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <div class="form-group">
-            <label class="form-label" for="settingsDefaultRate">Default Consultation Fee *</label>
-            <input type="number" step="0.01" min="0" id="settingsDefaultRate" class="form-input" placeholder="450.00" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="settingsDefaultCurrency">Billing Currency</label>
-            <select id="settingsDefaultCurrency" class="form-select">
-              <option value="GHS">GHS (Ghana Cedi)</option>
-              <option value="USD">USD (US Dollar)</option>
-              <option value="GBP">GBP (British Pound)</option>
-              <option value="EUR">EUR (Euro)</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <div class="form-group">
-            <label class="form-label" for="settingsTaxId">Tax / VAT ID (Optional)</label>
-            <input type="text" id="settingsTaxId" class="form-input" placeholder="e.g. C0012345678" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="settingsTaxRate">Tax / VAT Rate (%)</label>
-            <input type="number" step="0.1" min="0" max="100" id="settingsTaxRate" class="form-input" placeholder="0" />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="settingsPaymentInstructions">Bank / Payment Instructions (Printed on Invoices)</label>
-          <textarea id="settingsPaymentInstructions" class="form-textarea" rows="2" placeholder="Bank: Stanbic Bank Ghana | Account: 9040001234567 | MoMo: 0244567890 (FZ Safety Health)"></textarea>
-        </div>
-
-        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <div>
-              <div style="font-size:0.86rem; font-weight:700; color:var(--text-1);">Two-Factor Authentication (2FA)</div>
-              <div id="assessor2faStatusText" style="font-size:0.75rem; color:var(--text-muted);">Checking status...</div>
-            </div>
-            <button type="button" id="assessor2faToggleBtn" class="btn btn-outline btn-sm" onclick="toggleAssessor2faPanel()">Configure 2FA</button>
-          </div>
-          <div id="assessor2faConfigBox" style="display:none; padding:12px; border-radius:8px; background:var(--surface-canvas); border:1px solid var(--border); font-size:0.8rem;">
-            <div id="assessor2faSetupStep" style="display:none;">
-              <p style="margin:0 0 8px; color:var(--text-2);">Add this setup key to Google Authenticator or Authy, then enter the 6-digit code below:</p>
-              <div style="font-family:monospace; font-weight:700; padding:8px 10px; background:#fff; border:1px solid var(--border); border-radius:6px; word-break:break-all; margin-bottom:8px;" id="assessor2faSecretDisplay"></div>
-              <div style="display:flex; gap:8px;">
-                <input type="text" id="assessor2faConfirmCode" class="form-input" placeholder="6-digit code" maxlength="6" style="max-width:150px;">
-                <button type="button" class="btn btn-primary btn-sm" onclick="confirmEnableAssessor2fa()">Verify &amp; Enable</button>
-              </div>
-            </div>
-            <div id="assessor2faEnabledStep" style="display:none;">
-              <p style="margin:0 0 8px; color:var(--success); font-weight:600;">Two-factor authentication is active on your account.</p>
-              <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                <input type="text" id="assessor2faManageCode" class="form-input" placeholder="Current 6-digit code" maxlength="6" style="max-width:160px;">
-                <button type="button" class="btn btn-outline btn-sm" onclick="regenerateAssessorRecoveryCodes()">Regenerate Backup Codes</button>
-                <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="disableAssessor2fa()">Disable 2FA</button>
-              </div>
-            </div>
-            <div id="assessor2faRecoveryBox" style="display:none; margin-top:10px; padding:10px; background:#FEF3C7; border:1px solid #F59E0B; border-radius:6px;">
-              <div style="font-weight:700; color:#92400E; margin-bottom:4px;">Save these single-use recovery codes safely (shown once):</div>
-              <div id="assessor2faRecoveryList" style="font-family:monospace; font-size:0.78rem; color:#78350F; display:grid; grid-template-columns:repeat(2,1fr); gap:4px;"></div>
-            </div>
-          </div>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button type="button" class="btn btn-ghost" onclick="closeModal('clinicSettingsModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="saveSettingsBtn">Save Settings</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal: Manage Clinical Staff Roster & Onboard Doctors -->
-  <div class="modal-backdrop" id="manageDoctorsModal">
-    <div class="modal" style="max-width: 780px;">
-      <div class="modal-header">
-        <div>
-          <div style="font-size: 0.72rem; font-weight: 700; color: var(--accent); text-transform: uppercase;">CLINICAL TEAM MANAGEMENT</div>
-          <div class="modal-title">Manage Practice Doctors &amp; Clinicians</div>
-        </div>
-        <button class="modal-close" onclick="closeModal('manageDoctorsModal')">&times;</button>
-      </div>
-
-      <!-- Tabs Header -->
-      <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 16px; padding-bottom: 8px;">
-        <button type="button" class="btn btn-sm btn-primary" id="tabRosterBtn" onclick="switchDoctorModalTab('roster')">
-          Active Clinicians (<span id="doctorCountBadge">0</span>)
-        </button>
-        <button type="button" class="btn btn-sm btn-outline" id="tabAddDoctorBtn" onclick="switchDoctorModalTab('add')">
-          + Add New Doctor
-        </button>
-      </div>
-
-      <!-- Tab 1: Clinician Roster -->
-      <div id="doctorRosterTab">
-        <div class="table-container" style="max-height: 380px; overflow-y: auto;">
-          <table style="width: 100%;">
+      <!-- Referrals Data Table -->
+      <div class="data-table-container">
+        <div class="referrals-table-scroll">
+          <table class="data-table referrals-table">
             <thead>
               <tr>
-                <th>Clinician Name</th>
-                <th>Specialty</th>
-                <th>Role</th>
-                <th>Active Cases</th>
-                <th>Contact</th>
+                <th id="thSortRef" aria-sort="none">
+                  <button type="button" class="th-sort-btn" onclick="sortTable('referenceCode')">
+                    <span>Reference</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th id="thSortPatient" aria-sort="none">
+                  <button type="button" class="th-sort-btn" onclick="sortTable('patientName')">
+                    <span>Patient</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th>Clinician</th>
+                <th id="thSortAppt" aria-sort="descending">
+                  <button type="button" class="th-sort-btn" onclick="sortTable('createdAt')">
+                    <span>Appointment</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
                 <th>Status</th>
-                <th>Action</th>
+                <th class="num" id="thFeeHeader">Fee (GHS)</th>
+                <th style="text-align: right;">Actions</th>
               </tr>
             </thead>
-            <tbody id="doctorsTableBody">
-              <tr>
-                <td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">
-                  Loading clinical staff...
+            <tbody id="assessorQueueTableBody">
+              <tr class="empty-row">
+                <td colspan="7">
+                  <div class="empty-state-inline">
+                    <p>Loading assigned clinical referrals...</p>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -1993,148 +1587,725 @@
         </div>
       </div>
 
-      <!-- Tab 2: Add New Doctor Form -->
-      <div id="addDoctorTab" style="display: none;">
-        <form id="addDoctorForm" onsubmit="handleCreateDoctorSubmit(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label class="form-label" for="newDocFullName">Full Name (with Title) *</label>
-              <input type="text" id="newDocFullName" class="form-input" placeholder="e.g. Dr. Kwame Mensah" required />
+      <!-- Pagination Footer -->
+      <div class="pagination-bar" id="queuePaginationBar">
+        <div id="paginationSummary">Showing 0 referrals</div>
+        <div class="pagination-controls" id="paginationControlsRight">
+          <label for="pageSizeSelect" class="text-muted-sm">Rows per page</label>
+          <select class="select pagination-select" id="pageSizeSelect" onchange="handlePageSizeChange()">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <button type="button" class="btn btn-secondary btn-sm" id="prevPageBtn" onclick="changePage(-1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            <span>Previous</span>
+          </button>
+          <span id="pageIndicator" class="tabular-nums" style="padding: 0 var(--space-1);">Page 1 of 1</span>
+          <button type="button" class="btn btn-secondary btn-sm" id="nextPageBtn" onclick="changePage(1)">
+            <span>Next</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal: View Clinical Case, Consultation Chat & Digital Excuse Duty -->
+  <div class="modal-backdrop" id="caseDetailModal" role="dialog" aria-modal="true" aria-labelledby="modalHeaderPatientName">
+    <div class="modal-dialog modal-dialog--workspace">
+      <div class="modal-header">
+        <div class="modal-header-main">
+          <div class="modal-header-badges">
+            <span id="modalCaseRefCode" class="ref-code-tag tabular-nums">REF-XXXXXXXX</span>
+            <span id="modalHeaderStatusBadge" class="badge badge-warning">Pending</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: var(--space-2); flex-wrap: wrap;">
+            <h2 id="modalHeaderPatientName" class="modal-title">Patient Name</h2>
+            <span id="modalHeaderOrgDept" class="text-muted-sm">Organization · Department</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0;">
+          <span id="assessorPeerPresencePill" class="badge badge-neutral">Connecting...</span>
+          <button type="button" id="assessorStartCallBtn" class="btn btn-secondary btn-sm" onclick="startAssessorCall()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>Voice call</span>
+          </button>
+          <button type="button" class="modal-close-btn" onclick="closeModal('caseDetailModal')" aria-label="Close clinical record">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="clinical-ws-body">
+        <!-- Left Pane: Case Details, Scheduling & Digital Excuse Duty -->
+        <div class="clinical-left-pane">
+          <div id="modalCaseDetailBody"></div>
+
+          <div class="tabs-underline" role="tablist" aria-label="Case detail sections">
+            <button type="button" class="tab-underline-item active" id="clinicalTabOverviewBtn" onclick="switchClinicalRecordTab('overview')" role="tab" aria-selected="true">
+              Case &amp; schedule
+            </button>
+            <button type="button" class="tab-underline-item" id="clinicalTabDocsBtn" onclick="switchClinicalRecordTab('documents')" role="tab" aria-selected="false">
+              Certificates &amp; documents <span id="clinicalDocsCountBadge" class="tabular-nums">(0)</span>
+            </button>
+          </div>
+
+          <!-- Tab 1: Clinician Delegation & Appointment Scheduling -->
+          <div id="clinicalTabOverviewPanel" style="display: flex; flex-direction: column; gap: var(--space-3);">
+            <div id="modalTriageSection" class="ws-section" style="display: none;">
+              <div class="ws-section-title">
+                <span>Clinician delegation</span>
+                <span id="modalTriageDelegatedBadge" class="badge badge-neutral">Unassigned</span>
+              </div>
+              <div style="display: flex; gap: var(--space-2); align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 170px;">
+                  <label class="form-label" for="modalDoctorAssignSelect">Attending staff clinician</label>
+                  <select id="modalDoctorAssignSelect" class="select" style="margin-top: var(--space-1);">
+                    <option value="">Unassigned (Practice queue)</option>
+                  </select>
+                </div>
+                <button type="button" class="btn btn-secondary" id="modalAssignDoctorBtn" onclick="submitModalAssignDoctor()">
+                  Delegate
+                </button>
+              </div>
+              <div id="modalDelegationMeta" class="text-subtle-xs" style="margin-top: var(--space-2); display: none;"></div>
             </div>
-            <div class="form-group">
-              <label class="form-label" for="newDocEmail">Login Email *</label>
-              <input type="email" id="newDocEmail" class="form-input" placeholder="e.g. dr.mensah@fzsafety.com" required />
+
+            <div id="schedulingSection" class="ws-section">
+              <div class="ws-section-title">
+                <span>Appointment scheduling</span>
+              </div>
+              <div class="form-grid-2">
+                <div class="form-field">
+                  <label class="form-label" for="scheduleDateInput">Date *</label>
+                  <input type="date" id="scheduleDateInput" class="input">
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="scheduleTimeInput">Time (optional)</label>
+                  <input type="time" id="scheduleTimeInput" class="input">
+                </div>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="scheduleMeetingLinkInput">Video meeting link (optional)</label>
+                <input type="url" id="scheduleMeetingLinkInput" class="input" placeholder="https://meet.google.com/...">
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="scheduleNotesInput">Appointment note</label>
+                <input type="text" id="scheduleNotesInput" class="input" placeholder="e.g. Telehealth consultation, Clinic Room 3...">
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap;">
+                <label style="display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--text-muted); cursor: pointer;" title="Routes audio traffic through relay servers">
+                  <input type="checkbox" id="assessorIpShieldToggle" onchange="if(window.HavilahCall) window.HavilahCall.setIpShield(this.checked)">
+                  <span>Call IP shield (relay)</span>
+                </label>
+                <button type="button" class="btn btn-primary btn-sm" id="saveScheduleBtn" onclick="submitScheduleAppointment()">
+                  Save appointment
+                </button>
+              </div>
+              <span id="assessorCallDurationBadge" class="badge badge-success" style="display: none; margin-top: var(--space-2);">
+                Last call: <span id="assessorCallDurationText">0m 00s</span>
+              </span>
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label class="form-label" for="newDocPassword">Initial Password *</label>
-              <div style="position: relative;">
-                <input type="password" id="newDocPassword" class="form-input" placeholder="Min. 6 characters" minlength="6" required style="padding-right: 40px;" />
-                <button type="button" onclick="togglePasswordVisibility('newDocPassword', this)" aria-label="Show password" aria-pressed="false" title="Show password" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 4px; color: var(--text-3, #64748b); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          <!-- Tab 2: Clinical Documents & Digital Excuse Duty Generator -->
+          <div id="clinicalTabDocsPanel" style="display: none; flex-direction: column; gap: var(--space-3);">
+            <div class="ws-section" id="excuseDutyBuilderCard">
+              <div class="ws-section-title">
+                <span>Issue medical certificate (PDF)</span>
+              </div>
+              <p class="text-subtle-xs" style="margin-bottom: var(--space-3);">
+                Generate and attach an official HR-safe medical certificate to this patient's record.
+              </p>
+
+              <div class="form-grid-2">
+                <div class="form-field">
+                  <label class="form-label" for="excuseDutyTypeSelect">Certificate type</label>
+                  <select id="excuseDutyTypeSelect" class="select" onchange="onExcuseDutyFormChange()">
+                    <option value="excuse_duty">Excuse Duty (Sick Leave)</option>
+                    <option value="light_duty">Fit for Light / Modified Duty</option>
+                    <option value="fit_to_return">Fit to Return to Work</option>
+                    <option value="attendance">Consultation Attendance Note</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="excuseDutyMdcInput">MDC reg. number</label>
+                  <input type="text" id="excuseDutyMdcInput" class="input" placeholder="e.g. MDC/RN/12345">
+                </div>
+              </div>
+
+              <div id="excuseDutyDatesRow" class="form-grid-2">
+                <div class="form-field">
+                  <label class="form-label" for="excuseDutyStartInput">From date *</label>
+                  <input type="date" id="excuseDutyStartInput" class="input" onchange="onExcuseDutyFormChange()">
+                </div>
+                <div class="form-field" id="excuseDutyEndCol">
+                  <label class="form-label" for="excuseDutyEndInput">To date (inclusive) *</label>
+                  <input type="date" id="excuseDutyEndInput" class="input" onchange="onExcuseDutyFormChange()">
+                </div>
+              </div>
+
+              <div id="excuseDutySchedulePreview" class="info-notice" style="margin-bottom: var(--space-3);">
+                Duration: 1 Day | Return to duty: -
+              </div>
+
+              <div class="form-field">
+                <label class="form-label" for="excuseDutyRemarksInput">Clinical recommendation / HR-safe remarks</label>
+                <textarea id="excuseDutyRemarksInput" class="textarea" rows="3" placeholder="Medically assessed and advised rest from duties..."></textarea>
+              </div>
+
+              <label style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-3); cursor: pointer;">
+                <input type="checkbox" id="excuseDutyPrivacyCheck" checked>
+                <span>HR-safe privacy mode (omit confidential diagnosis on certificate)</span>
+              </label>
+
+              <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="handlePreviewExcuseDutyPdf()">
+                  Preview PDF
+                </button>
+                <button type="button" id="issueExcuseDutyBtn" class="btn btn-primary btn-sm" onclick="handleIssueExcuseDutyPdf()" style="flex: 1;">
+                  Issue &amp; send to employee
                 </button>
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label" for="newDocSpecialty">Clinical Specialty *</label>
-              <input type="text" id="newDocSpecialty" class="form-input" placeholder="e.g. Occupational Health Specialist" required />
+
+            <div id="modalAttachmentsSection" class="ws-section">
+              <div class="ws-section-title">
+                <span>Issued documents &amp; uploads</span>
+                <div>
+                  <input type="file" id="modalCaseAttachmentInput" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" style="display: none;" onchange="handleAssessorDirectUpload(event)">
+                  <button type="button" class="btn btn-secondary btn-sm" id="modalAttachDocBtn" onclick="document.getElementById('modalCaseAttachmentInput').click()">
+                    Upload file
+                  </button>
+                </div>
+              </div>
+
+              <div id="modalAttachmentUploadStatus" class="info-notice" style="display: none; margin-bottom: var(--space-2);">
+                Uploading medical document...
+              </div>
+
+              <div id="modalAttachmentsList" style="display: flex; flex-direction: column; gap: var(--space-2);"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Pane: Clinical Consultation Dialogue -->
+        <div class="clinical-chat-pane" id="modalDialogueSection">
+          <div class="clinical-chat-header">
+            <div style="display: flex; align-items: center; gap: var(--space-2);">
+              <span style="font-weight: var(--weight-semibold); color: var(--text); font-size: var(--text-base);">Patient consultation chat</span>
+              <span class="badge badge-neutral">Encrypted</span>
+            </div>
+            <span class="text-subtle-xs">Press Enter to send</span>
+          </div>
+
+          <div id="modalCaseThreadContainer" class="imsg-thread"></div>
+
+          <div class="imsg-composer-wrap">
+            <div class="imsg-composer">
+              <textarea id="modalCaseReplyInput" rows="1" placeholder="Message patient confidentially..." aria-label="Message patient" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); submitAssessorCaseMessage();}"></textarea>
+              <button type="button" id="modalCaseSendReplyBtn" class="imsg-send-btn" onclick="submitAssessorCaseMessage()" aria-label="Send message" title="Send message">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="clinical-ws-footer">
+        <button type="button" class="btn btn-destructive btn-sm" id="modalDeleteCaseBtn" onclick="handleDeleteCurrentCase()">
+          Delete case
+        </button>
+        <div style="display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary btn-sm" id="modalArchiveCaseBtn" onclick="handleToggleArchiveCurrentCase()">
+            Archive case
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('caseDetailModal')">Close</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="modalCompleteCaseBtn" onclick="openCompleteFromDetail()">Mark complete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmation Before Completing a Case -->
+  <div class="modal-backdrop" id="confirmCompleteCaseModal" role="dialog" aria-modal="true" aria-labelledby="confirmCompleteTitle">
+    <div class="modal-dialog modal-dialog--sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="confirmCompleteTitle">Mark referral complete</h2>
+        <button type="button" class="modal-close-btn" onclick="closeModal('confirmCompleteCaseModal')" aria-label="Close confirmation">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmCompleteMessage">Mark REF-xxxx as complete? This closes the case.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('confirmCompleteCaseModal')">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmCompleteProceedBtn" onclick="proceedConfirmedComplete()">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Complete Referral Case & Bill with Attachment -->
+  <div class="modal-backdrop" id="completeCaseModal" role="dialog" aria-modal="true" aria-labelledby="completeModalTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title" id="completeModalTitle">Complete referral &amp; record billing</h2>
+        <button type="button" class="modal-close-btn" onclick="closeModal('completeCaseModal')" aria-label="Close complete case modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <form id="completeCaseForm" onsubmit="handleCompleteCaseSubmit(event)" style="display: flex; flex-direction: column; min-height: 0; flex: 1;">
+        <div class="modal-body">
+          <input type="hidden" id="completeReferralId">
+          <div style="background-color: var(--bg); padding: var(--space-3); border-radius: var(--radius-control); margin-bottom: var(--space-4); border: 1px solid var(--border);">
+            <div class="text-subtle-xs">Patient &amp; reference</div>
+            <div style="font-weight: var(--weight-semibold); color: var(--text);" id="completePatientSummary">-</div>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="completeBillingAmount">Consultation fee *</label>
+            <div style="display: flex; gap: var(--space-2);">
+              <select id="completeCurrencySelect" class="select" style="width: 100px;" aria-label="Billing currency">
+                <option value="GHS">GHS</option>
+                <option value="USD">USD</option>
+                <option value="GBP">GBP</option>
+                <option value="EUR">EUR</option>
+              </select>
+              <input type="number" step="0.01" min="0" id="completeBillingAmount" class="input tabular-nums" placeholder="450.00" required>
+            </div>
+            <div class="form-hint">Enter the consultation fee to invoice the employer.</div>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="completeAssessorNotes">Clinical outcome &amp; assessment notes</label>
+            <textarea id="completeAssessorNotes" class="textarea" rows="3" placeholder="Consultation notes, recommendations, fitness-to-work outcome..."></textarea>
+          </div>
+
+          <div class="form-field" style="margin-bottom: 0;">
+            <label class="form-label" for="completeAttachmentInput">Attach certificate or medical report (optional)</label>
+            <input type="file" id="completeAttachmentInput" class="input" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" style="padding: 6px 10px; height: auto;">
+            <div class="form-hint">PDF, image, or document up to 10 MB.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('completeCaseModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="completeSubmitBtn">Complete &amp; bill</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Monthly Invoicing & Reconciliation Statement Export -->
+  <div class="modal-backdrop" id="exportStatementModal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title" id="exportModalTitle">Billing &amp; invoicing statement</h2>
+        <button type="button" class="modal-close-btn" onclick="closeModal('exportStatementModal')" aria-label="Close billing statement">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-field">
+          <label class="form-label" for="exportCompanySelect">Client company</label>
+          <select id="exportCompanySelect" class="select" onchange="updateExportPreview()">
+            <option value="all">All client companies</option>
+          </select>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-field">
+            <label class="form-label" for="exportPeriodSelect">Billing period</label>
+            <select id="exportPeriodSelect" class="select" onchange="handleExportPeriodChange()">
+              <option value="this_month">Current month</option>
+              <option value="last_month">Previous month</option>
+              <option value="all_time">All time</option>
+              <option value="custom">Custom date range</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="exportSettlementSelect">Settlement filter</label>
+            <select id="exportSettlementSelect" class="select" onchange="updateExportPreview()">
+              <option value="all">All (billed &amp; unbilled)</option>
+              <option value="settled">Settled only</option>
+              <option value="pending_payment">Pending payment only</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="exportCustomDateContainer" class="form-grid-2" style="display: none;">
+          <div class="form-field">
+            <label class="form-label" for="exportStartDate">Start date</label>
+            <input type="date" id="exportStartDate" class="input" onchange="updateExportPreview()">
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="exportEndDate">End date</label>
+            <input type="date" id="exportEndDate" class="input" onchange="updateExportPreview()">
+          </div>
+        </div>
+
+        <div>
+          <div class="form-label" style="margin-bottom: var(--space-2);">Statement summary preview</div>
+          <div class="summary-preview-grid tabular-nums">
+            <div><span class="text-muted-sm">Matching cases:</span> <strong id="exportCountPreview">0</strong></div>
+            <div><span class="text-muted-sm">Subtotal fees:</span> <strong id="exportSubtotalPreview">GHS 0.00</strong></div>
+            <div><span class="text-muted-sm">Settled:</span> <strong id="exportSettledPreview">GHS 0.00</strong></div>
+            <div><span class="text-muted-sm">Pending disbursement:</span> <strong id="exportPendingPreview">GHS 0.00</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('exportStatementModal')">Cancel</button>
+        <button type="button" class="btn btn-secondary" onclick="generateCSVExport()">Export CSV</button>
+        <button type="button" class="btn btn-primary" onclick="generatePDFInvoice()">Generate PDF invoice</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Clinic Profile & Billing Settings -->
+  <div class="modal-backdrop" id="clinicSettingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="modal-dialog modal-dialog--lg">
+      <div class="modal-header">
+        <h2 class="modal-title" id="settingsModalTitle">Clinic settings &amp; billing profile</h2>
+        <button type="button" class="modal-close-btn" onclick="closeModal('clinicSettingsModal')" aria-label="Close clinic settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <form id="clinicSettingsForm" onsubmit="handleSaveClinicSettings(event)" style="display: flex; flex-direction: column; min-height: 0; flex: 1;">
+        <div class="modal-body">
+          <div class="form-field">
+            <label class="form-label" for="settingsClinicName">Clinic or organization name *</label>
+            <input type="text" id="settingsClinicName" class="input" placeholder="e.g. FZ Safety and Health Centre" required>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="form-label" for="settingsPhone">Contact phone</label>
+              <input type="text" id="settingsPhone" class="input" placeholder="+233 24 000 0000">
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="settingsNotificationEmail">Notification email</label>
+              <input type="email" id="settingsNotificationEmail" class="input" placeholder="intake@clinic.com">
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label class="form-label" for="newDocPhone">Contact Phone</label>
-              <input type="text" id="newDocPhone" class="form-input" placeholder="+233 24 000 0000" />
+          <div class="form-field">
+            <label class="form-label" for="settingsAddress">Clinic physical or postal address</label>
+            <input type="text" id="settingsAddress" class="input" placeholder="Suite 402, Medical Tower, Accra">
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="form-label" for="settingsPracticeRegNumber">Practice registration / license no.</label>
+              <input type="text" id="settingsPracticeRegNumber" class="input" placeholder="e.g. HEFRA/GH/2026/001">
             </div>
-            <div class="form-group">
-              <label class="form-label" for="newDocRole">Practice Role</label>
-              <select id="newDocRole" class="form-select">
-                <option value="doctor">Staff Doctor (Attending Clinician)</option>
-                <option value="clinic_admin">Clinic Admin (Triage &amp; Staff Lead)</option>
+            <div class="form-field">
+              <label class="form-label" for="settingsMdcNumber">Clinician MDC registration no.</label>
+              <input type="text" id="settingsMdcNumber" class="input" placeholder="e.g. MDC/RN/12345">
+            </div>
+          </div>
+
+          <div class="form-field" style="padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-card); background-color: var(--bg);">
+            <label class="form-label" for="settingsSignatureInput">Clinician signature (for medical certificates)</label>
+            <div style="display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-2);">
+              <input type="file" id="settingsSignatureInput" accept="image/png,image/jpeg" onchange="handleSignatureFileSelected(event)" style="font-size: var(--text-sm);">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="handleClearSignature()">Remove</button>
+            </div>
+            <img id="settingsSignaturePreview" alt="Clinician signature preview" style="display: none; max-height: 44px; max-width: 220px; margin-bottom: var(--space-2); border-bottom: 1px solid var(--border); padding-bottom: 4px;">
+            <label style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--text-muted); cursor: pointer;">
+              <input type="checkbox" id="settingsSignatureApproveCheck">
+              <span>Approve this signature image for clinician-issued medical certificates</span>
+            </label>
+          </div>
+
+          <div class="form-field" style="padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-card); background-color: var(--bg);">
+            <label class="form-label" for="settingsStampInput">Official clinic stamp (for medical certificates)</label>
+            <div style="display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-2);">
+              <input type="file" id="settingsStampInput" accept="image/png,image/jpeg" onchange="handleStampFileSelected(event)" style="font-size: var(--text-sm);">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="handleClearStamp()">Remove</button>
+            </div>
+            <img id="settingsStampPreview" alt="Official clinic stamp preview" style="display: none; max-height: 68px; max-width: 240px; margin-bottom: var(--space-2); padding: 4px;">
+            <label style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--text-muted); cursor: pointer;">
+              <input type="checkbox" id="settingsStampApproveCheck">
+              <span>Approve this clinic stamp for clinician-issued medical certificates</span>
+            </label>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="form-label" for="settingsDefaultRate">Default consultation fee *</label>
+              <input type="number" step="0.01" min="0" id="settingsDefaultRate" class="input tabular-nums" placeholder="450.00" required>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="settingsDefaultCurrency">Billing currency</label>
+              <select id="settingsDefaultCurrency" class="select">
+                <option value="GHS">GHS (Ghana Cedi)</option>
+                <option value="USD">USD (US Dollar)</option>
+                <option value="GBP">GBP (British Pound)</option>
+                <option value="EUR">EUR (Euro)</option>
               </select>
             </div>
           </div>
 
-          <div style="margin-top: 18px; display: flex; justify-content: flex-end; gap: 10px;">
-            <button type="button" class="btn btn-ghost" onclick="switchDoctorModalTab('roster')">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="createDoctorSubmitBtn" style="display: inline-flex; align-items: center; gap: 6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              <span>Create Clinician Account</span>
-            </button>
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="form-label" for="settingsTaxId">Tax / VAT ID (optional)</label>
+              <input type="text" id="settingsTaxId" class="input" placeholder="e.g. C0012345678">
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="settingsTaxRate">Tax / VAT rate (%)</label>
+              <input type="number" step="0.1" min="0" max="100" id="settingsTaxRate" class="input tabular-nums" placeholder="0">
+            </div>
           </div>
-        </form>
+
+          <div class="form-field">
+            <label class="form-label" for="settingsPaymentInstructions">Bank / payment instructions (printed on invoices)</label>
+            <textarea id="settingsPaymentInstructions" class="textarea" rows="2" placeholder="Bank details and payment terms..."></textarea>
+          </div>
+
+          <div style="margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); flex-wrap: wrap;">
+              <div>
+                <div style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text);">Two-factor authentication (2FA)</div>
+                <div id="assessor2faStatusText" class="text-subtle-xs">Checking status...</div>
+              </div>
+              <button type="button" id="assessor2faToggleBtn" class="btn btn-secondary btn-sm" onclick="toggleAssessor2faPanel()">Configure 2FA</button>
+            </div>
+
+            <div id="assessor2faConfigBox" style="display: none; padding: var(--space-3); border-radius: var(--radius-card); background-color: var(--bg); border: 1px solid var(--border); font-size: var(--text-sm);">
+              <div id="assessor2faSetupStep" style="display: none;">
+                <p style="margin-bottom: var(--space-2);">Add this setup key to your authenticator app, then enter the 6-digit code below:</p>
+                <div style="font-weight: var(--weight-semibold); padding: var(--space-2) var(--space-3); background-color: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-control); word-break: break-all; margin-bottom: var(--space-3);" id="assessor2faSecretDisplay"></div>
+                <div style="display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap;">
+                  <input type="text" id="assessor2faConfirmCode" class="input tabular-nums" placeholder="6-digit code" maxlength="6" style="max-width: 160px;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="confirmEnableAssessor2fa()">Verify &amp; enable</button>
+                </div>
+              </div>
+
+              <div id="assessor2faEnabledStep" style="display: none;">
+                <p style="margin-bottom: var(--space-2); color: var(--success); font-weight: var(--weight-medium);">Two-factor authentication is active on your account.</p>
+                <div style="display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center;">
+                  <input type="text" id="assessor2faManageCode" class="input tabular-nums" placeholder="Current 6-digit code" maxlength="6" style="max-width: 170px;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="regenerateAssessorRecoveryCodes()">Regenerate backup codes</button>
+                  <button type="button" class="btn btn-destructive btn-sm" onclick="disableAssessor2fa()">Disable 2FA</button>
+                </div>
+              </div>
+
+              <div id="assessor2faRecoveryBox" style="display: none; margin-top: var(--space-3); padding: var(--space-3); background-color: var(--warning-bg); border: 1px solid var(--border); border-radius: var(--radius-control);">
+                <div style="font-weight: var(--weight-semibold); color: var(--warning); margin-bottom: var(--space-1);">Save these single-use recovery codes safely (shown once):</div>
+                <div id="assessor2faRecoveryList" class="tabular-nums" style="font-size: var(--text-xs); color: var(--text); display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-1);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('clinicSettingsModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveSettingsBtn">Save settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Manage Clinical Staff Roster & Onboard Doctors -->
+  <div class="modal-backdrop" id="manageDoctorsModal" role="dialog" aria-modal="true" aria-labelledby="manageDoctorsTitle">
+    <div class="modal-dialog modal-dialog--lg">
+      <div class="modal-header">
+        <h2 class="modal-title" id="manageDoctorsTitle">Clinic staff</h2>
+        <button type="button" class="modal-close-btn" onclick="closeModal('manageDoctorsModal')" aria-label="Close clinic staff">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
 
-      <div style="margin-top: 20px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 12px;">
-        <button type="button" class="btn btn-ghost" onclick="closeModal('manageDoctorsModal')">Close</button>
+      <div class="modal-body">
+        <div class="tabs-underline" role="tablist" style="margin-bottom: var(--space-4);">
+          <button type="button" class="tab-underline-item active" id="tabRosterBtn" role="tab" aria-selected="true" onclick="switchDoctorModalTab('roster')">
+            Active clinicians (<span id="doctorCountBadge" class="tabular-nums">0</span>)
+          </button>
+          <button type="button" class="tab-underline-item" id="tabAddDoctorBtn" role="tab" aria-selected="false" onclick="switchDoctorModalTab('add')">
+            Add clinician
+          </button>
+        </div>
+
+        <!-- Tab 1: Clinician Roster -->
+        <div id="doctorRosterTab">
+          <div class="data-table-container">
+            <div style="overflow-x: auto; max-height: 380px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Clinician name</th>
+                    <th>Specialty</th>
+                    <th>Role</th>
+                    <th>Active cases</th>
+                    <th>Contact</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="doctorsTableBody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: var(--space-6); color: var(--text-muted);">
+                      Loading clinical staff...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Add New Doctor Form -->
+        <div id="addDoctorTab" style="display: none;">
+          <form id="addDoctorForm" onsubmit="handleCreateDoctorSubmit(event)">
+            <div class="form-grid-2">
+              <div class="form-field">
+                <label class="form-label" for="newDocFullName">Full name (with title) *</label>
+                <input type="text" id="newDocFullName" class="input" placeholder="e.g. Dr. Kwame Mensah" required>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="newDocEmail">Login email *</label>
+                <input type="email" id="newDocEmail" class="input" placeholder="e.g. dr.mensah@clinic.com" required>
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-field">
+                <label class="form-label" for="newDocPassword">Initial password *</label>
+                <div class="input-with-button">
+                  <input type="password" id="newDocPassword" class="input" placeholder="Min. 6 characters" minlength="6" required>
+                  <button type="button" class="input-action-btn" onclick="togglePasswordVisibility('newDocPassword', this)" aria-label="Show password" aria-pressed="false" title="Show password">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="newDocSpecialty">Clinical specialty *</label>
+                <input type="text" id="newDocSpecialty" class="input" placeholder="e.g. Occupational Health Specialist" required>
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-field">
+                <label class="form-label" for="newDocPhone">Contact phone</label>
+                <input type="text" id="newDocPhone" class="input" placeholder="+233 24 000 0000">
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="newDocRole">Practice role</label>
+                <select id="newDocRole" class="select">
+                  <option value="doctor">Staff Doctor (Attending Clinician)</option>
+                  <option value="clinic_admin">Clinic Admin (Triage &amp; Staff Lead)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top: var(--space-4); display: flex; justify-content: flex-end; gap: var(--space-2);">
+              <button type="button" class="btn btn-secondary" onclick="switchDoctorModalTab('roster')">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="createDoctorSubmitBtn">Create clinician account</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('manageDoctorsModal')">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Session Auto-Lock Warning (Security Safeguards) -->
-  <div class="modal-backdrop" id="autoLockWarningModal">
-    <div class="modal" style="max-width: 440px; text-align: center;">
-      <div style="margin-bottom: 12px; color: var(--brand);"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
-      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-1); margin-bottom: 6px;">Session Security Inactivity Lock</h3>
-      <p style="color: var(--text-2); font-size: 0.88rem; margin-bottom: 18px;">
-        To protect confidential patient records, your session will automatically lock in <strong id="lockWarningCountdown" style="color: var(--danger);">60</strong> seconds due to inactivity.
-      </p>
-      <button class="btn btn-primary" style="width: 100%; padding: 11px;" onclick="resetInactivityTimerFromModal()">
-        Keep Working &amp; Extend Session
-      </button>
+  <!-- Modal: Session Auto-Lock Warning -->
+  <div class="modal-backdrop" id="autoLockWarningModal" role="dialog" aria-modal="true" aria-labelledby="autoLockWarningTitle">
+    <div class="modal-dialog modal-dialog--sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="autoLockWarningTitle">Session timeout warning</h2>
+        <button type="button" class="modal-close-btn" onclick="resetInactivityTimerFromModal()" aria-label="Stay signed in">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Your session will lock in <strong id="lockWarningCountdown" class="tabular-nums" style="color: var(--text);">2:00</strong>. Stay signed in?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="confirmLogoutAssessor()">Sign out</button>
+        <button type="button" class="btn btn-primary" onclick="resetInactivityTimerFromModal()">Stay signed in</button>
+      </div>
     </div>
   </div>
 
   <!-- Modal: Sign Out Confirmation -->
-  <div class="modal-backdrop" id="assessorSignOutModal">
-    <div class="modal" style="max-width: 400px; text-align: center;">
-      <div style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: var(--danger-subtle); color: var(--danger); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+  <div class="modal-backdrop" id="assessorSignOutModal" role="dialog" aria-modal="true" aria-labelledby="signOutTitle">
+    <div class="modal-dialog modal-dialog--sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="signOutTitle">Sign out</h2>
+        <button type="button" class="modal-close-btn" onclick="closeModal('assessorSignOutModal')" aria-label="Cancel sign out">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
-      <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-1); margin-bottom: 6px;">Sign Out</h3>
-      <p style="color: var(--text-2); font-size: 0.85rem; margin-bottom: 20px;">
-        Are you sure you want to sign out of the Medical Assessor Portal?
-      </p>
-      <div style="display: flex; gap: 10px; justify-content: center;">
-        <button type="button" class="btn btn-outline" onclick="closeModal('assessorSignOutModal')" style="flex: 1;">Cancel</button>
-        <button type="button" class="btn btn-danger" onclick="confirmLogoutAssessor()" style="flex: 1;">Sign Out</button>
+      <div class="modal-body">
+        <p>Are you sure you want to sign out of the Medical Assessor Portal?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('assessorSignOutModal')">Cancel</button>
+        <button type="button" class="btn btn-destructive-solid" onclick="confirmLogoutAssessor()">Sign out</button>
       </div>
     </div>
   </div>
 
   <!-- Toast Notification -->
-  <div class="toast" id="toast">
-    <div id="toastMessage" style="font-weight: 600;"></div>
+  <div class="portal-toast" id="toast" role="status" aria-live="polite">
+    <div id="toastMessage"></div>
   </div>
 
   <script src="/js/havilahCall.js?v=2.7.0" defer></script>
   <script src="/js/assessorPortal.js?v=2.3.0"></script>
-<script src="/js/tour.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(function() {
-      HavilahTour.init({
-        tourId: 'clinical-portal',
-        welcomeTitle: 'Medical Assessor Portal',
-        welcomeDesc: 'Welcome to the clinical services portal. Let us walk you through the key features for managing employee assessments.',
-        autoStart: false,
-        steps: [
-          {
-            target: '#assessorLoginSection',
-            title: 'Assessor Login',
-            description: 'Sign in with your clinical practitioner credentials. All sessions are protected with automatic 15-minute inactivity locks.',
-            placement: 'bottom'
-          },
-          {
-            target: '#securityTimerBadge',
-            title: 'Security Timer',
-            description: 'Your session automatically locks after 15 minutes of inactivity. This badge shows the countdown to protect patient confidentiality.',
-            placement: 'bottom'
-          },
-          {
-            target: '#assessorDashboardSection',
-            title: 'Assessor Dashboard',
-            description: 'Your main workspace showing assigned cases, pending reviews, completed assessments, and billing summary across all your client organizations.',
-            placement: 'bottom'
-          },
-          {
-            target: '#searchInput',
-            title: 'Search & Filter',
-            description: 'Search by reference code, patient name, phone, or department. Use the dropdown filters to narrow by company, status, settlement, or date range.',
-            placement: 'bottom'
-          },
-          {
-            target: '#assessorQueueTableBody',
-            title: 'Case Queue',
-            description: 'Your assessment case queue with patient details, status tracking, appointment scheduling, and priority indicators. Click any row to open the full case detail.',
-            placement: 'top'
-          }
-        ]
-      });
-    }, 800);
-  });
-</script>
+  <script src="/js/tour.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+        if (!window.HavilahTour) return;
+        HavilahTour.init({
+          tourId: 'clinical-portal',
+          welcomeTitle: 'Medical Assessor Portal',
+          welcomeDesc: 'Welcome to the clinical services portal. Let us walk you through managing referrals, appointments, and billing.',
+          autoStart: false,
+          steps: [
+            {
+              target: '#assessorLoginSection',
+              title: 'Assessor Sign In',
+              description: 'Sign in with your clinical practitioner credentials. All sessions are protected with an automatic 15-minute inactivity lock.',
+              placement: 'bottom'
+            },
+            {
+              target: '#assessorUserMenuBtn',
+              title: 'Account & Session Timer',
+              description: 'Open your account menu to check remaining session time before inactivity lock or sign out safely.',
+              placement: 'bottom'
+            },
+            {
+              target: '#assessorDashboardSection',
+              title: 'Referrals Overview',
+              description: 'Track active cases, unscheduled appointments, monthly completions, and outstanding billing across client organizations.',
+              placement: 'bottom'
+            },
+            {
+              target: '#searchInput',
+              title: 'Search & Filters',
+              description: 'Search by reference, patient, phone, or department, and filter by client company, clinician, status, settlement, or dates.',
+              placement: 'bottom'
+            },
+            {
+              target: '#assessorQueueTableBody',
+              title: 'Referrals List',
+              description: 'Assign clinicians inline, open case records for consultation chat and certificates, or use the action menu for quick updates.',
+              placement: 'top'
+            }
+          ]
+        });
+      }, 800);
+    });
+  </script>
 </body>
 </html>

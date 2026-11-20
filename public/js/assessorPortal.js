@@ -21,7 +21,7 @@
       search: '',
       company: 'all',
       doctor: 'all',
-      status: 'all',
+      status: 'active',
       settlement: 'all',
       datePreset: 'all',
       startDate: null,
@@ -30,6 +30,10 @@
   };
 
   const API_BASE = '/api/v1/assessor';
+  let pendingConfirmCompleteId = null;
+  let lastModalOpener = null;
+  let removeActiveFocusTrap = null;
+  let warningCountdownTimer = null;
 
   function escapeHtml(str) {
     return String(str == null ? '' : str)
@@ -61,28 +65,42 @@
     return '#';
   }
 
-  // --- Auto-Lock Security Watcher (HIPAA Compliance: 15-min inactivity timeout) ---
+  // --- Auto-Lock Security Watcher (15-min inactivity timeout) ---
   const INACTIVITY_TIMEOUT_SEC = 15 * 60; // 900 seconds (15 mins)
-  const WARNING_THRESHOLD_SEC = 60; // 60 seconds warning
+  const WARNING_THRESHOLD_SEC = 120; // 2:00 warning dialog threshold
   let secondsRemaining = INACTIVITY_TIMEOUT_SEC;
   let inactivityInterval = null;
+
+  function formatCountdownMmSs(totalSec) {
+    const clamped = Math.max(0, totalSec);
+    const mins = Math.floor(clamped / 60);
+    const secs = clamped % 60;
+    return `${mins}:${String(secs).padStart(2, '0')}`;
+  }
 
   function initAutoLockTimer() {
     const resetTimer = () => {
       secondsRemaining = INACTIVITY_TIMEOUT_SEC;
       const warningModal = document.getElementById('autoLockWarningModal');
-      if (warningModal && warningModal.classList.contains('show')) {
-        warningModal.classList.remove('show');
+      if (warningModal && (warningModal.classList.contains('show') || warningModal.classList.contains('is-open'))) {
+        closeModal('autoLockWarningModal');
       }
-      const badge = document.getElementById('securityTimerBadge');
-      if (badge) badge.classList.remove('warning');
+      if (warningCountdownTimer) {
+        clearInterval(warningCountdownTimer);
+        warningCountdownTimer = null;
+      }
+      updateTimerDisplay();
     };
 
-    ['mousemove', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
-      window.addEventListener(evt, resetTimer, { passive: true });
-    });
+    if (!window._assessorInactivityBound) {
+      ['mousemove', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
+        window.addEventListener(evt, resetTimer, { passive: true });
+      });
+      window._assessorInactivityBound = true;
+    }
 
     if (inactivityInterval) clearInterval(inactivityInterval);
+    updateTimerDisplay();
     inactivityInterval = setInterval(() => {
       if (!getAssessorToken()) return;
 
@@ -95,6 +113,10 @@
 
       if (secondsRemaining <= 0) {
         clearInterval(inactivityInterval);
+        if (warningCountdownTimer) {
+          clearInterval(warningCountdownTimer);
+          warningCountdownTimer = null;
+        }
         handleSecurityAutoLock();
       }
     }, 1000);
@@ -102,40 +124,41 @@
 
   function updateTimerDisplay() {
     const timerEl = document.getElementById('autoLockTimer');
-    const badge = document.getElementById('securityTimerBadge');
-    if (!timerEl) return;
-
     const mins = Math.floor(Math.max(0, secondsRemaining) / 60);
     const secs = Math.max(0, secondsRemaining) % 60;
-    timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    if (timerEl) {
+      timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
 
-    if (badge) {
-      if (secondsRemaining <= WARNING_THRESHOLD_SEC) {
-        badge.classList.add('warning');
-      } else {
-        badge.classList.remove('warning');
-      }
+    const countdownEl = document.getElementById('lockWarningCountdown');
+    if (countdownEl) {
+      countdownEl.textContent = formatCountdownMmSs(secondsRemaining);
     }
   }
 
   function showAutoLockWarning() {
     const modal = document.getElementById('autoLockWarningModal');
-    if (modal) modal.classList.add('show');
-
     const countdownEl = document.getElementById('lockWarningCountdown');
-    const countdownTimer = setInterval(() => {
-      if (countdownEl) countdownEl.textContent = String(Math.max(0, secondsRemaining));
-      if (secondsRemaining <= 0 || !modal.classList.contains('show')) {
-        clearInterval(countdownTimer);
+    if (countdownEl) countdownEl.textContent = formatCountdownMmSs(secondsRemaining);
+    openModal('autoLockWarningModal');
+
+    if (warningCountdownTimer) clearInterval(warningCountdownTimer);
+    warningCountdownTimer = setInterval(() => {
+      if (countdownEl) countdownEl.textContent = formatCountdownMmSs(secondsRemaining);
+      if (secondsRemaining <= 0 || !modal || !modal.classList.contains('show')) {
+        clearInterval(warningCountdownTimer);
+        warningCountdownTimer = null;
       }
     }, 1000);
   }
 
   window.resetInactivityTimerFromModal = () => {
     secondsRemaining = INACTIVITY_TIMEOUT_SEC;
+    if (warningCountdownTimer) {
+      clearInterval(warningCountdownTimer);
+      warningCountdownTimer = null;
+    }
     closeModal('autoLockWarningModal');
-    const badge = document.getElementById('securityTimerBadge');
-    if (badge) badge.classList.remove('warning');
     updateTimerDisplay();
   };
 
@@ -199,16 +222,26 @@
     return true;
   }
 
+  function computeInitials(name) {
+    const parts = String(name || 'DR').trim().split(/\s+/).filter(Boolean);
+    const filtered = parts.filter(p => !/^dr\.?$/i.test(p));
+    const source = filtered.length ? filtered : parts;
+    if (source.length >= 2) return (source[0][0] + source[source.length - 1][0]).toUpperCase();
+    return (source[0] || 'DR').slice(0, 2).toUpperCase();
+  }
+
   async function checkAuth() {
     const token = getAssessorToken();
     const loginSection = document.getElementById('assessorLoginSection');
     const dashboardSection = document.getElementById('assessorDashboardSection');
     const headerControls = document.getElementById('authHeaderControls');
+    const primaryNav = document.getElementById('portalPrimaryNav');
 
     if (!token) {
       if (loginSection) loginSection.style.display = 'block';
       if (dashboardSection) dashboardSection.style.display = 'none';
       if (headerControls) headerControls.style.display = 'none';
+      if (primaryNav) primaryNav.style.display = 'none';
       return;
     }
 
@@ -220,17 +253,25 @@
       state.assessor.isClinicAdmin = isClinicAdmin;
 
       const nameDisplay = document.getElementById('assessorNameDisplay');
+      const menuName = document.getElementById('assessorMenuName');
+      const menuEmail = document.getElementById('assessorMenuEmail');
+      const avatarEl = document.getElementById('assessorAvatarInitials');
       const manageStaffBtn = document.getElementById('manageStaffBtn');
       const doctorFilterSelect = document.getElementById('doctorFilterSelect');
 
-      if (nameDisplay) nameDisplay.textContent = res.assessor.name;
+      const displayName = res.assessor.name || 'Practitioner';
+      if (nameDisplay) nameDisplay.textContent = displayName;
+      if (menuName) menuName.textContent = displayName;
+      if (menuEmail) menuEmail.textContent = res.assessor.email || 'Clinical account';
+      if (avatarEl) avatarEl.textContent = computeInitials(displayName);
 
       if (manageStaffBtn) manageStaffBtn.style.display = isClinicAdmin ? 'inline-flex' : 'none';
-      if (doctorFilterSelect) doctorFilterSelect.style.display = isClinicAdmin ? 'inline-block' : 'none';
+      if (doctorFilterSelect) doctorFilterSelect.style.display = isClinicAdmin ? '' : 'none';
 
       if (loginSection) loginSection.style.display = 'none';
       if (dashboardSection) dashboardSection.style.display = 'block';
       if (headerControls) headerControls.style.display = 'flex';
+      if (primaryNav) primaryNav.style.display = 'flex';
 
       initAutoLockTimer();
       if (isClinicAdmin) {
@@ -242,8 +283,24 @@
       if (loginSection) loginSection.style.display = 'block';
       if (dashboardSection) dashboardSection.style.display = 'none';
       if (headerControls) headerControls.style.display = 'none';
+      if (primaryNav) primaryNav.style.display = 'none';
     }
   }
+
+  window.focusReferralsView = () => {
+    const refBtn = document.getElementById('navReferralsBtn');
+    if (refBtn) refBtn.classList.add('active');
+    const dash = document.getElementById('assessorDashboardSection');
+    if (dash) dash.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  window.focusReferralSearch = () => {
+    const searchEl = document.getElementById('searchInput');
+    if (searchEl) {
+      searchEl.focus();
+      searchEl.select();
+    }
+  };
 
   // --- Clinician Staff Management ---
   async function fetchDoctorsList() {
@@ -254,6 +311,9 @@
       const badge = document.getElementById('doctorCountBadge');
       if (badge) badge.textContent = state.doctors.length;
       renderDoctorsTable();
+      if (state.queue.length > 0) {
+        renderQueue();
+      }
     } catch (err) {
       console.warn('Doctors list load notice:', err.message);
     }
@@ -265,10 +325,10 @@
 
     if (filterSelect) {
       const curFilter = filterSelect.value;
-      let filterOpts = '<option value="all">All Clinicians</option><option value="unassigned">Unassigned Only</option>';
+      let filterOpts = '<option value="all">All clinicians</option><option value="unassigned">Unassigned only</option>';
       state.doctors.forEach(doc => {
         if (doc.active) {
-          filterOpts += `<option value="${escapeHtml(doc._id)}">${escapeHtml(doc.fullName)} (${escapeHtml(doc.specialty || 'General')})</option>`;
+          filterOpts += `<option value="${escapeHtml(doc._id)}">${escapeHtml(doc.fullName)}</option>`;
         }
       });
       filterSelect.innerHTML = filterOpts;
@@ -277,7 +337,7 @@
 
     if (assignSelect) {
       const curAssign = assignSelect.value;
-      let assignOpts = '<option value="">-- Unassigned (Practice Queue) --</option>';
+      let assignOpts = '<option value="">Unassigned (Practice queue)</option>';
       state.doctors.forEach(doc => {
         if (doc.active) {
           assignOpts += `<option value="${escapeHtml(doc._id)}">${escapeHtml(doc.fullName)} (${escapeHtml(doc.specialty || 'General')})${doc.role === 'clinic_admin' ? ' [Lead]' : ''}</option>`;
@@ -299,25 +359,17 @@
     const addTab = document.getElementById('addDoctorTab');
     const tabRosterBtn = document.getElementById('tabRosterBtn');
     const tabAddDoctorBtn = document.getElementById('tabAddDoctorBtn');
+    const isAdd = tab === 'add';
 
-    if (tab === 'add') {
-      if (rosterTab) rosterTab.style.display = 'none';
-      if (addTab) addTab.style.display = 'block';
-      if (tabRosterBtn) {
-        tabRosterBtn.className = 'btn btn-sm btn-outline';
-      }
-      if (tabAddDoctorBtn) {
-        tabAddDoctorBtn.className = 'btn btn-sm btn-primary';
-      }
-    } else {
-      if (rosterTab) rosterTab.style.display = 'block';
-      if (addTab) addTab.style.display = 'none';
-      if (tabRosterBtn) {
-        tabRosterBtn.className = 'btn btn-sm btn-primary';
-      }
-      if (tabAddDoctorBtn) {
-        tabAddDoctorBtn.className = 'btn btn-sm btn-outline';
-      }
+    if (rosterTab) rosterTab.style.display = isAdd ? 'none' : 'block';
+    if (addTab) addTab.style.display = isAdd ? 'block' : 'none';
+    if (tabRosterBtn) {
+      tabRosterBtn.classList.toggle('active', !isAdd);
+      tabRosterBtn.setAttribute('aria-selected', String(!isAdd));
+    }
+    if (tabAddDoctorBtn) {
+      tabAddDoctorBtn.classList.toggle('active', isAdd);
+      tabAddDoctorBtn.setAttribute('aria-selected', String(isAdd));
     }
   };
 
@@ -328,8 +380,8 @@
     if (!state.doctors || state.doctors.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="7" style="text-align: center; padding: 28px; color: var(--text-muted);">
-            No clinicians registered in this practice yet. Click <strong>Add New Doctor</strong> to onboard staff.
+          <td colspan="7" style="text-align: center; padding: var(--space-6); color: var(--text-muted);">
+            No clinicians registered in this practice yet. Use Add clinician to onboard staff.
           </td>
         </tr>
       `;
@@ -338,25 +390,25 @@
 
     tbody.innerHTML = state.doctors.map(doc => {
       const roleBadge = doc.role === 'clinic_admin'
-        ? '<span class="badge badge-admin-role">Clinic Admin</span>'
-        : '<span class="badge badge-specialty">Attending</span>';
+        ? '<span class="badge badge-warning">Clinic admin</span>'
+        : '<span class="badge badge-neutral">Attending</span>';
 
       const statusBadge = doc.active
-        ? '<span class="badge badge-completed">Active</span>'
-        : '<span class="badge badge-cancelled">Deactivated</span>';
+        ? '<span class="badge badge-success">Active</span>'
+        : '<span class="badge badge-danger">Deactivated</span>';
 
       const isCurrent = state.assessor?.doctorId && String(state.assessor.doctorId) === String(doc._id);
 
       return `
         <tr>
-          <td style="font-weight: 700; color: var(--text-1);">${escapeHtml(doc.fullName)}${isCurrent ? ' (You)' : ''}</td>
-          <td style="color: var(--text-2); font-size: 0.82rem;">${escapeHtml(doc.specialty || 'General Practitioner')}</td>
+          <td style="font-weight: var(--weight-semibold); color: var(--text);">${escapeHtml(doc.fullName)}${isCurrent ? ' (You)' : ''}</td>
+          <td style="color: var(--text-muted);">${escapeHtml(doc.specialty || 'General Practitioner')}</td>
           <td>${roleBadge}</td>
-          <td><span style="font-weight: 700; color: var(--accent);">${Number(doc.activeCaseCount || 0)}</span> active cases</td>
-          <td style="font-size: 0.8rem; color: var(--text-2);">${escapeHtml(doc.email)}<br/><span style="color: var(--text-muted);">${escapeHtml(doc.phone || 'No phone')}</span></td>
+          <td class="tabular-nums">${Number(doc.activeCaseCount || 0)} active</td>
+          <td style="font-size: var(--text-sm); color: var(--text-muted);">${escapeHtml(doc.email)}<br><span style="color: var(--text-subtle);">${escapeHtml(doc.phone || 'No phone')}</span></td>
           <td>${statusBadge}</td>
-          <td>
-            <button type="button" class="btn btn-outline btn-sm" onclick="toggleDoctorStatus('${escapeJsAttr(doc._id)}')" style="font-size: 0.72rem; padding: 3px 8px;" ${isCurrent ? 'disabled' : ''}>
+          <td style="text-align: right;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="toggleDoctorStatus('${escapeJsAttr(doc._id)}')" ${isCurrent ? 'disabled' : ''}>
               ${doc.active ? 'Deactivate' : 'Activate'}
             </button>
           </td>
@@ -439,12 +491,10 @@
         if (res.data.assignedDoctorId) {
           const docName = res.data.assignedDoctorId.fullName || 'Assigned Clinician';
           badgeEl.textContent = `Assigned: ${docName}`;
-          badgeEl.style.background = 'var(--success-subtle)';
-          badgeEl.style.color = 'var(--success)';
+          badgeEl.className = 'badge badge-success';
         } else {
           badgeEl.textContent = 'Unassigned';
-          badgeEl.style.background = 'var(--warning-subtle)';
-          badgeEl.style.color = 'var(--warning)';
+          badgeEl.className = 'badge badge-neutral';
         }
       }
 
@@ -463,7 +513,31 @@
     } catch (err) {
       alert('Error delegating referral: ' + err.message);
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'Delegate Case'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Delegate'; }
+    }
+  };
+
+  window.quickAssignDoctor = async (referralId, doctorId) => {
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/referrals/${referralId}/assign-doctor`, {
+        method: 'PATCH',
+        body: JSON.stringify({ doctorId: doctorId || null }),
+      });
+
+      const item = state.queue.find(r => r._id === referralId);
+      if (item && res.data) {
+        item.assignedDoctorId = res.data.assignedDoctorId;
+        item.delegatedAt = res.data.delegatedAt;
+        item.delegatedBy = res.data.delegatedBy;
+      }
+
+      showToast(res.message || 'Clinician assignment updated.');
+      processFilteredQueue();
+      updateKPIs();
+      fetchDoctorsList();
+    } catch (err) {
+      alert('Error assigning clinician: ' + err.message);
+      renderQueue();
     }
   };
 
@@ -482,7 +556,7 @@
     if (emailEl) emailEl.required = true;
     if (passEl) passEl.required = true;
     if (codeEl) codeEl.value = '';
-    if (btn) btn.textContent = 'Sign In to Clinical Console';
+    if (btn) btn.textContent = 'Sign in';
   };
 
   window.handleAssessorLogin = async (event) => {
@@ -523,7 +597,7 @@
         if (passEl) passEl.required = false;
         if (codeEl) codeEl.focus();
         btn.disabled = false;
-        btn.textContent = 'Verify 2FA & Sign In';
+        btn.textContent = 'Verify 2FA & sign in';
         return;
       }
 
@@ -536,7 +610,7 @@
     } finally {
       if (!pendingAssessor2faToken) {
         btn.disabled = false;
-        btn.textContent = 'Sign In to Clinical Console';
+        btn.textContent = 'Sign in';
       } else {
         btn.disabled = false;
       }
@@ -552,6 +626,8 @@
 
   window.toggleAssessorUserMenu = (event) => {
     if (event) event.stopPropagation();
+    window.closeExportMenu();
+    window.closeAllRowActionMenus();
     const menu = document.getElementById('assessorUserMenu');
     const btn = document.getElementById('assessorUserMenuBtn');
     if (!menu || !btn) return;
@@ -559,16 +635,57 @@
     btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   };
 
+  window.closeExportMenu = () => {
+    const menu = document.getElementById('exportMenuDropdown');
+    const btn = document.getElementById('exportMenuBtn');
+    if (menu) menu.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  };
+
+  window.toggleExportMenu = (event) => {
+    if (event) event.stopPropagation();
+    window.closeAssessorUserMenu();
+    window.closeAllRowActionMenus();
+    const menu = document.getElementById('exportMenuDropdown');
+    const btn = document.getElementById('exportMenuBtn');
+    if (!menu || !btn) return;
+    const isOpen = menu.classList.toggle('open');
+    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  };
+
   document.addEventListener('click', (e) => {
-    const wrap = document.getElementById('assessorUserMenuWrap');
-    if (wrap && !wrap.contains(e.target)) {
+    const userWrap = document.getElementById('assessorUserMenuWrap');
+    if (userWrap && !userWrap.contains(e.target)) {
       window.closeAssessorUserMenu();
+    }
+    const exportWrap = document.getElementById('exportMenuWrap');
+    if (exportWrap && !exportWrap.contains(e.target)) {
+      window.closeExportMenu();
     }
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       window.closeAssessorUserMenu();
+      window.closeExportMenu();
+      window.closeAllRowActionMenus();
+      const openBackdrop = document.querySelector('.modal-backdrop.show');
+      if (openBackdrop && openBackdrop.id) {
+        if (openBackdrop.id === 'autoLockWarningModal') {
+          window.resetInactivityTimerFromModal();
+        } else {
+          window.closeModal(openBackdrop.id);
+        }
+      }
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      const dash = document.getElementById('assessorDashboardSection');
+      if (dash && dash.style.display !== 'none') {
+        e.preventDefault();
+        window.focusReferralSearch();
+      }
     }
   });
 
@@ -621,17 +738,18 @@
         if (refCode) {
           const dot = document.getElementById(`presence-dot-${refCode}`);
           if (dot) {
-            dot.style.background = isOnline ? '#10b981' : '#cbd5e1';
+            dot.classList.toggle('is-online', Boolean(isOnline));
             dot.title = isOnline ? 'Patient is Online now' : 'Patient is Offline';
           }
         }
         if (state.selectedCase && (!refCode || state.selectedCase.referenceCode === refCode)) {
           const pill = document.getElementById('assessorPeerPresencePill');
           if (pill) {
-            pill.textContent = isOnline ? 'Patient Online' : 'Patient Offline';
-            pill.style.background = isOnline ? 'var(--success-subtle)' : 'var(--surface-canvas)';
-            pill.style.color = isOnline ? 'var(--success)' : 'var(--text-2)';
-            pill.style.borderColor = isOnline ? 'var(--success-border)' : 'var(--border)';
+            pill.textContent = isOnline ? 'Patient online' : 'Patient offline';
+            pill.className = isOnline ? 'badge badge-success' : 'badge badge-neutral';
+            pill.style.background = '';
+            pill.style.color = '';
+            pill.style.borderColor = '';
           }
         }
       },
@@ -674,48 +792,79 @@
   };
 
   function updateKPIs() {
-    let pending = 0;
-    let scheduled = 0;
-    let completed = 0;
-    let totalBilled = 0;
-    let settledAmount = 0;
-    let pendingDisbursement = 0;
-    let activeTotal = 0;
+    const now = new Date();
+    const curMonth = now.getMonth();
+    const curYear = now.getFullYear();
+
+    let activeCases = 0;
+    let awaitingAppointment = 0;
+    let completedThisMonth = 0;
+    let unbilledCompletedThisMonth = 0;
+    let outstandingAmount = 0;
+    let unsettledCount = 0;
 
     state.queue.forEach((r) => {
-      const st = r.status || 'pending';
-      const amount = r.billing?.amount || 0;
+      const st = (r.status || 'pending').toLowerCase();
+      if (st === 'archived') return;
 
-      if (st === 'archived') {
-        return; // Exclude archived from active KPI metrics
+      if (st === 'pending' || st === 'scheduled') {
+        activeCases++;
       }
-      activeTotal++;
+
+      if (st === 'pending' && !r.scheduledAt) {
+        awaitingAppointment++;
+      }
 
       if (st === 'completed') {
-        completed++;
-        totalBilled += amount;
-        if (r.billing?.settlementStatus === 'settled') {
-          settledAmount += amount;
-        } else {
-          pendingDisbursement += amount;
+        const closedRaw = r.clinicalDetails?.completedAt || r.updatedAt || r.createdAt;
+        const closedDate = closedRaw ? new Date(closedRaw) : null;
+        if (closedDate && !isNaN(closedDate.getTime()) && closedDate.getMonth() === curMonth && closedDate.getFullYear() === curYear) {
+          completedThisMonth++;
+          if (!r.billing?.isBilled) {
+            unbilledCompletedThisMonth++;
+          }
         }
-      } else if (st === 'scheduled') {
-        scheduled++;
-        pending++;
-      } else if (st === 'pending') {
-        pending++;
+      }
+
+      const amount = Number(r.billing?.amount || 0);
+      const settlement = r.billing?.settlementStatus || (r.billing?.isBilled ? 'pending_payment' : 'unbilled');
+      if ((r.billing?.isBilled || st === 'completed') && settlement !== 'settled' && amount > 0) {
+        outstandingAmount += amount;
+        unsettledCount++;
       }
     });
 
     const curr = state.assessor?.billingSettings?.defaultCurrency || 'GHS';
 
-    if (document.getElementById('kpiTotalAssigned')) document.getElementById('kpiTotalAssigned').textContent = activeTotal;
-    if (document.getElementById('kpiPending')) document.getElementById('kpiPending').textContent = pending;
-    if (document.getElementById('kpiScheduledCount')) document.getElementById('kpiScheduledCount').textContent = scheduled;
-    if (document.getElementById('kpiCompleted')) document.getElementById('kpiCompleted').textContent = completed;
-    if (document.getElementById('kpiTotalBilled')) document.getElementById('kpiTotalBilled').textContent = `${curr} ${totalBilled.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    if (document.getElementById('kpiSettlementBreakdown')) {
-      document.getElementById('kpiSettlementBreakdown').textContent = `${curr} ${settledAmount.toFixed(2)} Settled · ${curr} ${pendingDisbursement.toFixed(2)} Pending`;
+    const activeEl = document.getElementById('kpiActiveCases');
+    const awaitingEl = document.getElementById('kpiAwaitingAppt');
+    const completedEl = document.getElementById('kpiCompletedMonth');
+    const completedHelperEl = document.getElementById('kpiCompletedMonthHelper');
+    const outstandingLabelEl = document.getElementById('kpiOutstandingLabel');
+    const outstandingAmountEl = document.getElementById('kpiOutstandingAmount');
+    const outstandingHelperEl = document.getElementById('kpiOutstandingHelper');
+    const feeHeaderEl = document.getElementById('thFeeHeader');
+
+    if (activeEl) activeEl.textContent = String(activeCases);
+    if (awaitingEl) awaitingEl.textContent = String(awaitingAppointment);
+    if (completedEl) completedEl.textContent = String(completedThisMonth);
+    if (completedHelperEl) {
+      completedHelperEl.textContent = (completedThisMonth > 0 && unbilledCompletedThisMonth === completedThisMonth)
+        ? 'Ready to bill'
+        : 'Closed this month';
+    }
+    if (outstandingLabelEl) outstandingLabelEl.textContent = `Outstanding (${curr})`;
+    if (outstandingAmountEl) {
+      outstandingAmountEl.textContent = outstandingAmount.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    }
+    if (outstandingHelperEl) {
+      outstandingHelperEl.textContent = `${unsettledCount} unsettled ${unsettledCount === 1 ? 'invoice' : 'invoices'}`;
+    }
+    if (feeHeaderEl) {
+      feeHeaderEl.textContent = `Fee (${curr})`;
     }
   }
 
@@ -734,7 +883,7 @@
       }
     });
 
-    let optionsHtml = '<option value="all">All Client Companies</option>';
+    let optionsHtml = '<option value="all">All client companies</option>';
     companies.forEach((name, id) => {
       optionsHtml += `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`;
     });
@@ -744,6 +893,32 @@
 
     if (exportSelect) exportSelect.innerHTML = optionsHtml;
   }
+
+  function syncStatusTabs(statusVal) {
+    const activeTab = document.getElementById('statusTabActive');
+    const completedTab = document.getElementById('statusTabCompleted');
+    const allTab = document.getElementById('statusTabAll');
+
+    const map = [
+      [activeTab, statusVal === 'active'],
+      [completedTab, statusVal === 'completed'],
+      [allTab, statusVal === 'all' || statusVal === 'all_including_archived'],
+    ];
+    map.forEach(([el, isActive]) => {
+      if (!el) return;
+      el.classList.toggle('active', isActive);
+      el.setAttribute('aria-selected', String(isActive));
+    });
+  }
+
+  window.selectStatusTab = (tabValue) => {
+    state.filters.status = tabValue;
+    const statusSelect = document.getElementById('statusFilterSelect');
+    if (statusSelect) statusSelect.value = tabValue;
+    syncStatusTabs(tabValue);
+    state.pagination.page = 1;
+    processFilteredQueue();
+  };
 
   window.handleSearchChange = () => {
     state.filters.search = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
@@ -787,8 +962,10 @@
   window.applyQueueFilter = () => {
     state.filters.company = document.getElementById('companyFilterSelect')?.value || 'all';
     state.filters.doctor = document.getElementById('doctorFilterSelect')?.value || 'all';
-    state.filters.status = document.getElementById('statusFilterSelect')?.value || 'all';
+    state.filters.status = document.getElementById('statusFilterSelect')?.value || 'active';
     state.filters.settlement = document.getElementById('settlementFilterSelect')?.value || 'all';
+
+    syncStatusTabs(state.filters.status);
 
     if (state.filters.datePreset === 'custom') {
       const sVal = document.getElementById('customStartDate')?.value;
@@ -800,6 +977,155 @@
     state.pagination.page = 1;
     processFilteredQueue();
   };
+
+  window.removeQueueFilter = (key) => {
+    if (key === 'search') {
+      state.filters.search = '';
+      const el = document.getElementById('searchInput');
+      if (el) el.value = '';
+    } else if (key === 'company') {
+      state.filters.company = 'all';
+      const el = document.getElementById('companyFilterSelect');
+      if (el) el.value = 'all';
+    } else if (key === 'doctor') {
+      state.filters.doctor = 'all';
+      const el = document.getElementById('doctorFilterSelect');
+      if (el) el.value = 'all';
+    } else if (key === 'status') {
+      state.filters.status = 'active';
+      const el = document.getElementById('statusFilterSelect');
+      if (el) el.value = 'active';
+      syncStatusTabs('active');
+    } else if (key === 'settlement') {
+      state.filters.settlement = 'all';
+      const el = document.getElementById('settlementFilterSelect');
+      if (el) el.value = 'all';
+    } else if (key === 'datePreset') {
+      state.filters.datePreset = 'all';
+      state.filters.startDate = null;
+      state.filters.endDate = null;
+      const el = document.getElementById('datePresetSelect');
+      if (el) el.value = 'all';
+      const sEl = document.getElementById('customStartDate');
+      const eEl = document.getElementById('customEndDate');
+      const customContainer = document.getElementById('customDateRangeContainer');
+      if (sEl) sEl.value = '';
+      if (eEl) eEl.value = '';
+      if (customContainer) customContainer.style.display = 'none';
+    }
+    state.pagination.page = 1;
+    processFilteredQueue();
+  };
+
+  window.clearAllQueueFilters = () => {
+    const resetStatus = state.filters.status === 'active' ? 'all' : 'active';
+    state.filters = {
+      search: '',
+      company: 'all',
+      doctor: 'all',
+      status: resetStatus,
+      settlement: 'all',
+      datePreset: 'all',
+      startDate: null,
+      endDate: null,
+    };
+    const searchEl = document.getElementById('searchInput');
+    const compEl = document.getElementById('companyFilterSelect');
+    const docEl = document.getElementById('doctorFilterSelect');
+    const statusEl = document.getElementById('statusFilterSelect');
+    const settEl = document.getElementById('settlementFilterSelect');
+    const dateEl = document.getElementById('datePresetSelect');
+    const sEl = document.getElementById('customStartDate');
+    const eEl = document.getElementById('customEndDate');
+    const customContainer = document.getElementById('customDateRangeContainer');
+
+    if (searchEl) searchEl.value = '';
+    if (compEl) compEl.value = 'all';
+    if (docEl) docEl.value = 'all';
+    if (statusEl) statusEl.value = resetStatus;
+    if (settEl) settEl.value = 'all';
+    if (dateEl) dateEl.value = 'all';
+    if (sEl) sEl.value = '';
+    if (eEl) eEl.value = '';
+    if (customContainer) customContainer.style.display = 'none';
+
+    syncStatusTabs(resetStatus);
+    state.pagination.page = 1;
+    processFilteredQueue();
+  };
+
+  function renderActiveFilterChips() {
+    const container = document.getElementById('activeFilterChips');
+    if (!container) return;
+
+    const chips = [];
+    if (state.filters.search) {
+      chips.push({ key: 'search', label: `Search: "${state.filters.search}"` });
+    }
+    if (state.filters.company !== 'all') {
+      const sel = document.getElementById('companyFilterSelect');
+      const txt = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : 'Company';
+      chips.push({ key: 'company', label: `Client: ${txt}` });
+    }
+    if (state.filters.doctor && state.filters.doctor !== 'all') {
+      const sel = document.getElementById('doctorFilterSelect');
+      const txt = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : 'Clinician';
+      chips.push({ key: 'doctor', label: `Clinician: ${txt}` });
+    }
+    if (state.filters.status !== 'active') {
+      const sel = document.getElementById('statusFilterSelect');
+      const txt = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : state.filters.status;
+      chips.push({ key: 'status', label: `Status: ${txt}` });
+    }
+    if (state.filters.settlement !== 'all') {
+      const sel = document.getElementById('settlementFilterSelect');
+      const txt = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : state.filters.settlement;
+      chips.push({ key: 'settlement', label: `Settlement: ${txt}` });
+    }
+    if (state.filters.datePreset !== 'all') {
+      const sel = document.getElementById('datePresetSelect');
+      const txt = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : state.filters.datePreset;
+      chips.push({ key: 'datePreset', label: `Dates: ${txt}` });
+    }
+
+    if (chips.length === 0) {
+      container.style.display = 'none';
+      container.innerHTML = '';
+      return;
+    }
+
+    container.style.display = 'flex';
+    const closeSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+    container.innerHTML = chips.map((chip) => `
+      <span class="filter-chip">
+        <span>${escapeHtml(chip.label)}</span>
+        <button type="button" class="filter-chip-remove" onclick="removeQueueFilter('${escapeJsAttr(chip.key)}')" aria-label="Remove ${escapeHtml(chip.label)}">${closeSvg}</button>
+      </span>
+    `).join('') + '<button type="button" class="btn btn-ghost btn-sm" onclick="clearAllQueueFilters()">Clear filters</button>';
+  }
+
+  function updateSortHeaders() {
+    const mappings = [
+      { id: 'thSortRef', field: 'referenceCode' },
+      { id: 'thSortPatient', field: 'patientName' },
+      { id: 'thSortAppt', field: 'createdAt' },
+    ];
+    const chevronsUpDown = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>';
+    const chevronUp = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>';
+    const chevronDown = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+
+    mappings.forEach(({ id, field }) => {
+      const th = document.getElementById(id);
+      if (!th) return;
+      const isSorted = state.sorting.field === field;
+      const dir = isSorted ? (state.sorting.asc ? 'ascending' : 'descending') : 'none';
+      th.setAttribute('aria-sort', dir);
+      const iconEl = th.querySelector('.sort-icon');
+      if (iconEl) {
+        iconEl.innerHTML = isSorted ? (state.sorting.asc ? chevronUp : chevronDown) : chevronsUpDown;
+      }
+    });
+  }
 
   window.handlePageSizeChange = () => {
     const size = parseInt(document.getElementById('pageSizeSelect')?.value, 10) || 10;
@@ -850,8 +1176,12 @@
     }
 
     // Status filter
-    if (state.filters.status === 'all') {
-      // Default: hide archived cases from active triage queue
+    if (state.filters.status === 'active') {
+      result = result.filter((r) => {
+        const st = (r.status || 'pending').toLowerCase();
+        return st === 'pending' || st === 'scheduled';
+      });
+    } else if (state.filters.status === 'all') {
       result = result.filter((r) => (r.status || 'pending') !== 'archived');
     } else if (state.filters.status !== 'all_including_archived') {
       result = result.filter((r) => (r.status || 'pending') === state.filters.status);
@@ -920,42 +1250,83 @@
       state.pagination.page = state.pagination.totalPages;
     }
 
+    renderActiveFilterChips();
+    updateSortHeaders();
     renderQueue();
+  }
+
+  function formatAppointmentDisplay(scheduledAt) {
+    if (!scheduledAt) return null;
+    const d = new Date(scheduledAt);
+    if (isNaN(d.getTime())) return null;
+    const datePart = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
+    if (!hasTime) return datePart;
+    const timePart = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `${datePart}, ${timePart}`;
   }
 
   function renderQueue() {
     const tableBody = document.getElementById('assessorQueueTableBody');
     if (!tableBody) return;
 
-    const { page, limit, totalCount } = state.pagination;
+    const { page, limit, totalCount, totalPages } = state.pagination;
     const startIdx = (page - 1) * limit;
     const endIdx = startIdx + limit;
     const pageItems = state.filteredQueue.slice(startIdx, endIdx);
 
-    // Update Pagination Display
     const paginationSummary = document.getElementById('paginationSummary');
+    const paginationControlsRight = document.getElementById('paginationControlsRight');
     const pageIndicator = document.getElementById('pageIndicator');
     const prevBtn = document.getElementById('prevPageBtn');
     const nextBtn = document.getElementById('nextPageBtn');
 
     if (paginationSummary) {
       paginationSummary.textContent = totalCount > 0
-        ? `Showing ${startIdx + 1}–${Math.min(endIdx, totalCount)} of ${totalCount} cases`
-        : 'Showing 0 cases';
+        ? `Showing ${startIdx + 1} to ${Math.min(endIdx, totalCount)} of ${totalCount}`
+        : 'Showing 0 referrals';
+    }
+    if (paginationControlsRight) {
+      paginationControlsRight.style.display = totalPages <= 1 ? 'none' : 'flex';
     }
     if (pageIndicator) {
-      pageIndicator.textContent = `Page ${page} of ${state.pagination.totalPages}`;
+      pageIndicator.textContent = `Page ${page} of ${totalPages}`;
     }
     if (prevBtn) prevBtn.disabled = page <= 1;
-    if (nextBtn) nextBtn.disabled = page >= state.pagination.totalPages;
+    if (nextBtn) nextBtn.disabled = page >= totalPages;
 
     tableBody.innerHTML = '';
     if (pageItems.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:36px; color:var(--text-muted);">No clinical referrals found matching current filters.</td></tr>';
+      if (state.queue.length === 0) {
+        tableBody.innerHTML = `
+          <tr class="empty-row">
+            <td colspan="7">
+              <div class="empty-state-inline">
+                <strong>No referrals yet</strong>
+                <p>Assigned referrals for your clinic will appear here.</p>
+              </div>
+            </td>
+          </tr>
+        `;
+      } else {
+        tableBody.innerHTML = `
+          <tr class="empty-row">
+            <td colspan="7">
+              <div class="empty-state-inline">
+                <strong>No results for these filters</strong>
+                <p>Try adjusting your search or filter selections.</p>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="clearAllQueueFilters()">Clear filters</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
       return;
     }
 
     const isClinicAdmin = isUserClinicAdmin(state.assessor);
+    const defaultCurr = state.assessor?.billingSettings?.defaultCurrency || 'GHS';
+    const activeDoctors = (state.doctors || []).filter((doc) => doc.active);
 
     pageItems.forEach((r) => {
       const tr = document.createElement('tr');
@@ -963,170 +1334,198 @@
       const companyName = r.tenantId?.company_name || r.tenantId?.companyName || 'Organization';
       const patientName = r.clinicalDetails?.patientName || '-';
       const patientContact = r.clinicalDetails?.patientContact || '-';
-      const deptName = r.departmentName || 'General';
-      const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '-';
-
-      // Status badge
-      let statusBadge = '';
+      const receivedStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
       const st = (r.status || 'pending').toLowerCase();
-      if (st === 'completed') {
-        statusBadge = '<span class="badge badge-completed">Completed</span>';
-      } else if (st === 'scheduled') {
-        statusBadge = '<span class="badge badge-scheduled">Scheduled</span>';
-      } else if (st === 'cancelled') {
-        statusBadge = '<span class="badge badge-cancelled">Cancelled</span>';
-      } else if (st === 'archived') {
-        statusBadge = '<span class="badge" style="background:var(--surface-canvas); color:var(--text-muted); border:1px solid var(--border);">Archived</span>';
-      } else {
-        statusBadge = '<span class="badge badge-pending">Pending</span>';
-      }
-
-      const staleBadge = r.isStale ? '<span class="badge badge-stale" title="Pending >48hrs">48h+ Overdue</span>' : '';
-      const prio = (r.priority || 'standard').toLowerCase();
+      const isCompleted = st === 'completed';
       const isClosedCase = st === 'completed' || st === 'archived' || st === 'cancelled';
-      const priorityBadge = (prio === 'crisis' && !isClosedCase)
-        ? '<span class="badge" style="background:#DC2626; color:#FFFFFF; font-weight:700; letter-spacing:0.03em;" title="Immediate crisis screening escalation - Prioritize callback">CRISIS PRIORITY</span>'
-        : (prio === 'urgent' && !isClosedCase)
-          ? '<span class="badge" style="background:#EA580C; color:#FFFFFF; font-weight:700;" title="Severe clinical screening score">URGENT</span>'
-          : '';
-      if (prio === 'crisis' && !isClosedCase) {
-        tr.style.borderLeft = '4px solid #DC2626';
-        tr.style.background = 'rgba(220, 38, 38, 0.04)';
-      } else if (prio === 'urgent' && !isClosedCase) {
-        tr.style.borderLeft = '4px solid #EA580C';
+
+      // Strictly one status badge per referral
+      let statusBadge = '';
+      if (st === 'completed') {
+        statusBadge = '<span class="badge badge-success">Completed</span>';
+      } else if (st === 'scheduled') {
+        statusBadge = '<span class="badge badge-info">Scheduled</span>';
+      } else if (st === 'cancelled') {
+        statusBadge = '<span class="badge badge-danger">Cancelled</span>';
+      } else if (st === 'archived') {
+        statusBadge = '<span class="badge badge-neutral">Archived</span>';
+      } else {
+        statusBadge = '<span class="badge badge-warning">Pending</span>';
       }
 
-      // Clinician Column
-      let clinicianHtml = '';
-      if (r.assignedDoctorId) {
-        const docName = escapeHtml(r.assignedDoctorId.fullName || 'Attending Clinician');
-        const docSpec = r.assignedDoctorId.specialty ? `<span style="font-size:0.7rem; color:var(--text-muted); margin-left:4px;">· ${escapeHtml(r.assignedDoctorId.specialty)}</span>` : '';
-        clinicianHtml = `
-          <div style="margin-top:3px;">
-            <span class="badge badge-clinician">${docName}</span>${docSpec}
-          </div>
-        `;
-      } else {
-        if (isClinicAdmin && r.status !== 'completed' && r.status !== 'archived') {
-          clinicianHtml = `
-            <div style="display:inline-flex; align-items:center; gap:4px; margin-top:3px;">
-              <span class="badge badge-unassigned">Unassigned</span>
-              <button class="btn btn-outline btn-sm" onclick="openCaseDetail('${escapeJsAttr(r._id)}')" style="padding:1px 6px; font-size:0.68rem;" title="Triage & Delegate">Assign</button>
-            </div>
-          `;
+      // Billing status shows ONLY for completed cases, as a second neutral badge
+      const settlement = r.billing?.settlementStatus || (r.billing?.isBilled ? 'pending_payment' : 'unbilled');
+      let completedBillingBadge = '';
+      if (isCompleted) {
+        if (settlement === 'settled') {
+          completedBillingBadge = '<span class="badge badge-neutral">Settled</span>';
+        } else if (r.billing?.isBilled || settlement === 'pending_payment') {
+          completedBillingBadge = '<span class="badge badge-neutral">Billed</span>';
         } else {
-          clinicianHtml = '<div style="margin-top:3px;"><span class="badge badge-unassigned">Unassigned</span></div>';
+          completedBillingBadge = '<span class="badge badge-neutral">Unbilled</span>';
         }
       }
 
-      // Appointment date badge
-      let appointmentStr = '<span style="color:var(--text-muted); font-size:0.78rem;">Appt: Not set</span>';
-      if (r.scheduledAt) {
-        appointmentStr = `<span style="font-weight:700; color:var(--brand); font-size:0.8rem;">Appt: ${escapeHtml(new Date(r.scheduledAt).toLocaleDateString())}</span>`;
-      }
-
-      // Billing Amount
-      const currency = escapeHtml(r.billing?.currency || state.assessor?.billingSettings?.defaultCurrency || 'GHS');
-      const amountStr = r.billing?.isBilled
-        ? `<strong class="tabular-nums" style="font-size:0.84rem; color:var(--text-1);">${currency} ${(r.billing.amount || 0).toFixed(2)}</strong>`
-        : '<span style="color:var(--text-muted); font-size:0.78rem;">Unbilled</span>';
-
-      // Settlement Status Pill
-      let settlementPill = '';
-      const settlement = r.billing?.settlementStatus || (r.billing?.isBilled ? 'pending_payment' : 'unbilled');
-      if (settlement === 'settled') {
-        settlementPill = `<span class="settlement-pill settlement-settled" onclick="toggleSettlementStatus('${escapeJsAttr(r._id)}', 'settled')" title="Click to toggle settlement">Settled</span>`;
-      } else if (settlement === 'pending_payment') {
-        settlementPill = `<span class="settlement-pill settlement-pending" onclick="toggleSettlementStatus('${escapeJsAttr(r._id)}', 'pending_payment')" title="Click to mark Settled / Paid">Pending Payment</span>`;
-      } else {
-        settlementPill = '<span class="settlement-pill settlement-unbilled">Unbilled</span>';
-      }
-
-      // Action links for contact
-      const isEmail = patientContact.includes('@');
-      const isPhone = !isEmail && patientContact.length >= 7;
-      const safeContact = escapeHtml(patientContact);
-      let contactHtml = `<span style="color:var(--text-2); font-size:0.76rem;">${safeContact}</span>`;
-      if (isPhone) {
-        const cleanTel = patientContact.replace(/[^+\d]/g, '');
-        contactHtml = `<a href="tel:${escapeHtml(cleanTel)}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.76rem; display:inline-flex; align-items:center; gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${safeContact}</a>`;
-      } else if (isEmail) {
-        const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${r.referenceCode || ''}]`);
-        const safeMailAddr = encodeURIComponent(patientContact).replace(/%40/g, '@');
-        contactHtml = `<a href="mailto:${escapeHtml(safeMailAddr)}?subject=${mailtoSubj}" style="color:var(--brand); text-decoration:none; font-weight:600; font-size:0.76rem; display:inline-flex; align-items:center; gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>${safeContact}</a>`;
-      }
-
-      const isCompleted = r.status === 'completed';
-      const isOnline = window.HavilahCall ? window.HavilahCall.isPeerOnline(r.referenceCode) : false;
-      const dotColor = isOnline ? 'var(--success)' : 'var(--border-strong)';
-      const dotTitle = isOnline ? 'Patient is Online now' : 'Patient is Offline';
       const safeRefAttr = escapeHtml(r.referenceCode || '');
       const safeRefJs = escapeJsAttr(r.referenceCode || '');
       const safeIdJs = escapeJsAttr(r._id || '');
+      const safeIdAttr = escapeHtml(r._id || '');
       const safePatientNameJs = escapeJsAttr(patientName || 'Patient');
 
+      // Clinician column: assigned name or inline select when unassigned
+      let clinicianHtml = '';
+      if (r.assignedDoctorId) {
+        const docName = escapeHtml(r.assignedDoctorId.fullName || 'Attending Clinician');
+        const docSpec = r.assignedDoctorId.specialty
+          ? `<div class="cell-sub">${escapeHtml(r.assignedDoctorId.specialty)}</div>`
+          : '';
+        clinicianHtml = `<div class="cell-primary">${docName}</div>${docSpec}`;
+      } else if (isClinicAdmin && !isClosedCase) {
+        const docOpts = activeDoctors.map((doc) => (
+          `<option value="${escapeHtml(doc._id)}">${escapeHtml(doc.fullName)}</option>`
+        )).join('');
+        clinicianHtml = `
+          <select class="select inline-assign-select" aria-label="Assign clinician for ${safeRefAttr}" onchange="quickAssignDoctor('${safeIdJs}', this.value)">
+            <option value="">Assign clinician</option>
+            ${docOpts}
+          </select>
+        `;
+      } else {
+        clinicianHtml = '<span class="text-subtle-xs">Unassigned</span>';
+      }
+
+      // Appointment column
+      const apptFormatted = formatAppointmentDisplay(r.scheduledAt);
+      const appointmentHtml = apptFormatted
+        ? `<div class="cell-primary tabular-nums">${escapeHtml(apptFormatted)}</div>`
+        : '<div class="text-muted-sm">Not set</div>';
+
+      // Fee column (currency in header only, numbers right-aligned, never duplicate "Unbilled")
+      const hasFee = Boolean(r.billing?.isBilled || Number(r.billing?.amount || 0) > 0);
+      const feeDisplay = hasFee
+        ? Number(r.billing?.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '—';
+
+      // Contact link
+      const isEmail = patientContact.includes('@');
+      const isPhone = !isEmail && patientContact.length >= 7;
+      const safeContact = escapeHtml(patientContact);
+      let contactHtml = `<span class="text-subtle-xs">${safeContact}</span>`;
+      if (isPhone) {
+        const cleanTel = patientContact.replace(/[^+\d]/g, '');
+        contactHtml = `<a href="tel:${escapeHtml(cleanTel)}" class="contact-link">${safeContact}</a>`;
+      } else if (isEmail) {
+        const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${r.referenceCode || ''}]`);
+        const safeMailAddr = encodeURIComponent(patientContact).replace(/%40/g, '@');
+        contactHtml = `<a href="mailto:${escapeHtml(safeMailAddr)}?subject=${mailtoSubj}" class="contact-link">${safeContact}</a>`;
+      }
+
+      const isOnline = window.HavilahCall ? window.HavilahCall.isPeerOnline(r.referenceCode) : false;
+      const dotTitle = isOnline ? 'Patient is Online now' : 'Patient is Offline';
+
+      // Primary style only on rows needing action (unassigned open case or pending)
+      const needsAction = !isClosedCase && (st === 'pending' || !r.assignedDoctorId);
+      const openBtnClass = needsAction ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+
+      let billingMenuAction = '';
+      if (isCompleted && r.billing?.isBilled) {
+        const isSettled = settlement === 'settled';
+        const toggleLabel = isSettled ? 'Billing: Mark pending payment' : 'Billing: Mark settled';
+        billingMenuAction = `
+          <button type="button" class="row-action-item" role="menuitem" onclick="closeAllRowActionMenus(); toggleSettlementStatus('${safeIdJs}', '${escapeJsAttr(settlement)}')">
+            <span>${toggleLabel}</span>
+          </button>
+        `;
+      } else if (isCompleted) {
+        billingMenuAction = `
+          <button type="button" class="row-action-item" role="menuitem" onclick="closeAllRowActionMenus(); openCompleteModal('${safeIdJs}')">
+            <span>Billing</span>
+          </button>
+        `;
+      } else {
+        billingMenuAction = `
+          <button type="button" class="row-action-item" role="menuitem" onclick="closeAllRowActionMenus(); openExportModal()">
+            <span>Billing</span>
+          </button>
+        `;
+      }
+
       tr.innerHTML = `
-        <td data-label="Reference & Client">
+        <td class="col-ref" data-label="Reference">
           <div>
-            <div style="font-family:monospace; font-weight:700; color:var(--accent); font-size:0.84rem; white-space:nowrap;">
-              <span id="presence-dot-${safeRefAttr}" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${dotColor}; margin-right:5px; vertical-align:middle; transition:background 0.3s;" title="${dotTitle}"></span>${escapeHtml(r.referenceCode)}
+            <div class="cell-ref-code tabular-nums">
+              <span id="presence-dot-${safeRefAttr}" class="presence-dot ${isOnline ? 'is-online' : ''}" title="${dotTitle}"></span>
+              <span>${escapeHtml(r.referenceCode)}</span>
             </div>
-            <div class="cell-sub" style="font-weight:600; color:var(--text-1);">${escapeHtml(companyName)}</div>
+            <div class="cell-sub desktop-ref-company">${escapeHtml(companyName)}</div>
           </div>
+          <div class="mobile-only-badge">${statusBadge}${completedBillingBadge}</div>
         </td>
-        <td data-label="Patient & Contact">
+        <td class="mobile-only-cell" data-label="Client">
+          <span>${escapeHtml(companyName)}</span>
+        </td>
+        <td class="col-patient" data-label="Patient">
           <div>
             <div class="cell-primary">${escapeHtml(patientName)}</div>
             <div class="cell-sub">${contactHtml}</div>
           </div>
         </td>
-        <td data-label="Dept & Clinician">
+        <td class="col-clinician" data-label="Clinician">
+          ${clinicianHtml}
+        </td>
+        <td class="col-appt" data-label="Appointment">
           <div>
-            <div style="font-size:0.8rem; font-weight:600; color:var(--text-2);">${escapeHtml(deptName)}</div>
-            ${clinicianHtml}
+            ${appointmentHtml}
+            <div class="cell-sub">Received ${escapeHtml(receivedStr)}</div>
           </div>
         </td>
-        <td data-label="Schedule & Intake">
-          <div>
-            <div>${appointmentStr}</div>
-            <div class="cell-sub">Intake: ${escapeHtml(dateStr)}</div>
-          </div>
+        <td class="col-status" data-label="Status">
+          <div class="status-cell-group">${statusBadge}${completedBillingBadge}</div>
         </td>
-        <td data-label="Status">
-          <div style="display:inline-flex; flex-wrap:wrap; gap:4px; align-items:center;">
-            ${priorityBadge}
-            ${statusBadge}
-            ${staleBadge}
-          </div>
+        <td class="col-fee num" data-label="Fee (${escapeHtml(defaultCurr)})">
+          <span class="tabular-nums">${escapeHtml(feeDisplay)}</span>
         </td>
-        <td data-label="Billing & Settlement">
-          <div>
-            <div>${amountStr}</div>
-            <div style="margin-top:3px;">${settlementPill}</div>
-          </div>
-        </td>
-        <td data-label="Actions" style="text-align:right; white-space:nowrap;">
+        <td class="col-actions" data-label="Actions" style="text-align: right; white-space: nowrap;">
           <div class="row-actions-group">
-            <button class="btn btn-outline btn-sm" onclick="openCaseDetail('${safeIdJs}')" style="padding:4px 9px; font-size:0.75rem;">View</button>
-            ${!isCompleted && st !== 'archived' ? `<button class="btn btn-primary btn-sm" onclick="openCompleteModal('${safeIdJs}')" style="padding:4px 9px; font-size:0.75rem;">Complete</button>` : ''}
+            <button type="button" class="${openBtnClass}" onclick="openCaseDetail('${safeIdJs}')">Open</button>
             <div class="row-menu-wrap">
-              <button type="button" class="row-menu-trigger" onclick="toggleRowActionMenu(event, 'row-menu-${safeIdJs}')" title="More actions" aria-label="More actions">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              <button
+                type="button"
+                class="row-menu-trigger"
+                aria-haspopup="menu"
+                aria-expanded="false"
+                aria-controls="row-menu-${safeIdAttr}"
+                onclick="toggleRowActionMenu(event, 'row-menu-${safeIdJs}')"
+                title="More actions"
+                aria-label="More actions for ${safeRefAttr}"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
               </button>
-              <div class="row-action-dropdown" id="row-menu-${escapeHtml(r._id)}">
-                ${!isCompleted && st !== 'archived' ? `
-                <button type="button" class="row-action-item" onclick="closeAllRowActionMenus(); quickCallCase('${safeRefJs}', '${safePatientNameJs}')">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                  Call Patient
+              <div class="row-action-dropdown" id="row-menu-${safeIdAttr}" role="menu">
+                ${!isClosedCase ? `
+                <button type="button" class="row-action-item" role="menuitem" onclick="closeAllRowActionMenus(); openCaseDetailSection('${safeIdJs}', 'schedule')">
+                  <span>Schedule</span>
                 </button>` : ''}
-                <button type="button" class="row-action-item" onclick="closeAllRowActionMenus(); quickArchiveCase('${safeIdJs}', ${st === 'archived'})">
-                  ${st === 'archived'
-                    ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> Restore Case'
-                    : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> Archive Case'}
+                <button type="button" class="row-action-item" role="menuitem" onclick="closeAllRowActionMenus(); openCaseDetailSection('${safeIdJs}', 'note')">
+                  <span>Add note</span>
                 </button>
-                <button type="button" class="row-action-item danger" onclick="closeAllRowActionMenus(); quickDeleteCase('${safeIdJs}', '${safeRefJs}')">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                  Delete Case
+                <button type="button" class="row-action-item" role="menuitem" onclick="closeAllRowActionMenus(); openCaseDetailSection('${safeIdJs}', 'certificate')">
+                  <span>Record certificate</span>
+                </button>
+                ${!isClosedCase ? `
+                <button type="button" class="row-action-item" role="menuitem" onclick="closeAllRowActionMenus(); quickCallCase('${safeRefJs}', '${safePatientNameJs}')">
+                  <span>Call patient</span>
+                </button>
+                <button type="button" class="row-action-item" role="menuitem" onclick="closeAllRowActionMenus(); requestCompleteConfirmation('${safeIdJs}')">
+                  <span>Mark complete</span>
+                </button>` : ''}
+                ${billingMenuAction}
+                <div class="menu-divider" role="separator"></div>
+                <button type="button" class="row-action-item" role="menuitem" onclick="closeAllRowActionMenus(); quickArchiveCase('${safeIdJs}', ${st === 'archived'})">
+                  <span>${st === 'archived' ? 'Restore case' : 'Archive case'}</span>
+                </button>
+                <button type="button" class="row-action-item danger" role="menuitem" onclick="closeAllRowActionMenus(); quickDeleteCase('${safeIdJs}', '${safeRefJs}')">
+                  <span>Delete case</span>
                 </button>
               </div>
             </div>
@@ -1141,21 +1540,38 @@
   window.closeAllRowActionMenus = () => {
     document.querySelectorAll('.row-action-dropdown.open').forEach((el) => {
       el.classList.remove('open');
-      const td = el.closest('td');
-      if (td) td.classList.remove('menu-open-cell');
+      el.style.top = '';
+      el.style.left = '';
+      const wrap = el.closest('.row-menu-wrap');
+      const trigger = wrap ? wrap.querySelector('.row-menu-trigger') : null;
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
     });
   };
 
   window.toggleRowActionMenu = (event, menuId) => {
     if (event) event.stopPropagation();
+    window.closeAssessorUserMenu();
+    window.closeExportMenu();
+
     const targetMenu = document.getElementById(menuId);
     if (!targetMenu) return;
     const isOpen = targetMenu.classList.contains('open');
     window.closeAllRowActionMenus();
     if (!isOpen) {
       targetMenu.classList.add('open');
-      const td = targetMenu.closest('td');
-      if (td) td.classList.add('menu-open-cell');
+      const wrap = targetMenu.closest('.row-menu-wrap');
+      const trigger = wrap ? wrap.querySelector('.row-menu-trigger') : null;
+      if (trigger) {
+        trigger.setAttribute('aria-expanded', 'true');
+        const rect = trigger.getBoundingClientRect();
+        const menuWidth = targetMenu.offsetWidth || 184;
+        const menuHeight = targetMenu.offsetHeight || 220;
+        const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const top = spaceBelow >= menuHeight + 8 ? rect.bottom + 4 : Math.max(8, rect.top - menuHeight - 4);
+        targetMenu.style.left = `${left}px`;
+        targetMenu.style.top = `${top}px`;
+      }
     }
   };
 
@@ -1164,6 +1580,42 @@
       window.closeAllRowActionMenus();
     }
   });
+
+  window.addEventListener('scroll', window.closeAllRowActionMenus, true);
+  window.addEventListener('resize', window.closeAllRowActionMenus);
+
+  // --- Confirmation Dialog & Deep-Link Helpers ---
+  window.requestCompleteConfirmation = (id) => {
+    const item = state.queue.find((r) => r._id === id);
+    if (!item) return;
+    pendingConfirmCompleteId = item._id;
+    const msgEl = document.getElementById('confirmCompleteMessage');
+    if (msgEl) {
+      msgEl.textContent = `Mark ${item.referenceCode || 'this referral'} as complete? This closes the case.`;
+    }
+    openModal('confirmCompleteCaseModal');
+  };
+
+  window.proceedConfirmedComplete = () => {
+    const targetId = pendingConfirmCompleteId;
+    pendingConfirmCompleteId = null;
+    closeModal('confirmCompleteCaseModal');
+    if (targetId) {
+      window.openCompleteModal(targetId);
+    }
+  };
+
+  window.openCaseDetailSection = (id, section) => {
+    window.openCaseDetail(id);
+    if (section === 'certificate') {
+      window.switchClinicalRecordTab('documents');
+    } else if (section === 'schedule') {
+      window.switchClinicalRecordTab('overview');
+      setTimeout(() => document.getElementById('scheduleDateInput')?.focus(), 50);
+    } else if (section === 'note') {
+      setTimeout(() => document.getElementById('modalCaseReplyInput')?.focus(), 50);
+    }
+  };
 
   // --- Settlement Status Toggle ---
   window.toggleSettlementStatus = async (referralId, currentStatus) => {
@@ -1182,7 +1634,7 @@
         item.billing.settledAt = newStatus === 'settled' ? new Date() : null;
       }
 
-      showToast(`Settlement status updated to ${newStatus === 'settled' ? 'Settled / Paid' : 'Pending Payment'}`);
+      showToast(`Settlement status updated to ${newStatus === 'settled' ? 'Settled' : 'Pending payment'}`);
       updateKPIs();
       processFilteredQueue();
     } catch (err) {
@@ -1217,19 +1669,19 @@
     if (hdrOrgEl) hdrOrgEl.textContent = `${compName} · ${pDept}`;
     if (hdrStatusEl) {
       const st = (item.status || 'pending').toLowerCase();
-      hdrStatusEl.textContent = st.toUpperCase();
+      hdrStatusEl.textContent = st.charAt(0).toUpperCase() + st.slice(1);
+      hdrStatusEl.style.background = '';
+      hdrStatusEl.style.color = '';
       if (st === 'completed') {
-        hdrStatusEl.style.background = '#DCFCE7';
-        hdrStatusEl.style.color = '#15803D';
+        hdrStatusEl.className = 'badge badge-success';
       } else if (st === 'scheduled') {
-        hdrStatusEl.style.background = '#DBEAFE';
-        hdrStatusEl.style.color = '#1D4ED8';
+        hdrStatusEl.className = 'badge badge-info';
       } else if (st === 'cancelled') {
-        hdrStatusEl.style.background = '#FEE2E2';
-        hdrStatusEl.style.color = '#B91C1C';
+        hdrStatusEl.className = 'badge badge-danger';
+      } else if (st === 'archived') {
+        hdrStatusEl.className = 'badge badge-neutral';
       } else {
-        hdrStatusEl.style.background = '#FEF3C7';
-        hdrStatusEl.style.color = '#92400E';
+        hdrStatusEl.className = 'badge badge-warning';
       }
     }
 
@@ -1240,33 +1692,35 @@
     let contactAction = safePContact;
     if (isPhone) {
       const cleanTel = pContact.replace(/[^+\d]/g, '');
-      contactAction = `<a href="tel:${escapeHtml(cleanTel)}" style="color:var(--brand); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${safePContact}</a>`;
+      contactAction = `<a href="tel:${escapeHtml(cleanTel)}" class="contact-link" style="color: var(--brand); font-weight: var(--weight-medium);">${safePContact}</a>`;
     } else if (isEmail) {
       const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${item.referenceCode || ''}]`);
       const safeMail = encodeURIComponent(pContact).replace(/%40/g, '@');
-      contactAction = `<a href="mailto:${escapeHtml(safeMail)}?subject=${mailtoSubj}" style="color:var(--brand); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:5px; word-break:break-all;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>${safePContact}</a>`;
+      contactAction = `<a href="mailto:${escapeHtml(safeMail)}?subject=${mailtoSubj}" class="contact-link" style="color: var(--brand); font-weight: var(--weight-medium); word-break: break-all;">${safePContact}</a>`;
     }
 
     body.innerHTML = `
-      <div class="clinical-section-card" style="padding: 12px 14px;">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+      <div class="ws-section">
+        <div class="ws-kv-grid">
           <div>
-            <span style="color:var(--text-muted); font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">Direct Contact</span>
-            <div style="margin-top:2px; font-size:0.82rem;">${contactAction}</div>
+            <div class="ws-kv-label">Direct contact</div>
+            <div class="ws-kv-value">${contactAction}</div>
           </div>
           <div>
-            <span style="color:var(--text-muted); font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">Preferred Schedule</span>
-            <div style="margin-top:2px; font-weight:600; color:var(--text-1); font-size:0.82rem;">${escapeHtml(pSchedule)}</div>
+            <div class="ws-kv-label">Preferred schedule</div>
+            <div class="ws-kv-value" style="font-weight: var(--weight-medium);">${escapeHtml(pSchedule)}</div>
           </div>
         </div>
-        <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-light);">
-          <span style="color:var(--text-muted); font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">Intake Reason / Notes</span>
-          <div style="margin-top:3px; font-size:0.83rem; color:var(--text-1); line-height:1.45; white-space:pre-wrap;">${escapeHtml(intakeNotes)}</div>
+        <div class="ws-divider"></div>
+        <div>
+          <div class="ws-kv-label">Intake reason &amp; notes</div>
+          <div class="ws-kv-value" style="white-space: pre-wrap;">${escapeHtml(intakeNotes)}</div>
         </div>
         ${isCompleted ? `
-          <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-light); font-size:0.82rem; color:var(--text-1);">
-            <div style="margin-bottom:4px;"><strong>Billed Fee:</strong> ${escapeHtml(item.billing?.currency || 'GHS')} ${(item.billing?.amount || 0).toFixed(2)} (${escapeHtml(item.billing?.billedAt ? new Date(item.billing.billedAt).toLocaleDateString() : 'Settled')})</div>
-            <div><strong>Clinical Notes:</strong> ${escapeHtml(assessorNotes)}</div>
+          <div class="ws-divider"></div>
+          <div style="display: flex; flex-direction: column; gap: var(--space-1); font-size: var(--text-sm);">
+            <div><span class="text-muted-sm">Billed fee:</span> <strong class="tabular-nums">${escapeHtml(item.billing?.currency || 'GHS')} ${(item.billing?.amount || 0).toFixed(2)}</strong> (${escapeHtml(item.billing?.billedAt ? new Date(item.billing.billedAt).toLocaleDateString() : 'Settled')})</div>
+            <div><span class="text-muted-sm">Clinical notes:</span> ${escapeHtml(assessorNotes)}</div>
           </div>
         ` : ''}
       </div>
@@ -1290,15 +1744,15 @@
         }
         const badgeEl = document.getElementById('modalTriageDelegatedBadge');
         if (badgeEl) {
+          badgeEl.style.background = '';
+          badgeEl.style.color = '';
           if (item.assignedDoctorId) {
             const docName = item.assignedDoctorId.fullName || 'Attending Clinician';
             badgeEl.textContent = `Assigned: ${docName}`;
-            badgeEl.style.background = '#DCFCE7';
-            badgeEl.style.color = '#15803D';
+            badgeEl.className = 'badge badge-success';
           } else {
             badgeEl.textContent = 'Unassigned';
-            badgeEl.style.background = '#FEF3C7';
-            badgeEl.style.color = '#92400E';
+            badgeEl.className = 'badge badge-neutral';
           }
         }
         const metaEl = document.getElementById('modalDelegationMeta');
@@ -1348,8 +1802,7 @@
     const archiveBtn = document.getElementById('modalArchiveCaseBtn');
     if (archiveBtn) {
       const isArchived = item.status === 'archived';
-      archiveBtn.textContent = isArchived ? 'Restore from Archive' : 'Archive Case';
-      archiveBtn.style.color = isArchived ? 'var(--brand)' : 'var(--text-1)';
+      archiveBtn.textContent = isArchived ? 'Restore case' : 'Archive case';
     }
 
     // Update WebRTC Call Client presence for this specific case
@@ -1365,10 +1818,11 @@
       if (presencePill) {
         presencePill.dataset.ref = item.referenceCode;
         const isOnline = window.HavilahCall.isPeerOnline(item.referenceCode);
-        presencePill.textContent = isOnline ? 'Patient Online' : 'Patient Offline';
-        presencePill.style.background = isOnline ? 'var(--success-subtle)' : 'var(--surface-canvas)';
-        presencePill.style.color = isOnline ? 'var(--success)' : 'var(--text-2)';
-        presencePill.style.borderColor = isOnline ? 'var(--success-border)' : 'var(--border)';
+        presencePill.textContent = isOnline ? 'Patient online' : 'Patient offline';
+        presencePill.className = isOnline ? 'badge badge-success' : 'badge badge-neutral';
+        presencePill.style.background = '';
+        presencePill.style.color = '';
+        presencePill.style.borderColor = '';
       }
     }
 
@@ -1686,8 +2140,8 @@
     } catch (err) {
       alert('Failed to issue Digital Excuse Duty PDF: ' + err.message);
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'Issue & Send to Employee'; }
-      if (statusEl) { statusEl.style.display = 'none'; statusEl.textContent = 'Uploading confidential medical document...'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Issue & send to employee'; }
+      if (statusEl) { statusEl.style.display = 'none'; statusEl.textContent = 'Uploading medical document...'; }
     }
   };
 
@@ -1701,23 +2155,23 @@
 
     if (!attachments || attachments.length === 0) {
       attachList.innerHTML = `
-        <div style="color: var(--text-muted); font-size: 0.8rem; background: var(--surface-canvas); border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 14px; text-align: center;">
-          No medical documents attached yet. Click <strong>+ Attach Certificate</strong> above to issue a medical certificate or clinical report.
+        <div style="color: var(--text-muted); font-size: var(--text-sm); background-color: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-control); padding: var(--space-3); text-align: center;">
+          No medical documents attached yet. Use the certificate generator or upload a file above.
         </div>
       `;
       return;
     }
 
     attachList.innerHTML = attachments.map((att, idx) => {
-      const iconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
-      
-      const sizeStr = att.fileSize 
-        ? (att.fileSize > 1024 * 1024 
-            ? `${(att.fileSize / (1024 * 1024)).toFixed(1)} MB` 
+      const iconSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+
+      const sizeStr = att.fileSize
+        ? (att.fileSize > 1024 * 1024
+            ? `${(att.fileSize / (1024 * 1024)).toFixed(1)} MB`
             : `${Math.round(att.fileSize / 1024)} KB`)
         : '';
 
-      const timeStr = att.uploadedAt 
+      const timeStr = att.uploadedAt
         ? new Date(att.uploadedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
         : 'Recently';
 
@@ -1725,25 +2179,25 @@
       const safeFileHref = escapeHtml(sanitizeSafeHref(att.fileData || att.fileUrl || '', { allowData: true }));
 
       return `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--surface-card); border: 1px solid var(--border); padding: 10px 14px; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); gap: 10px;">
-          <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+        <div class="attachment-row">
+          <div style="display: flex; align-items: center; gap: var(--space-2); min-width: 0; flex: 1;">
             <div style="flex-shrink: 0; display: flex; align-items: center;">${iconSvg}</div>
             <div style="min-width: 0; flex: 1;">
-              <div style="font-weight: 700; color: var(--text-1); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${safeFileName}</div>
-              <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+              <div style="font-weight: var(--weight-medium); color: var(--text); font-size: var(--text-base); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${safeFileName}</div>
+              <div class="text-subtle-xs" style="display: flex; align-items: center; gap: var(--space-1);">
                 <span>${escapeHtml(timeStr)}</span>
-                ${sizeStr ? `<span>•</span><span>${escapeHtml(sizeStr)}</span>` : ''}
-                <span style="color: var(--success); font-weight: 600;">• Verified</span>
+                ${sizeStr ? `<span>·</span><span>${escapeHtml(sizeStr)}</span>` : ''}
+                <span style="color: var(--success);">· Verified</span>
               </div>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-            <a href="${safeFileHref}" download="${safeFileName}" class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <div style="display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0;">
+            <a href="${safeFileHref}" download="${safeFileName}" class="btn btn-secondary btn-sm">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               <span>Download</span>
             </a>
-            <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteAssessorAttachment(${idx})" style="padding: 4px 8px; font-size: 0.75rem; color: var(--danger); border-color: var(--danger-border);" title="Remove Document">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <button type="button" class="btn btn-destructive btn-sm" onclick="handleDeleteAssessorAttachment(${idx})" title="Remove document" aria-label="Remove ${safeFileName}">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
           </div>
         </div>
@@ -1840,7 +2294,7 @@
     if (!container) return;
 
     if (!thread || thread.length === 0) {
-      container.innerHTML = '<div style="margin:auto;color:#64748B;font-size:0.84rem;text-align:center;padding:28px 16px;max-width:280px;line-height:1.5;">No messages yet. Start a confidential conversation with the patient below.</div>';
+      container.innerHTML = '<div style="margin:auto;color:var(--text-subtle);font-size:var(--text-sm);text-align:center;padding:var(--space-6) var(--space-4);max-width:280px;line-height:1.5;">No messages yet. Start a confidential conversation with the patient below.</div>';
       return;
     }
 
@@ -2023,9 +2477,10 @@
 
   // --- Complete & Bill Modal ---
   window.openCompleteFromDetail = () => {
+    const targetId = state.selectedCase?._id;
     closeModal('caseDetailModal');
-    if (state.selectedCase) {
-      openCompleteModal(state.selectedCase._id);
+    if (targetId) {
+      window.requestCompleteConfirmation(targetId);
     }
   };
 
@@ -2073,7 +2528,7 @@
         if (file.size > 10 * 1024 * 1024) {
           alert('File exceeds 10MB maximum size limit.');
           btn.disabled = false;
-          btn.textContent = 'Mark Completed & Bill';
+          btn.textContent = 'Complete & bill';
           return;
         }
 
@@ -2103,7 +2558,7 @@
       alert('Error completing case: ' + err.message);
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Mark Completed & Bill';
+      btn.textContent = 'Complete & bill';
     }
   };
 
@@ -2448,7 +2903,7 @@
       if (statusText) {
         statusText.textContent = res.enabled
           ? `Enabled (${res.recovery_codes_remaining || 0} backup codes remaining)`
-          : 'Not enabled. Recommended for HIPAA/DPA clinical access';
+          : 'Not enabled. Recommended for clinical account security.';
       }
       if (setupStep) setupStep.style.display = res.enabled ? 'none' : 'block';
       if (enabledStep) enabledStep.style.display = res.enabled ? 'block' : 'none';
@@ -2749,7 +3204,22 @@
   // --- Modal Helpers ---
   window.openModal = (id) => {
     const modal = document.getElementById(id);
-    if (modal) modal.classList.add('show');
+    if (!modal) return;
+    lastModalOpener = document.activeElement;
+    modal.classList.add('show', 'is-open');
+    if (typeof removeActiveFocusTrap === 'function') {
+      removeActiveFocusTrap();
+      removeActiveFocusTrap = null;
+    }
+    if (window.HavilahUI && typeof window.HavilahUI.trapModalFocus === 'function') {
+      removeActiveFocusTrap = window.HavilahUI.trapModalFocus(modal, () => {
+        if (id === 'autoLockWarningModal') {
+          window.resetInactivityTimerFromModal();
+        } else {
+          window.closeModal(id);
+        }
+      });
+    }
   };
 
   window.closeModal = (id) => {
@@ -2760,8 +3230,22 @@
       }
     }
     const modal = document.getElementById(id);
-    if (modal) modal.classList.remove('show');
+    if (modal) modal.classList.remove('show', 'is-open');
+    if (typeof removeActiveFocusTrap === 'function') {
+      removeActiveFocusTrap();
+      removeActiveFocusTrap = null;
+    }
+    if (lastModalOpener && typeof lastModalOpener.focus === 'function' && document.contains(lastModalOpener)) {
+      lastModalOpener.focus();
+      lastModalOpener = null;
+    }
   };
+
+  document.addEventListener('click', (e) => {
+    if (e.target.classList && e.target.classList.contains('modal-backdrop') && e.target.id && e.target.id !== 'autoLockWarningModal') {
+      window.closeModal(e.target.id);
+    }
+  });
 
   document.addEventListener('DOMContentLoaded', () => {
     checkAuth();

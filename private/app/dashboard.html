@@ -16,6 +16,9 @@
 <script src="/js/data.js"></script>
 <script src="/js/auth.js?v=3"></script>
 <script src="/js/router.js"></script>
+<script src="/js/pdf/pdfConfig.js"></script>
+<script src="/js/pdf/pdfFonts.js"></script>
+<script src="/js/pdf/pdfComponents.js"></script>
 <script src="/js/assessmentReportPdf.js"></script>
 <script src="/js/havilahCall.js?v=2.7.0" defer></script>
 <style>
@@ -4859,7 +4862,7 @@ const App = (() => {
     trendFilter: { framework: 'all', timeframe: 'all' },
     assessmentLocks: { phq9: { status: 'locked' }, gad7: { status: 'locked' }, pss10: { status: 'locked' }, fas10: { status: 'locked' }, copsoq3: { status: 'locked', depth: 'core' } },
     clinicalProvider: {
-      name: 'FZ Safety and Health',
+      name: 'FZ Safety and Health Centre',
       hotline: '+233 24 362 9870',
       crisisHotline: '+233 24 362 9870',
       email: null
@@ -5606,7 +5609,7 @@ const App = (() => {
     }
 
     // Show result to user
-    const providerName = (state.clinicalProvider && state.clinicalProvider.name) ? state.clinicalProvider.name : 'Dr. Edith Clarke (FZ Safety and Health)';
+    const providerName = (state.clinicalProvider && state.clinicalProvider.name) ? state.clinicalProvider.name : 'Dr. Edith Clarke (FZ Safety and Health Centre)';
     let lowScoreTriggerHtml = '';
     if (isCrisisQ9 || isSevereClinical) {
       const hotlineNum = (state.clinicalProvider && state.clinicalProvider.hotline) || '+233 24 362 9870';

@@ -36,6 +36,19 @@ const DoctorSchema = new mongoose.Schema({
     default: 'Occupational Health Specialist',
     trim: true,
   },
+  mdcNumber: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  signatureDataUrl: {
+    type: String,
+    default: '',
+  },
+  signatureApprovedAt: {
+    type: Date,
+    default: null,
+  },
   role: {
     type: String,
     enum: ['clinic_admin', 'doctor'],

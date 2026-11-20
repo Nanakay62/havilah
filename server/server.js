@@ -47,6 +47,7 @@ const learnRouter = require('./routes/learn');
 const billingRouter = require('./routes/billing');
 const ssoRouter = require('./routes/sso');
 const callRoutes = require('./routes/callRoutes');
+const certificatesRouter = require('./routes/certificates');
 const { initCallSignaling } = require('./services/callSignaling');
 const logger = require('./utils/logger');
 const pinoHttp = require('pino-http');
@@ -202,7 +203,8 @@ app.use((req, res, next) => {
     p === '/superadmin' ||
     p === '/clinical-portal' ||
     p.startsWith('/activate') ||
-    p.startsWith('/reset-password')
+    p.startsWith('/reset-password') ||
+    p.startsWith('/verify')
   ) {
     res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   }
@@ -272,6 +274,9 @@ app.get(['/privacy', '/privacy.html'], (req, res) => {
 });
 app.get(['/terms', '/terms.html'], (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'terms.html'));
+});
+app.get(['/verify', '/verify/:certificateId'], (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', 'verify.html'));
 });
 app.get('/clinical-portal', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'clinical-portal.html'));
@@ -378,6 +383,7 @@ app.use('/api/v1/learn', learnRouter);
 app.use('/api/v1/billing', billingRouter);
 app.use('/api/v1/sso', ssoRouter);
 app.use('/api/v1/calls', callRoutes);
+app.use('/api/v1/certificates', certificatesRouter);
 
 // Global Error Handler - Sanitized Error Messages (Principle 11)
 app.use((err, req, res, next) => {

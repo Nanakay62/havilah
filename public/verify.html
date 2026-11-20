@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Certificate Verification — Havilah Occupational Health</title>
+  <style>
+    :root {
+      --ink: #1A1F2B;
+      --muted: #5B6472;
+      --rule: #E3E6EA;
+      --panel: #F7F8FA;
+      --accent: #0F6E6E;
+      --ok: #1E6B52;
+      --err: #9E3B33;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--ink);
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px;
+    }
+    .shell {
+      width: 100%;
+      max-width: 520px;
+    }
+    .letterhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 12px;
+      border-bottom: 1.5px solid var(--accent);
+      margin-bottom: 28px;
+    }
+    .brand {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .doc-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+    }
+    .subtitle {
+      font-size: 13.5px;
+      color: var(--muted);
+      margin: 0 0 24px 0;
+      line-height: 1.5;
+    }
+    .status-panel {
+      background: var(--panel);
+      border-left: 3px solid var(--muted);
+      padding: 18px 20px;
+      margin-bottom: 24px;
+    }
+    .status-panel.valid { border-left-color: var(--ok); }
+    .status-panel.invalid { border-left-color: var(--err); }
+    .status-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+    }
+    .status-panel.valid .status-title { color: var(--ok); }
+    .status-panel.invalid .status-title { color: var(--err); }
+    .status-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0;
+    }
+    .kv {
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+      margin-bottom: 24px;
+    }
+    .kv-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 13.5px;
+    }
+    .kv-row:last-child { border-bottom: none; }
+    .kv-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    .kv-val {
+      font-weight: 600;
+      text-align: right;
+    }
+    .footnote {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="letterhead">
+      <div class="brand">Havilah</div>
+      <div class="doc-label">Certificate Verification</div>
+    </header>
+
+    <h1>Medical certificate verification</h1>
+    <p class="subtitle">Confirming whether this certificate ID was issued by an authorized occupational health practice.</p>
+
+    <section id="statusPanel" class="status-panel" aria-live="polite">
+      <p id="statusTitle" class="status-title">Checking certificate…</p>
+      <p id="statusDesc" class="status-desc">Verifying against issued clinical records.</p>
+    </section>
+
+    <section id="detailsTable" class="kv" style="display:none;">
+      <div class="kv-row">
+        <span class="kv-label">Certificate ID</span>
+        <span id="valCertId" class="kv-val">—</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-label">Status</span>
+        <span id="valStatus" class="kv-val">—</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-label">Issue date</span>
+        <span id="valIssuedAt" class="kv-val">—</span>
+      </div>
+      <div class="kv-row">
+        <span class="kv-label">Issuing clinic</span>
+        <span id="valClinic" class="kv-val">—</span>
+      </div>
+    </section>
+
+    <p class="footnote">To protect patient confidentiality under the Ghana Data Protection Act (Act 843) and ISO 45003, no patient identity or medical details are displayed on this page.</p>
+  </main>
+
+  <script>
+    (async function () {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      const certId = decodeURIComponent(parts[parts.length - 1] || '').trim().toUpperCase();
+      const panel = document.getElementById('statusPanel');
+      const titleEl = document.getElementById('statusTitle');
+      const descEl = document.getElementById('statusDesc');
+      const tableEl = document.getElementById('detailsTable');
+
+      if (!certId || certId === 'VERIFY') {
+        panel.className = 'status-panel invalid';
+        titleEl.textContent = 'No certificate ID provided';
+        descEl.textContent = 'Scan the QR code on an issued certificate to verify its authenticity.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/v1/certificates/verify/' + encodeURIComponent(certId), {
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await res.json();
+
+        if (res.ok && data && data.valid) {
+          panel.className = 'status-panel valid';
+          titleEl.textContent = 'Valid certificate';
+          descEl.textContent = 'This certificate ID matches an authentic clinician-issued record.';
+          tableEl.style.display = 'block';
+          document.getElementById('valCertId').textContent = data.certificateId || certId;
+          document.getElementById('valStatus').textContent = 'Valid';
+          const dt = new Date(data.issuedAt);
+          document.getElementById('valIssuedAt').textContent = isNaN(dt.getTime())
+            ? String(data.issuedAt || '—')
+            : dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+          document.getElementById('valClinic').textContent = data.clinicName || '—';
+        } else {
+          panel.className = 'status-panel invalid';
+          titleEl.textContent = 'Certificate not verified';
+          descEl.textContent = 'This certificate ID could not be matched to an active issued certificate.';
+        }
+      } catch (err) {
+        panel.className = 'status-panel invalid';
+        titleEl.textContent = 'Verification unavailable';
+        descEl.textContent = 'Could not reach the verification service. Please try again shortly.';
+      }
+    })();
+  </script>
+</body>
+</html>

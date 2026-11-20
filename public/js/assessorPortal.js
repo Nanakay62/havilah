@@ -1528,27 +1528,57 @@
       try { localStorage.setItem('havilah_clinician_mdc_number', mdcNumber); } catch (e) {}
     }
 
-    const clinicianName = state.profile?.fullName || state.profile?.name || state.assessor?.name || 'Attending Clinician';
-    const clinicianSpecialty = state.profile?.specialty || state.assessor?.specialty || 'Occupational Health Specialist';
-    const clinicName = state.assessor?.organization || state.assessor?.clinicName || 'FZ Safety and Health';
-    const clinicPhone = state.assessor?.phone || '024 362 9870';
+    const clinicianName = state.profile?.fullName || state.profile?.name || state.assessor?.name || '';
+    const clinicianSpecialty = state.profile?.specialty || state.assessor?.specialty || '';
+    const clinicName = state.assessor?.organization || state.assessor?.clinicName || '';
+    const practiceRegistrationNumber = state.assessor?.practiceRegistrationNumber || '';
+    const clinicAddress = state.assessor?.address || '';
+    const clinicPhone = state.assessor?.phone || '';
+    const clinicEmail = state.assessor?.notificationEmail || state.assessor?.email || '';
+    const effectiveMdc = mdcNumber || state.assessor?.mdcNumber || '';
+
+    // Static verified assets for Dr. Edith Clarke / FZ Safety and Health Centre pilot profile
+    // (can be overridden or removed in Clinic Settings; other clinicians require explicit upload & approval)
+    const isDrEdith = /edith\s+clarke/i.test(clinicianName);
+    const isFzClinic = /fz\s+safety/i.test(clinicName);
+
+    let signatureDataUrl = state.assessor?.signatureDataUrl || '';
+    let signatureApproved = Boolean(state.assessor?.signatureApprovedAt && signatureDataUrl);
+    if (!signatureDataUrl && isDrEdith && state.assessor?.signatureApprovedAt !== false) {
+      signatureDataUrl = '/assets/signatures/dr-edith-clarke.png';
+      signatureApproved = true;
+    }
+
+    let stampDataUrl = state.assessor?.stampDataUrl || '';
+    let stampApproved = Boolean(state.assessor?.stampApprovedAt && stampDataUrl);
+    if (!stampDataUrl && isFzClinic && state.assessor?.stampApprovedAt !== false) {
+      stampDataUrl = '/assets/stamps/fz-safety-and-health-centre.png';
+      stampApproved = true;
+    }
 
     return {
       certificateType: typeKey,
-      referenceCode: item.referenceCode || '-',
-      patientName: item.clinicalDetails?.patientName || 'Employee',
-      companyName: item.tenantId?.company_name || 'Organization',
-      departmentName: item.departmentName || 'General',
+      referenceCode: item.referenceCode || '',
+      patientName: item.clinicalDetails?.patientName || '',
+      companyName: item.tenantId?.company_name || '',
+      departmentName: item.departmentName || '',
       consultationDate: new Date().toISOString().split('T')[0],
       startDate,
       endDate: (typeKey === 'excuse_duty' || typeKey === 'light_duty') ? endDate : startDate,
-      mdcNumber,
+      mdcNumber: effectiveMdc,
       remarks,
       hrSafePrivacy,
       clinicianName,
       clinicianSpecialty,
       clinicName,
-      clinicPhone
+      practiceRegistrationNumber,
+      clinicAddress,
+      clinicPhone,
+      clinicEmail,
+      signatureDataUrl,
+      signatureApproved,
+      stampDataUrl,
+      stampApproved
     };
   }
 
@@ -1560,8 +1590,11 @@
     const payload = collectExcuseDutyPayload();
     if (!payload) return;
     try {
-      await window.ExcuseDutyPdf.downloadExcuseDutyPdf(payload);
-      showToast('Digital Excuse Duty preview downloaded.');
+      await window.ExcuseDutyPdf.downloadExcuseDutyPdf({
+        ...payload,
+        isDraftPreview: true
+      });
+      showToast('Draft preview downloaded (unissued).');
     } catch (err) {
       alert('Could not generate PDF preview: ' + err.message);
     }
@@ -1582,11 +1615,32 @@
 
     const btn = document.getElementById('issueExcuseDutyBtn');
     const statusEl = document.getElementById('modalAttachmentUploadStatus');
-    if (btn) { btn.disabled = true; btn.textContent = 'Generating & Issuing...'; }
-    if (statusEl) { statusEl.textContent = 'Generating and attaching Digital Excuse Duty PDF...'; statusEl.style.display = 'block'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Registering & Issuing...'; }
+    if (statusEl) { statusEl.textContent = 'Registering verifiable certificate ID & generating PDF...'; statusEl.style.display = 'block'; }
 
     try {
-      const built = await window.ExcuseDutyPdf.buildExcuseDutyPdf(payload);
+      // 1. Register & log authoritative tamper-evident certificate on server (clinician-only)
+      const certRes = await assessorApiFetch(`${API_BASE}/referrals/${state.selectedCase._id}/certificates`, {
+        method: 'POST',
+        body: JSON.stringify({
+          certificateType: payload.certificateType
+        })
+      });
+      if (!certRes || !certRes.data || !certRes.data.certificateId) {
+        throw new Error('Could not register verifiable certificate ID on server.');
+      }
+
+      const issuedPayload = {
+        ...payload,
+        isDraftPreview: false,
+        certificateId: certRes.data.certificateId,
+        issuedAt: certRes.data.issuedAt,
+        verifyUrl: certRes.data.verifyUrl,
+        clinicName: certRes.data.clinicName || payload.clinicName
+      };
+
+      // 2. Render official PDF on-device with real QR code and server-issued ID/timestamp
+      const built = await window.ExcuseDutyPdf.buildExcuseDutyPdf(issuedPayload);
       const res = await assessorApiFetch(`${API_BASE}/referrals/${state.selectedCase._id}/attachments`, {
         method: 'POST',
         body: JSON.stringify({
@@ -1603,11 +1657,11 @@
         renderAssessorAttachments(res.data);
 
         // Post a clean notice into the consultation chat so the employee sees it immediately
-        const certLabel = built.data.typeMeta.badge;
+        const certLabel = built.data.typeMeta.shortLabel || built.data.typeMeta.title;
         const periodSummary = (payload.certificateType === 'excuse_duty' || payload.certificateType === 'light_duty')
           ? ` (${sched.startFormatted} to ${sched.endFormatted}, ${sched.days} day${sched.days === 1 ? '' : 's'})`
           : ` (${sched.startFormatted})`;
-        const noticeMsg = `I have issued your Digital ${certLabel} Certificate${periodSummary} [Cert ID: ${built.certificateId}]. You can download the PDF from your Clinical Documents section above.`;
+        const noticeMsg = `I have issued your ${certLabel} certificate${periodSummary} [Cert ID: ${built.certificateId}]. You can download the PDF from your Clinical Documents section above.`;
 
         try {
           const msgRes = await assessorApiFetch(`${API_BASE}/referrals/${state.selectedCase._id}/message`, {
@@ -2483,6 +2537,10 @@
       const settings = data.billingSettings || {};
 
       document.getElementById('settingsClinicName').value = data.organization || data.name || '';
+      const regEl = document.getElementById('settingsPracticeRegNumber');
+      if (regEl) regEl.value = data.practiceRegistrationNumber || '';
+      const mdcEl = document.getElementById('settingsMdcNumber');
+      if (mdcEl) mdcEl.value = state.assessor?.mdcNumber || data.mdcNumber || '';
       document.getElementById('settingsPhone').value = data.phone || '';
       document.getElementById('settingsNotificationEmail').value = data.notificationEmail || data.email || '';
       document.getElementById('settingsAddress').value = data.address || '';
@@ -2492,10 +2550,113 @@
       document.getElementById('settingsTaxRate').value = settings.taxRate || 0;
       document.getElementById('settingsPaymentInstructions').value = settings.paymentInstructions || '';
 
+      // Populate clinician signature state
+      const isDrEdith = /edith\s+clarke/i.test(state.profile?.fullName || state.assessor?.name || data.name || '');
+      const isFzClinic = /fz\s+safety/i.test(data.organization || state.assessor?.organization || '');
+
+      const sigUrl = state.assessor?.signatureDataUrl || data.signatureDataUrl || (isDrEdith ? '/assets/signatures/dr-edith-clarke.png' : '');
+      const sigApproved = Boolean(state.assessor?.signatureApprovedAt || data.signatureApprovedAt || (isDrEdith && sigUrl === '/assets/signatures/dr-edith-clarke.png'));
+      window._pendingSignatureDataUrl = sigUrl;
+      const sigPreview = document.getElementById('settingsSignaturePreview');
+      const sigApproveCheck = document.getElementById('settingsSignatureApproveCheck');
+      if (sigPreview) {
+        if (sigUrl) {
+          sigPreview.src = sigUrl;
+          sigPreview.style.display = 'block';
+        } else {
+          sigPreview.removeAttribute('src');
+          sigPreview.style.display = 'none';
+        }
+      }
+      if (sigApproveCheck) sigApproveCheck.checked = sigApproved && Boolean(sigUrl);
+
+      // Populate clinic stamp state
+      const stampUrl = state.assessor?.stampDataUrl || data.stampDataUrl || (isFzClinic ? '/assets/stamps/fz-safety-and-health-centre.png' : '');
+      const stampApproved = Boolean(state.assessor?.stampApprovedAt || data.stampApprovedAt || (isFzClinic && stampUrl === '/assets/stamps/fz-safety-and-health-centre.png'));
+      window._pendingStampDataUrl = stampUrl;
+      const stampPreview = document.getElementById('settingsStampPreview');
+      const stampApproveCheck = document.getElementById('settingsStampApproveCheck');
+      if (stampPreview) {
+        if (stampUrl) {
+          stampPreview.src = stampUrl;
+          stampPreview.style.display = 'block';
+        } else {
+          stampPreview.removeAttribute('src');
+          stampPreview.style.display = 'none';
+        }
+      }
+      if (stampApproveCheck) stampApproveCheck.checked = stampApproved && Boolean(stampUrl);
+
       openModal('clinicSettingsModal');
     } catch (err) {
       alert('Error loading clinic settings: ' + err.message);
     }
+  };
+
+  window.handleSignatureFileSelected = (event) => {
+    const file = event?.target?.files?.[0];
+    if (!file) return;
+    if (!/^image\/(png|jpeg)$/.test(file.type)) {
+      alert('Please select a PNG or JPEG signature image.');
+      return;
+    }
+    if (file.size > 250 * 1024) {
+      alert('Signature image must be under 250 KB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      window._pendingSignatureDataUrl = reader.result || '';
+      const sigPreview = document.getElementById('settingsSignaturePreview');
+      if (sigPreview && window._pendingSignatureDataUrl) {
+        sigPreview.src = window._pendingSignatureDataUrl;
+        sigPreview.style.display = 'block';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.handleClearSignature = () => {
+    window._pendingSignatureDataUrl = '';
+    const sigPreview = document.getElementById('settingsSignaturePreview');
+    const sigInput = document.getElementById('settingsSignatureInput');
+    const sigApproveCheck = document.getElementById('settingsSignatureApproveCheck');
+    if (sigPreview) { sigPreview.removeAttribute('src'); sigPreview.style.display = 'none'; }
+    if (sigInput) sigInput.value = '';
+    if (sigApproveCheck) sigApproveCheck.checked = false;
+  };
+
+  window.handleStampFileSelected = (event) => {
+    const file = event?.target?.files?.[0];
+    if (!file) return;
+    if (!/^image\/(png|jpeg)$/.test(file.type)) {
+      alert('Please select a PNG or JPEG clinic stamp image.');
+      return;
+    }
+    if (file.size > 250 * 1024) {
+      alert('Clinic stamp image must be under 250 KB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      window._pendingStampDataUrl = reader.result || '';
+      const stampPreview = document.getElementById('settingsStampPreview');
+      if (stampPreview && window._pendingStampDataUrl) {
+        stampPreview.src = window._pendingStampDataUrl;
+        stampPreview.style.display = 'block';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.handleClearStamp = () => {
+    window._pendingStampDataUrl = '';
+    const stampPreview = document.getElementById('settingsStampPreview');
+    const stampInput = document.getElementById('settingsStampInput');
+    const stampApproveCheck = document.getElementById('settingsStampApproveCheck');
+    if (stampPreview) { stampPreview.removeAttribute('src'); stampPreview.style.display = 'none'; }
+    if (stampInput) stampInput.value = '';
+    if (stampApproveCheck) stampApproveCheck.checked = false;
   };
 
   window.handleSaveClinicSettings = async (event) => {
@@ -2505,6 +2666,8 @@
     btn.textContent = 'Saving...';
 
     const organization = document.getElementById('settingsClinicName').value.trim();
+    const practiceRegistrationNumber = (document.getElementById('settingsPracticeRegNumber')?.value || '').trim();
+    const mdcNumber = (document.getElementById('settingsMdcNumber')?.value || '').trim();
     const phone = document.getElementById('settingsPhone').value.trim();
     const notificationEmail = document.getElementById('settingsNotificationEmail').value.trim();
     const address = document.getElementById('settingsAddress').value.trim();
@@ -2513,12 +2676,26 @@
     const taxId = document.getElementById('settingsTaxId').value.trim();
     const taxRate = Number(document.getElementById('settingsTaxRate').value) || 0;
     const paymentInstructions = document.getElementById('settingsPaymentInstructions').value.trim();
+    const signatureDataUrl = window._pendingSignatureDataUrl !== undefined
+      ? window._pendingSignatureDataUrl
+      : (state.assessor?.signatureDataUrl || '');
+    const signatureApproved = Boolean(document.getElementById('settingsSignatureApproveCheck')?.checked && signatureDataUrl);
+    const stampDataUrl = window._pendingStampDataUrl !== undefined
+      ? window._pendingStampDataUrl
+      : (state.assessor?.stampDataUrl || '');
+    const stampApproved = Boolean(document.getElementById('settingsStampApproveCheck')?.checked && stampDataUrl);
 
     try {
       const res = await assessorApiFetch(`${API_BASE}/profile`, {
         method: 'PUT',
         body: JSON.stringify({
           organization,
+          practiceRegistrationNumber,
+          mdcNumber,
+          signatureDataUrl,
+          signatureApproved,
+          stampDataUrl,
+          stampApproved,
           phone,
           notificationEmail,
           address,

@@ -11,6 +11,10 @@
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/components.css">
   <script src="/js/vendor/jspdf.umd.min.js"></script>
+  <script src="/js/vendor/qrcode-generator.min.js"></script>
+  <script src="/js/pdf/pdfConfig.js"></script>
+  <script src="/js/pdf/pdfFonts.js"></script>
+  <script src="/js/pdf/pdfComponents.js"></script>
   <script src="/js/excuseDutyPdf.js"></script>
   <style>
     :root {
@@ -1831,6 +1835,43 @@
         <div class="form-group">
           <label class="form-label" for="settingsAddress">Clinic Physical / Postal Address</label>
           <input type="text" id="settingsAddress" class="form-input" placeholder="Suite 402, Ridge Medical Tower, Accra, Ghana" />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="settingsPracticeRegNumber">Practice Registration / License No.</label>
+            <input type="text" id="settingsPracticeRegNumber" class="form-input" placeholder="e.g. HEFRA/GH/2026/001" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="settingsMdcNumber">Clinician MDC Registration No.</label>
+            <input type="text" id="settingsMdcNumber" class="form-input" placeholder="e.g. MDC/RN/12345" />
+          </div>
+        </div>
+
+        <div class="form-group" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg);">
+          <label class="form-label" for="settingsSignatureInput">Clinician Signature (for Medical Certificates)</label>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+            <input type="file" id="settingsSignatureInput" accept="image/png,image/jpeg" onchange="handleSignatureFileSelected(event)" style="font-size: 0.78rem;" />
+            <button type="button" class="btn btn-outline btn-sm" onclick="handleClearSignature()" style="font-size: 0.75rem; padding: 4px 8px;">Remove</button>
+          </div>
+          <img id="settingsSignaturePreview" alt="Clinician signature preview" style="display: none; max-height: 44px; max-width: 220px; margin-bottom: 8px; border-bottom: 1px solid #CBD5E1; padding-bottom: 4px;" />
+          <label style="display: flex; align-items: center; gap: 7px; font-size: 0.78rem; color: var(--text-2); cursor: pointer;">
+            <input type="checkbox" id="settingsSignatureApproveCheck" />
+            <span>I approve this signature image for use on clinician-issued medical certificates</span>
+          </label>
+        </div>
+
+        <div class="form-group" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg);">
+          <label class="form-label" for="settingsStampInput">Official Clinic Stamp (for Medical Certificates)</label>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+            <input type="file" id="settingsStampInput" accept="image/png,image/jpeg" onchange="handleStampFileSelected(event)" style="font-size: 0.78rem;" />
+            <button type="button" class="btn btn-outline btn-sm" onclick="handleClearStamp()" style="font-size: 0.75rem; padding: 4px 8px;">Remove</button>
+          </div>
+          <img id="settingsStampPreview" alt="Official clinic stamp preview" style="display: none; max-height: 68px; max-width: 240px; margin-bottom: 8px; padding: 4px;" />
+          <label style="display: flex; align-items: center; gap: 7px; font-size: 0.78rem; color: var(--text-2); cursor: pointer;">
+            <input type="checkbox" id="settingsStampApproveCheck" />
+            <span>I approve this clinic stamp for use on clinician-issued medical certificates</span>
+          </label>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">

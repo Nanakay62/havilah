@@ -33,7 +33,7 @@ const NOINDEX_EXACT_PATHS = new Set([
   '/admin.html',
 ]);
 
-const NOINDEX_PREFIXES = ['/api/', '/app/', '/portal/', '/private/'];
+const NOINDEX_PREFIXES = ['/api/', '/app/', '/portal/', '/private/', '/verify'];
 
 function getCanonicalOrigin(requestUrl, env) {
   const raw = (env && env.PUBLIC_ORIGIN) ? env.PUBLIC_ORIGIN : requestUrl.origin;
@@ -75,6 +75,7 @@ function buildRobotsTxt(canonicalOrigin) {
     'Disallow: /clinical-portal',
     'Disallow: /activate',
     'Disallow: /reset-password',
+    'Disallow: /verify',
     '',
     `Sitemap: ${canonicalOrigin}/sitemap.xml`,
     '',
@@ -246,6 +247,8 @@ export default {
       targetPath = '/app/superadmin';
     } else if (path === '/portal/clinical' || path === '/portal/clinical.html' || path === '/clinical' || path === '/clinical-portal') {
       targetPath = '/clinical-portal';
+    } else if (path === '/verify' || path.startsWith('/verify/')) {
+      targetPath = '/public/verify.html';
     } else if (path === '/favicon.ico') {
       targetPath = '/public/assets/havilah-mark.svg';
     } else if (path.startsWith('/js/')) {

@@ -7,6 +7,12 @@ const AssessorSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   passwordHash: { type: String, required: true },
   organization: { type: String, default: '' }, // clinic/practice name
+  practiceRegistrationNumber: { type: String, default: '', trim: true },
+  mdcNumber: { type: String, default: '', trim: true },
+  signatureDataUrl: { type: String, default: '' },
+  signatureApprovedAt: { type: Date, default: null },
+  stampDataUrl: { type: String, default: '' },
+  stampApprovedAt: { type: Date, default: null },
   phone: { type: String, default: '' },
   notificationEmail: { type: String, default: '' },
   address: { type: String, default: '' },

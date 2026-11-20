@@ -6,6 +6,8 @@ const jwt = require('jsonwebtoken');
 const Assessor = require('../models/Assessor');
 const Doctor = require('../models/Doctor');
 const Referral = require('../models/Referral');
+const IssuedCertificate = require('../models/IssuedCertificate');
+const AuditLog = require('../models/AuditLog');
 const { requireAssessorAuth, requireClinicAdmin } = require('../middleware/assessorAuth');
 const { generateTotpSecret, verifyTotpCode, getOtpAuthUrl, generateRecoveryCodes, verifyAndConsumeRecoveryCode } = require('../utils/totp');
 
@@ -222,6 +224,12 @@ router.get('/me', requireAssessorAuth, async (req, res) => {
       specialty: req.doctor ? req.doctor.specialty : 'Lead Medical Assessor',
       isLeadAssessor: !req.doctor,
       organization: req.assessor.organization,
+      practiceRegistrationNumber: req.assessor.practiceRegistrationNumber || '',
+      mdcNumber: (req.doctor ? req.doctor.mdcNumber : req.assessor.mdcNumber) || '',
+      signatureDataUrl: (req.doctor ? req.doctor.signatureDataUrl : req.assessor.signatureDataUrl) || '',
+      signatureApprovedAt: (req.doctor ? req.doctor.signatureApprovedAt : req.assessor.signatureApprovedAt) || null,
+      stampDataUrl: req.assessor.stampDataUrl || '',
+      stampApprovedAt: req.assessor.stampApprovedAt || null,
       phone: req.doctor?.phone || req.assessor.phone,
       notificationEmail: req.assessor.notificationEmail,
       address: req.assessor.address,
@@ -263,7 +271,20 @@ router.get('/profile', requireAssessorAuth, async (req, res, next) => {
  */
 router.put('/profile', requireAssessorAuth, async (req, res, next) => {
   try {
-    const { name, organization, phone, notificationEmail, address, billingSettings } = req.body;
+    const {
+      name,
+      organization,
+      practiceRegistrationNumber,
+      mdcNumber,
+      signatureDataUrl,
+      signatureApproved,
+      stampDataUrl,
+      stampApproved,
+      phone,
+      notificationEmail,
+      address,
+      billingSettings,
+    } = req.body;
     const assessor = await Assessor.findById(req.assessor._id);
     if (!assessor) {
       return res.status(404).json({ success: false, error: 'Assessor not found' });
@@ -271,9 +292,71 @@ router.put('/profile', requireAssessorAuth, async (req, res, next) => {
 
     if (name && typeof name === 'string') assessor.name = name.trim();
     if (organization !== undefined) assessor.organization = String(organization).trim();
+    if (practiceRegistrationNumber !== undefined) {
+      assessor.practiceRegistrationNumber = String(practiceRegistrationNumber).trim().slice(0, 80);
+    }
     if (phone !== undefined) assessor.phone = String(phone).trim();
     if (notificationEmail !== undefined) assessor.notificationEmail = String(notificationEmail).trim().toLowerCase();
     if (address !== undefined) assessor.address = String(address).trim();
+
+    // Clinician credentials & signature (applied to staff Doctor if logged in as staff, else lead Assessor)
+    const sigTarget = req.doctor ? await Doctor.findById(req.doctor._id) : assessor;
+    if (sigTarget) {
+      if (mdcNumber !== undefined) {
+        sigTarget.mdcNumber = String(mdcNumber).trim().slice(0, 60);
+      }
+      if (signatureDataUrl !== undefined) {
+        const cleanSig = String(signatureDataUrl || '').trim();
+        if (!cleanSig) {
+          sigTarget.signatureDataUrl = '';
+          sigTarget.signatureApprovedAt = null;
+        } else if (
+          (cleanSig.startsWith('data:image/png;base64,') ||
+            cleanSig.startsWith('data:image/jpeg;base64,') ||
+            /^\/assets\/signatures\/[a-z0-9._-]+\.(png|jpe?g)$/i.test(cleanSig)) &&
+          cleanSig.length <= 350000
+        ) {
+          sigTarget.signatureDataUrl = cleanSig;
+          sigTarget.signatureApprovedAt = signatureApproved ? new Date() : null;
+        } else {
+          return res.status(400).json({
+            success: false,
+            error: 'INVALID_SIGNATURE',
+            message: 'Signature must be a PNG or JPEG image under 250 KB.',
+          });
+        }
+      } else if (signatureApproved !== undefined) {
+        sigTarget.signatureApprovedAt = (signatureApproved && sigTarget.signatureDataUrl) ? new Date() : null;
+      }
+      if (req.doctor) {
+        await sigTarget.save();
+      }
+    }
+
+    // Practice stamp (stored at clinic/practice level on Assessor)
+    if (stampDataUrl !== undefined) {
+      const cleanStamp = String(stampDataUrl || '').trim();
+      if (!cleanStamp) {
+        assessor.stampDataUrl = '';
+        assessor.stampApprovedAt = null;
+      } else if (
+        (cleanStamp.startsWith('data:image/png;base64,') ||
+          cleanStamp.startsWith('data:image/jpeg;base64,') ||
+          /^\/assets\/stamps\/[a-z0-9._-]+\.(png|jpe?g)$/i.test(cleanStamp)) &&
+        cleanStamp.length <= 350000
+      ) {
+        assessor.stampDataUrl = cleanStamp;
+        assessor.stampApprovedAt = stampApproved ? new Date() : null;
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: 'INVALID_STAMP',
+          message: 'Clinic stamp must be a PNG or JPEG image under 250 KB.',
+        });
+      }
+    } else if (stampApproved !== undefined) {
+      assessor.stampApprovedAt = (stampApproved && assessor.stampDataUrl) ? new Date() : null;
+    }
 
     if (billingSettings && typeof billingSettings === 'object') {
       assessor.billingSettings = assessor.billingSettings || {};
@@ -304,6 +387,12 @@ router.put('/profile', requireAssessorAuth, async (req, res, next) => {
         name: assessor.name,
         email: assessor.email,
         organization: assessor.organization,
+        practiceRegistrationNumber: assessor.practiceRegistrationNumber || '',
+        mdcNumber: (sigTarget && sigTarget.mdcNumber) || '',
+        signatureDataUrl: (sigTarget && sigTarget.signatureDataUrl) || '',
+        signatureApprovedAt: (sigTarget && sigTarget.signatureApprovedAt) || null,
+        stampDataUrl: assessor.stampDataUrl || '',
+        stampApprovedAt: assessor.stampApprovedAt || null,
         phone: assessor.phone,
         notificationEmail: assessor.notificationEmail,
         address: assessor.address,
@@ -813,6 +902,104 @@ router.patch('/referrals/:id/settlement', requireAssessorAuth, async (req, res, 
       success: true,
       message: `Settlement status updated to ${settlementStatus}.`,
       data: referral,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   POST /api/v1/assessor/referrals/:id/certificates
+ * @desc    Issue and log a tamper-evident Medical Excuse Duty Certificate for an approved consultation record.
+ *          Strictly clinician-authenticated; employees cannot self-issue certificates.
+ * @access  Assessor Authenticated
+ */
+router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const referralId = req.params.id;
+    const allowedTypes = ['excuse_duty', 'light_duty', 'fit_to_return', 'attendance'];
+    const certificateType = allowedTypes.includes(req.body?.certificateType)
+      ? req.body.certificateType
+      : 'excuse_duty';
+
+    const referral = await Referral.findById(referralId);
+    if (!referral) {
+      return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Consultation record not found.' });
+    }
+
+    if (!canAccessReferral(req, referral)) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this consultation record.' });
+    }
+
+    if (referral.status === 'cancelled') {
+      return res.status(400).json({ success: false, error: 'INVALID_STATUS', message: 'Cannot issue a certificate for a cancelled consultation.' });
+    }
+
+    const clinicName = (req.assessor.organization || req.assessor.name || '').trim();
+    if (!clinicName) {
+      return res.status(400).json({
+        success: false,
+        error: 'CLINIC_PROFILE_INCOMPLETE',
+        message: 'Configure your clinic/practice name in Clinic Settings before issuing certificates.',
+      });
+    }
+
+    const certificateId = IssuedCertificate.generateCertificateId();
+    const issuedAt = new Date();
+    const integrityHash = IssuedCertificate.computeIntegrityHash({
+      certificateId,
+      referralId: referral._id,
+      assessorId: req.assessor._id,
+      issuedAt,
+    });
+
+    const record = await IssuedCertificate.create({
+      certificateId,
+      integrityHash,
+      referralId: referral._id,
+      assessorId: req.assessor._id,
+      doctorId: req.doctor ? req.doctor._id : null,
+      certificateType,
+      clinicName,
+      issuedAt,
+    });
+
+    // Log issuance in AuditLog (best-effort, non-blocking)
+    try {
+      await AuditLog.create({
+        company_id: referral.company_id || String(referral.tenantId || 'clinical'),
+        actor_id: req.doctor ? req.doctor._id : req.assessor._id,
+        actor_role: req.doctor ? (req.doctor.role || 'doctor') : 'clinic_admin',
+        action: 'CERTIFICATE_ISSUED',
+        resource_type: 'IssuedCertificate',
+        resource_id: record._id.toString(),
+        metadata: {
+          certificateId: record.certificateId,
+          certificateType: record.certificateType,
+          referralReference: referral.referenceCode,
+          issuedAt: record.issuedAt.toISOString(),
+        },
+        ip_address: req.ip,
+      });
+    } catch (auditErr) {
+      console.warn('[Certificate] Audit log skipped:', auditErr.message);
+    }
+
+    const baseOrigin = (
+      process.env.APP_BASE_URL ||
+      process.env.CLIENT_ORIGIN ||
+      `${req.protocol}://${req.get('host')}`
+    ).replace(/\/$/, '');
+    const verifyUrl = `${baseOrigin}/verify/${encodeURIComponent(record.certificateId)}`;
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        certificateId: record.certificateId,
+        issuedAt: record.issuedAt.toISOString(),
+        clinicName: record.clinicName,
+        verifyUrl,
+      },
     });
   } catch (err) {
     next(err);

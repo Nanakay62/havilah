@@ -1556,6 +1556,9 @@
       stampApproved = true;
     }
 
+    const clinicLogoDataUrl = isFzClinic ? '/assets/logos/fz-emblem.png' : '';
+    const clinicWatermarkDataUrl = isFzClinic ? '/assets/logos/fz-watermark.png' : '';
+
     return {
       certificateType: typeKey,
       referenceCode: item.referenceCode || '',
@@ -1578,7 +1581,9 @@
       signatureDataUrl,
       signatureApproved,
       stampDataUrl,
-      stampApproved
+      stampApproved,
+      clinicLogoDataUrl,
+      clinicWatermarkDataUrl
     };
   }
 

@@ -182,11 +182,25 @@
     const topY = m;
     let brandX = m;
 
+    let logoBottomY = topY;
     if (opts.logoDataUrl) {
       try {
-        // Havilah mark ratio 350:269 -> 9.8mm x 7.5mm slim letterhead mark
-        pdf.addImage(opts.logoDataUrl, 'PNG', m, topY - 0.5, 9.8, 7.5);
-        brandX = m + 12.2;
+        const maxW = opts.logoMaxWidth || 12;
+        const maxH = opts.logoMaxHeight || 9.5;
+        let drawW = 9.8;
+        let drawH = 7.5;
+        if (typeof pdf.getImageProperties === 'function') {
+          const props = pdf.getImageProperties(opts.logoDataUrl);
+          if (props && props.width > 0 && props.height > 0) {
+            const scale = Math.min(maxW / props.width, maxH / props.height);
+            drawW = props.width * scale;
+            drawH = props.height * scale;
+          }
+        }
+        const imgFmt = /^data:image\/jpe?g/i.test(opts.logoDataUrl) ? 'JPEG' : 'PNG';
+        pdf.addImage(opts.logoDataUrl, imgFmt, m, topY - 0.5, drawW, drawH, undefined, 'FAST');
+        brandX = m + drawW + 3.2;
+        logoBottomY = topY - 0.5 + drawH;
       } catch (e) {
         brandX = m;
       }
@@ -246,7 +260,7 @@
       rightY += 3.6;
     }
 
-    const ruleY = Math.max(leftY, rightY, topY + 10.5) + r(1);
+    const ruleY = Math.max(leftY, rightY, logoBottomY + 1, topY + 10.5) + r(1);
     pdf.setDrawColor(...COLORS.accent);
     pdf.setLineWidth(PAGE.accentRuleWidth);
     pdf.line(m, ruleY, rightX, ruleY);

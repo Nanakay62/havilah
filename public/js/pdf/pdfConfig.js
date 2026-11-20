@@ -157,7 +157,9 @@
       signatureDataUrl: clean(input.signatureDataUrl),
       signatureApproved: Boolean(input.signatureApproved && clean(input.signatureDataUrl)),
       stampDataUrl: clean(input.stampDataUrl),
-      stampApproved: Boolean(input.stampApproved && clean(input.stampDataUrl))
+      stampApproved: Boolean(input.stampApproved && clean(input.stampDataUrl)),
+      clinicLogoDataUrl: clean(input.clinicLogoDataUrl),
+      clinicWatermarkDataUrl: clean(input.clinicWatermarkDataUrl)
     };
   }
 

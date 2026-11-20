@@ -171,7 +171,9 @@
       signatureDataUrl: input.signatureDataUrl,
       signatureApproved: input.signatureApproved,
       stampDataUrl: input.stampDataUrl,
-      stampApproved: input.stampApproved
+      stampApproved: input.stampApproved,
+      clinicLogoDataUrl: input.clinicLogoDataUrl,
+      clinicWatermarkDataUrl: input.clinicWatermarkDataUrl
     });
 
     const remarks = (input.remarks && String(input.remarks).trim()) || typeMeta.defaultRemarks;
@@ -232,9 +234,15 @@
       creator: 'Havilah Clinical Portal'
     });
 
-    const [fonts, logoDataUrl, signatureImg, stampImg] = await Promise.all([
+    const [fonts, clinicLogoImg, fallbackLogoImg, watermarkImg, signatureImg, stampImg] = await Promise.all([
       Fonts.registerFonts(pdf, { includeSerif: true }),
+      data.clinic.clinicLogoDataUrl
+        ? Components.loadImageAsDataUrl(data.clinic.clinicLogoDataUrl)
+        : Promise.resolve(null),
       Components.loadHavilahLogoDataUrl(),
+      data.clinic.clinicWatermarkDataUrl
+        ? Components.loadImageAsDataUrl(data.clinic.clinicWatermarkDataUrl)
+        : Promise.resolve(null),
       data.clinic.signatureApproved
         ? Components.loadImageAsDataUrl(data.clinic.signatureDataUrl)
         : Promise.resolve(null),
@@ -243,8 +251,32 @@
         : Promise.resolve(null)
     ]);
 
+    const logoDataUrl = clinicLogoImg || fallbackLogoImg;
     const m = PAGE.margin;
     const rightX = PAGE.width - m;
+
+    // -------------------------------------------------------------------------
+    // 0. OPTIONAL MONOCHROME CENTER WATERMARK (rendered first, strictly behind text)
+    // -------------------------------------------------------------------------
+    if (watermarkImg) {
+      try {
+        let wmW = 62;
+        let wmH = 71;
+        if (typeof pdf.getImageProperties === 'function') {
+          const props = pdf.getImageProperties(watermarkImg);
+          if (props && props.width > 0 && props.height > 0) {
+            const scale = Math.min(70 / props.width, 72 / props.height);
+            wmW = props.width * scale;
+            wmH = props.height * scale;
+          }
+        }
+        const wmX = (PAGE.width - wmW) / 2;
+        const wmY = 108; // Centered behind the certification body
+        pdf.addImage(watermarkImg, 'PNG', wmX, wmY, wmW, wmH, undefined, 'FAST');
+      } catch (e) {
+        // Non-blocking: omit watermark if image fails
+      }
+    }
 
     // -------------------------------------------------------------------------
     // 1. SLIM CLINICAL LETTERHEAD (read from clinic profile, omit unset fields)
@@ -262,6 +294,8 @@
 
     let y = Components.drawHeader(pdf, fonts, {
       logoDataUrl,
+      logoMaxWidth: 13.5,
+      logoMaxHeight: 14.5,
       brandTitle: data.clinic.clinicName || COPY.brandName,
       brandSubtitle: 'Occupational Health Clinical Practice',
       brandMetaLines,

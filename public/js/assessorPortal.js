@@ -1209,6 +1209,30 @@
     const isCompleted = item.status === 'completed';
     const isClinicAdmin = isUserClinicAdmin(state.assessor);
 
+    // Populate sticky workspace header
+    const hdrNameEl = document.getElementById('modalHeaderPatientName');
+    const hdrOrgEl = document.getElementById('modalHeaderOrgDept');
+    const hdrStatusEl = document.getElementById('modalHeaderStatusBadge');
+    if (hdrNameEl) hdrNameEl.textContent = pName;
+    if (hdrOrgEl) hdrOrgEl.textContent = `${compName} · ${pDept}`;
+    if (hdrStatusEl) {
+      const st = (item.status || 'pending').toLowerCase();
+      hdrStatusEl.textContent = st.toUpperCase();
+      if (st === 'completed') {
+        hdrStatusEl.style.background = '#DCFCE7';
+        hdrStatusEl.style.color = '#15803D';
+      } else if (st === 'scheduled') {
+        hdrStatusEl.style.background = '#DBEAFE';
+        hdrStatusEl.style.color = '#1D4ED8';
+      } else if (st === 'cancelled') {
+        hdrStatusEl.style.background = '#FEE2E2';
+        hdrStatusEl.style.color = '#B91C1C';
+      } else {
+        hdrStatusEl.style.background = '#FEF3C7';
+        hdrStatusEl.style.color = '#92400E';
+      }
+    }
+
     // Direct phone/email action links
     const isEmail = pContact.includes('@');
     const isPhone = !isEmail && pContact.length >= 7;
@@ -1216,38 +1240,43 @@
     let contactAction = safePContact;
     if (isPhone) {
       const cleanTel = pContact.replace(/[^+\d]/g, '');
-      contactAction = `<a href="tel:${escapeHtml(cleanTel)}" style="color:var(--brand); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call ${safePContact}</a>`;
+      contactAction = `<a href="tel:${escapeHtml(cleanTel)}" style="color:var(--brand); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${safePContact}</a>`;
     } else if (isEmail) {
       const mailtoSubj = encodeURIComponent(`Havilah Clinical Consultation [${item.referenceCode || ''}]`);
       const safeMail = encodeURIComponent(pContact).replace(/%40/g, '@');
-      contactAction = `<a href="mailto:${escapeHtml(safeMail)}?subject=${mailtoSubj}" style="color:var(--brand); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>Email ${safePContact}</a>`;
+      contactAction = `<a href="mailto:${escapeHtml(safeMail)}?subject=${mailtoSubj}" style="color:var(--brand); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:5px; word-break:break-all;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>${safePContact}</a>`;
     }
 
     body.innerHTML = `
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; background:#F8FAFC; padding:14px; border-radius:8px; border:1px solid var(--border);">
-        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">CLIENT COMPANY</span><div style="font-weight:700; color:var(--text-1);">${escapeHtml(compName)}</div></div>
-        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">DEPARTMENT</span><div style="font-weight:600; color:var(--text-1);">${escapeHtml(pDept)}</div></div>
-        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">PATIENT NAME</span><div style="font-weight:700; color:var(--text-1); font-size:0.95rem;">${escapeHtml(pName)}</div></div>
-        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">DIRECT CONTACT</span><div>${contactAction}</div></div>
-        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">PREFERRED SCHEDULE</span><div style="font-weight:600; color:var(--text-1);">${escapeHtml(pSchedule)}</div></div>
-        <div><span style="color:var(--text-muted); font-size:0.75rem; font-weight:700;">CASE STATUS</span><div style="font-weight:700; text-transform:uppercase; color:var(--accent);">${escapeHtml(item.status)}</div></div>
-      </div>
-
-      <div>
-        <span style="color:var(--text-2); font-size:0.78rem; font-weight:700; text-transform:uppercase;">Intake Consultation Reason / Notes</span>
-        <div style="background:#F8FAFC; padding:12px; border-radius:8px; margin-top:4px; border:1px solid var(--border); font-size:0.86rem; color:var(--text-1); white-space:pre-wrap;">${escapeHtml(intakeNotes)}</div>
-      </div>
-
-      ${isCompleted ? `
-        <div>
-          <span style="color:var(--text-2); font-size:0.78rem; font-weight:700; text-transform:uppercase;">Assessor Case Notes &amp; Fee</span>
-          <div style="background:#F8FAFC; padding:12px; border-radius:8px; margin-top:4px; border:1px solid var(--border); font-size:0.86rem; color:var(--text-1);">
-            <div style="margin-bottom:6px;"><strong>Amount Billed:</strong> ${escapeHtml(item.billing?.currency || 'GHS')} ${(item.billing?.amount || 0).toFixed(2)} (${escapeHtml(item.billing?.billedAt ? new Date(item.billing.billedAt).toLocaleDateString() : 'Settled')})</div>
-            <div><strong>Clinical Notes:</strong> ${escapeHtml(assessorNotes)}</div>
+      <div class="clinical-section-card" style="padding: 12px 14px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div>
+            <span style="color:var(--text-muted); font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">Direct Contact</span>
+            <div style="margin-top:2px; font-size:0.82rem;">${contactAction}</div>
+          </div>
+          <div>
+            <span style="color:var(--text-muted); font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">Preferred Schedule</span>
+            <div style="margin-top:2px; font-weight:600; color:var(--text-1); font-size:0.82rem;">${escapeHtml(pSchedule)}</div>
           </div>
         </div>
-      ` : ''}
+        <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-light);">
+          <span style="color:var(--text-muted); font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">Intake Reason / Notes</span>
+          <div style="margin-top:3px; font-size:0.83rem; color:var(--text-1); line-height:1.45; white-space:pre-wrap;">${escapeHtml(intakeNotes)}</div>
+        </div>
+        ${isCompleted ? `
+          <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-light); font-size:0.82rem; color:var(--text-1);">
+            <div style="margin-bottom:4px;"><strong>Billed Fee:</strong> ${escapeHtml(item.billing?.currency || 'GHS')} ${(item.billing?.amount || 0).toFixed(2)} (${escapeHtml(item.billing?.billedAt ? new Date(item.billing.billedAt).toLocaleDateString() : 'Settled')})</div>
+            <div><strong>Clinical Notes:</strong> ${escapeHtml(assessorNotes)}</div>
+          </div>
+        ` : ''}
+      </div>
     `;
+
+    // Reset left-pane tab to Overview and initialize Digital Excuse Duty defaults
+    if (typeof window.switchClinicalRecordTab === 'function') {
+      window.switchClinicalRecordTab('overview');
+    }
+    initExcuseDutyFormForCase(item);
 
     // Populate triage & delegation section
     const triageSec = document.getElementById('modalTriageSection');
@@ -1403,9 +1432,212 @@
     }
   };
 
+  // --- Clinical Workspace Left-Pane Tabs & Digital Excuse Duty Helpers ---
+  window.switchClinicalRecordTab = (tabName) => {
+    const overviewBtn = document.getElementById('clinicalTabOverviewBtn');
+    const docsBtn = document.getElementById('clinicalTabDocsBtn');
+    const overviewPanel = document.getElementById('clinicalTabOverviewPanel');
+    const docsPanel = document.getElementById('clinicalTabDocsPanel');
+
+    const isDocs = tabName === 'documents';
+    if (overviewBtn) {
+      overviewBtn.classList.toggle('active', !isDocs);
+      overviewBtn.setAttribute('aria-selected', String(!isDocs));
+    }
+    if (docsBtn) {
+      docsBtn.classList.toggle('active', isDocs);
+      docsBtn.setAttribute('aria-selected', String(isDocs));
+    }
+    if (overviewPanel) overviewPanel.style.display = isDocs ? 'none' : 'flex';
+    if (docsPanel) docsPanel.style.display = isDocs ? 'flex' : 'none';
+  };
+
+  function initExcuseDutyFormForCase() {
+    const today = new Date().toISOString().split('T')[0];
+    const typeEl = document.getElementById('excuseDutyTypeSelect');
+    const startEl = document.getElementById('excuseDutyStartInput');
+    const endEl = document.getElementById('excuseDutyEndInput');
+    const mdcEl = document.getElementById('excuseDutyMdcInput');
+    const remarksEl = document.getElementById('excuseDutyRemarksInput');
+    const privacyEl = document.getElementById('excuseDutyPrivacyCheck');
+
+    if (typeEl) typeEl.value = 'excuse_duty';
+    if (startEl) startEl.value = today;
+    if (endEl) endEl.value = today;
+    if (mdcEl) {
+      const savedMdc = localStorage.getItem('havilah_clinician_mdc_number') || '';
+      mdcEl.value = savedMdc;
+    }
+    if (remarksEl && window.ExcuseDutyPdf) {
+      remarksEl.value = window.ExcuseDutyPdf.CERTIFICATE_TYPES.excuse_duty.defaultRemarks;
+    }
+    if (privacyEl) privacyEl.checked = true;
+    window.onExcuseDutyFormChange(true);
+  }
+
+  window.onExcuseDutyFormChange = (skipRemarksReset) => {
+    const typeEl = document.getElementById('excuseDutyTypeSelect');
+    const startEl = document.getElementById('excuseDutyStartInput');
+    const endEl = document.getElementById('excuseDutyEndInput');
+    const endCol = document.getElementById('excuseDutyEndCol');
+    const previewEl = document.getElementById('excuseDutySchedulePreview');
+    const remarksEl = document.getElementById('excuseDutyRemarksInput');
+
+    const typeKey = typeEl ? typeEl.value : 'excuse_duty';
+    const needsRange = typeKey === 'excuse_duty' || typeKey === 'light_duty';
+    if (endCol) endCol.style.display = needsRange ? 'block' : 'none';
+
+    if (startEl && endEl && needsRange && startEl.value && (!endEl.value || endEl.value < startEl.value)) {
+      endEl.value = startEl.value;
+    }
+
+    if (remarksEl && !skipRemarksReset && window.ExcuseDutyPdf && window.ExcuseDutyPdf.CERTIFICATE_TYPES[typeKey]) {
+      const allDefaults = Object.values(window.ExcuseDutyPdf.CERTIFICATE_TYPES).map(t => t.defaultRemarks);
+      if (!remarksEl.value.trim() || allDefaults.includes(remarksEl.value.trim())) {
+        remarksEl.value = window.ExcuseDutyPdf.CERTIFICATE_TYPES[typeKey].defaultRemarks;
+      }
+    }
+
+    if (previewEl && window.ExcuseDutyPdf) {
+      const startVal = startEl ? startEl.value : '';
+      const endVal = needsRange ? (endEl ? endEl.value : startVal) : startVal;
+      const sched = window.ExcuseDutyPdf.calculateExcuseDutySchedule(startVal, endVal);
+      if (!sched.valid) {
+        previewEl.textContent = 'Select a valid start and end date.';
+      } else if (needsRange) {
+        previewEl.textContent = `Duration: ${sched.days} Day${sched.days === 1 ? '' : 's'} (${sched.startFormatted} to ${sched.endFormatted}) | Return to duty: ${sched.returnDateFormatted}`;
+      } else if (typeKey === 'fit_to_return') {
+        previewEl.textContent = `Certified fit to resume duties on ${sched.startFormatted}`;
+      } else {
+        previewEl.textContent = `Consultation attendance date: ${sched.startFormatted}`;
+      }
+    }
+  };
+
+  function collectExcuseDutyPayload() {
+    const item = state.selectedCase;
+    if (!item) return null;
+    const typeKey = (document.getElementById('excuseDutyTypeSelect') || {}).value || 'excuse_duty';
+    const startDate = (document.getElementById('excuseDutyStartInput') || {}).value || new Date().toISOString().split('T')[0];
+    const endDate = (document.getElementById('excuseDutyEndInput') || {}).value || startDate;
+    const mdcNumber = ((document.getElementById('excuseDutyMdcInput') || {}).value || '').trim();
+    const remarks = ((document.getElementById('excuseDutyRemarksInput') || {}).value || '').trim();
+    const hrSafePrivacy = Boolean((document.getElementById('excuseDutyPrivacyCheck') || {}).checked);
+
+    if (mdcNumber) {
+      try { localStorage.setItem('havilah_clinician_mdc_number', mdcNumber); } catch (e) {}
+    }
+
+    const clinicianName = state.profile?.fullName || state.profile?.name || state.assessor?.name || 'Attending Clinician';
+    const clinicianSpecialty = state.profile?.specialty || state.assessor?.specialty || 'Occupational Health Specialist';
+    const clinicName = state.assessor?.organization || state.assessor?.clinicName || 'FZ Safety and Health';
+    const clinicPhone = state.assessor?.phone || '024 362 9870';
+
+    return {
+      certificateType: typeKey,
+      referenceCode: item.referenceCode || '-',
+      patientName: item.clinicalDetails?.patientName || 'Employee',
+      companyName: item.tenantId?.company_name || 'Organization',
+      departmentName: item.departmentName || 'General',
+      consultationDate: new Date().toISOString().split('T')[0],
+      startDate,
+      endDate: (typeKey === 'excuse_duty' || typeKey === 'light_duty') ? endDate : startDate,
+      mdcNumber,
+      remarks,
+      hrSafePrivacy,
+      clinicianName,
+      clinicianSpecialty,
+      clinicName,
+      clinicPhone
+    };
+  }
+
+  window.handlePreviewExcuseDutyPdf = async () => {
+    if (!window.ExcuseDutyPdf) {
+      alert('Excuse Duty PDF generator is still loading. Please refresh and try again.');
+      return;
+    }
+    const payload = collectExcuseDutyPayload();
+    if (!payload) return;
+    try {
+      await window.ExcuseDutyPdf.downloadExcuseDutyPdf(payload);
+      showToast('Digital Excuse Duty preview downloaded.');
+    } catch (err) {
+      alert('Could not generate PDF preview: ' + err.message);
+    }
+  };
+
+  window.handleIssueExcuseDutyPdf = async () => {
+    if (!state.selectedCase) return;
+    if (!window.ExcuseDutyPdf) {
+      alert('Excuse Duty PDF generator is still loading. Please refresh and try again.');
+      return;
+    }
+    const payload = collectExcuseDutyPayload();
+    const sched = window.ExcuseDutyPdf.calculateExcuseDutySchedule(payload.startDate, payload.endDate);
+    if (!sched.valid) {
+      alert('Please choose a valid start date and end date (end date must be on or after start date).');
+      return;
+    }
+
+    const btn = document.getElementById('issueExcuseDutyBtn');
+    const statusEl = document.getElementById('modalAttachmentUploadStatus');
+    if (btn) { btn.disabled = true; btn.textContent = 'Generating & Issuing...'; }
+    if (statusEl) { statusEl.textContent = 'Generating and attaching Digital Excuse Duty PDF...'; statusEl.style.display = 'block'; }
+
+    try {
+      const built = await window.ExcuseDutyPdf.buildExcuseDutyPdf(payload);
+      const res = await assessorApiFetch(`${API_BASE}/referrals/${state.selectedCase._id}/attachments`, {
+        method: 'POST',
+        body: JSON.stringify({
+          fileName: built.fileName,
+          fileData: built.dataUri,
+          fileType: 'application/pdf',
+          fileSize: built.blobSize
+        })
+      });
+
+      if (res && res.data) {
+        state.selectedCase.clinicalDetails = state.selectedCase.clinicalDetails || {};
+        state.selectedCase.clinicalDetails.attachments = res.data;
+        renderAssessorAttachments(res.data);
+
+        // Post a clean notice into the consultation chat so the employee sees it immediately
+        const certLabel = built.data.typeMeta.badge;
+        const periodSummary = (payload.certificateType === 'excuse_duty' || payload.certificateType === 'light_duty')
+          ? ` (${sched.startFormatted} to ${sched.endFormatted}, ${sched.days} day${sched.days === 1 ? '' : 's'})`
+          : ` (${sched.startFormatted})`;
+        const noticeMsg = `I have issued your Digital ${certLabel} Certificate${periodSummary} [Cert ID: ${built.certificateId}]. You can download the PDF from your Clinical Documents section above.`;
+
+        try {
+          const msgRes = await assessorApiFetch(`${API_BASE}/referrals/${state.selectedCase._id}/message`, {
+            method: 'POST',
+            body: JSON.stringify({ message: noticeMsg })
+          });
+          if (msgRes && msgRes.success && msgRes.thread) {
+            state.selectedCase.thread = msgRes.thread;
+            renderAssessorModalThread(msgRes.thread);
+          }
+        } catch (chatErr) {
+          console.warn('[ExcuseDuty] Chat notice skipped:', chatErr.message);
+        }
+
+        showToast(`Digital Excuse Duty (${built.certificateId}) issued and sent to employee.`);
+      }
+    } catch (err) {
+      alert('Failed to issue Digital Excuse Duty PDF: ' + err.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Issue & Send to Employee'; }
+      if (statusEl) { statusEl.style.display = 'none'; statusEl.textContent = 'Uploading confidential medical document...'; }
+    }
+  };
+
   // --- Clinical Attachment Functions for Assessor ---
   function renderAssessorAttachments(attachments) {
     const attachList = document.getElementById('modalAttachmentsList');
+    const countBadge = document.getElementById('clinicalDocsCountBadge');
+    const count = Array.isArray(attachments) ? attachments.length : 0;
+    if (countBadge) countBadge.textContent = `(${count})`;
     if (!attachList) return;
 
     if (!attachments || attachments.length === 0) {
@@ -1530,33 +1762,66 @@
     }
   };
 
-  // --- Clinical Thread Functions for Assessor ---
+  // --- Clinical Thread Functions for Assessor (Unified iMessage-Style Bubbles) ---
+  function formatChatDateLabel(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return '';
+    const now = new Date();
+    const todayKey = now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    if (d.toDateString() === todayKey) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
   function renderAssessorModalThread(thread) {
     const container = document.getElementById('modalCaseThreadContainer');
     if (!container) return;
 
     if (!thread || thread.length === 0) {
-      container.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;text-align:center;padding:16px;">No messages in consultation dialogue yet. Type a note below to initiate communication.</div>';
+      container.innerHTML = '<div style="margin:auto;color:#64748B;font-size:0.84rem;text-align:center;padding:28px 16px;max-width:280px;line-height:1.5;">No messages yet. Start a confidential conversation with the patient below.</div>';
       return;
     }
 
-    container.innerHTML = thread.map(msg => {
+    let lastDateKey = '';
+    const htmlParts = [];
+
+    thread.forEach((msg, idx) => {
       const isAssessor = msg.sender === 'assessor';
-      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const prev = idx > 0 ? thread[idx - 1] : null;
+      const next = idx < thread.length - 1 ? thread[idx + 1] : null;
+
+      const msgDate = msg.timestamp ? new Date(msg.timestamp) : null;
+      const dateKey = msgDate && !isNaN(msgDate.getTime()) ? msgDate.toDateString() : '';
+      const dateChanged = Boolean(dateKey && dateKey !== lastDateKey);
+      if (dateChanged) {
+        lastDateKey = dateKey;
+        htmlParts.push(`<div class="imsg-date-divider">${escapeHtml(formatChatDateLabel(msg.timestamp))}</div>`);
+      }
+
+      const sameAsPrev = Boolean(prev && prev.sender === msg.sender && !dateChanged);
+      const nextDate = next && next.timestamp ? new Date(next.timestamp) : null;
+      const nextDateKey = nextDate && !isNaN(nextDate.getTime()) ? nextDate.toDateString() : '';
+      const sameAsNext = Boolean(next && next.sender === msg.sender && (!nextDateKey || nextDateKey === dateKey));
+
+      const timeStr = msgDate && !isNaN(msgDate.getTime())
+        ? msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '';
       const safeMsg = escapeHtml(msg.message || '');
+      const senderLabel = isAssessor ? 'You' : (state.selectedCase?.clinicalDetails?.patientName || 'Patient');
 
-      return `
-        <div style="display:flex;flex-direction:column;align-items:${isAssessor ? 'flex-end' : 'flex-start'};gap:2px;margin-bottom:6px;">
-          <div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);padding:0 4px;">
-            ${isAssessor ? 'You (Practitioner)' : 'Patient (Employee)'} • ${timeStr}
-          </div>
-          <div style="max-width:82%;padding:8px 12px;border-radius:${isAssessor ? '14px 14px 2px 14px' : '14px 14px 14px 2px'};font-size:0.82rem;line-height:1.45;background:${isAssessor ? 'var(--brand)' : 'var(--surface-card)'};color:${isAssessor ? '#FFFFFF' : 'var(--text-1)'};border:1px solid ${isAssessor ? 'transparent' : 'var(--border)'};box-shadow:0 1px 3px rgba(0,0,0,0.05);word-break:break-word;">
-            ${safeMsg}
-          </div>
+      htmlParts.push(`
+        <div class="imsg-row ${isAssessor ? 'imsg-row--out' : 'imsg-row--in'}${sameAsPrev ? ' imsg-row--continued' : ''}">
+          ${!sameAsPrev ? `<div class="imsg-sender">${escapeHtml(senderLabel)}</div>` : ''}
+          <div class="imsg-bubble ${isAssessor ? 'imsg-bubble--out' : 'imsg-bubble--in'}">${safeMsg}</div>
+          ${!sameAsNext && timeStr ? `<div class="imsg-time">${escapeHtml(timeStr)}</div>` : ''}
         </div>
-      `;
-    }).join('');
+      `);
+    });
 
+    container.innerHTML = htmlParts.join('');
     setTimeout(() => { container.scrollTop = container.scrollHeight; }, 10);
   }
 
@@ -1568,11 +1833,11 @@
     const btn = document.getElementById('modalCaseSendReplyBtn');
 
     if (!msg) {
-      alert('Please enter a message before sending.');
+      if (inputEl) inputEl.focus();
       return;
     }
 
-    if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+    if (btn) btn.disabled = true;
 
     try {
       const res = await assessorApiFetch(`${API_BASE}/referrals/${id}/message`, {
@@ -1587,12 +1852,11 @@
 
         if (inputEl) inputEl.value = '';
         renderAssessorModalThread(res.thread);
-        showToast('Message sent to patient.');
       }
     } catch (err) {
       alert('Error sending message: ' + err.message);
     } finally {
-      if (btn) { btn.disabled = false; btn.innerHTML = '<span>Send</span>'; }
+      if (btn) btn.disabled = false;
     }
   };
 

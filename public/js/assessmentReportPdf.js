@@ -279,7 +279,7 @@
         statusColor = [220, 38, 38];
         statusBg = [254, 242, 242];
         riskLevel = 'Moderately Severe (15–19) • Prompt Clinical Support';
-        narrativeText = 'Your PHQ-9 score falls in the moderately severe range (15–19). Symptoms like low mood, exhaustion, or harsh self-criticism are likely weighing heavily on day-to-day life. You do not have to carry this alone—please schedule a free, confidential check-in with Dr. Edith Clarke.';
+        narrativeText = 'Your PHQ-9 score falls in the moderately severe range (15–19). Symptoms like low mood, exhaustion, or harsh self-criticism are likely weighing heavily on day-to-day life. You do not have to carry this alone; please schedule a free, confidential check-in with Dr. Edith Clarke.';
       } else {
         statusBand = 'Severe Symptoms';
         statusColor = [185, 28, 28];
@@ -364,7 +364,7 @@
             {
               title: 'Start Small with One Daily Anchor Activity',
               meta: 'Behavioral Activation',
-              body: 'When mood and energy feel heavy, pick one tiny manageable step each day—a 10-minute walk outdoors, eating a regular meal, or messaging one trusted friend—rather than waiting for motivation first.'
+              body: 'When mood and energy feel heavy, pick one tiny manageable step each day (a 10-minute walk outdoors, eating a regular meal, or messaging one trusted friend) rather than waiting for motivation first.'
             },
             {
               title: 'Protect Sleep & Evening Decompression',
@@ -376,7 +376,7 @@
             {
               title: 'Keep Engaging in Mood-Lifting Routines',
               meta: 'Daily Mood Habit',
-              body: 'Schedule small activities that give you a sense of enjoyment or accomplishment each week—movement, sunlight, music, or connecting with people who energize you.'
+              body: 'Schedule small activities that give you a sense of enjoyment or accomplishment each week, such as movement, sunlight, music, or connecting with people who energize you.'
             },
             {
               title: 'Maintain Steady Sleep & Energy Rhythms',
@@ -494,7 +494,7 @@
       });
 
       importantNoteTitle = 'Understanding Your GAD-7 Score';
-      importantNoteBody = 'GAD-7 scores range from 0 to 21 (lower raw score = lower anxiety symptoms; higher Wellbeing Index = calmer baseline). This private summary is yours alone—never shared with your employer or HR.';
+      importantNoteBody = 'GAD-7 scores range from 0 to 21 (lower raw score = lower anxiety symptoms; higher Wellbeing Index = calmer baseline). This private summary is yours alone and is never shared with your employer or HR.';
 
       section3Title = '3. Calming & Anxiety-Relief Habits';
       section3Subtitle = 'Evidence-based techniques tailored to your GAD-7 anxiety screening:';
@@ -530,7 +530,7 @@
             {
               title: 'Talk Things Through Early',
               meta: 'Support & Guidance',
-              body: 'Sharing worries with someone you trust—or checking in confidentially with Dr. Edith Clarke whenever anxiety spikes—keeps stress from snowballing.'
+              body: 'Sharing worries with someone you trust, or checking in confidentially with Dr. Edith Clarke whenever anxiety spikes, keeps stress from snowballing.'
             }
           ];
 
@@ -677,7 +677,7 @@
         statusColor = [220, 38, 38];
         statusBg = [254, 242, 242];
         riskLevel = 'Extreme Fatigue (35–50) • Medical Check-In Advised';
-        narrativeText = 'Your FAS-10 score falls in the severe fatigue range (35–50). Persistent physical and mental exhaustion deserves real care—and sometimes has treatable medical causes (sleep, iron/vitamin levels, or chronic strain). Please book a free private check-in with Dr. Edith Clarke.';
+        narrativeText = 'Your FAS-10 score falls in the severe fatigue range (35–50). Persistent physical and mental exhaustion deserves real care, and sometimes has treatable medical causes (sleep, iron/vitamin levels, or chronic strain). Please book a free private check-in with Dr. Edith Clarke.';
       }
 
       section2Title = '2. Breakdown by Validated FAS-10 Fatigue Subscales';
@@ -808,7 +808,7 @@
         statusColor = [220, 38, 38];
         statusBg = [254, 242, 242];
         riskLevel = 'Elevated Workplace Risk • Support Advised';
-        narrativeText = 'Your COPSOQ-III results indicate heavy workplace psychosocial strain. You do not have to navigate this alone—you can speak confidentially with Dr. Edith Clarke or submit an anonymous workplace hazard note in Havilah.';
+        narrativeText = 'Your COPSOQ-III results indicate heavy workplace psychosocial strain. You do not have to navigate this alone; you can speak confidentially with Dr. Edith Clarke or submit an anonymous workplace hazard note in Havilah.';
       }
 
       section2Title = '2. Breakdown by ISO 45003 Workplace Areas';
@@ -911,7 +911,7 @@
         statusColor = [5, 150, 105];
         statusBg = [236, 253, 245];
         riskLevel = 'Healthy Across All 5 Pillars';
-        narrativeText = 'Across all 5 Havilah wellbeing instruments, your overall balance is strong. Your mood, calm, stress coping, energy recovery, and work environment are supporting you well—keep protecting your daily habits.';
+        narrativeText = 'Across all 5 Havilah wellbeing instruments, your overall balance is strong. Your mood, calm, stress coping, energy recovery, and work environment are supporting you well. Keep protecting your daily habits.';
       } else if (exactMean >= 50) {
         statusBand = 'Moderate Strain';
         statusColor = [217, 119, 6];
@@ -923,7 +923,7 @@
         statusColor = [220, 38, 38];
         statusBg = [254, 242, 242];
         riskLevel = 'Elevated Strain • Clinical Check-In Advised';
-        narrativeText = 'Your combined 5-module profile shows elevated strain across multiple wellbeing pillars. You do not need to carry this alone—we strongly encourage a free, 100% confidential check-in with Dr. Edith Clarke.';
+        narrativeText = 'Your combined 5-module profile shows elevated strain across multiple wellbeing pillars. You do not need to carry this alone. We strongly encourage a free, 100% confidential check-in with Dr. Edith Clarke.';
       }
 
       section2Title = '2. Breakdown Across All 5 Wellbeing Pillars';
@@ -996,7 +996,7 @@
         {
           title: 'Review Your Full Profile Privately with Dr. Edith Clarke',
           meta: 'Free Partner Care',
-          body: `You can share this confidential 5-pillar PDF during a free private consultation with Dr. Edith Clarke (${assessorPhone})—your employer and HR are never informed.`
+          body: `You can share this confidential 5-pillar PDF during a free private consultation with Dr. Edith Clarke (${assessorPhone}). Your employer and HR are never informed.`
         }
       ];
     }

@@ -2220,7 +2220,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
             <div class="avatar">--</div>
             <div>
               <div class="dropdown-header-name">Team Member</div>
-              <div class="dropdown-header-email">—</div>
+              <div class="dropdown-header-email">-</div>
             </div>
           </div>
           <button class="dropdown-item" onclick="App.openProfileSettings()" role="menuitem">
@@ -2562,7 +2562,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
             <div class="settings-avatar" id="settingsProfileAvatar">--</div>
             <div class="settings-profile-meta">
               <div class="settings-profile-name" id="settingsProfileName">Team Member</div>
-              <div class="settings-profile-email" id="settingsProfileEmail">—</div>
+              <div class="settings-profile-email" id="settingsProfileEmail">-</div>
             </div>
           </div>
 
@@ -2572,14 +2572,14 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
               <div class="settings-row-label">Department</div>
               <div class="settings-row-desc">Your assigned organizational department.</div>
             </div>
-            <div class="settings-row-value" id="settingsValDepartment">—</div>
+            <div class="settings-row-value" id="settingsValDepartment">-</div>
           </div>
           <div class="settings-row" id="settingsRowRole">
             <div class="settings-row-info">
               <div class="settings-row-label">Role</div>
               <div class="settings-row-desc">Your platform account permission level.</div>
             </div>
-            <div class="settings-row-value" id="settingsValRole">—</div>
+            <div class="settings-row-value" id="settingsValRole">-</div>
           </div>
           <p class="settings-subnote">Managed by your organization. Contact HR to change these.</p>
 
@@ -3059,7 +3059,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
                 <span id="consultDisplayStatus" class="help-status-badge">Pending</span>
               </div>
               <div class="help-meta-text" style="margin-top: 4px;">
-                Requested on <span id="consultDisplayDate">—</span> · Preferred: <span id="consultDisplayPreferred">—</span>
+                Requested on <span id="consultDisplayDate">-</span> · Preferred: <span id="consultDisplayPreferred">-</span>
               </div>
             </div>
           </div>
@@ -4009,13 +4009,13 @@ function renderTrackedReportView(report) {
   document.getElementById('trackAuthSection').style.display = 'none';
   document.getElementById('trackDetailsSection').style.display = 'block';
 
-  let formattedDate = '—';
+  let formattedDate = '-';
   if (report.createdAt) {
     const d = new Date(report.createdAt);
     formattedDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
-  const trackingCode = report.trackingCode || '—';
+  const trackingCode = report.trackingCode || '-';
   const category = report.category || 'General';
   const urgency = report.urgency || 'Standard';
 
@@ -4290,7 +4290,7 @@ function renderHelpRequestsList(items) {
     const isActive = code && code === activeCode;
     const thread = Array.isArray(item.thread) ? item.thread : [];
     const lastTs = thread.length > 0 ? thread[thread.length - 1].timestamp : null;
-    const dateLabel = item.createdAt ? formatHelpShortDate(item.createdAt) : '—';
+    const dateLabel = item.createdAt ? formatHelpShortDate(item.createdAt) : '-';
     const msgLabel = lastTs ? ('Last message ' + formatHelpShortDate(lastTs)) : 'No messages yet';
     return `
       <button type="button" class="help-req-row${isActive ? ' is-active' : ''}" onclick="window.lookupConsultationReport('${escapeHelpHtml(code)}')">
@@ -5196,9 +5196,9 @@ const App = (() => {
       { text: "Trouble falling or staying asleep, or sleeping too much?" },
       { text: "Feeling tired or having little energy?" },
       { text: "Poor appetite or overeating?" },
-      { text: "Feeling bad about yourself — or that you are a failure or have let yourself or your family down?" },
+      { text: "Feeling bad about yourself, or that you are a failure or have let yourself or your family down?" },
       { text: "Trouble concentrating on things, such as reading the newspaper or watching television?" },
-      { text: "Moving or speaking so slowly that other people could have noticed? Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual?" },
+      { text: "Moving or speaking so slowly that other people could have noticed? Or the opposite, being so fidgety or restless that you have been moving around a lot more than usual?" },
       { text: "Thoughts that you would be better off dead, or of hurting yourself in some way?" }
     ],
     gad7: [
@@ -5512,7 +5512,7 @@ const App = (() => {
       const hotlineNum = (state.clinicalProvider && state.clinicalProvider.hotline) || '+233 24 362 9870';
       const defaultContact = localStorage.getItem('havilah_patient_contact') || (state.user && (state.user.phone || state.user.email)) || '';
       lowScoreTriggerHtml = `
-        <div id="crisisProtocolResultCard" role="alert" style="margin-top: 20px; padding: 20px; text-align: left; background: #ffffff; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 12px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);">
+        <div id="crisisProtocolResultCard" role="alert" style="margin-top: 20px; padding: 20px; text-align: left; background: #ffffff; border: 2px solid #dc2626; border-radius: 12px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);">
           <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
             <div style="width: 36px; height: 36px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 800; font-size: 1rem;">!</div>
             <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -5522,7 +5522,7 @@ const App = (() => {
           </div>
           <p style="font-size: 0.88rem; color: #1e293b; line-height: 1.55; margin-bottom: 16px;">
             ${isCrisisQ9
-              ? 'Your response indicated thoughts of self-harm or being better off dead. Please reach out right now — free, confidential human support is available immediately.'
+              ? 'Your response indicated thoughts of self-harm or being better off dead. Please reach out right now. Free, confidential human support is available immediately.'
               : 'Your screening score falls in the severe range. Connecting with a qualified clinician promptly is strongly recommended.'}
           </p>
           <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px;">
@@ -6231,7 +6231,7 @@ const App = (() => {
       badge.style.background = '#ecfdf5';
       badge.style.color = '#047857';
       badge.style.borderColor = '#a7f3d0';
-      hint.textContent = 'All 5 wellbeing check-in modules completed — your combined summary report is ready.';
+      hint.textContent = 'All 5 wellbeing check-in modules completed. Your combined summary report is ready.';
       btn.disabled = false;
       btn.style.background = 'linear-gradient(135deg, #0d9488, #0f766e)';
       btn.style.color = '#ffffff';
@@ -6475,7 +6475,7 @@ const App = (() => {
     };
 
     const displayName = name || 'Team Member';
-    const displayEmail = email || '—';
+    const displayEmail = email || '-';
     const roleLabel = role === 'hr_admin' ? 'HR Administrator' : role === 'super_admin' ? 'Super Administrator' : role === 'assessor' ? 'Clinical Assessor' : (role ? (role.charAt(0).toUpperCase() + role.slice(1)) : 'Employee');
     const displayTitle = dept ? `${roleLabel} • ${dept}` : roleLabel;
 
@@ -6489,7 +6489,7 @@ const App = (() => {
       } else {
         initials = parts[0][0].toUpperCase();
       }
-    } else if (displayEmail && displayEmail.includes('@') && displayEmail !== '—') {
+    } else if (displayEmail && displayEmail.includes('@') && displayEmail !== '-') {
       initials = displayEmail.split('@')[0].slice(0, 2).toUpperCase();
     }
 
@@ -7403,7 +7403,7 @@ const App = (() => {
     const emailEl = document.getElementById('settingsProfileEmail');
     if (avatarEl) avatarEl.textContent = initials;
     if (nameEl) nameEl.textContent = name || 'Team Member';
-    if (emailEl) emailEl.textContent = email || '—';
+    if (emailEl) emailEl.textContent = email || '-';
 
     // Work details rows: Department & Role
     const rowDept = document.getElementById('settingsRowDepartment');
@@ -8361,7 +8361,7 @@ window.App = App;
         <div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <span class="help-mono" style="font-size:17px;font-weight:600;color:var(--text);" id="trackDisplayCode">WBL-XXXXXX</span>
-            <span style="color:var(--text-muted);font-size:14px;" id="trackDisplayDate">—</span>
+            <span style="color:var(--text-muted);font-size:14px;" id="trackDisplayDate">-</span>
           </div>
           <div style="display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text-muted);margin-top:4px;flex-wrap:wrap;">
             <span>Category: <strong style="color:var(--text);font-weight:500;" id="trackDisplayCategory">General</strong></span>
@@ -8387,15 +8387,15 @@ window.App = App;
             </div>
             <div style="display:flex;justify-content:space-between;gap:8px;">
               <span style="color:var(--text-muted);">Submitted</span>
-              <span style="color:var(--text);font-weight:500;" id="trackSidebarDate">—</span>
+              <span style="color:var(--text);font-weight:500;" id="trackSidebarDate">-</span>
             </div>
             <div style="display:flex;justify-content:space-between;gap:8px;">
               <span style="color:var(--text-muted);">Category</span>
-              <span style="color:var(--text);font-weight:500;" id="trackSidebarCategory">—</span>
+              <span style="color:var(--text);font-weight:500;" id="trackSidebarCategory">-</span>
             </div>
             <div style="display:flex;justify-content:space-between;gap:8px;">
               <span style="color:var(--text-muted);">Urgency</span>
-              <span style="color:var(--text);font-weight:500;" id="trackSidebarUrgency">—</span>
+              <span style="color:var(--text);font-weight:500;" id="trackSidebarUrgency">-</span>
             </div>
           </div>
         </div>
@@ -8537,7 +8537,7 @@ window.App = App;
           {
             target: '#empGreeting',
             title: 'Personal Greeting',
-            description: 'Your dashboard greets you by name. This is your private wellness space — only you can see your individual results.',
+            description: 'Your dashboard greets you by name. This is your private wellness space; only you can see your individual results.',
             placement: 'bottom'
           },
           {

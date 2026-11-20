@@ -1298,7 +1298,7 @@ function renderAssessorsTable(assessors) {
       ? '<span style="background:rgba(16,185,129,0.12); color:#059669; border:1px solid #a7f3d0; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">Active</span>'
       : '<span style="background:rgba(239,68,68,0.12); color:#dc2626; border:1px solid #fecaca; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">Inactive</span>';
 
-    const dateStr = a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '—';
+    const dateStr = a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '-';
     const safeIdJs = escapeJsAttrSafe(a._id);
 
     tr.innerHTML = `
@@ -1468,7 +1468,7 @@ function renderStaleReferralsTable(staleList) {
       ? `${r.assignedAssessorId.name} (${r.assignedAssessorId.organization || ''})`
       : 'Unassigned';
 
-    let reassignHistory = '—';
+    let reassignHistory = '-';
     if (r.reassignedFrom) {
       const fromName = r.reassignedFrom.name || 'Previous Assessor';
       const when = r.reassignedAt ? new Date(r.reassignedAt).toLocaleDateString() : '';
@@ -1710,13 +1710,13 @@ function renderConflictReports() {
       closed: '<span class="badge" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1;">Closed</span>',
     };
     const stBadge = statusMap[r.status] || `<span class="badge badge-billing">${escapeHtmlSafe(r.status)}</span>`;
-    const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+    const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
 
     return `
       <tr>
         <td>
           <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; font-weight: 700; background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; padding: 4px 8px; border-radius: 6px; display: inline-block;">
-            ${escapeHtmlSafe(r.trackingCode || '—')}
+            ${escapeHtmlSafe(r.trackingCode || '-')}
           </span>
         </td>
         <td>
@@ -1826,7 +1826,7 @@ function openSuperAdminReportModal(reportId) {
     }
   }
 
-  if (descEl) descEl.textContent = report.description || '—';
+  if (descEl) descEl.textContent = report.description || '-';
   if (statusSelect) statusSelect.value = report.status || 'submitted';
 
   renderSuperAdminModalThread(report.thread || []);
@@ -2027,7 +2027,7 @@ async function lookupUserAccount() {
 
     if (!data.found) {
       currentLookedUpUser = null;
-      resultEl.innerHTML = `<div style="color: #059669; font-weight: 600;">No account found for ${escapeHtmlSafe(email)} — they can register freely.</div>`;
+      resultEl.innerHTML = `<div style="color: #059669; font-weight: 600;">No account found for ${escapeHtmlSafe(email)}. They can register freely.</div>`;
       return;
     }
 

@@ -961,10 +961,10 @@
       const tr = document.createElement('tr');
 
       const companyName = r.tenantId?.company_name || r.tenantId?.companyName || 'Organization';
-      const patientName = r.clinicalDetails?.patientName || '—';
-      const patientContact = r.clinicalDetails?.patientContact || '—';
+      const patientName = r.clinicalDetails?.patientName || '-';
+      const patientContact = r.clinicalDetails?.patientContact || '-';
       const deptName = r.departmentName || 'General';
-      const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—';
+      const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '-';
 
       // Status badge
       let statusBadge = '';
@@ -985,7 +985,7 @@
       const prio = (r.priority || 'standard').toLowerCase();
       const isClosedCase = st === 'completed' || st === 'archived' || st === 'cancelled';
       const priorityBadge = (prio === 'crisis' && !isClosedCase)
-        ? '<span class="badge" style="background:#DC2626; color:#FFFFFF; font-weight:700; letter-spacing:0.03em;" title="Immediate crisis screening escalation — Prioritize callback">CRISIS PRIORITY</span>'
+        ? '<span class="badge" style="background:#DC2626; color:#FFFFFF; font-weight:700; letter-spacing:0.03em;" title="Immediate crisis screening escalation - Prioritize callback">CRISIS PRIORITY</span>'
         : (prio === 'urgent' && !isClosedCase)
           ? '<span class="badge" style="background:#EA580C; color:#FFFFFF; font-weight:700;" title="Severe clinical screening score">URGENT</span>'
           : '';
@@ -1200,8 +1200,8 @@
 
     const body = document.getElementById('modalCaseDetailBody');
     const compName = item.tenantId?.company_name || 'Organization';
-    const pName = item.clinicalDetails?.patientName || '—';
-    const pContact = item.clinicalDetails?.patientContact || '—';
+    const pName = item.clinicalDetails?.patientName || '-';
+    const pContact = item.clinicalDetails?.patientContact || '-';
     const pDept = item.departmentName || 'General';
     const pSchedule = item.preferredTime || 'As soon as available';
     const intakeNotes = item.clinicalDetails?.intakeNotes || 'None provided';
@@ -2125,7 +2125,7 @@
       if (statusText) {
         statusText.textContent = res.enabled
           ? `Enabled (${res.recovery_codes_remaining || 0} backup codes remaining)`
-          : 'Not enabled — recommended for HIPAA/DPA clinical access';
+          : 'Not enabled. Recommended for HIPAA/DPA clinical access';
       }
       if (setupStep) setupStep.style.display = res.enabled ? 'none' : 'block';
       if (enabledStep) enabledStep.style.display = res.enabled ? 'block' : 'none';

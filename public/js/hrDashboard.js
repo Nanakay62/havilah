@@ -327,12 +327,12 @@
         month: 'short',
         day: 'numeric',
         year: 'numeric'
-      }) : '—';
+      }) : '-';
 
       const st = (r.status || 'pending').toLowerCase();
 
       // Age calculation (hours/days since created; if >48h and pending, show e.g. "2d" plus overdue badge)
-      let ageHtml = '—';
+      let ageHtml = '-';
       if (r.createdAt) {
         const createdMs = new Date(r.createdAt).getTime();
         const diffMs = Math.max(0, Date.now() - createdMs);
@@ -380,7 +380,7 @@
 
       tr.innerHTML = `
         <td data-label="Reference code" style="font-family: monospace; font-weight: 600; font-size: var(--text-sm); letter-spacing: 0.02em;">
-          ${escapeHrHtml(r.referenceCode || '—')}
+          ${escapeHrHtml(r.referenceCode || '-')}
         </td>
         <td data-label="Department" style="font-weight: 500;">
           ${escapeHrHtml(r.departmentName || 'General')}
@@ -546,14 +546,14 @@
         closed: { label: 'Closed', badgeClass: 'badge-success' },
       };
       const st = statusBadges[r.status] || { label: r.status, badgeClass: 'badge-neutral' };
-      const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+      const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
 
       const safeReportId = String(r._id || '').replace(/[^A-Za-z0-9_-]/g, '');
 
       return `
         <tr>
           <td data-label="Tracking code">
-            <span style="font-family: monospace; font-weight: var(--weight-semibold); color: var(--brand); font-variant-numeric: tabular-nums;">${escapeHrHtml(r.trackingCode || '—')}</span>
+            <span style="font-family: monospace; font-weight: var(--weight-semibold); color: var(--brand); font-variant-numeric: tabular-nums;">${escapeHrHtml(r.trackingCode || '-')}</span>
           </td>
           <td data-label="Category" style="font-weight: var(--weight-medium); color: var(--text);">${escapeHrHtml(r.category || 'General')}</td>
           <td data-label="Urgency">
@@ -769,7 +769,7 @@
       urgEl.className = `badge ${report.urgency === 'Critical' ? 'badge-danger' : report.urgency === 'Urgent' ? 'badge-warning' : 'badge-neutral'}`;
       urgEl.style.color = '';
     }
-    if (descEl) descEl.textContent = report.description || '—';
+    if (descEl) descEl.textContent = report.description || '-';
     if (statusSelect) statusSelect.value = report.status || 'submitted';
 
     renderHrModalThread(report.thread || []);
@@ -1139,7 +1139,7 @@
 
       const u = data.user || {};
       currentHrLookedUpUser = { email, ...u, removable: data.removable };
-      const createdStr = u.created_at ? new Date(u.created_at).toLocaleDateString() : '—';
+      const createdStr = u.created_at ? new Date(u.created_at).toLocaleDateString() : '-';
 
       let actionSection = '';
       if (data.removable) {
@@ -1323,10 +1323,10 @@
             return `<tr>
               <td data-label="Invoice #" style="font-family:monospace;font-weight:600;">${escapeBillingHtml(inv.invoiceNumber)}</td>
               <td data-label="Plan / Cycle">${escapeBillingHtml((inv.tier || '').toUpperCase())} (${escapeBillingHtml(inv.interval || 'monthly')})</td>
-              <td data-label="PO / Email">${escapeBillingHtml(inv.poNumber || '—')} · ${escapeBillingHtml(inv.billingEmail || '')}</td>
+              <td data-label="PO / Email">${escapeBillingHtml(inv.poNumber || '-')} · ${escapeBillingHtml(inv.billingEmail || '')}</td>
               <td data-label="Amount (GHS)" style="font-weight:600;">GHS ${Number(inv.amountGhs || 0).toLocaleString()}</td>
               <td data-label="Status"><span class="badge ${badgeCls}">${escapeBillingHtml(st)}</span></td>
-              <td data-label="Requested">${(inv.issuedAt || inv.requestedAt) ? new Date(inv.issuedAt || inv.requestedAt).toLocaleDateString() : '—'}</td>
+              <td data-label="Requested">${(inv.issuedAt || inv.requestedAt) ? new Date(inv.issuedAt || inv.requestedAt).toLocaleDateString() : '-'}</td>
             </tr>`;
           }).join('');
         }

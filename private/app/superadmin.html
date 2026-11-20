@@ -1297,7 +1297,7 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
           <h2 class="modal-title" style="margin: 0; font-size: 1.15rem;" id="saModalTitle">Case Details</h2>
           <span id="saModalCodeChip" class="badge" style="font-family: monospace; font-size: 12px; background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE;">WBL-XXXXXX</span>
         </div>
-        <p style="margin: 4px 0 0; font-size: 12.5px; color: var(--text-2);" id="saModalTenantName">Organization: —</p>
+        <p style="margin: 4px 0 0; font-size: 12.5px; color: var(--text-2);" id="saModalTenantName">Organization: -</p>
       </div>
       <button onclick="closeSuperAdminReportModal()" style="background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px; width: 32px; height: 32px; font-size: 18px; cursor: pointer; color: var(--text-2); display: flex; align-items: center; justify-content: center; transition: all 0.15s;">&times;</button>
     </div>
@@ -1306,7 +1306,7 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--bg-base); padding: 14px 16px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 18px;">
       <div>
         <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Incident Category</div>
-        <div style="font-weight: 700; color: var(--text-1); font-size: 13.5px; margin-top: 3px;" id="saModalCategory">—</div>
+        <div style="font-weight: 700; color: var(--text-1); font-size: 13.5px; margin-top: 3px;" id="saModalCategory">-</div>
       </div>
       <div>
         <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Urgency Classification</div>
@@ -1319,7 +1319,7 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
     <!-- Incident Description -->
     <div style="margin-bottom: 18px;">
       <label style="display: block; font-size: 11px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Confidential Incident Description</label>
-      <div id="saModalDescription" style="background: var(--bg-base); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--text-1); line-height: 1.55; max-height: 130px; overflow-y: auto; white-space: pre-wrap;">—</div>
+      <div id="saModalDescription" style="background: var(--bg-base); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--text-1); line-height: 1.55; max-height: 130px; overflow-y: auto; white-space: pre-wrap;">-</div>
     </div>
 
     <!-- Status Control -->
@@ -1886,8 +1886,8 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
     </div>
     
     <div style="margin-bottom:18px;padding:12px 16px;background:#f8fafc;border-radius:8px;border:1px solid var(--border);font-size:13px;">
-      <div style="color:var(--text-2);margin-bottom:4px;">Organization: <strong id="reassignModalCompany" style="color:var(--text-1);">—</strong></div>
-      <div style="color:var(--text-2);">Current Assessor: <strong id="reassignModalCurrentAssessor" style="color:#dc2626;">—</strong></div>
+      <div style="color:var(--text-2);margin-bottom:4px;">Organization: <strong id="reassignModalCompany" style="color:var(--text-1);">-</strong></div>
+      <div style="color:var(--text-2);">Current Assessor: <strong id="reassignModalCurrentAssessor" style="color:#dc2626;">-</strong></div>
     </div>
 
     <div style="margin-bottom:18px;padding:12px 16px;background:#F0FDF4;border-radius:8px;border:1px solid #BBF7D0;font-size:12px;color:#15803D;">
@@ -1971,7 +1971,7 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
     const data = await res.json().catch(() => ({}));
     document.getElementById('sa2faStatusText').textContent = data.enabled
       ? `Enabled (${data.recovery_codes_remaining || 0} backup codes remaining)`
-      : 'Disabled — enable TOTP 2FA to protect platform operator access';
+      : 'Disabled. Enable TOTP 2FA to protect platform operator access';
     document.getElementById('sa2faSetupPanel').style.display = data.enabled ? 'none' : 'block';
     document.getElementById('sa2faEnabledPanel').style.display = data.enabled ? 'block' : 'none';
     if (!data.enabled) {

@@ -352,7 +352,7 @@
         }, 500);
       }
     } else {
-      // No target — center tooltip on screen
+      // No target - center tooltip on screen
       elements.spotlight.style.display = 'none';
       centerTooltip();
     }

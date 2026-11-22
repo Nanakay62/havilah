@@ -100,7 +100,9 @@
     // Quiet non-diagnostic footnote for wellbeing/module reports
     nonDiagnosticFootnote: 'Screening indicator only; this report is not a clinical diagnosis. Speak with a qualified clinician if symptoms persist or worsen.',
     // Single privacy-basis line for Medical Excuse Duty Certificates (diagnosis omitted)
-    certificatePrivacyBasis: 'Clinical diagnosis and medical notes are omitted in accordance with the Ghana Data Protection Act, 2012 (Act 843) and ISO 45003 confidentiality standards.',
+    certificatePrivacyBasis: 'Clinical diagnosis and medical notes are omitted in accordance with the Ghana Data Protection Act, 2012 (Act 843) and ISO 45003 confidentiality standards. Issued electronically under the Ghana Electronic Transactions Act, 2008 (Act 772).',
+    // Explicit consent basis when privacy omission is unchecked by clinician with patient consent
+    certificateConsentedBasis: 'Clinical remarks are included with the patient\'s informed consent in accordance with the Ghana Data Protection Act, 2012 (Act 843). Issued electronically under the Ghana Electronic Transactions Act, 2008 (Act 772).',
     // Public national helplines (Ghana)
     publicHelplines: [
       { name: 'Ghana Mental Health Authority (Toll-Free)', contact: '0800 678 678' },

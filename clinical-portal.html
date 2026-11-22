@@ -14,10 +14,10 @@
   <script src="/js/icons.js"></script>
   <script src="/js/vendor/jspdf.umd.min.js"></script>
   <script src="/js/vendor/qrcode-generator.min.js"></script>
-  <script src="/js/pdf/pdfConfig.js"></script>
+  <script src="/js/pdf/pdfConfig.js?v=2.1.0"></script>
   <script src="/js/pdf/pdfFonts.js"></script>
   <script src="/js/pdf/pdfComponents.js"></script>
-  <script src="/js/excuseDutyPdf.js"></script>
+  <script src="/js/excuseDutyPdf.js?v=2.1.0"></script>
   <style>
     /* ── Assessor Portal Layout & Token-Only Overrides ── */
     html, body {
@@ -1717,8 +1717,10 @@
                 <span>Issue medical certificate (PDF)</span>
               </div>
               <p class="text-subtle-xs" style="margin-bottom: var(--space-3);">
-                Generate and attach an official HR-safe medical certificate to this patient's record.
+                Generate and seal an HR-safe, QR-verifiable medical certificate under Ghana Act 857, Act 829, Act 772, and Act 843.
               </p>
+
+              <div id="excuseDutyComplianceAlert" class="alert-banner alert-banner-warning" style="display: none; margin-bottom: var(--space-3); font-size: var(--text-xs); flex-direction: column; gap: var(--space-2);"></div>
 
               <div class="form-grid-2">
                 <div class="form-field">
@@ -1731,8 +1733,22 @@
                   </select>
                 </div>
                 <div class="form-field">
-                  <label class="form-label" for="excuseDutyMdcInput">MDC reg. number</label>
+                  <label class="form-label" for="excuseDutyMdcInput">MDC reg. number *</label>
                   <input type="text" id="excuseDutyMdcInput" class="input" placeholder="e.g. MDC/RN/12345">
+                </div>
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-field">
+                  <label class="form-label" for="excuseDutyConsultDateInput">Date of examination *</label>
+                  <input type="date" id="excuseDutyConsultDateInput" class="input" onchange="onExcuseDutyFormChange()">
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="excuseDutyConsultModeSelect">Consultation modality *</label>
+                  <select id="excuseDutyConsultModeSelect" class="select">
+                    <option value="in_person">In-person clinical examination</option>
+                    <option value="telehealth">Telehealth / virtual consultation</option>
+                  </select>
                 </div>
               </div>
 
@@ -1747,6 +1763,16 @@
                 </div>
               </div>
 
+              <div class="form-field">
+                <label class="form-label" for="excuseDutyStaffIdInput">Employee / staff ID (optional)</label>
+                <input type="text" id="excuseDutyStaffIdInput" class="input" placeholder="e.g. EMP-0428">
+                <div class="form-hint">Printed on the PDF only for employer attendance matching; never exposed on public QR lookup.</div>
+              </div>
+
+              <div id="excuseDutyBackdateWarning" class="alert-banner alert-banner-warning" style="display: none; margin-bottom: var(--space-3); font-size: var(--text-xs);">
+                <span>Backdated leave notice: Start date precedes examination date. Ensure clinical justification is documented in your case notes under MDC Ghana guidelines.</span>
+              </div>
+
               <div id="excuseDutySchedulePreview" class="info-notice" style="margin-bottom: var(--space-3);">
                 Duration: 1 Day | Return to duty: -
               </div>
@@ -1756,9 +1782,18 @@
                 <textarea id="excuseDutyRemarksInput" class="textarea" rows="3" placeholder="Medically assessed and advised rest from duties..."></textarea>
               </div>
 
-              <label style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-3); cursor: pointer;">
-                <input type="checkbox" id="excuseDutyPrivacyCheck" checked>
+              <label style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-2); cursor: pointer;">
+                <input type="checkbox" id="excuseDutyPrivacyCheck" checked onchange="onExcuseDutyFormChange(true)">
                 <span>HR-safe privacy mode (omit confidential diagnosis on certificate)</span>
+              </label>
+
+              <div id="excuseDutyConsentAlert" class="alert-banner alert-banner-danger" style="display: none; margin-bottom: var(--space-3); font-size: var(--text-xs);">
+                <span>Data Protection Act 843 notice: Disclosing medical details to an employer requires explicit documented patient consent. Keep privacy mode checked unless the patient requests disclosure.</span>
+              </div>
+
+              <label style="display: flex; align-items: flex-start; gap: var(--space-2); font-size: var(--text-xs); color: var(--text); font-weight: var(--weight-medium); padding: var(--space-2) var(--space-3); background-color: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-control); margin-bottom: var(--space-3); cursor: pointer;">
+                <input type="checkbox" id="excuseDutyAttestationCheck" style="margin-top: 2px;">
+                <span>I certify that I personally examined this patient and authorize my MDC credentials, signature, and clinic stamp on this electronic certificate under Ghana Act 857 and Act 772.</span>
               </label>
 
               <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
@@ -1769,6 +1804,13 @@
                   Issue &amp; send to employee
                 </button>
               </div>
+            </div>
+
+            <div id="modalIssuedCertificatesSection" class="ws-section" style="display: none;">
+              <div class="ws-section-title">
+                <span>Registered digital certificates</span>
+              </div>
+              <div id="modalIssuedCertificatesList" style="display: flex; flex-direction: column; gap: var(--space-2);"></div>
             </div>
 
             <div id="modalAttachmentsSection" class="ws-section">
@@ -1845,6 +1887,33 @@
         <button type="button" class="btn btn-secondary" onclick="closeModal('confirmCompleteCaseModal')">Cancel</button>
         <button type="button" class="btn btn-primary" id="confirmCompleteProceedBtn" onclick="proceedConfirmedComplete()">Continue</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: Revoke Issued Medical Certificate -->
+  <div class="modal-backdrop" id="revokeCertificateModal" role="dialog" aria-modal="true" aria-labelledby="revokeCertTitle">
+    <div class="modal-dialog modal-dialog--sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="revokeCertTitle">Revoke certificate</h2>
+        <button type="button" class="modal-close-btn" onclick="closeModal('revokeCertificateModal')" aria-label="Close revoke dialog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <form id="revokeCertificateForm" onsubmit="confirmRevokeCertificate(event)" style="display: flex; flex-direction: column; min-height: 0; flex: 1;">
+        <div class="modal-body">
+          <input type="hidden" id="revokeCertIdInput">
+          <p id="revokeCertSummary" style="margin-bottom: var(--space-3);">Revoking a certificate marks its QR verification link as revoked immediately for employers.</p>
+          <div class="form-field" style="margin-bottom: 0;">
+            <label class="form-label" for="revokeCertReasonInput">Reason for revocation *</label>
+            <textarea id="revokeCertReasonInput" class="textarea" rows="3" minlength="5" maxlength="300" placeholder="e.g. Incorrect return-to-duty date entered; superseded by revised certificate." required></textarea>
+            <div class="form-hint">Minimum 5 characters. Logged in the immutable audit trail.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('revokeCertificateModal')">Cancel</button>
+          <button type="submit" class="btn btn-destructive-solid" id="confirmRevokeCertBtn">Revoke certificate</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1999,12 +2068,23 @@
 
           <div class="form-grid-2">
             <div class="form-field">
-              <label class="form-label" for="settingsPracticeRegNumber">Practice registration / license no.</label>
+              <label class="form-label" for="settingsPracticeRegNumber">HeFRA / practice registration no. *</label>
               <input type="text" id="settingsPracticeRegNumber" class="input" placeholder="e.g. HEFRA/GH/2026/001">
             </div>
             <div class="form-field">
-              <label class="form-label" for="settingsMdcNumber">Clinician MDC registration no.</label>
+              <label class="form-label" for="settingsMdcNumber">Clinician MDC registration no. *</label>
               <input type="text" id="settingsMdcNumber" class="input" placeholder="e.g. MDC/RN/12345">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="form-label" for="settingsHefraExpiry">HeFRA licence expiry (optional)</label>
+              <input type="date" id="settingsHefraExpiry" class="input">
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="settingsMdcExpiry">MDC annual retention expiry (optional)</label>
+              <input type="date" id="settingsMdcExpiry" class="input">
             </div>
           </div>
 
@@ -2194,12 +2274,17 @@
                 <input type="text" id="newDocPhone" class="input" placeholder="+233 24 000 0000">
               </div>
               <div class="form-field">
-                <label class="form-label" for="newDocRole">Practice role</label>
-                <select id="newDocRole" class="select">
-                  <option value="doctor">Staff Doctor (Attending Clinician)</option>
-                  <option value="clinic_admin">Clinic Admin (Triage &amp; Staff Lead)</option>
-                </select>
+                <label class="form-label" for="newDocMdcNumber">MDC registration no.</label>
+                <input type="text" id="newDocMdcNumber" class="input" placeholder="e.g. MDC/RN/12345">
               </div>
+            </div>
+
+            <div class="form-field">
+              <label class="form-label" for="newDocRole">Practice role</label>
+              <select id="newDocRole" class="select">
+                <option value="doctor">Staff Doctor (Attending Clinician)</option>
+                <option value="clinic_admin">Clinic Admin (Triage &amp; Staff Lead)</option>
+              </select>
             </div>
 
             <div style="margin-top: var(--space-4); display: flex; justify-content: flex-end; gap: var(--space-2);">
@@ -2260,7 +2345,7 @@
   </div>
 
   <script src="/js/havilahCall.js?v=2.7.0" defer></script>
-  <script src="/js/assessorPortal.js?v=2.3.0"></script>
+  <script src="/js/assessorPortal.js?v=2.4.0"></script>
   <script src="/js/tour.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {

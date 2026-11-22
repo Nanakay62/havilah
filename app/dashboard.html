@@ -4607,11 +4607,76 @@ function sanitizeSafeAttachmentHref(url) {
   if (typeof url !== 'string') return '#';
   const trimmed = url.trim();
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  if (/^data:(application\/pdf|image\/(png|jpeg|jpg|gif|webp)|text\/plain);base64,[A-Za-z0-9+/=\s]+$/i.test(trimmed)) {
-    return trimmed;
+  const match = trimmed.match(/^data:(application\/pdf|image\/(?:png|jpeg|jpg|gif|webp)|text\/plain)(?:;[^;,=]+=[^;,]*)*;base64,([A-Za-z0-9+/=\s]+)$/i);
+  if (match) {
+    return `data:${match[1].toLowerCase()};base64,${match[2].replace(/\s+/g, '')}`;
   }
   return '#';
 }
+
+function consultDataUriToBlob(dataUri) {
+  const clean = sanitizeSafeAttachmentHref(dataUri);
+  if (!clean.startsWith('data:')) return null;
+  const commaIdx = clean.indexOf(',');
+  if (commaIdx === -1) return null;
+  const header = clean.slice(5, commaIdx);
+  const mime = header.split(';')[0] || 'application/octet-stream';
+  const b64 = clean.slice(commaIdx + 1);
+  const binStr = atob(b64);
+  const bytes = new Uint8Array(binStr.length);
+  for (let i = 0; i < binStr.length; i++) {
+    bytes[i] = binStr.charCodeAt(i);
+  }
+  return { blob: new Blob([bytes], { type: mime }), mime };
+}
+
+window.openConsultAttachment = function (idx) {
+  const att = (window._consultAttachmentsCache || [])[idx];
+  if (!att) return;
+  const safeHref = sanitizeSafeAttachmentHref(att.fileData || att.fileUrl || '');
+  if (safeHref === '#') return;
+  if (safeHref.startsWith('data:')) {
+    const parsed = consultDataUriToBlob(safeHref);
+    if (!parsed) return;
+    const blobUrl = URL.createObjectURL(parsed.blob);
+    const win = window.open(blobUrl, '_blank', 'noopener');
+    if (!win) {
+      window.downloadConsultAttachment(idx);
+    }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+  } else {
+    window.open(safeHref, '_blank', 'noopener');
+  }
+};
+
+window.downloadConsultAttachment = function (idx) {
+  const att = (window._consultAttachmentsCache || [])[idx];
+  if (!att) return;
+  const safeHref = sanitizeSafeAttachmentHref(att.fileData || att.fileUrl || '');
+  if (safeHref === '#') return;
+  const fileName = att.fileName || 'Medical_Certificate.pdf';
+  if (safeHref.startsWith('data:')) {
+    const parsed = consultDataUriToBlob(safeHref);
+    if (!parsed) return;
+    const blobUrl = URL.createObjectURL(parsed.blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+  } else {
+    const a = document.createElement('a');
+    a.href = safeHref;
+    a.download = fileName;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+};
 
 function renderConsultationTrackView(data) {
   if (!data) return;
@@ -4680,6 +4745,8 @@ function renderConsultationAttachments(attachments) {
   const list = document.getElementById('consultAttachmentsList');
   if (!card || !list) return;
 
+  window._consultAttachmentsCache = Array.isArray(attachments) ? attachments : [];
+
   if (!attachments || attachments.length === 0) {
     card.style.display = 'none';
     list.innerHTML = '';
@@ -4687,7 +4754,7 @@ function renderConsultationAttachments(attachments) {
   }
 
   card.style.display = 'flex';
-  list.innerHTML = attachments.map((att) => {
+  list.innerHTML = attachments.map((att, idx) => {
     const sizeStr = att.fileSize
       ? (att.fileSize > 1024 * 1024
           ? `${(att.fileSize / (1024 * 1024)).toFixed(1)} MB`
@@ -4696,14 +4763,18 @@ function renderConsultationAttachments(attachments) {
     const timeStr = att.uploadedAt ? formatHelpShortDate(att.uploadedAt) : 'Recently';
     const fileName = escapeHelpHtml(att.fileName || 'Medical_Certificate');
     const safeDataHref = escapeHelpHtml(sanitizeSafeAttachmentHref(att.fileData || att.fileUrl || ''));
+    const isPdf = /\.pdf$/i.test(att.fileName || '') || /application\/pdf/i.test(att.fileType || '');
 
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:1px solid var(--border);padding:12px;border-radius:var(--radius-control);gap:12px;flex-wrap:wrap;">
         <div style="min-width:0;flex:1;">
           <div style="font-weight:600;color:var(--text);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fileName}</div>
-          <div class="help-meta-text" style="margin-top:2px;">Issued ${escapeHelpHtml(timeStr)}${sizeStr ? ' · ' + escapeHelpHtml(sizeStr) : ''}</div>
+          <div class="help-meta-text" style="margin-top:2px;">Issued ${escapeHelpHtml(timeStr)}${sizeStr ? ' · ' + escapeHelpHtml(sizeStr) : ''}${att.certificateId ? ' · Cert ' + escapeHelpHtml(att.certificateId) : ''}</div>
         </div>
-        <a href="${safeDataHref}" download="${fileName}" class="help-btn help-btn--secondary">Download</a>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          ${isPdf ? `<button type="button" onclick="openConsultAttachment(${idx})" class="help-btn help-btn--secondary">Open PDF</button>` : ''}
+          <a href="${safeDataHref}" download="${fileName}" onclick="event.preventDefault(); downloadConsultAttachment(${idx});" class="help-btn help-btn--secondary">Download</a>
+        </div>
       </div>
     `;
   }).join('');

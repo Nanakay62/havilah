@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Certificate Verification - Havilah Occupational Health</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/havilah-mark.svg">
+  <style>
+    :root {
+      --ink: #1A1F2B;
+      --muted: #5B6472;
+      --rule: #E3E6EA;
+      --panel: #F7F8FA;
+      --accent: #0F6E6E;
+      --ok: #1E6B52;
+      --ok-bg: #F0F7F4;
+      --err: #9E3B33;
+      --err-bg: #FAF2F1;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Segoe UI Variable', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 64px;
+    }
+    .shell {
+      width: 100%;
+      max-width: 560px;
+    }
+    .letterhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1.5px solid var(--accent);
+      margin-bottom: 24px;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .doc-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      text-align: right;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+    }
+    .subtitle {
+      font-size: 13.5px;
+      color: var(--muted);
+      margin: 0 0 20px 0;
+      line-height: 1.5;
+    }
+    .lookup-form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .lookup-input {
+      flex: 1;
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--ink);
+      text-transform: uppercase;
+    }
+    .lookup-input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+    .btn {
+      height: 40px;
+      padding: 0 16px;
+      border-radius: 6px;
+      border: 1px solid var(--rule);
+      background: #FFFFFF;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #FFFFFF;
+    }
+    .btn-primary:hover {
+      opacity: 0.94;
+    }
+    .status-panel {
+      background: var(--panel);
+      border-left: 3px solid var(--muted);
+      padding: 16px 18px;
+      margin-bottom: 20px;
+      border-radius: 0 6px 6px 0;
+    }
+    .status-panel.valid {
+      border-left-color: var(--ok);
+      background: var(--ok-bg);
+    }
+    .status-panel.invalid {
+      border-left-color: var(--err);
+      background: var(--err-bg);
+    }
+    .status-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+    }
+    .status-panel.valid .status-title { color: var(--ok); }
+    .status-panel.invalid .status-title { color: var(--err); }
+    .status-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.45;
+    }
+    .kv {
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+      margin-bottom: 22px;
+    }
+    .kv-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 13.5px;
+    }
+    .kv-row:last-child { border-bottom: none; }
+    .kv-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .kv-val {
+      font-weight: 600;
+      text-align: right;
+      word-break: break-word;
+    }
+    .tamper-box {
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      background: var(--panel);
+      padding: 16px;
+      margin-bottom: 22px;
+    }
+    .tamper-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      margin: 0 0 6px 0;
+    }
+    .tamper-desc {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin: 0 0 12px 0;
+      line-height: 1.45;
+    }
+    .drop-zone {
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      background: #FFFFFF;
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+    .drop-zone.drag-over,
+    .drop-zone:hover {
+      border-color: var(--accent);
+    }
+    .drop-zone input[type="file"] {
+      display: none;
+    }
+    .hash-result {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.45;
+      display: none;
+    }
+    .hash-result.match {
+      display: block;
+      background: var(--ok-bg);
+      border-left: 3px solid var(--ok);
+      color: var(--ok);
+    }
+    .hash-result.mismatch {
+      display: block;
+      background: var(--err-bg);
+      border-left: 3px solid var(--err);
+      color: var(--err);
+    }
+    .footnote {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    @media (max-width: 480px) {
+      .lookup-form { flex-direction: column; }
+      .kv-row { flex-direction: column; gap: 4px; }
+      .kv-val { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="letterhead">
+      <div class="brand">
+        <img src="/assets/havilah-mark.svg" alt="Havilah" style="height: 26px; width: auto; display: block;">
+        <span>Havilah</span>
+      </div>
+      <div class="doc-label">Certificate Verification</div>
+    </header>
+
+    <h1>Medical certificate verification</h1>
+    <p class="subtitle">Verify whether an electronic medical excuse duty certificate was issued by an authorized practitioner and whether the PDF file remains unedited.</p>
+
+    <form class="lookup-form" id="manualLookupForm">
+      <input type="text" id="certIdInput" class="lookup-input" placeholder="HVL-XXXX-XXXX-XXXX" aria-label="Certificate ID" autocomplete="off">
+      <button type="submit" class="btn btn-primary">Verify ID</button>
+    </form>
+
+    <section id="statusPanel" class="status-panel" aria-live="polite" style="display:none;">
+      <p id="statusTitle" class="status-title">Checking certificate...</p>
+      <p id="statusDesc" class="status-desc">Verifying against issued clinical records.</p>
+    </section>
+
+    <section id="detailsTable" class="kv" style="display:none;">
+      <div class="kv-row" id="rowCertId">
+        <span class="kv-label">Certificate ID</span>
+        <span id="valCertId" class="kv-val">-</span>
+      </div>
+      <div class="kv-row" id="rowStatus">
+        <span class="kv-label">Status</span>
+        <span id="valStatus" class="kv-val">-</span>
+      </div>
+      <div class="kv-row" id="rowCertType">
+        <span class="kv-label">Certificate type</span>
+        <span id="valCertType" class="kv-val">-</span>
+      </div>
+      <div class="kv-row" id="rowDuration" style="display:none;">
+        <span class="kv-label">Certified duration</span>
+        <span id="valDuration" class="kv-val">-</span>
+      </div>
+      <div class="kv-row" id="rowModality" style="display:none;">
+        <span class="kv-label">Consultation modality</span>
+        <span id="valModality" class="kv-val">-</span>
+      </div>
+      <div class="kv-row" id="rowIssuedAt">
+        <span class="kv-label">Issue date (UTC)</span>
+        <span id="valIssuedAt" class="kv-val">-</span>
+      </div>
+      <div class="kv-row" id="rowClinic">
+        <span class="kv-label">Issuing clinic</span>
+        <span id="valClinic" class="kv-val">-</span>
+      </div>
+      <div class="kv-row" id="rowHefra" style="display:none;">
+        <span class="kv-label">HeFRA / Practice Reg. No.</span>
+        <span id="valHefra" class="kv-val">-</span>
+      </div>
+      <div class="kv-row" id="rowClinician" style="display:none;">
+        <span class="kv-label">Attending clinician</span>
+        <span id="valClinician" class="kv-val">-</span>
+      </div>
+      <div class="kv-row" id="rowMdc" style="display:none;">
+        <span class="kv-label">MDC Reg. No.</span>
+        <span id="valMdc" class="kv-val">-</span>
+      </div>
+      <div class="kv-row" id="rowSeal">
+        <span class="kv-label">Tamper protection</span>
+        <span id="valSeal" class="kv-val">-</span>
+      </div>
+    </section>
+
+    <section id="tamperCheckSection" class="tamper-box" style="display:none;">
+      <p class="tamper-title">Verify PDF file authenticity (SHA-256 tamper check)</p>
+      <p class="tamper-desc">Select or drop the employee's PDF file below to confirm it has not been modified since issuance. Your PDF is hashed locally inside your browser and is never uploaded.</p>
+      <label class="drop-zone" id="pdfDropZone">
+        <input type="file" id="pdfTamperFileInput" accept="application/pdf,.pdf">
+        <div id="pdfDropText" style="font-size: 13px; font-weight: 600; color: var(--accent);">Choose or drop PDF file to check authenticity</div>
+      </label>
+      <div id="pdfHashResult" class="hash-result" role="status" aria-live="polite"></div>
+    </section>
+
+    <p class="footnote">To protect patient confidentiality under the Ghana Data Protection Act, 2012 (Act 843) and ISO 45003, no patient name, staff ID, or medical diagnosis is disclosed on this page. Cryptographic verification complies with the Ghana Electronic Transactions Act, 2008 (Act 772).</p>
+  </main>
+
+  <script>
+    (function () {
+      const TYPE_LABELS = {
+        excuse_duty: 'Medical Excuse Duty (Sick Leave)',
+        light_duty: 'Fit for Light / Modified Duty',
+        fit_to_return: 'Fit to Return to Work',
+        attendance: 'Medical Consultation Attendance'
+      };
+      const MODE_LABELS = {
+        in_person: 'In-person clinical examination',
+        telehealth: 'Telehealth consultation'
+      };
+
+      let activeCertId = '';
+
+      function setOptionalRow(rowId, valId, value) {
+        const row = document.getElementById(rowId);
+        const valEl = document.getElementById(valId);
+        if (!row || !valEl) return;
+        if (value) {
+          row.style.display = 'flex';
+          valEl.textContent = String(value);
+        } else {
+          row.style.display = 'none';
+        }
+      }
+
+      async function verifyCertificateId(certId) {
+        const cleanId = String(certId || '').trim().toUpperCase();
+        activeCertId = cleanId;
+
+        const panel = document.getElementById('statusPanel');
+        const titleEl = document.getElementById('statusTitle');
+        const descEl = document.getElementById('statusDesc');
+        const tableEl = document.getElementById('detailsTable');
+        const tamperSec = document.getElementById('tamperCheckSection');
+        const hashResult = document.getElementById('pdfHashResult');
+
+        if (hashResult) {
+          hashResult.className = 'hash-result';
+          hashResult.textContent = '';
+        }
+
+        if (!cleanId || cleanId === 'VERIFY') {
+          panel.style.display = 'block';
+          panel.className = 'status-panel';
+          titleEl.textContent = 'Enter a Certificate ID or scan the QR code';
+          descEl.textContent = 'Type the Certificate ID printed on the document (format: HVL-XXXX-XXXX-XXXX) and select Verify ID.';
+          tableEl.style.display = 'none';
+          tamperSec.style.display = 'none';
+          return;
+        }
+
+        panel.style.display = 'block';
+        panel.className = 'status-panel';
+        titleEl.textContent = 'Checking certificate...';
+        descEl.textContent = 'Verifying against issued clinical records.';
+        tableEl.style.display = 'none';
+        tamperSec.style.display = 'none';
+
+        try {
+          const res = await fetch('/api/v1/certificates/verify/' + encodeURIComponent(cleanId), {
+            headers: { 'Accept': 'application/json' }
+          });
+          const data = await res.json();
+
+          if (res.ok && data && data.valid) {
+            panel.className = 'status-panel valid';
+            titleEl.textContent = 'Valid certificate';
+            descEl.textContent = 'This certificate ID matches an authentic clinician-issued electronic record.';
+            tableEl.style.display = 'block';
+
+            document.getElementById('valCertId').textContent = data.certificateId || cleanId;
+            document.getElementById('valStatus').textContent = 'Valid';
+            document.getElementById('valCertType').textContent = TYPE_LABELS[data.certificateType] || 'Medical Certificate';
+
+            const durText = data.durationDays != null
+              ? `${data.durationDays} day${data.durationDays === 1 ? '' : 's'}`
+              : '';
+            setOptionalRow('rowDuration', 'valDuration', durText);
+            setOptionalRow('rowModality', 'valModality', data.consultationMode ? (MODE_LABELS[data.consultationMode] || data.consultationMode) : '');
+
+            const dt = new Date(data.issuedAt);
+            document.getElementById('valIssuedAt').textContent = isNaN(dt.getTime())
+              ? String(data.issuedAt || '-')
+              : dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+            document.getElementById('valClinic').textContent = data.clinicName || '-';
+
+            setOptionalRow('rowHefra', 'valHefra', data.practiceRegNumber);
+            setOptionalRow('rowClinician', 'valClinician', data.clinicianName);
+            setOptionalRow('rowMdc', 'valMdc', data.mdcNumber);
+
+            document.getElementById('valSeal').textContent = data.fileHashProtected
+              ? `SHA-256 sealed (${data.pdfSha256Prefix || 'verified'}...)`
+              : 'Legacy ID check only';
+
+            tamperSec.style.display = data.fileHashProtected ? 'block' : 'none';
+          } else if (data && (data.revoked || data.status === 'revoked')) {
+            panel.className = 'status-panel invalid';
+            titleEl.textContent = 'Certificate revoked';
+            const revDt = data.revokedAt ? new Date(data.revokedAt) : null;
+            const revDateStr = revDt && !isNaN(revDt.getTime())
+              ? revDt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' })
+              : '';
+            descEl.textContent = `This certificate was revoked by the issuing clinic${revDateStr ? ' on ' + revDateStr : ''} and is no longer valid.`;
+            if (data.clinicName) {
+              tableEl.style.display = 'block';
+              document.getElementById('valCertId').textContent = data.certificateId || cleanId;
+              document.getElementById('valStatus').textContent = 'Revoked';
+              document.getElementById('valCertType').textContent = '-';
+              document.getElementById('valIssuedAt').textContent = revDateStr || '-';
+              document.getElementById('valClinic').textContent = data.clinicName;
+              document.getElementById('valSeal').textContent = 'Revoked';
+              setOptionalRow('rowDuration', 'valDuration', '');
+              setOptionalRow('rowModality', 'valModality', '');
+              setOptionalRow('rowHefra', 'valHefra', '');
+              setOptionalRow('rowClinician', 'valClinician', '');
+              setOptionalRow('rowMdc', 'valMdc', '');
+            }
+          } else {
+            panel.className = 'status-panel invalid';
+            titleEl.textContent = 'Certificate not verified';
+            descEl.textContent = 'This certificate ID could not be matched to an active issued certificate.';
+          }
+        } catch (err) {
+          panel.className = 'status-panel invalid';
+          titleEl.textContent = 'Verification unavailable';
+          descEl.textContent = 'Could not reach the verification service. Please try again shortly.';
+        }
+      }
+
+      async function checkPdfFileHash(file) {
+        const resultEl = document.getElementById('pdfHashResult');
+        const dropText = document.getElementById('pdfDropText');
+        if (!file || !activeCertId) return;
+        if (!window.crypto || !window.crypto.subtle) {
+          resultEl.className = 'hash-result mismatch';
+          resultEl.textContent = 'Your browser does not support Web Crypto SHA-256 verification. Try a modern Edge, Chrome, Firefox, or Safari browser.';
+          return;
+        }
+        if (dropText) dropText.textContent = `Checking "${file.name}"...`;
+
+        try {
+          const buf = await file.arrayBuffer();
+          const digest = await window.crypto.subtle.digest('SHA-256', buf);
+          const hex = Array.from(new Uint8Array(digest))
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
+
+          const res = await fetch('/api/v1/certificates/verify/' + encodeURIComponent(activeCertId) + '/hash', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ sha256: hex })
+          });
+          const data = await res.json();
+
+          if (res.ok && data.hashMatches === true) {
+            resultEl.className = 'hash-result match';
+            resultEl.innerHTML = '<strong>Authentic unedited PDF:</strong> The SHA-256 fingerprint of this PDF matches the clinic\'s sealed issuance record byte for byte.';
+          } else if (res.ok && data.hashProtected === false) {
+            resultEl.className = 'hash-result mismatch';
+            resultEl.textContent = data.message || 'This legacy certificate predates PDF file hash sealing.';
+          } else {
+            resultEl.className = 'hash-result mismatch';
+            resultEl.innerHTML = '<strong>Warning: File mismatch detected.</strong> This PDF does not match the original document sealed by the clinic, or it has been altered.';
+          }
+        } catch (err) {
+          resultEl.className = 'hash-result mismatch';
+          resultEl.textContent = 'Could not verify the PDF file hash right now. Please try again.';
+        } finally {
+          if (dropText) dropText.textContent = 'Choose or drop PDF file to check authenticity';
+        }
+      }
+
+      const form = document.getElementById('manualLookupForm');
+      const idInput = document.getElementById('certIdInput');
+      if (form && idInput) {
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          const val = idInput.value.trim().toUpperCase();
+          if (val) {
+            verifyCertificateId(val);
+          }
+        });
+      }
+
+      const fileInput = document.getElementById('pdfTamperFileInput');
+      const dropZone = document.getElementById('pdfDropZone');
+      if (fileInput) {
+        fileInput.addEventListener('change', function () {
+          if (fileInput.files && fileInput.files[0]) {
+            checkPdfFileHash(fileInput.files[0]);
+            fileInput.value = '';
+          }
+        });
+      }
+      if (dropZone) {
+        dropZone.addEventListener('dragover', function (e) {
+          e.preventDefault();
+          dropZone.classList.add('drag-over');
+        });
+        dropZone.addEventListener('dragleave', function () {
+          dropZone.classList.remove('drag-over');
+        });
+        dropZone.addEventListener('drop', function (e) {
+          e.preventDefault();
+          dropZone.classList.remove('drag-over');
+          const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          if (file) checkPdfFileHash(file);
+        });
+      }
+
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      const lastSeg = decodeURIComponent(parts[parts.length - 1] || '').trim().toUpperCase();
+      if (lastSeg && lastSeg !== 'VERIFY' && lastSeg !== 'VERIFY.HTML') {
+        if (idInput) idInput.value = lastSeg;
+        verifyCertificateId(lastSeg);
+      } else {
+        verifyCertificateId('');
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -61,6 +61,11 @@
     }
   };
 
+  const CONSULTATION_MODES = {
+    in_person: 'In-person clinical examination',
+    telehealth: 'Telehealth consultation'
+  };
+
   function getJsPDFClass() {
     return (typeof window !== 'undefined' && ((window.jspdf && window.jspdf.jsPDF) || window.jsPDF))
       || (typeof global !== 'undefined' && global.window && global.window.jspdf && global.window.jspdf.jsPDF)
@@ -68,7 +73,7 @@
   }
 
   function formatDisplayDate(dateStr) {
-    if (!dateStr) return '—';
+    if (!dateStr) return '-';
     const raw = String(dateStr).trim();
     // Accept ISO date or full ISO timestamp
     const datePart = raw.includes('T') ? raw.split('T')[0] : raw;
@@ -104,18 +109,18 @@
 
   function calculateExcuseDutySchedule(startDateStr, endDateStr) {
     if (!startDateStr) {
-      return { valid: false, days: 0, returnDateIso: '', returnDateFormatted: '—', startFormatted: '—', endFormatted: '—' };
+      return { valid: false, days: 0, returnDateIso: '', returnDateFormatted: '-', startFormatted: '-', endFormatted: '-' };
     }
     const effectiveEnd = endDateStr || startDateStr;
     const sp = String(startDateStr).split('-').map(Number);
     const ep = String(effectiveEnd).split('-').map(Number);
     if (sp.length !== 3 || ep.length !== 3) {
-      return { valid: false, days: 0, returnDateIso: '', returnDateFormatted: '—', startFormatted: '—', endFormatted: '—' };
+      return { valid: false, days: 0, returnDateIso: '', returnDateFormatted: '-', startFormatted: '-', endFormatted: '-' };
     }
     const startUtc = Date.UTC(sp[0], sp[1] - 1, sp[2]);
     const endUtc = Date.UTC(ep[0], ep[1] - 1, ep[2]);
     if (isNaN(startUtc) || isNaN(endUtc) || endUtc < startUtc) {
-      return { valid: false, days: 0, returnDateIso: '', returnDateFormatted: '—', startFormatted: '—', endFormatted: '—' };
+      return { valid: false, days: 0, returnDateIso: '', returnDateFormatted: '-', startFormatted: '-', endFormatted: '-' };
     }
     const days = Math.round((endUtc - startUtc) / (24 * 60 * 60 * 1000)) + 1;
     const returnDate = new Date(endUtc + 24 * 60 * 60 * 1000);
@@ -141,6 +146,8 @@
     const todayIso = nowIso.split('T')[0];
 
     const consultationDate = input.consultationDate || todayIso;
+    const consultationMode = input.consultationMode === 'telehealth' ? 'telehealth' : 'in_person';
+    const consultationModeLabel = CONSULTATION_MODES[consultationMode] || CONSULTATION_MODES.in_person;
     const startDate = input.startDate || consultationDate;
     const endDate = (typeKey === 'excuse_duty' || typeKey === 'light_duty')
       ? (input.endDate || startDate)
@@ -158,7 +165,7 @@
     }
     const shortVerifyDisplay = verifyUrl.replace(/^https?:\/\//i, '');
 
-    // Read clinic profile strictly from input — never invent fake license/address/phone
+    // Read clinic profile strictly from input: never invent fake license, address, or phone
     const clinic = resolveClinicProfile({
       clinicName: input.clinicName || input.organization,
       practiceRegistrationNumber: input.practiceRegistrationNumber || input.licenseNumber,
@@ -177,6 +184,8 @@
     });
 
     const remarks = (input.remarks && String(input.remarks).trim()) || typeMeta.defaultRemarks;
+    const employeeStaffId = (input.employeeStaffId && String(input.employeeStaffId).trim()) || '';
+    const hrSafePrivacy = input.hrSafePrivacy !== false;
 
     const safePatientSlug = String(input.patientName || 'Employee')
       .trim()
@@ -196,15 +205,19 @@
       issuedDateFormatted: formatDisplayDate(issuedAt),
       verifyUrl,
       shortVerifyDisplay,
-      referenceCode: (input.referenceCode && String(input.referenceCode).trim()) || '—',
-      patientName: (input.patientName && String(input.patientName).trim()) || '—',
-      companyName: (input.companyName && String(input.companyName).trim()) || '—',
-      departmentName: (input.departmentName && String(input.departmentName).trim()) || '—',
+      referenceCode: (input.referenceCode && String(input.referenceCode).trim()) || '-',
+      patientName: (input.patientName && String(input.patientName).trim()) || '-',
+      employeeStaffId,
+      companyName: (input.companyName && String(input.companyName).trim()) || '-',
+      departmentName: (input.departmentName && String(input.departmentName).trim()) || '-',
       consultationDate,
       consultationDateFormatted: formatDisplayDate(consultationDate),
+      consultationMode,
+      consultationModeLabel,
       startDate,
       endDate,
       schedule,
+      hrSafePrivacy,
       remarks,
       clinic,
       fileName
@@ -228,7 +241,7 @@
 
     // Accessible PDF document metadata
     pdf.setProperties({
-      title: `${data.typeMeta.title} — ${data.certificateId}`,
+      title: `${data.typeMeta.title} - ${data.certificateId}`,
       subject: 'Occupational Health Medical Certificate',
       author: data.clinic.clinicName || COPY.brandName,
       creator: 'Havilah Clinical Portal'
@@ -253,7 +266,6 @@
 
     const logoDataUrl = clinicLogoImg || fallbackLogoImg;
     const m = PAGE.margin;
-    const rightX = PAGE.width - m;
 
     // -------------------------------------------------------------------------
     // 0. OPTIONAL MONOCHROME CENTER WATERMARK (rendered first, strictly behind text)
@@ -283,7 +295,7 @@
     // -------------------------------------------------------------------------
     const brandMetaLines = [];
     if (data.clinic.practiceRegistrationNumber) {
-      brandMetaLines.push(`Practice Reg. No.: ${data.clinic.practiceRegistrationNumber}`);
+      brandMetaLines.push(`HeFRA / Practice Reg. No.: ${data.clinic.practiceRegistrationNumber}`);
     }
     const contactLineParts = [];
     if (data.clinic.address) contactLineParts.push(data.clinic.address);
@@ -307,7 +319,7 @@
     y += r(3);
 
     // -------------------------------------------------------------------------
-    // 2. DOCUMENT TITLE (Sentence case, 20 pt, restrained — no badges/boxes)
+    // 2. DOCUMENT TITLE (Sentence case, 20 pt, restrained without noisy boxes)
     // -------------------------------------------------------------------------
     pdf.setFont(fonts.sans, 'bold');
     pdf.setFontSize(TYPE.hero);
@@ -319,7 +331,7 @@
     pdf.setFontSize(TYPE.label);
     pdf.setTextColor(...COLORS.accent);
     pdf.text(data.typeMeta.shortLabel.toUpperCase(), m, y);
-    y += r(5);
+    y += r(4.5);
 
     // -------------------------------------------------------------------------
     // 3. TWO-COLUMN KEY-VALUE FIELDS (no card border spam, crisp 0.5pt rules)
@@ -327,21 +339,25 @@
     const colLeft = gridCol(1, 6);
     const colRight = gridCol(7, 6);
 
+    const patientValue = data.employeeStaffId
+      ? `${data.patientName}  (Staff ID: ${data.employeeStaffId})`
+      : data.patientName;
+
     const kvRows = [
       [
-        { label: 'Patient / employee name', value: data.patientName },
+        { label: 'Patient / employee name', value: patientValue },
         { label: 'Employer / organization', value: data.companyName }
       ],
       [
         { label: 'Department', value: data.departmentName },
-        { label: 'Consultation reference', value: `${data.referenceCode}  (${data.consultationDateFormatted})` }
+        { label: 'Consultation ref. & modality', value: `${data.referenceCode} - ${data.consultationModeLabel}` }
       ]
     ];
 
     if (data.typeKey === 'excuse_duty' || data.typeKey === 'light_duty') {
       kvRows.push([
-        { label: 'Excused from', value: data.schedule.startFormatted },
-        { label: 'Excused to (inclusive)', value: data.schedule.endFormatted }
+        { label: 'Date of examination', value: data.consultationDateFormatted },
+        { label: 'Excused period (inclusive)', value: `${data.schedule.startFormatted} to ${data.schedule.endFormatted}` }
       ]);
       kvRows.push([
         { label: 'Total duration', value: `${data.schedule.days} day${data.schedule.days === 1 ? '' : 's'}` },
@@ -349,18 +365,18 @@
       ]);
     } else if (data.typeKey === 'fit_to_return') {
       kvRows.push([
-        { label: 'Certified fit to resume duty', value: data.schedule.startFormatted, emphasize: true },
-        { label: 'Assessment date', value: data.consultationDateFormatted }
+        { label: 'Date of examination', value: data.consultationDateFormatted },
+        { label: 'Certified fit to resume duty', value: data.schedule.startFormatted, emphasize: true }
       ]);
     } else {
       kvRows.push([
-        { label: 'Consultation attendance date', value: data.schedule.startFormatted, emphasize: true },
-        { label: 'Certificate status', value: 'Attendance confirmed' }
+        { label: 'Date of examination', value: data.consultationDateFormatted },
+        { label: 'Consultation attendance status', value: `${data.schedule.startFormatted} (Confirmed)`, emphasize: true }
       ]);
     }
 
     Components.drawRule(pdf, y, COLORS.ink);
-    y += r(3.5);
+    y += r(3.2);
 
     kvRows.forEach((pair, idx) => {
       const [leftItem, rightItem] = pair;
@@ -374,8 +390,8 @@
         pdf.setFont(fonts.sans, item.emphasize ? 'bold' : fonts.semiboldStyle);
         pdf.setFontSize(TYPE.body);
         pdf.setTextColor(...(item.emphasize ? COLORS.accent : COLORS.ink));
-        const valLines = pdf.splitTextToSize(String(item.value || '—'), col.width);
-        pdf.text(valLines, col.x, y + 4.4);
+        const valLines = pdf.splitTextToSize(String(item.value || '-'), col.width);
+        pdf.text(valLines, col.x, y + 4.3);
         return valLines.length;
       };
 
@@ -383,37 +399,40 @@
       const rLines = drawCell(rightItem, colRight);
       const maxLines = Math.max(lLines, rLines, 1);
 
-      y += 4.4 + (maxLines * 4.2) + r(1.5);
+      y += 4.3 + (maxLines * 4.1) + r(1.4);
       Components.drawRule(pdf, y, idx === kvRows.length - 1 ? COLORS.ink : COLORS.rule);
-      y += r(3.5);
+      y += r(3.2);
     });
 
-    y += r(3);
+    y += r(2.5);
 
     // -------------------------------------------------------------------------
-    // 4. FORMAL CERTIFICATION PARAGRAPH (Source Serif 4) + SINGLE PRIVACY LINE
+    // 4. FORMAL CERTIFICATION PARAGRAPH (Source Serif 4) + LEGAL PRIVACY LINE
     // -------------------------------------------------------------------------
     pdf.setFont(fonts.sans, fonts.semiboldStyle);
     pdf.setFontSize(TYPE.label);
     pdf.setTextColor(...COLORS.muted);
     pdf.text('CLINICAL CERTIFICATION', m, y);
-    y += r(4);
+    y += r(3.8);
 
     // Formal serif salutation & certification body
     pdf.setFont(fonts.serif, 'normal');
     pdf.setFontSize(TYPE.subheading);
     pdf.setTextColor(...COLORS.ink);
     const certLines = pdf.splitTextToSize(data.remarks, PAGE.contentWidth);
-    pdf.text(certLines, m, y, { lineHeightFactor: 1.55 });
-    y += (certLines.length * 5.8) + r(4.5);
+    pdf.text(certLines, m, y, { lineHeightFactor: 1.5 });
+    y += (certLines.length * 5.6) + r(4.0);
 
-    // Single calm privacy-basis line (diagnosis omitted) — stated ONCE in the entire document
+    // Single legal/privacy-basis line stated ONCE in the document
     pdf.setFont(fonts.sans, 'normal');
     pdf.setFontSize(TYPE.label);
     pdf.setTextColor(...COLORS.muted);
-    const privacyLines = pdf.splitTextToSize(COPY.certificatePrivacyBasis, PAGE.contentWidth);
+    const legalLine = data.hrSafePrivacy
+      ? COPY.certificatePrivacyBasis
+      : (COPY.certificateConsentedBasis || COPY.certificatePrivacyBasis);
+    const privacyLines = pdf.splitTextToSize(legalLine, PAGE.contentWidth);
     pdf.text(privacyLines, m, y);
-    y += (privacyLines.length * 3.8) + r(6);
+    y += (privacyLines.length * 3.6) + r(5);
 
     // -------------------------------------------------------------------------
     // 5. SIGNATURE BLOCK + CLINIC STAMP AREA
@@ -542,7 +561,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // 6. VERIFICATION PANEL (THE ONE SUBTLE PANEL ON THIS PAGE — QR + URL)
+    // 6. VERIFICATION PANEL (THE ONE SUBTLE PANEL ON THIS PAGE: QR + URL)
     // -------------------------------------------------------------------------
     const verifyPanelH = 26;
     const verifyY = Math.max(credY + r(4), sy + stampH + r(6), PAGE.height - m - 14 - verifyPanelH);
@@ -566,9 +585,9 @@
     pdf.setFontSize(TYPE.label);
     pdf.setTextColor(...COLORS.accent);
     pdf.text(
-      data.isDraftPreview ? 'DRAFT PREVIEW — NOT YET VERIFIABLE' : 'EMPLOYER VERIFICATION',
+      data.isDraftPreview ? 'DRAFT PREVIEW - NOT YET VERIFIABLE' : 'EMPLOYER VERIFICATION & TAMPER CHECK',
       vTextX,
-      verifyY + 7
+      verifyY + 6.5
     );
 
     pdf.setFont(fonts.sans, 'normal');
@@ -576,29 +595,29 @@
     pdf.setTextColor(...COLORS.ink);
     if (data.isDraftPreview) {
       const draftNote = pdf.splitTextToSize(
-        'Issue this certificate from the clinician portal to generate a registered verification ID and scannable QR code.',
+        'Issue this certificate from the clinician portal to generate a registered verification ID, SHA-256 PDF seal, and scannable QR code.',
         vTextW
       );
-      pdf.text(draftNote, vTextX, verifyY + 11.8);
+      pdf.text(draftNote, vTextX, verifyY + 11.2);
     } else {
       const verifyNote = pdf.splitTextToSize(
-        'Scan the QR code or visit the verification URL below to confirm validity, issue date, and issuing clinic. No medical details are disclosed.',
+        'Scan the QR code or visit the URL below to confirm validity, issuing clinic, clinician MDC number, and PDF tamper-check (SHA-256). No patient identity or medical diagnosis is disclosed.',
         vTextW
       );
-      pdf.text(verifyNote, vTextX, verifyY + 11.5);
+      pdf.text(verifyNote, vTextX, verifyY + 10.8);
 
       pdf.setFont(fonts.sans, fonts.semiboldStyle);
       pdf.setFontSize(TYPE.label);
       pdf.setTextColor(...COLORS.accent);
       const urlLine = data.shortVerifyDisplay || data.verifyUrl || `Certificate ID: ${data.certificateId}`;
-      pdf.text(urlLine, vTextX, verifyY + 21.8);
+      pdf.text(urlLine, vTextX, verifyY + 22.4);
     }
 
     // -------------------------------------------------------------------------
-    // 7. FOOTER (Reference ID + Page 1 of 1; no duplicate privacy sentence)
+    // 7. FOOTER (Reference ID + Regulatory Notice + Page 1 of 1)
     // -------------------------------------------------------------------------
     Components.drawFooter(pdf, fonts, {
-      leftText: `Certificate ID: ${data.certificateId}  ·  Issued ${data.issuedTimestampFormatted}`,
+      leftText: `Certificate ID: ${data.certificateId}  ·  Issued ${data.issuedTimestampFormatted}  ·  Act 772 / Act 843 Compliant`,
       pageNumber: 1,
       totalPages: 1,
       includePrivacyLine: false
@@ -607,15 +626,52 @@
     return { pdf, data };
   }
 
+  function uint8ArrayToBase64(bytes) {
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString('base64');
+    }
+    const chunkSize = 0x8000;
+    const chunks = [];
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize)));
+    }
+    return btoa(chunks.join(''));
+  }
+
+  async function computeSha256Hex(bytes) {
+    // Browser Web Crypto
+    if (typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle) {
+      try {
+        const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
+        return Array.from(new Uint8Array(digest))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
+      } catch (e) {
+        // Fall through on restricted contexts
+      }
+    }
+    // Node.js fallback
+    if (typeof process !== 'undefined' && process.versions && process.versions.node && typeof require === 'function') {
+      const nodeCrypto = require('crypto');
+      return nodeCrypto.createHash('sha256').update(Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)).digest('hex');
+    }
+    return '';
+  }
+
   async function buildExcuseDutyPdf(rawInput = {}) {
     const { pdf, data } = await renderExcuseDutyDoc(rawInput);
-    const dataUri = pdf.output('datauristring');
-    const base64Part = dataUri.split(',')[1] || '';
-    const blobSize = Math.round((base64Part.length * 3) / 4);
+    const arrayBuffer = pdf.output('arraybuffer');
+    const bytes = new Uint8Array(arrayBuffer);
+    const base64 = uint8ArrayToBase64(bytes);
+    const dataUri = `data:application/pdf;base64,${base64}`;
+    const pdfSha256 = await computeSha256Hex(bytes);
+    const blobSize = bytes.byteLength;
 
     return {
       dataUri,
+      base64,
       blobSize,
+      pdfSha256,
       fileName: data.fileName,
       certificateId: data.certificateId,
       data
@@ -624,16 +680,36 @@
 
   async function downloadExcuseDutyPdf(rawInput = {}) {
     const { pdf, data } = await renderExcuseDutyDoc(rawInput);
-    pdf.save(data.fileName);
+    const arrayBuffer = pdf.output('arraybuffer');
+    const bytes = new Uint8Array(arrayBuffer);
+    const pdfSha256 = await computeSha256Hex(bytes);
+
+    if (typeof Blob !== 'undefined' && typeof URL !== 'undefined' && typeof document !== 'undefined') {
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = data.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } else {
+      pdf.save(data.fileName);
+    }
+
     return {
       fileName: data.fileName,
       certificateId: data.certificateId,
+      pdfSha256,
+      blobSize: bytes.byteLength,
       data
     };
   }
 
   return {
     CERTIFICATE_TYPES,
+    CONSULTATION_MODES,
     calculateExcuseDutySchedule,
     buildCertificatePayload,
     buildExcuseDutyPdf,

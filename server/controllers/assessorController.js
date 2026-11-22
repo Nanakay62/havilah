@@ -225,7 +225,9 @@ router.get('/me', requireAssessorAuth, async (req, res) => {
       isLeadAssessor: !req.doctor,
       organization: req.assessor.organization,
       practiceRegistrationNumber: req.assessor.practiceRegistrationNumber || '',
+      hefraLicenseExpiry: req.assessor.hefraLicenseExpiry || null,
       mdcNumber: (req.doctor ? req.doctor.mdcNumber : req.assessor.mdcNumber) || '',
+      mdcLicenseExpiry: (req.doctor ? req.doctor.mdcLicenseExpiry : req.assessor.mdcLicenseExpiry) || null,
       signatureDataUrl: (req.doctor ? req.doctor.signatureDataUrl : req.assessor.signatureDataUrl) || '',
       signatureApprovedAt: (req.doctor ? req.doctor.signatureApprovedAt : req.assessor.signatureApprovedAt) || null,
       stampDataUrl: req.assessor.stampDataUrl || '',
@@ -275,7 +277,9 @@ router.put('/profile', requireAssessorAuth, async (req, res, next) => {
       name,
       organization,
       practiceRegistrationNumber,
+      hefraLicenseExpiry,
       mdcNumber,
+      mdcLicenseExpiry,
       signatureDataUrl,
       signatureApproved,
       stampDataUrl,
@@ -290,10 +294,23 @@ router.put('/profile', requireAssessorAuth, async (req, res, next) => {
       return res.status(404).json({ success: false, error: 'Assessor not found' });
     }
 
+    const parseOptionalDate = (val) => {
+      if (val === '' || val === null || val === undefined) return null;
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? undefined : d;
+    };
+
     if (name && typeof name === 'string') assessor.name = name.trim();
     if (organization !== undefined) assessor.organization = String(organization).trim();
     if (practiceRegistrationNumber !== undefined) {
       assessor.practiceRegistrationNumber = String(practiceRegistrationNumber).trim().slice(0, 80);
+    }
+    if (hefraLicenseExpiry !== undefined) {
+      const parsedHefra = parseOptionalDate(hefraLicenseExpiry);
+      if (parsedHefra === undefined) {
+        return res.status(400).json({ success: false, error: 'INVALID_DATE', message: 'Invalid HeFRA licence expiry date.' });
+      }
+      assessor.hefraLicenseExpiry = parsedHefra;
     }
     if (phone !== undefined) assessor.phone = String(phone).trim();
     if (notificationEmail !== undefined) assessor.notificationEmail = String(notificationEmail).trim().toLowerCase();
@@ -304,6 +321,13 @@ router.put('/profile', requireAssessorAuth, async (req, res, next) => {
     if (sigTarget) {
       if (mdcNumber !== undefined) {
         sigTarget.mdcNumber = String(mdcNumber).trim().slice(0, 60);
+      }
+      if (mdcLicenseExpiry !== undefined) {
+        const parsedMdc = parseOptionalDate(mdcLicenseExpiry);
+        if (parsedMdc === undefined) {
+          return res.status(400).json({ success: false, error: 'INVALID_DATE', message: 'Invalid MDC licence expiry date.' });
+        }
+        sigTarget.mdcLicenseExpiry = parsedMdc;
       }
       if (signatureDataUrl !== undefined) {
         const cleanSig = String(signatureDataUrl || '').trim();
@@ -388,7 +412,9 @@ router.put('/profile', requireAssessorAuth, async (req, res, next) => {
         email: assessor.email,
         organization: assessor.organization,
         practiceRegistrationNumber: assessor.practiceRegistrationNumber || '',
+        hefraLicenseExpiry: assessor.hefraLicenseExpiry || null,
         mdcNumber: (sigTarget && sigTarget.mdcNumber) || '',
+        mdcLicenseExpiry: (sigTarget && sigTarget.mdcLicenseExpiry) || null,
         signatureDataUrl: (sigTarget && sigTarget.signatureDataUrl) || '',
         signatureApprovedAt: (sigTarget && sigTarget.signatureApprovedAt) || null,
         stampDataUrl: assessor.stampDataUrl || '',
@@ -457,7 +483,7 @@ router.get('/doctors', requireAssessorAuth, async (req, res, next) => {
  */
 router.post('/doctors', requireAssessorAuth, requireClinicAdmin, async (req, res, next) => {
   try {
-    const { fullName, email, password, specialty, phone, role } = req.body;
+    const { fullName, email, password, specialty, phone, role, mdcNumber, mdcLicenseExpiry } = req.body;
 
     if (!fullName || !email || !password || typeof fullName !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
       return res.status(400).json({
@@ -494,6 +520,12 @@ router.post('/doctors', requireAssessorAuth, requireClinicAdmin, async (req, res
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    let parsedDocMdcExpiry = null;
+    if (mdcLicenseExpiry) {
+      const d = new Date(mdcLicenseExpiry);
+      if (!isNaN(d.getTime())) parsedDocMdcExpiry = d;
+    }
+
     const doctor = await Doctor.create({
       practiceId: req.assessor._id,
       fullName: fullName.trim(),
@@ -501,6 +533,8 @@ router.post('/doctors', requireAssessorAuth, requireClinicAdmin, async (req, res
       passwordHash,
       phone: phone ? String(phone).trim() : '',
       specialty: specialty ? String(specialty).trim() : 'Occupational Health Specialist',
+      mdcNumber: mdcNumber ? String(mdcNumber).trim().slice(0, 60) : '',
+      mdcLicenseExpiry: parsedDocMdcExpiry,
       role: role === 'clinic_admin' ? 'clinic_admin' : 'doctor',
       active: true,
     });
@@ -908,10 +942,36 @@ router.patch('/referrals/:id/settlement', requireAssessorAuth, async (req, res, 
   }
 });
 
+function parseIsoDateOnly(val) {
+  if (!val || typeof val !== 'string') return null;
+  const trimmed = val.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
+  const [y, m, d] = trimmed.split('-').map(Number);
+  const utcMs = Date.UTC(y, m - 1, d);
+  const check = new Date(utcMs);
+  if (
+    isNaN(utcMs) ||
+    check.getUTCFullYear() !== y ||
+    check.getUTCMonth() + 1 !== m ||
+    check.getUTCDate() !== d
+  ) {
+    return null;
+  }
+  return { iso: trimmed, utcMs };
+}
+
+function normalizeAttachmentDataUri(raw) {
+  if (typeof raw !== 'string') return raw;
+  const trimmed = raw.trim();
+  const match = trimmed.match(/^data:(application\/pdf|image\/(?:png|jpeg|jpg|gif|webp)|text\/plain)(?:;[^;,=]+=[^;,]*)*;base64,([A-Za-z0-9+/=\s]+)$/i);
+  if (!match) return trimmed;
+  return `data:${match[1].toLowerCase()};base64,${match[2].replace(/\s+/g, '')}`;
+}
+
 /**
  * @route   POST /api/v1/assessor/referrals/:id/certificates
  * @desc    Issue and log a tamper-evident Medical Excuse Duty Certificate for an approved consultation record.
- *          Strictly clinician-authenticated; employees cannot self-issue certificates.
+ *          Strictly clinician-authenticated; validates HeFRA, MDC, dates, and clinician attestation under Act 857 / Act 772.
  * @access  Assessor Authenticated
  */
 router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res, next) => {
@@ -944,16 +1004,124 @@ router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res,
       });
     }
 
+    const practiceRegNumber = String(req.assessor.practiceRegistrationNumber || '').trim().slice(0, 80);
+    if (!practiceRegNumber) {
+      return res.status(400).json({
+        success: false,
+        error: 'HEFRA_LICENSE_REQUIRED',
+        message: 'Add your clinic HeFRA / practice registration number in Clinic Settings before issuing official medical certificates.',
+      });
+    }
+
+    const mdcNumber = String(
+      req.body?.mdcNumber ||
+      (req.doctor ? req.doctor.mdcNumber : req.assessor.mdcNumber) ||
+      ''
+    ).trim().slice(0, 60);
+    if (!mdcNumber || mdcNumber.length < 3) {
+      return res.status(400).json({
+        success: false,
+        error: 'MDC_NUMBER_REQUIRED',
+        message: 'Enter your valid MDC registration number before issuing a medical certificate.',
+      });
+    }
+
+    if (req.body?.attestationConfirmed !== true) {
+      return res.status(400).json({
+        success: false,
+        error: 'ATTESTATION_REQUIRED',
+        message: 'Clinician attestation confirmation is required under Ghana Act 857 and Act 772 before issuing a certificate.',
+      });
+    }
+
+    const todayIso = new Date().toISOString().split('T')[0];
+    const consultDateRaw = req.body?.consultationDate ? String(req.body.consultationDate) : todayIso;
+    const consultParsed = parseIsoDateOnly(consultDateRaw);
+    if (!consultParsed) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_DATE',
+        message: 'Date of examination must be a valid YYYY-MM-DD date.',
+      });
+    }
+    const consultationDate = consultParsed.iso;
+
+    const consultationMode = req.body?.consultationMode === 'telehealth' ? 'telehealth' : 'in_person';
+
+    const startParsed = parseIsoDateOnly(req.body?.startDate ? String(req.body.startDate) : consultationDate);
+    if (!startParsed) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_DATE',
+        message: 'Start date must be a valid YYYY-MM-DD date.',
+      });
+    }
+    const startDate = startParsed.iso;
+
+    const needsRange = certificateType === 'excuse_duty' || certificateType === 'light_duty';
+    const endRaw = needsRange ? (req.body?.endDate ? String(req.body.endDate) : startDate) : startDate;
+    const endParsed = parseIsoDateOnly(endRaw);
+    if (!endParsed) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_DATE',
+        message: 'End date must be a valid YYYY-MM-DD date.',
+      });
+    }
+    if (endParsed.utcMs < startParsed.utcMs) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_DATE_RANGE',
+        message: 'End date must be on or after the start date.',
+      });
+    }
+    const endDate = endParsed.iso;
+
+    let durationDays = null;
+    let returnDate = '';
+    if (needsRange) {
+      durationDays = Math.round((endParsed.utcMs - startParsed.utcMs) / 86400000) + 1;
+      const nextDay = new Date(endParsed.utcMs + 86400000);
+      returnDate = nextDay.toISOString().split('T')[0];
+    } else if (certificateType === 'fit_to_return') {
+      durationDays = null;
+      returnDate = startDate;
+    } else {
+      durationDays = 1;
+      returnDate = '';
+    }
+
+    const isBackdated = Boolean(needsRange && startDate < consultationDate);
+    const hrSafePrivacy = req.body?.hrSafePrivacy !== false;
+    const clinicianName = String((req.doctor ? req.doctor.fullName : req.assessor.name) || '').trim();
+    const clinicianSpecialty = String((req.doctor ? req.doctor.specialty : 'Lead Medical Assessor') || '').trim();
+    const twoFactorVerified = Boolean(req.doctor ? req.doctor.totp_enabled : req.assessor.totp_enabled);
+
     const certificateId = IssuedCertificate.generateCertificateId();
     const issuedAt = new Date();
     const integrityHash = IssuedCertificate.computeIntegrityHash({
+      schemaVersion: 2,
       certificateId,
       referralId: referral._id,
       assessorId: req.assessor._id,
+      doctorId: req.doctor ? req.doctor._id : null,
+      certificateType,
+      clinicName,
+      practiceRegNumber,
+      clinicianName,
+      mdcNumber,
+      consultationDate,
+      consultationMode,
+      startDate,
+      endDate,
+      durationDays,
+      returnDate,
       issuedAt,
+      pdfSha256: '',
     });
 
     const record = await IssuedCertificate.create({
+      schemaVersion: 2,
       certificateId,
       integrityHash,
       referralId: referral._id,
@@ -961,25 +1129,48 @@ router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res,
       doctorId: req.doctor ? req.doctor._id : null,
       certificateType,
       clinicName,
+      practiceRegNumber,
+      clinicianName,
+      clinicianSpecialty,
+      mdcNumber,
+      consultationDate,
+      consultationMode,
+      startDate,
+      endDate,
+      durationDays,
+      returnDate,
+      isBackdated,
+      hrSafePrivacy,
+      attestationConfirmed: true,
+      attestationIp: String(req.ip || ''),
+      twoFactorVerified,
       issuedAt,
     });
 
-    // Log issuance in AuditLog (best-effort, non-blocking)
+    // Log issuance in immutable AuditLog (best-effort, non-blocking)
     try {
-      await AuditLog.create({
-        company_id: referral.company_id || String(referral.tenantId || 'clinical'),
-        actor_id: req.doctor ? req.doctor._id : req.assessor._id,
+      await AuditLog.append({
+        company_id: String(referral.company_id || referral.tenantId || 'clinical'),
+        actor_user_id: String(req.doctor ? req.doctor._id : req.assessor._id),
         actor_role: req.doctor ? (req.doctor.role || 'doctor') : 'clinic_admin',
-        action: 'CERTIFICATE_ISSUED',
-        resource_type: 'IssuedCertificate',
-        resource_id: record._id.toString(),
-        metadata: {
+        event_type: 'CERTIFICATE_ISSUED',
+        event_payload: {
           certificateId: record.certificateId,
           certificateType: record.certificateType,
           referralReference: referral.referenceCode,
+          clinicianName,
+          mdcNumber,
+          practiceRegNumber,
+          consultationDate,
+          consultationMode,
+          startDate,
+          endDate,
+          durationDays,
+          isBackdated,
+          twoFactorVerified,
+          ip: req.ip || '',
           issuedAt: record.issuedAt.toISOString(),
         },
-        ip_address: req.ip,
       });
     } catch (auditErr) {
       console.warn('[Certificate] Audit log skipped:', auditErr.message);
@@ -998,7 +1189,257 @@ router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res,
         certificateId: record.certificateId,
         issuedAt: record.issuedAt.toISOString(),
         clinicName: record.clinicName,
+        practiceRegNumber: record.practiceRegNumber,
+        clinicianName: record.clinicianName,
+        clinicianSpecialty: record.clinicianSpecialty,
+        mdcNumber: record.mdcNumber,
+        certificateType: record.certificateType,
+        consultationDate: record.consultationDate,
+        consultationMode: record.consultationMode,
+        startDate: record.startDate,
+        endDate: record.endDate,
+        durationDays: record.durationDays,
+        returnDate: record.returnDate,
+        isBackdated: record.isBackdated,
         verifyUrl,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   PATCH /api/v1/assessor/referrals/:id/certificates/:certificateId/seal
+ * @desc    Lock the SHA-256 hash of the generated PDF onto an issued certificate record (immutable once sealed)
+ * @access  Assessor Authenticated
+ */
+router.patch('/referrals/:id/certificates/:certificateId/seal', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const referralId = req.params.id;
+    const rawCertId = String(req.params.certificateId || '').trim().toUpperCase();
+    const rawHash = String(req.body?.pdfSha256 || '').trim().toLowerCase();
+
+    if (!rawHash || !/^[a-f0-9]{64}$/.test(rawHash)) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_HASH',
+        message: 'A valid 64-character SHA-256 hex digest is required to seal the certificate PDF.',
+      });
+    }
+
+    const referral = await Referral.findById(referralId);
+    if (!referral) {
+      return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Consultation record not found.' });
+    }
+
+    if (!canAccessReferral(req, referral)) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this consultation record.' });
+    }
+
+    const record = await IssuedCertificate.findOne({
+      certificateId: rawCertId,
+      referralId: referral._id,
+      assessorId: req.assessor._id,
+    });
+    if (!record) {
+      return res.status(404).json({ success: false, error: 'CERTIFICATE_NOT_FOUND', message: 'Issued certificate not found.' });
+    }
+
+    if (record.revoked) {
+      return res.status(400).json({ success: false, error: 'CERTIFICATE_REVOKED', message: 'Cannot seal a revoked certificate.' });
+    }
+
+    if (record.pdfSha256) {
+      if (String(record.pdfSha256).toLowerCase() === rawHash) {
+        return res.json({
+          success: true,
+          data: {
+            certificateId: record.certificateId,
+            pdfSha256: record.pdfSha256,
+            pdfSealedAt: record.pdfSealedAt ? record.pdfSealedAt.toISOString() : null,
+          },
+        });
+      }
+      return res.status(409).json({
+        success: false,
+        error: 'ALREADY_SEALED',
+        message: 'Certificate PDF hash is already sealed and cannot be overwritten.',
+      });
+    }
+
+    record.pdfSha256 = rawHash;
+    record.pdfSealedAt = new Date();
+    const baseObj = typeof record.toObject === 'function' ? record.toObject() : record;
+    record.integrityHash = IssuedCertificate.computeIntegrityHash({
+      ...baseObj,
+      schemaVersion: record.schemaVersion || 2,
+      pdfSha256: rawHash,
+    });
+    await record.save();
+
+    try {
+      await AuditLog.append({
+        company_id: String(referral.company_id || referral.tenantId || 'clinical'),
+        actor_user_id: String(req.doctor ? req.doctor._id : req.assessor._id),
+        actor_role: req.doctor ? (req.doctor.role || 'doctor') : 'clinic_admin',
+        event_type: 'CERTIFICATE_SEALED',
+        event_payload: {
+          certificateId: record.certificateId,
+          referralReference: referral.referenceCode,
+          pdfSha256: rawHash,
+          pdfSealedAt: record.pdfSealedAt.toISOString(),
+        },
+      });
+    } catch (auditErr) {
+      console.warn('[Certificate] Audit log skipped:', auditErr.message);
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        certificateId: record.certificateId,
+        pdfSha256: record.pdfSha256,
+        pdfSealedAt: record.pdfSealedAt.toISOString(),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   GET /api/v1/assessor/referrals/:id/certificates
+ * @desc    List issued certificates for a consultation case (for status tracking & revocation)
+ * @access  Assessor Authenticated
+ */
+router.get('/referrals/:id/certificates', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const referralId = req.params.id;
+    const referral = await Referral.findById(referralId);
+    if (!referral) {
+      return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Consultation record not found.' });
+    }
+
+    if (!canAccessReferral(req, referral)) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized access to this consultation record.' });
+    }
+
+    const records = await IssuedCertificate.find({
+      referralId: referral._id,
+      assessorId: req.assessor._id,
+    })
+      .sort({ issuedAt: -1 })
+      .lean();
+
+    const safeList = records.map((rec) => ({
+      certificateId: rec.certificateId,
+      certificateType: rec.certificateType || 'excuse_duty',
+      clinicName: rec.clinicName,
+      practiceRegNumber: rec.practiceRegNumber || '',
+      clinicianName: rec.clinicianName || '',
+      mdcNumber: rec.mdcNumber || '',
+      consultationDate: rec.consultationDate || '',
+      consultationMode: rec.consultationMode || 'in_person',
+      startDate: rec.startDate || '',
+      endDate: rec.endDate || '',
+      durationDays: rec.durationDays != null ? rec.durationDays : null,
+      returnDate: rec.returnDate || '',
+      isBackdated: Boolean(rec.isBackdated),
+      fileHashProtected: Boolean(rec.pdfSha256),
+      pdfSha256Prefix: rec.pdfSha256 ? String(rec.pdfSha256).slice(0, 12) : '',
+      issuedAt: rec.issuedAt,
+      revoked: Boolean(rec.revoked),
+      revokedAt: rec.revokedAt || null,
+      revokedReason: rec.revokedReason || '',
+      revokedBy: rec.revokedBy || '',
+    }));
+
+    return res.json({
+      success: true,
+      data: safeList,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @route   PATCH /api/v1/assessor/certificates/:certificateId/revoke
+ * @desc    Revoke a previously issued medical certificate with a documented reason
+ * @access  Assessor Authenticated
+ */
+router.patch('/certificates/:certificateId/revoke', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const rawCertId = String(req.params.certificateId || '').trim().toUpperCase();
+    const reason = String(req.body?.reason || '').trim().slice(0, 300);
+
+    if (!reason || reason.length < 5) {
+      return res.status(400).json({
+        success: false,
+        error: 'REASON_REQUIRED',
+        message: 'Provide a clear revocation reason (at least 5 characters).',
+      });
+    }
+
+    const record = await IssuedCertificate.findOne({
+      certificateId: rawCertId,
+      assessorId: req.assessor._id,
+    });
+    if (!record) {
+      return res.status(404).json({ success: false, error: 'CERTIFICATE_NOT_FOUND', message: 'Issued certificate not found.' });
+    }
+
+    const referral = await Referral.findById(record.referralId);
+    if (!referral || !canAccessReferral(req, referral)) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'Unauthorized to revoke this certificate.' });
+    }
+
+    if (record.revoked) {
+      return res.json({
+        success: true,
+        message: 'Certificate already revoked.',
+        data: {
+          certificateId: record.certificateId,
+          revoked: true,
+          revokedAt: record.revokedAt ? record.revokedAt.toISOString() : null,
+          revokedReason: record.revokedReason || '',
+        },
+      });
+    }
+
+    record.revoked = true;
+    record.revokedAt = new Date();
+    record.revokedReason = reason;
+    record.revokedBy = String((req.doctor ? req.doctor.fullName : req.assessor.name) || 'Clinician').trim();
+    await record.save();
+
+    try {
+      await AuditLog.append({
+        company_id: String(referral.company_id || referral.tenantId || 'clinical'),
+        actor_user_id: String(req.doctor ? req.doctor._id : req.assessor._id),
+        actor_role: req.doctor ? (req.doctor.role || 'doctor') : 'clinic_admin',
+        event_type: 'CERTIFICATE_REVOKED',
+        event_payload: {
+          certificateId: record.certificateId,
+          referralReference: referral.referenceCode,
+          revokedBy: record.revokedBy,
+          revokedReason: reason,
+          revokedAt: record.revokedAt.toISOString(),
+        },
+      });
+    } catch (auditErr) {
+      console.warn('[Certificate] Audit log skipped:', auditErr.message);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Certificate revoked successfully.',
+      data: {
+        certificateId: record.certificateId,
+        revoked: true,
+        revokedAt: record.revokedAt.toISOString(),
+        revokedReason: record.revokedReason,
       },
     });
   } catch (err) {
@@ -1014,7 +1455,7 @@ router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res,
 router.post('/referrals/:id/attachments', requireAssessorAuth, async (req, res, next) => {
   try {
     const referralId = req.params.id;
-    const { fileName, fileData, fileType, fileSize } = req.body;
+    const { fileName, fileData, fileType, fileSize, certificateId, pdfSha256 } = req.body;
 
     if (!fileName || !fileData) {
       return res.status(400).json({ success: false, error: 'VALIDATION_ERROR', message: 'File name and file data are required.' });
@@ -1032,11 +1473,15 @@ router.post('/referrals/:id/attachments', requireAssessorAuth, async (req, res, 
     referral.clinicalDetails = referral.clinicalDetails || {};
     referral.clinicalDetails.attachments = referral.clinicalDetails.attachments || [];
 
+    const normalizedFileData = normalizeAttachmentDataUri(fileData);
+
     const attachmentObj = {
       fileName: fileName.trim(),
-      fileData,
+      fileData: normalizedFileData,
       fileType: fileType || 'application/octet-stream',
       fileSize: fileSize || 0,
+      certificateId: certificateId ? String(certificateId).trim().toUpperCase() : '',
+      pdfSha256: pdfSha256 ? String(pdfSha256).trim().toLowerCase() : '',
       uploadedAt: new Date(),
     };
 

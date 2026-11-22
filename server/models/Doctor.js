@@ -41,6 +41,10 @@ const DoctorSchema = new mongoose.Schema({
     default: '',
     trim: true,
   },
+  mdcLicenseExpiry: {
+    type: Date,
+    default: null,
+  },
   signatureDataUrl: {
     type: String,
     default: '',

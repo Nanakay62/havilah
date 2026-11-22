@@ -59,10 +59,29 @@
     if (!rawHref || typeof rawHref !== 'string') return '#';
     const trimmed = rawHref.trim();
     if (/^https?:\/\//i.test(trimmed)) return trimmed;
-    if (options.allowData && /^data:(application\/pdf|image\/(png|jpeg|jpg|gif|webp)|text\/plain);base64,[A-Za-z0-9+/=\s]+$/i.test(trimmed)) {
-      return trimmed;
+    if (options.allowData) {
+      const match = trimmed.match(/^data:(application\/pdf|image\/(?:png|jpeg|jpg|gif|webp)|text\/plain)(?:;[^;,=]+=[^;,]*)*;base64,([A-Za-z0-9+/=\s]+)$/i);
+      if (match) {
+        return `data:${match[1].toLowerCase()};base64,${match[2].replace(/\s+/g, '')}`;
+      }
     }
     return '#';
+  }
+
+  function dataUriToBlob(dataUri) {
+    const clean = sanitizeSafeHref(dataUri, { allowData: true });
+    if (!clean.startsWith('data:')) return null;
+    const commaIdx = clean.indexOf(',');
+    if (commaIdx === -1) return null;
+    const header = clean.slice(5, commaIdx);
+    const mime = header.split(';')[0] || 'application/octet-stream';
+    const b64 = clean.slice(commaIdx + 1);
+    const binStr = atob(b64);
+    const bytes = new Uint8Array(binStr.length);
+    for (let i = 0; i < binStr.length; i++) {
+      bytes[i] = binStr.charCodeAt(i);
+    }
+    return { blob: new Blob([bytes], { type: mime }), mime };
   }
 
   // --- Auto-Lock Security Watcher (15-min inactivity timeout) ---
@@ -401,7 +420,7 @@
 
       return `
         <tr>
-          <td style="font-weight: var(--weight-semibold); color: var(--text);">${escapeHtml(doc.fullName)}${isCurrent ? ' (You)' : ''}</td>
+          <td style="font-weight: var(--weight-semibold); color: var(--text);">${escapeHtml(doc.fullName)}${isCurrent ? ' (You)' : ''}${doc.mdcNumber ? `<div class="text-subtle-xs" style="font-weight: var(--weight-regular);">MDC: ${escapeHtml(doc.mdcNumber)}</div>` : ''}</td>
           <td style="color: var(--text-muted);">${escapeHtml(doc.specialty || 'General Practitioner')}</td>
           <td>${roleBadge}</td>
           <td class="tabular-nums">${Number(doc.activeCaseCount || 0)} active</td>
@@ -425,6 +444,7 @@
     const password = document.getElementById('newDocPassword').value;
     const specialty = document.getElementById('newDocSpecialty').value.trim();
     const phone = document.getElementById('newDocPhone').value.trim();
+    const mdcNumber = (document.getElementById('newDocMdcNumber')?.value || '').trim();
     const role = document.getElementById('newDocRole').value;
 
     btn.disabled = true;
@@ -433,7 +453,7 @@
     try {
       const res = await assessorApiFetch(`${API_BASE}/doctors`, {
         method: 'POST',
-        body: JSON.stringify({ fullName, email, password, specialty, phone, role }),
+        body: JSON.stringify({ fullName, email, password, specialty, phone, mdcNumber, role }),
       });
 
       showToast(`Clinician ${res.data.fullName} registered successfully!`);
@@ -1404,7 +1424,7 @@
       const hasFee = Boolean(r.billing?.isBilled || Number(r.billing?.amount || 0) > 0);
       const feeDisplay = hasFee
         ? Number(r.billing?.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        : '—';
+        : '-';
 
       // Contact link
       const isEmail = patientContact.includes('@');
@@ -1906,36 +1926,103 @@
     if (docsPanel) docsPanel.style.display = isDocs ? 'flex' : 'none';
   };
 
-  function initExcuseDutyFormForCase() {
+  function initExcuseDutyFormForCase(item) {
     const today = new Date().toISOString().split('T')[0];
     const typeEl = document.getElementById('excuseDutyTypeSelect');
+    const consultDateEl = document.getElementById('excuseDutyConsultDateInput');
+    const consultModeEl = document.getElementById('excuseDutyConsultModeSelect');
     const startEl = document.getElementById('excuseDutyStartInput');
     const endEl = document.getElementById('excuseDutyEndInput');
+    const staffIdEl = document.getElementById('excuseDutyStaffIdInput');
     const mdcEl = document.getElementById('excuseDutyMdcInput');
     const remarksEl = document.getElementById('excuseDutyRemarksInput');
     const privacyEl = document.getElementById('excuseDutyPrivacyCheck');
+    const attestEl = document.getElementById('excuseDutyAttestationCheck');
 
     if (typeEl) typeEl.value = 'excuse_duty';
+    let defaultConsultDate = today;
+    if (item && item.scheduledAt) {
+      const schedIso = new Date(item.scheduledAt).toISOString().split('T')[0];
+      if (schedIso && schedIso <= today) defaultConsultDate = schedIso;
+    }
+    if (consultDateEl) consultDateEl.value = defaultConsultDate;
+    if (consultModeEl) {
+      consultModeEl.value = item?.clinicalDetails?.meetingLink ? 'telehealth' : 'in_person';
+    }
     if (startEl) startEl.value = today;
     if (endEl) endEl.value = today;
+    if (staffIdEl) staffIdEl.value = '';
     if (mdcEl) {
+      const profileMdc = (state.assessor?.mdcNumber || '').trim();
       const savedMdc = localStorage.getItem('havilah_clinician_mdc_number') || '';
-      mdcEl.value = savedMdc;
+      mdcEl.value = profileMdc || savedMdc;
     }
     if (remarksEl && window.ExcuseDutyPdf) {
       remarksEl.value = window.ExcuseDutyPdf.CERTIFICATE_TYPES.excuse_duty.defaultRemarks;
     }
     if (privacyEl) privacyEl.checked = true;
+    if (attestEl) attestEl.checked = false;
+
+    updateExcuseDutyComplianceBanner();
     window.onExcuseDutyFormChange(true);
+    if (item && item._id) {
+      loadCaseCertificates(item._id);
+    }
+  }
+
+  function updateExcuseDutyComplianceBanner() {
+    const alertEl = document.getElementById('excuseDutyComplianceAlert');
+    if (!alertEl) return;
+    const issues = [];
+    const hefra = String(state.assessor?.practiceRegistrationNumber || '').trim();
+    if (!hefra) {
+      issues.push('Clinic HeFRA / practice registration number is missing. Add it in Clinic Settings before issuing official certificates.');
+    }
+    const nowMs = Date.now();
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    if (state.assessor?.hefraLicenseExpiry) {
+      const exp = new Date(state.assessor.hefraLicenseExpiry).getTime();
+      if (!isNaN(exp) && exp < nowMs) {
+        issues.push('Clinic HeFRA licence expiry date has passed. Update your renewal date in Clinic Settings.');
+      } else if (!isNaN(exp) && exp - nowMs < thirtyDaysMs) {
+        issues.push('Clinic HeFRA licence expires within 30 days.');
+      }
+    }
+    if (state.assessor?.mdcLicenseExpiry) {
+      const exp = new Date(state.assessor.mdcLicenseExpiry).getTime();
+      if (!isNaN(exp) && exp < nowMs) {
+        issues.push('Your MDC annual retention expiry date has passed. Update it in Clinic Settings.');
+      }
+    }
+
+    if (issues.length > 0) {
+      alertEl.className = 'alert-banner alert-banner-warning';
+      alertEl.style.display = 'flex';
+      alertEl.innerHTML = `
+        <div>${escapeHtml(issues.join(' '))}</div>
+        <button type="button" class="btn btn-secondary btn-sm" style="align-self: flex-start;" onclick="closeModal('caseDetailModal'); openClinicSettingsModal();">Open Clinic settings</button>
+      `;
+    } else if (!state.assessor?.totp_enabled) {
+      alertEl.className = 'alert-banner alert-banner-info';
+      alertEl.style.display = 'flex';
+      alertEl.innerHTML = '<span>Security recommendation: Enable 2FA in Clinic Settings to strengthen non-repudiation under the Electronic Transactions Act 772.</span>';
+    } else {
+      alertEl.style.display = 'none';
+      alertEl.innerHTML = '';
+    }
   }
 
   window.onExcuseDutyFormChange = (skipRemarksReset) => {
     const typeEl = document.getElementById('excuseDutyTypeSelect');
+    const consultDateEl = document.getElementById('excuseDutyConsultDateInput');
     const startEl = document.getElementById('excuseDutyStartInput');
     const endEl = document.getElementById('excuseDutyEndInput');
     const endCol = document.getElementById('excuseDutyEndCol');
     const previewEl = document.getElementById('excuseDutySchedulePreview');
     const remarksEl = document.getElementById('excuseDutyRemarksInput');
+    const backdateEl = document.getElementById('excuseDutyBackdateWarning');
+    const privacyEl = document.getElementById('excuseDutyPrivacyCheck');
+    const consentEl = document.getElementById('excuseDutyConsentAlert');
 
     const typeKey = typeEl ? typeEl.value : 'excuse_duty';
     const needsRange = typeKey === 'excuse_duty' || typeKey === 'light_duty';
@@ -1952,8 +2039,16 @@
       }
     }
 
+    const startVal = startEl ? startEl.value : '';
+    const consultVal = consultDateEl ? consultDateEl.value : '';
+    if (backdateEl) {
+      backdateEl.style.display = (needsRange && startVal && consultVal && startVal < consultVal) ? 'flex' : 'none';
+    }
+    if (consentEl && privacyEl) {
+      consentEl.style.display = privacyEl.checked ? 'none' : 'flex';
+    }
+
     if (previewEl && window.ExcuseDutyPdf) {
-      const startVal = startEl ? startEl.value : '';
       const endVal = needsRange ? (endEl ? endEl.value : startVal) : startVal;
       const sched = window.ExcuseDutyPdf.calculateExcuseDutySchedule(startVal, endVal);
       if (!sched.valid) {
@@ -1971,12 +2066,19 @@
   function collectExcuseDutyPayload() {
     const item = state.selectedCase;
     if (!item) return null;
+    const todayIso = new Date().toISOString().split('T')[0];
     const typeKey = (document.getElementById('excuseDutyTypeSelect') || {}).value || 'excuse_duty';
-    const startDate = (document.getElementById('excuseDutyStartInput') || {}).value || new Date().toISOString().split('T')[0];
+    const consultationDate = (document.getElementById('excuseDutyConsultDateInput') || {}).value || todayIso;
+    const consultationMode = (document.getElementById('excuseDutyConsultModeSelect') || {}).value === 'telehealth'
+      ? 'telehealth'
+      : 'in_person';
+    const startDate = (document.getElementById('excuseDutyStartInput') || {}).value || consultationDate;
     const endDate = (document.getElementById('excuseDutyEndInput') || {}).value || startDate;
+    const employeeStaffId = ((document.getElementById('excuseDutyStaffIdInput') || {}).value || '').trim();
     const mdcNumber = ((document.getElementById('excuseDutyMdcInput') || {}).value || '').trim();
     const remarks = ((document.getElementById('excuseDutyRemarksInput') || {}).value || '').trim();
     const hrSafePrivacy = Boolean((document.getElementById('excuseDutyPrivacyCheck') || {}).checked);
+    const attestationConfirmed = Boolean((document.getElementById('excuseDutyAttestationCheck') || {}).checked);
 
     if (mdcNumber) {
       try { localStorage.setItem('havilah_clinician_mdc_number', mdcNumber); } catch (e) {}
@@ -2017,14 +2119,17 @@
       certificateType: typeKey,
       referenceCode: item.referenceCode || '',
       patientName: item.clinicalDetails?.patientName || '',
+      employeeStaffId,
       companyName: item.tenantId?.company_name || '',
       departmentName: item.departmentName || '',
-      consultationDate: new Date().toISOString().split('T')[0],
+      consultationDate,
+      consultationMode,
       startDate,
       endDate: (typeKey === 'excuse_duty' || typeKey === 'light_duty') ? endDate : startDate,
       mdcNumber: effectiveMdc,
       remarks,
       hrSafePrivacy,
+      attestationConfirmed,
       clinicianName,
       clinicianSpecialty,
       clinicName,
@@ -2066,6 +2171,22 @@
       return;
     }
     const payload = collectExcuseDutyPayload();
+    if (!payload.practiceRegistrationNumber) {
+      alert('Please configure your clinic HeFRA / practice registration number in Clinic Settings before issuing an official certificate.');
+      window.openClinicSettingsModal();
+      return;
+    }
+    if (!payload.mdcNumber || payload.mdcNumber.length < 3) {
+      alert('Please enter your valid Medical and Dental Council (MDC) registration number.');
+      document.getElementById('excuseDutyMdcInput')?.focus();
+      return;
+    }
+    if (!payload.attestationConfirmed) {
+      alert('Please confirm the clinician attestation checkbox under Act 857 and Act 772 before issuing.');
+      document.getElementById('excuseDutyAttestationCheck')?.focus();
+      return;
+    }
+
     const sched = window.ExcuseDutyPdf.calculateExcuseDutySchedule(payload.startDate, payload.endDate);
     if (!sched.valid) {
       alert('Please choose a valid start date and end date (end date must be on or after start date).');
@@ -2074,15 +2195,22 @@
 
     const btn = document.getElementById('issueExcuseDutyBtn');
     const statusEl = document.getElementById('modalAttachmentUploadStatus');
-    if (btn) { btn.disabled = true; btn.textContent = 'Registering & Issuing...'; }
-    if (statusEl) { statusEl.textContent = 'Registering verifiable certificate ID & generating PDF...'; statusEl.style.display = 'block'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Registering & Sealing...'; }
+    if (statusEl) { statusEl.textContent = 'Registering verifiable certificate ID, building PDF & sealing SHA-256 hash...'; statusEl.style.display = 'block'; }
 
     try {
       // 1. Register & log authoritative tamper-evident certificate on server (clinician-only)
       const certRes = await assessorApiFetch(`${API_BASE}/referrals/${state.selectedCase._id}/certificates`, {
         method: 'POST',
         body: JSON.stringify({
-          certificateType: payload.certificateType
+          certificateType: payload.certificateType,
+          consultationDate: payload.consultationDate,
+          consultationMode: payload.consultationMode,
+          startDate: payload.startDate,
+          endDate: payload.endDate,
+          mdcNumber: payload.mdcNumber,
+          hrSafePrivacy: payload.hrSafePrivacy,
+          attestationConfirmed: true
         })
       });
       if (!certRes || !certRes.data || !certRes.data.certificateId) {
@@ -2095,18 +2223,34 @@
         certificateId: certRes.data.certificateId,
         issuedAt: certRes.data.issuedAt,
         verifyUrl: certRes.data.verifyUrl,
-        clinicName: certRes.data.clinicName || payload.clinicName
+        clinicName: certRes.data.clinicName || payload.clinicName,
+        practiceRegistrationNumber: certRes.data.practiceRegNumber || payload.practiceRegistrationNumber,
+        clinicianName: certRes.data.clinicianName || payload.clinicianName,
+        clinicianSpecialty: certRes.data.clinicianSpecialty || payload.clinicianSpecialty,
+        mdcNumber: certRes.data.mdcNumber || payload.mdcNumber
       };
 
-      // 2. Render official PDF on-device with real QR code and server-issued ID/timestamp
+      // 2. Render official PDF bytes with QR code and compute exact SHA-256 digest
       const built = await window.ExcuseDutyPdf.buildExcuseDutyPdf(issuedPayload);
+
+      // 3. Seal the exact PDF SHA-256 hash on the server record (immutable)
+      if (built.pdfSha256) {
+        await assessorApiFetch(`${API_BASE}/referrals/${state.selectedCase._id}/certificates/${encodeURIComponent(built.certificateId)}/seal`, {
+          method: 'PATCH',
+          body: JSON.stringify({ pdfSha256: built.pdfSha256 })
+        });
+      }
+
+      // 4. Attach clean data URI & integrity metadata to the consultation record
       const res = await assessorApiFetch(`${API_BASE}/referrals/${state.selectedCase._id}/attachments`, {
         method: 'POST',
         body: JSON.stringify({
           fileName: built.fileName,
           fileData: built.dataUri,
           fileType: 'application/pdf',
-          fileSize: built.blobSize
+          fileSize: built.blobSize,
+          certificateId: built.certificateId,
+          pdfSha256: built.pdfSha256 || ''
         })
       });
 
@@ -2120,7 +2264,7 @@
         const periodSummary = (payload.certificateType === 'excuse_duty' || payload.certificateType === 'light_duty')
           ? ` (${sched.startFormatted} to ${sched.endFormatted}, ${sched.days} day${sched.days === 1 ? '' : 's'})`
           : ` (${sched.startFormatted})`;
-        const noticeMsg = `I have issued your ${certLabel} certificate${periodSummary} [Cert ID: ${built.certificateId}]. You can download the PDF from your Clinical Documents section above.`;
+        const noticeMsg = `I have issued your ${certLabel} certificate${periodSummary} [Cert ID: ${built.certificateId}]. You can download or open the PDF from your Clinical Documents section above.`;
 
         try {
           const msgRes = await assessorApiFetch(`${API_BASE}/referrals/${state.selectedCase._id}/message`, {
@@ -2135,13 +2279,172 @@
           console.warn('[ExcuseDuty] Chat notice skipped:', chatErr.message);
         }
 
-        showToast(`Digital Excuse Duty (${built.certificateId}) issued and sent to employee.`);
+        const attestEl = document.getElementById('excuseDutyAttestationCheck');
+        if (attestEl) attestEl.checked = false;
+        loadCaseCertificates(state.selectedCase._id);
+        showToast(`Digital Excuse Duty (${built.certificateId}) issued, SHA-256 sealed, and sent to employee.`);
       }
     } catch (err) {
       alert('Failed to issue Digital Excuse Duty PDF: ' + err.message);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Issue & send to employee'; }
       if (statusEl) { statusEl.style.display = 'none'; statusEl.textContent = 'Uploading medical document...'; }
+    }
+  };
+
+  async function loadCaseCertificates(referralId) {
+    const sec = document.getElementById('modalIssuedCertificatesSection');
+    const list = document.getElementById('modalIssuedCertificatesList');
+    if (!sec || !list || !referralId) return;
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/referrals/${referralId}/certificates`);
+      renderCaseCertificates(res.data || []);
+    } catch (e) {
+      sec.style.display = 'none';
+    }
+  }
+
+  function renderCaseCertificates(certs) {
+    const sec = document.getElementById('modalIssuedCertificatesSection');
+    const list = document.getElementById('modalIssuedCertificatesList');
+    if (!sec || !list) return;
+    if (!certs || certs.length === 0) {
+      sec.style.display = 'none';
+      list.innerHTML = '';
+      return;
+    }
+
+    sec.style.display = 'block';
+    list.innerHTML = certs.map((c) => {
+      const isRevoked = Boolean(c.revoked);
+      const statusBadge = isRevoked
+        ? '<span class="badge badge-danger">Revoked</span>'
+        : '<span class="badge badge-success">Active</span>';
+      const sealBadge = c.fileHashProtected
+        ? '<span class="badge badge-neutral">SHA-256 sealed</span>'
+        : '';
+      const datesText = c.startDate
+        ? (c.endDate && c.endDate !== c.startDate ? `${c.startDate} to ${c.endDate}` : c.startDate)
+        : (c.issuedAt ? new Date(c.issuedAt).toISOString().split('T')[0] : '-');
+      const safeIdAttr = escapeHtml(c.certificateId || '');
+      const safeIdJs = escapeJsAttr(c.certificateId || '');
+      const verifyHref = `/verify/${encodeURIComponent(c.certificateId || '')}`;
+
+      return `
+        <div class="attachment-row" style="flex-wrap: wrap;">
+          <div style="min-width: 0; flex: 1;">
+            <div style="display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;">
+              <strong class="tabular-nums" style="font-size: var(--text-sm); color: var(--text);">${safeIdAttr}</strong>
+              ${statusBadge}
+              ${sealBadge}
+            </div>
+            <div class="text-subtle-xs" style="margin-top: 2px;">
+              Dates: ${escapeHtml(datesText)}${c.mdcNumber ? ` · MDC: ${escapeHtml(c.mdcNumber)}` : ''}
+            </div>
+            ${isRevoked && c.revokedReason ? `<div class="text-subtle-xs" style="color: var(--danger); margin-top: 2px;">Reason: ${escapeHtml(c.revokedReason)}</div>` : ''}
+          </div>
+          <div style="display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0;">
+            <a href="${escapeHtml(verifyHref)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Verify link</a>
+            ${!isRevoked ? `<button type="button" class="btn btn-destructive btn-sm" onclick="openRevokeCertificateModal('${safeIdJs}', '${escapeJsAttr(datesText)}')">Revoke</button>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.openRevokeCertificateModal = (certId, datesLabel) => {
+    const idInput = document.getElementById('revokeCertIdInput');
+    const summaryEl = document.getElementById('revokeCertSummary');
+    const reasonEl = document.getElementById('revokeCertReasonInput');
+    if (idInput) idInput.value = certId || '';
+    if (summaryEl) {
+      summaryEl.textContent = `Revoke certificate ${certId || ''}${datesLabel ? ' (' + datesLabel + ')' : ''}? Employers scanning its QR code will immediately see that it has been revoked.`;
+    }
+    if (reasonEl) reasonEl.value = '';
+    openModal('revokeCertificateModal');
+    setTimeout(() => reasonEl?.focus(), 40);
+  };
+
+  window.confirmRevokeCertificate = async (event) => {
+    event.preventDefault();
+    const certId = (document.getElementById('revokeCertIdInput')?.value || '').trim();
+    const reason = (document.getElementById('revokeCertReasonInput')?.value || '').trim();
+    const btn = document.getElementById('confirmRevokeCertBtn');
+    if (!certId || reason.length < 5) {
+      alert('Provide a revocation reason (at least 5 characters).');
+      return;
+    }
+    if (btn) { btn.disabled = true; btn.textContent = 'Revoking...'; }
+    try {
+      await assessorApiFetch(`${API_BASE}/certificates/${encodeURIComponent(certId)}/revoke`, {
+        method: 'PATCH',
+        body: JSON.stringify({ reason }),
+      });
+      closeModal('revokeCertificateModal');
+      showToast(`Certificate ${certId} revoked.`);
+      if (state.selectedCase?._id) {
+        loadCaseCertificates(state.selectedCase._id);
+      }
+    } catch (err) {
+      alert('Failed to revoke certificate: ' + err.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Revoke certificate'; }
+    }
+  };
+
+  window.openAssessorAttachment = (idx) => {
+    const att = (state.selectedCase?.clinicalDetails?.attachments || [])[idx];
+    if (!att) return;
+    const raw = att.fileData || att.fileUrl || '';
+    const safeHref = sanitizeSafeHref(raw, { allowData: true });
+    if (safeHref === '#') {
+      alert('This document format cannot be opened safely.');
+      return;
+    }
+    if (safeHref.startsWith('data:')) {
+      const parsed = dataUriToBlob(safeHref);
+      if (!parsed) return;
+      const blobUrl = URL.createObjectURL(parsed.blob);
+      const win = window.open(blobUrl, '_blank', 'noopener');
+      if (!win) {
+        window.downloadAssessorAttachment(idx);
+      }
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } else {
+      window.open(safeHref, '_blank', 'noopener');
+    }
+  };
+
+  window.downloadAssessorAttachment = (idx) => {
+    const att = (state.selectedCase?.clinicalDetails?.attachments || [])[idx];
+    if (!att) return;
+    const raw = att.fileData || att.fileUrl || '';
+    const safeHref = sanitizeSafeHref(raw, { allowData: true });
+    if (safeHref === '#') {
+      alert('This document cannot be downloaded safely.');
+      return;
+    }
+    const fileName = att.fileName || 'Clinical_Document.pdf';
+    if (safeHref.startsWith('data:')) {
+      const parsed = dataUriToBlob(safeHref);
+      if (!parsed) return;
+      const blobUrl = URL.createObjectURL(parsed.blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } else {
+      const a = document.createElement('a');
+      a.href = safeHref;
+      a.download = fileName;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   };
 
@@ -2177,6 +2480,7 @@
 
       const safeFileName = escapeHtml(att.fileName || 'Clinical_Document');
       const safeFileHref = escapeHtml(sanitizeSafeHref(att.fileData || att.fileUrl || '', { allowData: true }));
+      const isPdf = /\.pdf$/i.test(att.fileName || '') || /application\/pdf/i.test(att.fileType || '');
 
       return `
         <div class="attachment-row">
@@ -2184,15 +2488,20 @@
             <div style="flex-shrink: 0; display: flex; align-items: center;">${iconSvg}</div>
             <div style="min-width: 0; flex: 1;">
               <div style="font-weight: var(--weight-medium); color: var(--text); font-size: var(--text-base); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${safeFileName}</div>
-              <div class="text-subtle-xs" style="display: flex; align-items: center; gap: var(--space-1);">
+              <div class="text-subtle-xs" style="display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap;">
                 <span>${escapeHtml(timeStr)}</span>
                 ${sizeStr ? `<span>·</span><span>${escapeHtml(sizeStr)}</span>` : ''}
+                ${att.certificateId ? `<span>·</span><span class="tabular-nums">${escapeHtml(att.certificateId)}</span>` : ''}
                 <span style="color: var(--success);">· Verified</span>
               </div>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0;">
-            <a href="${safeFileHref}" download="${safeFileName}" class="btn btn-secondary btn-sm">
+            ${isPdf ? `
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openAssessorAttachment(${idx})">
+              <span>Open</span>
+            </button>` : ''}
+            <a href="${safeFileHref}" download="${safeFileName}" onclick="event.preventDefault(); downloadAssessorAttachment(${idx});" class="btn btn-secondary btn-sm">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               <span>Download</span>
             </a>
@@ -3001,6 +3310,16 @@
       if (regEl) regEl.value = data.practiceRegistrationNumber || '';
       const mdcEl = document.getElementById('settingsMdcNumber');
       if (mdcEl) mdcEl.value = state.assessor?.mdcNumber || data.mdcNumber || '';
+      const hefraExpEl = document.getElementById('settingsHefraExpiry');
+      if (hefraExpEl) {
+        const rawHefra = data.hefraLicenseExpiry || state.assessor?.hefraLicenseExpiry;
+        hefraExpEl.value = rawHefra ? new Date(rawHefra).toISOString().split('T')[0] : '';
+      }
+      const mdcExpEl = document.getElementById('settingsMdcExpiry');
+      if (mdcExpEl) {
+        const rawMdc = state.assessor?.mdcLicenseExpiry || data.mdcLicenseExpiry;
+        mdcExpEl.value = rawMdc ? new Date(rawMdc).toISOString().split('T')[0] : '';
+      }
       document.getElementById('settingsPhone').value = data.phone || '';
       document.getElementById('settingsNotificationEmail').value = data.notificationEmail || data.email || '';
       document.getElementById('settingsAddress').value = data.address || '';
@@ -3128,6 +3447,8 @@
     const organization = document.getElementById('settingsClinicName').value.trim();
     const practiceRegistrationNumber = (document.getElementById('settingsPracticeRegNumber')?.value || '').trim();
     const mdcNumber = (document.getElementById('settingsMdcNumber')?.value || '').trim();
+    const hefraLicenseExpiry = document.getElementById('settingsHefraExpiry')?.value || null;
+    const mdcLicenseExpiry = document.getElementById('settingsMdcExpiry')?.value || null;
     const phone = document.getElementById('settingsPhone').value.trim();
     const notificationEmail = document.getElementById('settingsNotificationEmail').value.trim();
     const address = document.getElementById('settingsAddress').value.trim();
@@ -3151,7 +3472,9 @@
         body: JSON.stringify({
           organization,
           practiceRegistrationNumber,
+          hefraLicenseExpiry,
           mdcNumber,
+          mdcLicenseExpiry,
           signatureDataUrl,
           signatureApproved,
           stampDataUrl,

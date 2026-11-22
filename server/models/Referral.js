@@ -44,6 +44,8 @@ const ReferralSchema = new mongoose.Schema({
       fileData: { type: String }, // Base64 fallback for legacy data
       fileType: { type: String },
       fileSize: { type: Number },
+      certificateId: { type: String, default: '' },
+      pdfSha256: { type: String, default: '' },
       uploadedAt: { type: Date, default: Date.now },
     }],
   },

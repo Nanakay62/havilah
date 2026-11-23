@@ -6,6 +6,8 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Certificate Verification - Havilah Occupational Health</title>
   <link rel="icon" type="image/svg+xml" href="/assets/havilah-mark.svg">
+  <link rel="stylesheet" href="/css/loader.css">
+  <script src="/js/havilahLoader.js"></script>
   <style>
     :root {
       --ink: #1A1F2B;
@@ -90,6 +92,10 @@
       border-color: var(--accent);
     }
     .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
       height: 40px;
       padding: 0 16px;
       border-radius: 6px;
@@ -246,10 +252,11 @@
 
     <form class="lookup-form" id="manualLookupForm">
       <input type="text" id="certIdInput" class="lookup-input" placeholder="HVL-XXXX-XXXX-XXXX" aria-label="Certificate ID" autocomplete="off">
-      <button type="submit" class="btn btn-primary">Verify ID</button>
+      <button type="submit" id="verifySubmitBtn" class="btn btn-primary">Verify ID</button>
     </form>
 
     <section id="statusPanel" class="status-panel" aria-live="polite" style="display:none;">
+      <div id="statusLoaderSlot" style="display:none;"></div>
       <p id="statusTitle" class="status-title">Checking certificate...</p>
       <p id="statusDesc" class="status-desc">Verifying against issued clinical records.</p>
     </section>
@@ -360,11 +367,13 @@
         activeCertId = cleanId;
 
         const panel = document.getElementById('statusPanel');
+        const loaderSlot = document.getElementById('statusLoaderSlot');
         const titleEl = document.getElementById('statusTitle');
         const descEl = document.getElementById('statusDesc');
         const tableEl = document.getElementById('detailsTable');
         const tamperSec = document.getElementById('tamperCheckSection');
         const hashResult = document.getElementById('pdfHashResult');
+        const verifyBtn = document.getElementById('verifySubmitBtn');
 
         if (hashResult) {
           hashResult.className = 'hash-result';
@@ -372,6 +381,13 @@
         }
 
         if (!cleanId || cleanId === 'VERIFY') {
+          if (loaderSlot) {
+            loaderSlot.style.display = 'none';
+            loaderSlot.innerHTML = '';
+          }
+          titleEl.style.display = '';
+          descEl.style.display = '';
+          if (window.HavilahLoader && verifyBtn) window.HavilahLoader.setButtonLoading(verifyBtn, false);
           panel.style.display = 'block';
           panel.className = 'status-panel';
           titleEl.textContent = 'Enter a Certificate ID or scan the QR code';
@@ -383,8 +399,24 @@
 
         panel.style.display = 'block';
         panel.className = 'status-panel';
-        titleEl.textContent = 'Checking certificate...';
-        descEl.textContent = 'Verifying against issued clinical records.';
+        if (loaderSlot) {
+          loaderSlot.innerHTML = window.HavilahLoader
+            ? window.HavilahLoader.render({
+                variant: 'section',
+                label: 'Checking certificate...',
+                sublabel: 'Verifying against issued clinical records.'
+              })
+            : '';
+          loaderSlot.style.display = 'block';
+          titleEl.style.display = 'none';
+          descEl.style.display = 'none';
+        } else {
+          titleEl.textContent = 'Checking certificate...';
+          descEl.textContent = 'Verifying against issued clinical records.';
+        }
+        if (window.HavilahLoader && verifyBtn) {
+          window.HavilahLoader.setButtonLoading(verifyBtn, true, 'Verifying...');
+        }
         tableEl.style.display = 'none';
         tamperSec.style.display = 'none';
 
@@ -464,6 +496,16 @@
           panel.className = 'status-panel invalid';
           titleEl.textContent = 'Verification unavailable';
           descEl.textContent = 'Could not reach the verification service. Please try again shortly.';
+        } finally {
+          if (loaderSlot) {
+            loaderSlot.style.display = 'none';
+            loaderSlot.innerHTML = '';
+          }
+          titleEl.style.display = '';
+          descEl.style.display = '';
+          if (window.HavilahLoader && verifyBtn) {
+            window.HavilahLoader.setButtonLoading(verifyBtn, false);
+          }
         }
       }
 

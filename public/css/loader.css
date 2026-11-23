@@ -1,0 +1,417 @@
+/* ==========================================================================
+   Havilah Custom Loader: Concentric Breathing Ripple (Idea B)
+   Uses pure CSS GPU-composited transforms and opacity with zero JS timers.
+   Harmonizes with the landing page's Concentric Gravity Contours.
+   ========================================================================== */
+
+@keyframes havilahRipplePrimary {
+  0% {
+    transform: scale(0.58);
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(1.62);
+    opacity: 0;
+  }
+}
+
+@keyframes havilahRippleSecondary {
+  0% {
+    transform: scale(0.58);
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(1.62);
+    opacity: 0;
+  }
+}
+
+@keyframes havilahMarkBreathe {
+  0%,
+  100% {
+    transform: scale(0.97);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+havilah-loader {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+havilah-loader[variant="section"],
+havilah-loader:not([variant]) {
+  display: flex;
+  width: 100%;
+}
+
+havilah-loader[variant="fullscreen"] {
+  display: flex;
+  width: 100%;
+}
+
+.havilah-loader {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  font-family: 'Inter', var(--font-sans, system-ui, -apple-system, sans-serif);
+  box-sizing: border-box;
+}
+
+.havilah-loader__stage {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.havilah-loader__ring {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  box-sizing: border-box;
+  will-change: transform, opacity;
+  z-index: 1;
+}
+
+.havilah-loader__ring--1 {
+  border: 1.75px solid #0F766E;
+  animation: havilahRipplePrimary 3.2s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+.havilah-loader__ring--2 {
+  border: 1.75px solid #0cb6d6;
+  animation: havilahRippleSecondary 3.2s cubic-bezier(0.22, 0.61, 0.36, 1) 1.6s infinite;
+}
+
+.havilah-loader__halo {
+  position: relative;
+  z-index: 2;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(240, 253, 250, 0.78);
+  border: 1px solid rgba(153, 246, 228, 0.68);
+  box-shadow: 0 4px 16px -4px rgba(15, 118, 110, 0.12);
+  box-sizing: border-box;
+}
+
+.havilah-loader__mark {
+  display: block;
+  object-fit: contain;
+  will-change: transform;
+  animation: havilahMarkBreathe 3.2s ease-in-out infinite;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.havilah-loader__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.havilah-loader__label {
+  font-family: 'Plus Jakarta Sans', 'Inter', var(--font-sans, system-ui, -apple-system, sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  color: #0F172A;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.havilah-loader__sublabel {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: #475569;
+  line-height: 1.4;
+  margin: 0;
+  max-width: 320px;
+}
+
+.havilah-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ==========================================================================
+   Variants: fullscreen, section (default), button
+   ========================================================================== */
+
+.havilah-loader--fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  background: rgba(248, 250, 252, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: opacity 0.24s ease;
+}
+
+.havilah-loader--fullscreen.havilah-loader--inline-preview {
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  min-height: 260px;
+  border-radius: 14px;
+}
+
+.havilah-loader--fullscreen .havilah-loader__stage {
+  width: 128px;
+  height: 128px;
+}
+
+.havilah-loader--fullscreen .havilah-loader__ring {
+  width: 79px;
+  height: 79px;
+}
+
+.havilah-loader--fullscreen .havilah-loader__halo {
+  width: 72px;
+  height: 72px;
+}
+
+.havilah-loader--fullscreen .havilah-loader__mark {
+  width: 48px;
+  height: auto;
+  max-height: 48px;
+}
+
+.havilah-loader--fullscreen .havilah-loader__label {
+  font-size: 16px;
+}
+
+.havilah-loader--fullscreen .havilah-loader__sublabel {
+  font-size: 13.5px;
+}
+
+.havilah-loader--leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.havilah-loader--section {
+  display: flex;
+  width: 100%;
+  padding: 20px 12px;
+  gap: 10px;
+}
+
+.havilah-loader--section .havilah-loader__stage {
+  width: 100px;
+  height: 100px;
+}
+
+.havilah-loader--section .havilah-loader__ring {
+  width: 62px;
+  height: 62px;
+}
+
+.havilah-loader--section .havilah-loader__halo {
+  width: 56px;
+  height: 56px;
+}
+
+.havilah-loader--section .havilah-loader__mark {
+  width: 36px;
+  height: auto;
+  max-height: 36px;
+}
+
+.havilah-loader--button {
+  display: inline-flex;
+  flex-direction: row;
+  gap: 0;
+  padding: 0;
+  vertical-align: middle;
+}
+
+.havilah-loader--button .havilah-loader__stage {
+  width: 22px;
+  height: 22px;
+}
+
+.havilah-loader--button .havilah-loader__ring--1 {
+  width: 15px;
+  height: 15px;
+  border-width: 1.5px;
+}
+
+.havilah-loader--button .havilah-loader__ring--2 {
+  display: none;
+}
+
+.havilah-loader--button .havilah-loader__halo {
+  width: 20px;
+  height: 20px;
+  background: rgba(240, 253, 250, 0.9);
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  box-shadow: none;
+}
+
+.havilah-loader--button .havilah-loader__mark {
+  width: 16px;
+  height: auto;
+  max-height: 16px;
+}
+
+.havilah-loader--button .havilah-loader__copy {
+  display: none;
+}
+
+/* ==========================================================================
+   Dark Surface & High-Contrast Button Support (#0F172A / Primary Teal Buttons)
+   ========================================================================== */
+
+.havilah-loader--dark.havilah-loader--fullscreen,
+[data-theme="dark"] .havilah-loader--fullscreen,
+[data-surface="dark"] .havilah-loader--fullscreen {
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.havilah-loader--dark .havilah-loader__halo,
+[data-theme="dark"] .havilah-loader .havilah-loader__halo,
+[data-surface="dark"] .havilah-loader .havilah-loader__halo {
+  background: rgba(248, 250, 252, 0.95);
+  border-color: rgba(94, 234, 212, 0.55);
+  box-shadow: 0 0 24px rgba(12, 182, 214, 0.22);
+}
+
+.havilah-loader--dark .havilah-loader__ring--1,
+[data-theme="dark"] .havilah-loader .havilah-loader__ring--1,
+[data-surface="dark"] .havilah-loader .havilah-loader__ring--1 {
+  border-color: #14B8A6;
+}
+
+.havilah-loader--dark .havilah-loader__ring--2,
+[data-theme="dark"] .havilah-loader .havilah-loader__ring--2,
+[data-surface="dark"] .havilah-loader .havilah-loader__ring--2 {
+  border-color: #0cb6d6;
+}
+
+.havilah-loader--dark .havilah-loader__label,
+[data-theme="dark"] .havilah-loader .havilah-loader__label,
+[data-surface="dark"] .havilah-loader .havilah-loader__label {
+  color: #F8FAFC;
+}
+
+.havilah-loader--dark .havilah-loader__sublabel,
+[data-theme="dark"] .havilah-loader .havilah-loader__sublabel,
+[data-surface="dark"] .havilah-loader .havilah-loader__sublabel {
+  color: #94A3B8;
+}
+
+.btn-primary .havilah-loader--button .havilah-loader__halo,
+.btn-destructive-solid .havilah-loader--button .havilah-loader__halo,
+.havilah-loader--button.havilah-loader--dark .havilah-loader__halo {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: none;
+}
+
+.btn-primary .havilah-loader--button .havilah-loader__ring--1,
+.btn-destructive-solid .havilah-loader--button .havilah-loader__ring--1,
+.havilah-loader--button.havilah-loader--dark .havilah-loader__ring--1 {
+  border-color: rgba(204, 251, 241, 0.9);
+}
+
+/* ==========================================================================
+   Zero-Layout-Shift Button Loading Wrapper
+   ========================================================================== */
+
+.hl-btn-is-loading {
+  position: relative !important;
+  pointer-events: none;
+}
+
+.btn.hl-btn-is-loading:disabled,
+.hl-btn-is-loading:disabled {
+  opacity: 0.92;
+  cursor: progress;
+}
+
+.btn.hl-btn-is-loading::after,
+.hl-btn-is-loading::after {
+  content: none !important;
+  display: none !important;
+}
+
+.hl-btn-idle-measure {
+  visibility: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.hl-btn-active-indicator {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.hl-btn-active-text {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   Reduced Motion Accessibility
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .havilah-loader__ring--1 {
+    animation: none;
+    transform: scale(1.18);
+    opacity: 0.45;
+  }
+
+  .havilah-loader__ring--2 {
+    animation: none;
+    opacity: 0;
+  }
+
+  .havilah-loader__mark {
+    animation: none;
+    transform: scale(1);
+  }
+}

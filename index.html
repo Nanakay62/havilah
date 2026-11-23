@@ -134,6 +134,8 @@
   <!-- Core Design Tokens & Component Library -->
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/loader.css">
+  <script src="/js/havilahLoader.js" defer></script>
 
   <style>
     /* ------------------------------------------------------------------------
@@ -3097,7 +3099,12 @@ window.App = {
       return;
     }
     if (err) err.style.display = 'none';
-    if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
+    if (window.HavilahLoader && btn) {
+      window.HavilahLoader.setButtonLoading(btn, true, 'Submitting...');
+    } else if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+    }
     try {
       const res = await post('/api/v1/demo-request', { email: em, companyName: co, plan: pl });
       const data = await res.json();
@@ -3111,7 +3118,12 @@ window.App = {
     } catch {
       if (err) { err.textContent = 'Network error. Please try again.'; err.style.display = 'flex'; }
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'Submit request'; }
+      if (window.HavilahLoader && btn) {
+        window.HavilahLoader.setButtonLoading(btn, false, 'Submit request');
+      } else if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Submit request';
+      }
     }
   },
   openVideoModal: () => {
@@ -3172,7 +3184,12 @@ window.App = {
       return;
     }
     if (err) err.style.display = 'none';
-    if (btn) { btn.disabled = true; btn.textContent = 'Creating workspace...'; }
+    if (window.HavilahLoader && btn) {
+      window.HavilahLoader.setButtonLoading(btn, true, 'Creating workspace...');
+    } else if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Creating workspace...';
+    }
     try {
       const res = await post('/api/v1/auth/register-tenant', { companyName: cn, fullName: fn, email: em, password: pw, industry: ind });
       const d = await res.json();
@@ -3187,6 +3204,12 @@ window.App = {
           }
           if (em) localStorage.setItem('wf_user_email', em);
         }
+        if (window.HavilahLoader) {
+          window.HavilahLoader.showFullscreen({
+            label: 'Creating your workspace',
+            sublabel: 'Preparing HR Analytics Portal...'
+          });
+        }
         window.location.href = d.redirectUrl || '/portal/hr.html';
       } else if (err) {
         err.textContent = d.error || d.message || 'Registration failed.';
@@ -3195,7 +3218,12 @@ window.App = {
     } catch {
       if (err) { err.textContent = 'Network error. Please try again.'; err.style.display = 'flex'; }
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'Create workspace'; }
+      if (window.HavilahLoader && btn) {
+        window.HavilahLoader.setButtonLoading(btn, false, 'Create workspace');
+      } else if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Create workspace';
+      }
     }
   }
 };

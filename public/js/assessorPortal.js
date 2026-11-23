@@ -590,8 +590,13 @@
     const twoFaCode = codeEl ? codeEl.value.trim() : '';
     const btn = document.getElementById('assessorLoginBtn');
 
-    btn.disabled = true;
-    btn.textContent = pendingAssessor2faToken ? 'Verifying 2FA...' : 'Signing in...';
+    const loadingLabel = pendingAssessor2faToken ? 'Verifying 2FA...' : 'Signing in...';
+    if (window.HavilahLoader) {
+      window.HavilahLoader.setButtonLoading(btn, true, loadingLabel);
+    } else {
+      btn.disabled = true;
+      btn.textContent = loadingLabel;
+    }
 
     try {
       let res;
@@ -619,8 +624,12 @@
         if (emailEl) emailEl.required = false;
         if (passEl) passEl.required = false;
         if (codeEl) codeEl.focus();
-        btn.disabled = false;
-        btn.textContent = 'Verify 2FA & sign in';
+        if (window.HavilahLoader) {
+          window.HavilahLoader.setButtonLoading(btn, false, 'Verify 2FA & sign in');
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Verify 2FA & sign in';
+        }
         return;
       }
 
@@ -632,8 +641,12 @@
       alert(err.message || 'Login failed');
     } finally {
       if (!pendingAssessor2faToken) {
-        btn.disabled = false;
-        btn.textContent = 'Sign in';
+        if (window.HavilahLoader) {
+          window.HavilahLoader.setButtonLoading(btn, false, 'Sign in');
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Sign in';
+        }
       } else {
         btn.disabled = false;
       }
@@ -2335,8 +2348,21 @@
 
     const btn = document.getElementById('issueExcuseDutyBtn');
     const statusEl = document.getElementById('modalAttachmentUploadStatus');
-    if (btn) { btn.disabled = true; btn.textContent = 'Registering & Sealing...'; }
-    if (statusEl) { statusEl.textContent = 'Registering verifiable certificate ID, building PDF & sealing SHA-256 hash...'; statusEl.style.display = 'block'; }
+    const statusTextEl = document.getElementById('modalAttachmentUploadText');
+    if (window.HavilahLoader) {
+      window.HavilahLoader.setButtonLoading(btn, true, 'Registering & Sealing...');
+    } else if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Registering & Sealing...';
+    }
+    if (statusTextEl) {
+      statusTextEl.textContent = 'Registering verifiable certificate ID, building PDF & sealing SHA-256 hash...';
+    } else if (statusEl) {
+      statusEl.textContent = 'Registering verifiable certificate ID, building PDF & sealing SHA-256 hash...';
+    }
+    if (statusEl) {
+      statusEl.style.display = 'flex';
+    }
 
     try {
       // 1. Register & log authoritative tamper-evident certificate on server (clinician-only)
@@ -2431,8 +2457,14 @@
     } catch (err) {
       alert('Failed to issue Digital Excuse Duty PDF: ' + err.message);
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'Issue & send to employee'; }
-      if (statusEl) { statusEl.style.display = 'none'; statusEl.textContent = 'Uploading medical document...'; }
+      if (window.HavilahLoader) {
+        window.HavilahLoader.setButtonLoading(btn, false, 'Issue & send to employee');
+      } else if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Issue & send to employee';
+      }
+      if (statusTextEl) statusTextEl.textContent = 'Uploading medical document...';
+      if (statusEl) statusEl.style.display = 'none';
     }
   };
 
@@ -2674,7 +2706,9 @@
     }
 
     const statusEl = document.getElementById('modalAttachmentUploadStatus');
-    if (statusEl) statusEl.style.display = 'block';
+    const statusTextEl = document.getElementById('modalAttachmentUploadText');
+    if (statusTextEl) statusTextEl.textContent = 'Uploading medical document...';
+    if (statusEl) statusEl.style.display = 'flex';
 
     try {
       const base64Data = await readFileAsBase64(file);
@@ -2971,8 +3005,12 @@
       return;
     }
 
-    btn.disabled = true;
-    btn.textContent = 'Saving & Settling...';
+    if (window.HavilahLoader) {
+      window.HavilahLoader.setButtonLoading(btn, true, 'Saving & Settling...');
+    } else {
+      btn.disabled = true;
+      btn.textContent = 'Saving & Settling...';
+    }
 
     try {
       let attachmentPayload = null;
@@ -2980,8 +3018,12 @@
         const file = fileInput.files[0];
         if (file.size > 10 * 1024 * 1024) {
           alert('File exceeds 10MB maximum size limit.');
-          btn.disabled = false;
-          btn.textContent = 'Complete & bill';
+          if (window.HavilahLoader) {
+            window.HavilahLoader.setButtonLoading(btn, false, 'Complete & bill');
+          } else {
+            btn.disabled = false;
+            btn.textContent = 'Complete & bill';
+          }
           return;
         }
 
@@ -3010,8 +3052,12 @@
     } catch (err) {
       alert('Error completing case: ' + err.message);
     } finally {
-      btn.disabled = false;
-      btn.textContent = 'Complete & bill';
+      if (window.HavilahLoader) {
+        window.HavilahLoader.setButtonLoading(btn, false, 'Complete & bill');
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Complete & bill';
+      }
     }
   };
 
@@ -3585,8 +3631,12 @@
   window.handleSaveClinicSettings = async (event) => {
     event.preventDefault();
     const btn = document.getElementById('saveSettingsBtn');
-    btn.disabled = true;
-    btn.textContent = 'Saving...';
+    if (window.HavilahLoader) {
+      window.HavilahLoader.setButtonLoading(btn, true, 'Saving...');
+    } else {
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+    }
 
     const organization = document.getElementById('settingsClinicName').value.trim();
     const practiceRegistrationNumber = (document.getElementById('settingsPracticeRegNumber')?.value || '').trim();
@@ -3647,8 +3697,12 @@
     } catch (err) {
       alert('Error saving settings: ' + err.message);
     } finally {
-      btn.disabled = false;
-      btn.textContent = 'Save Settings';
+      if (window.HavilahLoader) {
+        window.HavilahLoader.setButtonLoading(btn, false, 'Save settings');
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Save Settings';
+      }
     }
   };
 

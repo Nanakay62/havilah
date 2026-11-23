@@ -1645,7 +1645,7 @@ let activeConflictReport = null;
 async function loadConflictReports() {
   const tbody = document.getElementById('saConflictTableBody');
   if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-2);">Loading conflict inquiries...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 16px;"><havilah-loader variant="section" label="Loading conflict inquiries..."></havilah-loader></td></tr>';
   }
 
   try {
@@ -1896,7 +1896,12 @@ async function saveSuperAdminReportStatus() {
   const newStatus = statusSelect?.value;
   const btn = document.getElementById('saSaveStatusBtn');
 
-  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  if (window.HavilahLoader) {
+    window.HavilahLoader.setButtonLoading(btn, true, 'Saving...');
+  } else if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+  }
 
   try {
     const res = await fetch(`/api/v1/superadmin/reports/${activeConflictReport._id}`, {
@@ -1918,7 +1923,12 @@ async function saveSuperAdminReportStatus() {
   } catch (err) {
     showToast('Error', 'Could not reach server.', 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Save Status'; }
+    if (window.HavilahLoader) {
+      window.HavilahLoader.setButtonLoading(btn, false, 'Save Status');
+    } else if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Save Status';
+    }
   }
 }
 
@@ -1930,7 +1940,12 @@ async function sendSuperAdminReportReply() {
 
   if (!message) return;
 
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  if (window.HavilahLoader) {
+    window.HavilahLoader.setButtonLoading(btn, true, 'Sending...');
+  } else if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+  }
 
   try {
     const activeToken = localStorage.getItem('havilah_token') || localStorage.getItem('token') || localStorage.getItem('session_token');
@@ -1956,7 +1971,12 @@ async function sendSuperAdminReportReply() {
   } catch (err) {
     showToast('Error', 'Could not reach server.', 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Send Reply'; }
+    if (window.HavilahLoader) {
+      window.HavilahLoader.setButtonLoading(btn, false, 'Send Reply');
+    } else if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Send Reply';
+    }
     if (input) input.focus();
   }
 }

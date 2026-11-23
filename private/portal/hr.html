@@ -10,7 +10,9 @@
 <link rel="preload" href="/fonts/Roboto.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/tokens.css?v=2.0.0">
 <link rel="stylesheet" href="/css/components.css?v=2.0.0">
+<link rel="stylesheet" href="/css/loader.css">
 <script src="/js/icons.js"></script>
+<script src="/js/havilahLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="/js/vendor/jspdf.umd.min.js"></script>
 <script src="/js/vendor/html2canvas.min.js"></script>
@@ -1041,7 +1043,7 @@
             </tr>
           </thead>
           <tbody id="hrInvitesTableBody">
-            <tr class="empty-row"><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">Loading invitations...</td></tr>
+            <tr class="empty-row"><td colspan="6" style="padding: 16px; text-align: center;"><havilah-loader variant="section" label="Loading invitations..."></havilah-loader></td></tr>
           </tbody>
         </table>
       </div>
@@ -1189,8 +1191,8 @@
         </thead>
         <tbody id="hrBillingTableBody">
           <tr class="empty-row">
-            <td colspan="7" style="padding: 32px; text-align: center; color: var(--text-subtle);">
-              Loading billing records...
+            <td colspan="7" style="padding: 16px; text-align: center;">
+              <havilah-loader variant="section" label="Loading billing records..."></havilah-loader>
             </td>
           </tr>
         </tbody>
@@ -1423,7 +1425,7 @@
           </tr>
         </thead>
         <tbody id="hrEthicsTableBody">
-          <tr class="empty-row"><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">Loading ethics reports...</td></tr>
+          <tr class="empty-row"><td colspan="6" style="padding: 16px; text-align: center;"><havilah-loader variant="section" label="Loading ethics reports..."></havilah-loader></td></tr>
         </tbody>
       </table>
     </div>
@@ -3807,7 +3809,12 @@ const App = (() => {
     const saveBtn = document.getElementById('hrSaveSupportContactsBtn');
     const summaryEl = document.getElementById('hrSupportContactsSummary');
     if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
-    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+    if (window.HavilahLoader) {
+      window.HavilahLoader.setButtonLoading(saveBtn, true, 'Saving...');
+    } else if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+    }
 
     try {
       const headers = { 'Content-Type': 'application/json', ...(window.Auth ? Auth.getAuthHeader() : {}) };
@@ -3833,7 +3840,12 @@ const App = (() => {
     } catch (err) {
       if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Could not reach the server.'; }
     } finally {
-      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save support contacts'; }
+      if (window.HavilahLoader) {
+        window.HavilahLoader.setButtonLoading(saveBtn, false);
+      } else if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save support contacts';
+      }
     }
   };
 
@@ -4370,8 +4382,19 @@ const App = (() => {
     document.addEventListener('keydown', handleKey);
     
     console.log('Rendering HR components...');
+    if (window.HavilahLoader) {
+      window.HavilahLoader.showFullscreen({
+        label: 'Preparing HR Analytics',
+        sublabel: 'Verifying N >= 5 privacy threshold...',
+        maxMs: 3500
+      });
+    }
     loadUserProfile();
-    fetchAnalytics();
+    Promise.resolve(fetchAnalytics()).finally(() => {
+      if (window.HavilahLoader) {
+        window.HavilahLoader.hideFullscreen();
+      }
+    });
     renderKPIs();
     renderDeptList();
     renderAlerts();

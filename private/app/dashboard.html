@@ -10,7 +10,9 @@
 <link rel="preload" href="/fonts/Roboto.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/tokens.css?v=2.0.0">
 <link rel="stylesheet" href="/css/components.css?v=2.0.0">
+<link rel="stylesheet" href="/css/loader.css">
 <script src="/js/icons.js"></script>
+<script src="/js/havilahLoader.js"></script>
 <script src="/js/vendor/chart.umd.min.js"></script>
 <script src="/js/vendor/jspdf.umd.min.js"></script>
 <script src="/js/data.js"></script>
@@ -3778,7 +3780,12 @@ window.submitDailyPulse = async function() {
   const work_fit = pulseValues.WorkFit || 3;
 
   const btn = document.getElementById('submitPulseBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  if (window.HavilahLoader) {
+    window.HavilahLoader.setButtonLoading(btn, true, 'Saving...');
+  } else if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+  }
 
   try {
     const fetchFunc = typeof apiFetch === 'function' ? apiFetch : fetch;
@@ -3802,7 +3809,12 @@ window.submitDailyPulse = async function() {
   } catch (err) {
     if (typeof showToast === 'function') showToast('Connection Error', 'Could not reach server.', 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Submit Daily Pulse'; }
+    if (window.HavilahLoader) {
+      window.HavilahLoader.setButtonLoading(btn, false);
+    } else if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Submit Daily Pulse';
+    }
   }
 };
 
@@ -5600,9 +5612,8 @@ const App = (() => {
     
     // Show Loading
     document.getElementById('modalQText').innerHTML = `
-      <div style="text-align:center; padding: 40px 0;">
-        <svg class="animate-spin h-10 w-10 text-cyan-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        <h3 style="font-size: 1.2rem; color: var(--text-2);">Analyzing responses...</h3>
+      <div style="text-align:center; padding: 20px 0;">
+        <havilah-loader variant="section" label="Analyzing responses..." sublabel="Scoring privately inside your encrypted session"></havilah-loader>
       </div>
     `;
     document.getElementById('modalOptions').innerHTML = '';
@@ -6877,54 +6888,68 @@ const App = (() => {
       return;
     }
 
-    // Set user profile info from localStorage & live session endpoint
-    await loadEmployeeUserProfile();
+    if (window.HavilahLoader) {
+      window.HavilahLoader.showFullscreen({
+        label: 'Preparing your workspace',
+        sublabel: 'Loading confidential wellbeing insights...',
+        maxMs: 3500
+      });
+    }
 
-    // Auto-initialize WebRTC Call signaling and online presence for employee
-    (async () => {
-      try {
-        let savedRef = localStorage.getItem('havilah_last_consult_ref');
-        if (!savedRef) {
-          const token = localStorage.getItem('token') || localStorage.getItem('havilah_token') || '';
-          const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-          const res = await fetch('/api/v1/referrals/my-active', { headers });
-          const data = await res.json().catch(() => null);
-          if (data && data.success && data.data && data.data.referenceCode) {
-            savedRef = data.data.referenceCode;
-            localStorage.setItem('havilah_last_consult_ref', savedRef);
-          }
-        }
+    try {
+      // Set user profile info from localStorage & live session endpoint
+      await loadEmployeeUserProfile();
 
-        if (savedRef && window.HavilahCall) {
-          window.HavilahCall.init({
-            role: 'employee',
-            referenceCode: savedRef,
-            token: localStorage.getItem('token') || localStorage.getItem('havilah_token') || '',
-            onPeerPresence: (isOnline) => {
-              const pill = document.getElementById('empPeerPresencePill');
-              if (pill) {
-                pill.style.display = 'inline-flex';
-                pill.textContent = isOnline ? 'Practitioner available' : 'Not available right now';
-                pill.className = isOnline ? 'help-status-badge help-status-badge--completed' : 'help-status-badge';
-              }
-              const dashPill = document.getElementById('dashboardDoctorPresencePill');
-              if (dashPill) {
-                dashPill.style.display = 'inline-flex';
-                dashPill.textContent = isOnline ? 'Practitioner available' : 'Not available right now';
-                dashPill.style.background = isOnline ? 'var(--success-bg)' : 'var(--bg)';
-                dashPill.style.color = isOnline ? 'var(--success)' : 'var(--text-muted)';
-              }
+      // Auto-initialize WebRTC Call signaling and online presence for employee
+      (async () => {
+        try {
+          let savedRef = localStorage.getItem('havilah_last_consult_ref');
+          if (!savedRef) {
+            const token = localStorage.getItem('token') || localStorage.getItem('havilah_token') || '';
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            const res = await fetch('/api/v1/referrals/my-active', { headers });
+            const data = await res.json().catch(() => null);
+            if (data && data.success && data.data && data.data.referenceCode) {
+              savedRef = data.data.referenceCode;
+              localStorage.setItem('havilah_last_consult_ref', savedRef);
             }
-          });
-        }
-      } catch (e) {
-        console.warn('Call signaling initialization notice:', e.message);
-      }
-    })();
+          }
 
-    renderEmployeeDashboard();
-    updateTrendChart();
-    await window.fetchDashboardData();
+          if (savedRef && window.HavilahCall) {
+            window.HavilahCall.init({
+              role: 'employee',
+              referenceCode: savedRef,
+              token: localStorage.getItem('token') || localStorage.getItem('havilah_token') || '',
+              onPeerPresence: (isOnline) => {
+                const pill = document.getElementById('empPeerPresencePill');
+                if (pill) {
+                  pill.style.display = 'inline-flex';
+                  pill.textContent = isOnline ? 'Practitioner available' : 'Not available right now';
+                  pill.className = isOnline ? 'help-status-badge help-status-badge--completed' : 'help-status-badge';
+                }
+                const dashPill = document.getElementById('dashboardDoctorPresencePill');
+                if (dashPill) {
+                  dashPill.style.display = 'inline-flex';
+                  dashPill.textContent = isOnline ? 'Practitioner available' : 'Not available right now';
+                  dashPill.style.background = isOnline ? 'var(--success-bg)' : 'var(--bg)';
+                  dashPill.style.color = isOnline ? 'var(--success)' : 'var(--text-muted)';
+                }
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('Call signaling initialization notice:', e.message);
+        }
+      })();
+
+      renderEmployeeDashboard();
+      updateTrendChart();
+      await window.fetchDashboardData();
+    } finally {
+      if (window.HavilahLoader) {
+        window.HavilahLoader.hideFullscreen();
+      }
+    }
 
     // Clear stale completion cache keys from localStorage
     ['mock_completed_surveys', 'survey_completion_cache', 'completed_wellness_banners', 'wf_completed_list'].forEach(k => {

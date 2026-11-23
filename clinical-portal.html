@@ -11,7 +11,9 @@
   <link rel="stylesheet" href="/css/tokens.css?v=2.0.0">
   <link rel="stylesheet" href="/css/components.css?v=2.0.0">
   <link rel="stylesheet" href="/css/tour.css">
+  <link rel="stylesheet" href="/css/loader.css">
   <script src="/js/icons.js"></script>
+  <script src="/js/havilahLoader.js"></script>
   <script src="/js/vendor/jspdf.umd.min.js"></script>
   <script src="/js/vendor/qrcode-generator.min.js"></script>
   <script src="/js/pdf/pdfConfig.js?v=2.1.0"></script>
@@ -1727,7 +1729,7 @@
               <tr class="empty-row">
                 <td colspan="8">
                   <div class="empty-state-inline">
-                    <p>Loading assigned clinical referrals...</p>
+                    <havilah-loader variant="section" label="Loading assigned clinical referrals..."></havilah-loader>
                   </div>
                 </td>
               </tr>
@@ -2031,8 +2033,9 @@
                 </div>
               </div>
 
-              <div id="modalAttachmentUploadStatus" class="info-notice" style="display: none; margin-bottom: var(--space-2);">
-                Uploading medical document...
+              <div id="modalAttachmentUploadStatus" class="info-notice" style="display: none; align-items: center; gap: 10px; margin-bottom: var(--space-2);">
+                <havilah-loader variant="button" sr-text="Uploading medical document"></havilah-loader>
+                <span id="modalAttachmentUploadText">Uploading medical document...</span>
               </div>
 
               <div id="modalAttachmentsList" style="display: flex; flex-direction: column; gap: var(--space-2);"></div>
@@ -2435,8 +2438,8 @@
                 </thead>
                 <tbody id="doctorsTableBody">
                   <tr>
-                    <td colspan="7" style="text-align: center; padding: var(--space-6); color: var(--text-muted);">
-                      Loading clinical staff...
+                    <td colspan="7" style="text-align: center; padding: var(--space-4);">
+                      <havilah-loader variant="section" label="Loading clinical staff..."></havilah-loader>
                     </td>
                   </tr>
                 </tbody>

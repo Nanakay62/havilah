@@ -516,6 +516,17 @@
       color: #0F172A;
       margin: 0 0 18px 0;
       max-width: 620px;
+      min-height: 3.3em;
+      transition: opacity 0.32s ease, transform 0.32s ease;
+    }
+
+    .hero-title.is-fading {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    .hero-title-accent {
+      color: #0F766E;
     }
 
     .hero-subtitle {
@@ -1961,7 +1972,7 @@
               <span class="hero-eyebrow-dot" aria-hidden="true"></span>
               <span>ISO 45003 Workplace Wellness &amp; Compliance</span>
             </div>
-            <h1 id="hero-heading" class="hero-title">Turn Workplace Stress Into Measurable Workforce Resilience.</h1>
+            <h1 id="hero-heading" class="hero-title" aria-live="polite"><span id="heroTitleLead">Turn Workplace Stress </span><span id="heroTitleAccent" class="hero-title-accent">Into Measurable Workforce Resilience.</span></h1>
             <p class="hero-subtitle">Confidential clinical screening (PHQ-9, GAD-7, PSS-10, FAS-10, COPSOQ III), N &gt;= 5 anonymized HR analytics, and tamper-evident digital excuse duty certificates aligned with Ghana's Data Protection Act 843.</p>
             <div class="hero-cta-group">
               <button type="button" class="btn-hero-primary" onclick="App.bookDemo()">Request Employer Demo</button>
@@ -3017,7 +3028,7 @@ function showToast(title, message, type = 'info') {
   }, 4000);
 }
 
-/* Scroll Reveal Controller */
+/* Scroll Reveal & Hero Quote Rotator Controller */
 document.addEventListener('DOMContentLoaded', () => {
   if ('IntersectionObserver' in window) {
     const obs = new IntersectionObserver((entries, o) => {
@@ -3028,6 +3039,32 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.reveal-on-scroll').forEach(el => obs.observe(el));
   } else {
     document.querySelectorAll('.reveal-on-scroll').forEach(el => el.classList.add('is-visible'));
+  }
+
+  const headingEl = $('hero-heading');
+  const leadEl = $('heroTitleLead');
+  const accentEl = $('heroTitleAccent');
+  const prefersReduced = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const heroQuotes = [
+    { lead: 'Turn Workplace Stress ', accent: 'Into Measurable Workforce Resilience.' },
+    { lead: 'Know How Your Team Is Doing, ', accent: 'With Every Answer Kept Private.' },
+    { lead: 'Replace Forged Paper Sick Notes ', accent: 'With Verified Digital Excuse Duty.' },
+    { lead: 'Spot Workplace Burnout Early, ', accent: 'Before It Becomes a Crisis.' },
+    { lead: 'Confidential Care for Employees. ', accent: 'Anonymous Group Insight for HR.' }
+  ];
+
+  if (headingEl && leadEl && accentEl && !prefersReduced) {
+    let quoteIdx = 0;
+    setInterval(() => {
+      if (document.hidden) return;
+      headingEl.classList.add('is-fading');
+      setTimeout(() => {
+        quoteIdx = (quoteIdx + 1) % heroQuotes.length;
+        leadEl.textContent = heroQuotes[quoteIdx].lead;
+        accentEl.textContent = heroQuotes[quoteIdx].accent;
+        headingEl.classList.remove('is-fading');
+      }, 320);
+    }, 4500);
   }
 });
 

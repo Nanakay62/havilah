@@ -100,6 +100,37 @@ describe('Medical Excuse Duty Certificate Integrity, Ghana Compliance & PDF Veri
     v2Doc.mdcNumber = 'MDC/RN/12345';
     v2Doc.pdfSha256 = 'f'.repeat(64);
     expect(v2Doc.verifyIntegrity()).toBe(false);
+
+    // Upgraded v3 check binding OSH fitness disposition, restrictions, and re-assessment date
+    const v3Params = {
+      ...v2Params,
+      schemaVersion: 3,
+      certificateType: 'light_duty',
+      fitnessStatus: 'fit_with_restrictions',
+      reassessmentRequired: true,
+      reassessmentDate: '2026-11-27',
+      workRestrictions: [
+        'No heavy lifting or strenuous manual handling',
+        'No operating heavy machinery, forklifts, or commercial vehicles',
+      ],
+    };
+    const v3Doc = new IssuedCertificate({
+      ...v3Params,
+      integrityHash: IssuedCertificate.computeIntegrityHash(v3Params),
+    });
+    expect(v3Doc.verifyIntegrity()).toBe(true);
+
+    v3Doc.fitnessStatus = 'fit_full_duty';
+    expect(v3Doc.verifyIntegrity()).toBe(false);
+    v3Doc.fitnessStatus = 'fit_with_restrictions';
+    v3Doc.reassessmentRequired = false;
+    expect(v3Doc.verifyIntegrity()).toBe(false);
+    v3Doc.reassessmentRequired = true;
+    v3Doc.reassessmentDate = '2026-12-01';
+    expect(v3Doc.verifyIntegrity()).toBe(false);
+    v3Doc.reassessmentDate = '2026-11-27';
+    v3Doc.workRestrictions = [];
+    expect(v3Doc.verifyIntegrity()).toBe(false);
   });
 
   it('GET /api/v1/certificates/verify/:certificateId returns Ghana regulatory metadata and zero patient PII', async () => {
@@ -109,13 +140,13 @@ describe('Medical Excuse Duty Certificate Integrity, Ghana Compliance & PDF Veri
     const issuedAt = new Date('2026-11-20T14:30:00.000Z');
     const pdfSha256 = crypto.createHash('sha256').update('%PDF-1.3 test').digest('hex');
 
-    const v2Params = {
-      schemaVersion: 2,
+    const v3Params = {
+      schemaVersion: 3,
       certificateId,
       referralId,
       assessorId,
       doctorId: null,
-      certificateType: 'excuse_duty',
+      certificateType: 'light_duty',
       clinicName: 'FZ Safety and Health Centre',
       practiceRegNumber: 'HEFRA/GH/2026/001',
       clinicianName: 'Dr. Edith Clarke',
@@ -126,13 +157,17 @@ describe('Medical Excuse Duty Certificate Integrity, Ghana Compliance & PDF Veri
       endDate: '2026-11-22',
       durationDays: 3,
       returnDate: '2026-11-23',
+      fitnessStatus: 'fit_with_restrictions',
+      workRestrictions: ['No heavy lifting or strenuous manual handling'],
+      reassessmentRequired: true,
+      reassessmentDate: '2026-11-27',
       issuedAt,
       pdfSha256,
     };
 
     const record = new IssuedCertificate({
-      ...v2Params,
-      integrityHash: IssuedCertificate.computeIntegrityHash(v2Params),
+      ...v3Params,
+      integrityHash: IssuedCertificate.computeIntegrityHash(v3Params),
       revoked: false,
     });
 
@@ -152,18 +187,22 @@ describe('Medical Excuse Duty Certificate Integrity, Ghana Compliance & PDF Veri
       practiceRegNumber: 'HEFRA/GH/2026/001',
       clinicianName: 'Dr. Edith Clarke',
       mdcNumber: 'MDC/RN/12345',
-      certificateType: 'excuse_duty',
+      certificateType: 'light_duty',
       durationDays: 3,
       consultationMode: 'in_person',
+      fitnessStatus: 'fit_with_restrictions',
+      reassessmentRequired: true,
       fileHashProtected: true,
       pdfSha256Prefix: pdfSha256.slice(0, 12),
     });
 
-    // Zero patient PII or diagnosis or leave-date keys exposed
+    // Zero patient PII, diagnosis, leave dates, or specific restrictions exposed publicly
     expect(res.body.patientName).toBeUndefined();
     expect(res.body.referralId).toBeUndefined();
     expect(res.body.startDate).toBeUndefined();
     expect(res.body.endDate).toBeUndefined();
+    expect(res.body.reassessmentDate).toBeUndefined();
+    expect(res.body.workRestrictions).toBeUndefined();
     expect(res.body.diagnosis).toBeUndefined();
     expect(res.body.remarks).toBeUndefined();
   });
@@ -367,16 +406,36 @@ describe('Medical Excuse Duty Certificate Integrity, Ghana Compliance & PDF Veri
     });
     const auditSpy = vi.spyOn(AuditLog, 'append').mockResolvedValue({});
 
+    // Rejects invalid reassessmentDate
+    const badReviewRes = await request(app)
+      .post(`/api/v1/assessor/referrals/${referralId}/certificates`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        certificateType: 'light_duty',
+        mdcNumber: 'MDC/RN/12345',
+        reassessmentDate: 'not-a-date',
+        attestationConfirmed: true,
+      });
+    expect(badReviewRes.status).toBe(400);
+    expect(badReviewRes.body.error).toBe('INVALID_DATE');
+
     const issueRes = await request(app)
       .post(`/api/v1/assessor/referrals/${referralId}/certificates`)
       .set('Authorization', `Bearer ${token}`)
       .send({
-        certificateType: 'excuse_duty',
+        certificateType: 'light_duty',
         consultationDate: '2026-11-20',
         consultationMode: 'telehealth',
         startDate: '2026-11-19',
         endDate: '2026-11-21',
         mdcNumber: 'MDC/RN/12345',
+        fitnessStatus: 'fit_with_restrictions',
+        workRestrictions: [
+          'No heavy lifting or strenuous manual handling',
+          'No operating heavy machinery, forklifts, or commercial vehicles',
+        ],
+        reassessmentRequired: true,
+        reassessmentDate: '2026-11-26',
         attestationConfirmed: true,
       });
 
@@ -386,6 +445,10 @@ describe('Medical Excuse Duty Certificate Integrity, Ghana Compliance & PDF Veri
     expect(issueRes.body.data.mdcNumber).toBe('MDC/RN/12345');
     expect(issueRes.body.data.durationDays).toBe(3);
     expect(issueRes.body.data.returnDate).toBe('2026-11-22');
+    expect(issueRes.body.data.fitnessStatus).toBe('fit_with_restrictions');
+    expect(issueRes.body.data.reassessmentRequired).toBe(true);
+    expect(issueRes.body.data.reassessmentDate).toBe('2026-11-26');
+    expect(issueRes.body.data.workRestrictions).toHaveLength(2);
     expect(issueRes.body.data.isBackdated).toBe(true);
     expect(auditSpy).toHaveBeenCalledWith(expect.objectContaining({ event_type: 'CERTIFICATE_ISSUED' }));
 
@@ -487,6 +550,41 @@ describe('Medical Excuse Duty Certificate Integrity, Ghana Compliance & PDF Veri
 
       // Zero em dashes in payload fields
       expect(JSON.stringify(built.data)).not.toContain('\u2014');
+      expect(built.pageCount).toBe(1);
+
+      // Maximum OSH restrictions + custom restriction + re-assessment must still fit strictly on 1 A4 page
+      const oshBuilt = await ExcuseDutyPdf.buildExcuseDutyPdf({
+        certificateType: 'light_duty',
+        certificateId: 'HVL-BBBB-CCCC-DDDD',
+        referenceCode: 'REF-2026-099',
+        patientName: 'Kwame Boateng',
+        employeeStaffId: 'MIN-8821',
+        companyName: 'Ashanti Deep Gold Mining Corporation Ltd',
+        departmentName: 'Underground Maintenance & Hoisting Operations',
+        consultationDate: '2026-11-20',
+        consultationMode: 'in_person',
+        startDate: '2026-11-20',
+        endDate: '2026-11-27',
+        clinicName: 'FZ Safety and Health Centre',
+        practiceRegistrationNumber: 'HEFRA/GH/2026/001',
+        clinicianName: 'Dr. Edith Clarke',
+        clinicianSpecialty: 'Occupational Health Physician',
+        mdcNumber: 'MDC/RN/12345',
+        fitnessStatus: 'fit_with_restrictions',
+        reassessmentRequired: true,
+        reassessmentDate: '2026-11-27',
+        workRestrictions: [
+          ...ExcuseDutyPdf.DEFAULT_WORK_RESTRICTIONS,
+          'Avoid silica dust and respiratory irritant zones',
+        ],
+        verifyUrl: 'https://havilah.dic20016.workers.dev/verify/HVL-BBBB-CCCC-DDDD',
+        hrSafePrivacy: true,
+      });
+      expect(oshBuilt.pageCount).toBe(1);
+      expect(oshBuilt.data.workRestrictions).toHaveLength(7);
+      expect(oshBuilt.data.reassessmentRequired).toBe(true);
+      expect(oshBuilt.dataUri.startsWith('data:application/pdf;base64,')).toBe(true);
+      expect(JSON.stringify(oshBuilt.data)).not.toContain('\u2014');
     } finally {
       global.window = prevWindow;
       global.qrcode = prevQr;

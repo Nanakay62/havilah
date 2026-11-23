@@ -95,6 +95,24 @@ const IssuedCertificateSchema = new mongoose.Schema({
     default: '',
     trim: true,
   },
+  fitnessStatus: {
+    type: String,
+    enum: ['', 'temporarily_unfit', 'fit_with_restrictions', 'fit_full_duty', 'pending_review'],
+    default: '',
+  },
+  workRestrictions: {
+    type: [String],
+    default: [],
+  },
+  reassessmentRequired: {
+    type: Boolean,
+    default: false,
+  },
+  reassessmentDate: {
+    type: String,
+    default: '',
+    trim: true,
+  },
   isBackdated: {
     type: Boolean,
     default: false,
@@ -183,12 +201,17 @@ IssuedCertificateSchema.statics.computeIntegrityHash = function computeIntegrity
     returnDate,
     issuedAt,
     pdfSha256,
+    fitnessStatus,
+    reassessmentRequired,
+    reassessmentDate,
+    workRestrictions,
   } = params;
 
+  const version = Number(schemaVersion) === 3 ? 3 : (Number(schemaVersion) === 2 ? 2 : 1);
   let payload;
-  if (Number(schemaVersion) === 2) {
-    payload = [
-      'v2',
+  if (version >= 2) {
+    const baseFields = [
+      version === 3 ? 'v3' : 'v2',
       String(certificateId || ''),
       String(referralId || ''),
       String(assessorId || ''),
@@ -206,7 +229,19 @@ IssuedCertificateSchema.statics.computeIntegrityHash = function computeIntegrity
       String(returnDate || ''),
       new Date(issuedAt).toISOString(),
       String(pdfSha256 || '').toLowerCase(),
-    ].join('|');
+    ];
+    if (version === 3) {
+      const normalizedRestrictions = Array.isArray(workRestrictions)
+        ? workRestrictions.map((s) => String(s || '').trim()).filter(Boolean).join(';')
+        : '';
+      baseFields.push(
+        String(fitnessStatus || ''),
+        reassessmentRequired ? '1' : '0',
+        String(reassessmentDate || ''),
+        normalizedRestrictions
+      );
+    }
+    payload = baseFields.join('|');
   } else {
     payload = [
       String(certificateId),
@@ -237,36 +272,39 @@ IssuedCertificateSchema.statics.generateCertificateId = function generateCertifi
  * Verify that a stored certificate record has not been altered.
  */
 IssuedCertificateSchema.methods.verifyIntegrity = function verifyIntegrity() {
-  const version = Number(this.schemaVersion) === 2 ? 2 : 1;
-  const expected = this.constructor.computeIntegrityHash(
-    version === 2
-      ? {
-          schemaVersion: 2,
-          certificateId: this.certificateId,
-          referralId: this.referralId,
-          assessorId: this.assessorId,
-          doctorId: this.doctorId,
-          certificateType: this.certificateType,
-          clinicName: this.clinicName,
-          practiceRegNumber: this.practiceRegNumber,
-          clinicianName: this.clinicianName,
-          mdcNumber: this.mdcNumber,
-          consultationDate: this.consultationDate,
-          consultationMode: this.consultationMode,
-          startDate: this.startDate,
-          endDate: this.endDate,
-          durationDays: this.durationDays,
-          returnDate: this.returnDate,
-          issuedAt: this.issuedAt,
-          pdfSha256: this.pdfSha256,
-        }
-      : {
-          certificateId: this.certificateId,
-          referralId: this.referralId,
-          assessorId: this.assessorId,
-          issuedAt: this.issuedAt,
-        }
-  );
+  const version = Number(this.schemaVersion) === 3 ? 3 : (Number(this.schemaVersion) === 2 ? 2 : 1);
+  const params = version === 1
+    ? {
+        certificateId: this.certificateId,
+        referralId: this.referralId,
+        assessorId: this.assessorId,
+        issuedAt: this.issuedAt,
+      }
+    : {
+        schemaVersion: version,
+        certificateId: this.certificateId,
+        referralId: this.referralId,
+        assessorId: this.assessorId,
+        doctorId: this.doctorId,
+        certificateType: this.certificateType,
+        clinicName: this.clinicName,
+        practiceRegNumber: this.practiceRegNumber,
+        clinicianName: this.clinicianName,
+        mdcNumber: this.mdcNumber,
+        consultationDate: this.consultationDate,
+        consultationMode: this.consultationMode,
+        startDate: this.startDate,
+        endDate: this.endDate,
+        durationDays: this.durationDays,
+        returnDate: this.returnDate,
+        issuedAt: this.issuedAt,
+        pdfSha256: this.pdfSha256,
+        fitnessStatus: this.fitnessStatus,
+        reassessmentRequired: this.reassessmentRequired,
+        reassessmentDate: this.reassessmentDate,
+        workRestrictions: this.workRestrictions,
+      };
+  const expected = this.constructor.computeIntegrityHash(params);
   try {
     return crypto.timingSafeEqual(
       Buffer.from(String(this.integrityHash || ''), 'hex'),

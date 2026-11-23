@@ -627,86 +627,193 @@ button, select, input, textarea, a, [role="button"], [tabindex="0"] {
 }
 
 /* --------------------------------------------------------------------------
-   4. STAT CARDS & METRICS GRID
+   4. STAT STRIP (Borderless 4-Column Desktop / 2x2 Mobile with 1px Dividers)
    -------------------------------------------------------------------------- */
-.stat-grid {
+.stat-grid,
+.stats-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-3);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
   margin-bottom: var(--space-6);
 }
 
-@media (min-width: 768px) {
-  .stat-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-4);
-  }
+.stat-grid--5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
-@media (min-width: 1024px) {
-  .stat-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-4);
-  }
+.stat-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.card-box .stat-grid,
+.card .stat-grid {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.modal-dialog > .modal-body > .stat-card,
+.modal .stat-card:not(.stat-grid .stat-card) {
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: var(--space-3) var(--space-4);
 }
 
 .stat-card {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  padding: var(--space-4);
-  box-shadow: var(--shadow-card);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--space-3) var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  min-width: 0;
+  transition: none;
 }
 
-@media (max-width: 640px) {
+.stat-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.stat-grid > .stat-card:first-child,
+.stats-grid > .stat-card:first-child {
+  padding-left: 0;
+}
+
+.stat-grid > .stat-card:last-child,
+.stats-grid > .stat-card:last-child {
+  padding-right: 0;
+}
+
+.stat-grid > .stat-card + .stat-card,
+.stats-grid > .stat-card + .stat-card {
+  border-left: 1px solid var(--border);
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
   .stat-card {
-    padding: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+  }
+}
+
+@media (max-width: 639px) {
+  .stat-grid,
+  .stats-grid,
+  .stat-grid--5,
+  .stat-grid--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat-grid > .stat-card:nth-child(2n+1),
+  .stats-grid > .stat-card:nth-child(2n+1) {
+    border-left: none;
+    padding: var(--space-3) var(--space-3) var(--space-3) 0;
+  }
+
+  .stat-grid > .stat-card:nth-child(2n),
+  .stats-grid > .stat-card:nth-child(2n) {
+    border-left: 1px solid var(--border);
+    padding: var(--space-3) 0 var(--space-3) var(--space-3);
+  }
+
+  .stat-grid > .stat-card:nth-child(n+3),
+  .stats-grid > .stat-card:nth-child(n+3) {
+    border-top: 1px solid var(--border);
   }
 }
 
 .stat-label,
-.stat-card-label {
-  font-size: var(--text-sm);
+.stat-card-label,
+.stat-card-title {
+  font-size: 13px;
   font-weight: var(--weight-medium);
   color: var(--text-muted);
+  line-height: 1.35;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .stat-value,
 .stat-card-value {
-  font-size: var(--text-xl);
+  font-size: 28px;
   font-weight: var(--weight-semibold);
   color: var(--text);
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
   line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+@media (max-width: 399px) {
+  .stat-value,
+  .stat-card-value {
+    font-size: 22px;
+  }
 }
 
 .stat-hint,
 .stat-card-hint,
-.stat-card-helper {
-  font-size: var(--text-xs);
+.stat-card-helper,
+.stat-card-trend {
+  font-size: 12px;
+  font-weight: var(--weight-regular);
   color: var(--text-subtle);
+  line-height: 1.4;
+  margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.stat-card .skeleton {
+  display: block;
+}
+
+.stat-skeleton-label {
+  width: 88px;
+  height: 14px;
+}
+
+.stat-skeleton-value {
+  width: 72px;
+  height: 32px;
+  margin: 2px 0;
+}
+
+.stat-skeleton-helper {
+  width: 112px;
+  height: 12px;
+}
+
 /* --------------------------------------------------------------------------
-   5. DATA TABLES (Desktop Table + Mobile Stacked Cards)
+   5. DATA TABLES (Flat Desktop Table + Bordered Mobile Stacked Cards)
    -------------------------------------------------------------------------- */
 .data-table-container {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.data-table-scroll {
+  width: 100%;
+  overflow-x: auto;
 }
 
 .data-table-header {
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--border);
+  padding: 0 0 var(--space-3) 0;
+  border-bottom: none;
+  background-color: transparent;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -718,6 +825,7 @@ button, select, input, textarea, a, [role="button"], [tabindex="0"] {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  background-color: transparent;
 }
 
 .data-table thead th {
@@ -726,32 +834,62 @@ button, select, input, textarea, a, [role="button"], [tabindex="0"] {
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
   color: var(--text-subtle);
-  background-color: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background-color: var(--bg);
+  border-bottom: 1px solid var(--border-strong);
   position: sticky;
   top: 0;
   z-index: 2;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .data-table thead th:first-child,
+  .data-table tbody td:first-child {
+    padding-left: 0;
+  }
+
+  .data-table thead th:last-child,
+  .data-table tbody td:last-child {
+    padding-right: 0;
+  }
 }
 
 .data-table tbody tr {
-  height: 44px;
+  height: 48px;
   border-bottom: 1px solid var(--border);
-  transition: background-color 0.1s ease;
+  background-color: transparent;
+  transition: background-color 0.12s ease;
 }
 
 .data-table tbody tr:hover {
-  background-color: var(--bg);
+  background-color: var(--surface);
 }
 
-.data-table tbody tr:last-child {
-  border-bottom: none;
+.data-table tbody tr.empty-row:hover {
+  background-color: transparent;
 }
 
 .data-table tbody td {
-  padding: 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
   font-size: var(--text-base);
   color: var(--text);
   vertical-align: middle;
+}
+
+.chart-card .data-table thead th,
+.card-box .data-table thead th,
+.card .data-table thead th,
+.modal .data-table thead th,
+.modal-dialog .data-table thead th {
+  background-color: var(--surface);
+}
+
+.chart-card .data-table tbody tr:hover,
+.card-box .data-table tbody tr:hover,
+.card .data-table tbody tr:hover,
+.modal .data-table tbody tr:hover,
+.modal-dialog .data-table tbody tr:hover {
+  background-color: var(--bg);
 }
 
 .data-table .num {
@@ -775,7 +913,7 @@ button, select, input, textarea, a, [role="button"], [tabindex="0"] {
   }
 
   .data-table.table-to-cards tbody {
-    padding: var(--space-3);
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-3);

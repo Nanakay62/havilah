@@ -70,6 +70,8 @@ router.get('/verify/:certificateId', sensitiveRateLimiter(30), async (req, res, 
       certificateType: record.certificateType || 'excuse_duty',
       durationDays: record.durationDays != null ? record.durationDays : null,
       consultationMode: record.consultationMode || null,
+      fitnessStatus: record.fitnessStatus || null,
+      reassessmentRequired: Number(record.schemaVersion) >= 3 ? Boolean(record.reassessmentRequired) : null,
       fileHashProtected: Boolean(record.pdfSha256),
       pdfSha256Prefix: record.pdfSha256 ? record.pdfSha256.slice(0, 12) : null,
     });

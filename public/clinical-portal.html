@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#0F766E">
   <link rel="icon" type="image/svg+xml" href="/assets/havilah-mark.svg">
   <link rel="preload" href="/fonts/Roboto.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/css/tokens.css">
-  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/tokens.css?v=2.0.0">
+  <link rel="stylesheet" href="/css/components.css?v=2.0.0">
   <link rel="stylesheet" href="/css/tour.css">
   <script src="/js/icons.js"></script>
   <script src="/js/vendor/jspdf.umd.min.js"></script>
@@ -17,7 +17,7 @@
   <script src="/js/pdf/pdfConfig.js?v=2.1.0"></script>
   <script src="/js/pdf/pdfFonts.js"></script>
   <script src="/js/pdf/pdfComponents.js"></script>
-  <script src="/js/excuseDutyPdf.js?v=2.1.0"></script>
+  <script src="/js/excuseDutyPdf.js?v=2.2.0"></script>
   <style>
     /* ── Assessor Portal Layout & Token-Only Overrides ── */
     html, body {
@@ -366,25 +366,7 @@
       display: inline-flex;
     }
 
-    /* ── Stat Cards Refinement for 320px+ ── */
-    .stat-card {
-      min-width: 0;
-    }
-
-    @media (max-width: 420px) {
-      .stat-grid {
-        gap: var(--space-2);
-      }
-      .stat-card {
-        padding: var(--space-3);
-      }
-      .stat-card-value,
-      .stat-value {
-        font-size: var(--text-lg);
-      }
-    }
-
-    /* ── Tabs & Retained Horizontal Filter Strip ── */
+    /* ── Tabs & Borderless Controls Toolbar ── */
     .controls-stack {
       display: flex;
       flex-direction: column;
@@ -392,22 +374,23 @@
       margin-bottom: var(--space-4);
     }
 
-    .filter-strip {
+    .controls-toolbar {
       display: flex;
       align-items: center;
       gap: var(--space-2);
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       width: 100%;
-      background-color: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-card);
-      padding: var(--space-3);
-      box-shadow: var(--shadow-card);
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
     }
 
     .search-box {
-      flex: 1 1 240px;
-      min-width: 200px;
+      flex: 1 1 auto;
+      max-width: 440px;
+      min-width: 0;
       position: relative;
     }
 
@@ -426,14 +409,89 @@
       align-items: center;
     }
 
-    .filter-select {
-      width: auto;
-      min-width: 145px;
-      max-width: 240px;
-      flex: 0 0 auto;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .filters-menu-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .filters-trigger-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .filters-count-badge {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: var(--radius-full);
+      background-color: var(--brand);
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: var(--weight-semibold);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .filters-backdrop {
+      display: none;
+    }
+
+    .filters-popover {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      width: 340px;
+      max-width: calc(100vw - 32px);
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-overlay);
+      padding: var(--space-4);
+      z-index: 220;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .filters-popover.open {
+      display: flex;
+    }
+
+    @media (min-width: 768px) and (max-width: 959px) {
+      .filters-popover {
+        left: auto;
+        right: 0;
+      }
+    }
+
+    .filters-popover-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filters-popover-title {
+      font-size: var(--text-base);
+      font-weight: var(--weight-semibold);
+      color: var(--text);
+    }
+
+    .filters-popover-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .filters-popover-field label {
+      font-size: var(--text-xs);
+      font-weight: var(--weight-medium);
+      color: var(--text-muted);
     }
 
     .custom-date-range {
@@ -441,22 +499,50 @@
       align-items: center;
       gap: var(--space-2);
       flex-wrap: wrap;
+      margin-top: var(--space-1);
     }
 
     .custom-date-range .input {
-      width: auto;
+      flex: 1 1 120px;
+      min-width: 0;
+    }
+
+    .filters-popover-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--border);
     }
 
     @media (max-width: 767px) {
-      .filter-strip {
-        padding: var(--space-3);
+      .search-box {
+        max-width: none;
       }
-      .search-box,
-      .filter-select,
-      .custom-date-range,
-      .custom-date-range .input {
+
+      .filters-backdrop.open {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background-color: rgba(15, 23, 42, 0.4);
+        z-index: 1090;
+      }
+
+      .filters-popover {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
         width: 100%;
-        min-width: 100%;
+        max-width: 100%;
+        max-height: 82dvh;
+        overflow-y: auto;
+        border-radius: var(--radius-modal) var(--radius-modal) 0 0;
+        border-bottom: none;
+        padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+        z-index: 1100;
       }
     }
 
@@ -500,29 +586,13 @@
       color: var(--text);
     }
 
-    /* ── Referrals Table ── */
+    /* ── Referrals Table (inherits flat desktop / mobile card styles from components.css) ── */
     .referrals-table-scroll {
       width: 100%;
       overflow-x: auto;
     }
 
-    .referrals-table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-
     .referrals-table thead th {
-      height: 40px;
-      padding: 0 var(--space-3);
-      font-size: var(--text-xs);
-      font-weight: var(--weight-medium);
-      color: var(--text-subtle);
-      background-color: var(--bg);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 2;
       white-space: nowrap;
       user-select: none;
     }
@@ -549,23 +619,32 @@
 
     .referrals-table tbody tr {
       height: 56px;
-      border-bottom: 1px solid var(--border);
-      transition: background-color 0.1s ease;
-    }
-
-    .referrals-table tbody tr:hover {
-      background-color: var(--bg);
-    }
-
-    .referrals-table tbody tr:last-child {
-      border-bottom: none;
     }
 
     .referrals-table tbody td {
       padding: var(--space-2) var(--space-3);
-      font-size: var(--text-base);
-      color: var(--text);
-      vertical-align: middle;
+    }
+
+    @media (min-width: 768px) {
+      .referrals-table thead th:first-child,
+      .referrals-table tbody td:first-child {
+        padding-left: 0;
+      }
+
+      .referrals-table thead th:last-child,
+      .referrals-table tbody td:last-child {
+        padding-right: 0;
+      }
+
+      .referrals-table.hide-company-col th.col-company,
+      .referrals-table.hide-company-col td.col-company {
+        display: none;
+      }
+
+      .referrals-table.hide-company-col thead th.col-ref,
+      .referrals-table.hide-company-col tbody td.col-ref {
+        padding-left: 0;
+      }
     }
 
     .cell-primary {
@@ -574,9 +653,24 @@
       line-height: 1.35;
     }
 
-    .cell-ref-code {
-      font-weight: var(--weight-semibold);
+    .cell-company-wrap {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-2);
+    }
+
+    .cell-company {
+      font-size: 15px;
+      font-weight: 600;
       color: var(--text);
+      line-height: 1.35;
+    }
+
+    .cell-ref-code {
+      font-size: 13px;
+      font-weight: var(--weight-regular);
+      color: var(--text-muted);
       white-space: nowrap;
       display: inline-flex;
       align-items: center;
@@ -707,8 +801,7 @@
       background-color: var(--danger-bg);
     }
 
-    .mobile-only-badge,
-    .mobile-only-cell {
+    .mobile-only-badge {
       display: none;
     }
 
@@ -775,10 +868,27 @@
         padding-top: 2px;
       }
 
+      .referrals-table tbody td.col-company {
+        display: flex;
+        padding-top: 0;
+        padding-bottom: 2px;
+        border-bottom: none;
+        align-items: flex-start;
+        text-align: left;
+      }
+
+      .referrals-table tbody td.col-company::before {
+        display: none;
+        content: none;
+      }
+
       .referrals-table tbody td.col-ref {
         padding-top: 0;
-        padding-bottom: var(--space-2);
+        padding-bottom: var(--space-3);
+        border-bottom: 1px solid var(--border);
+        justify-content: flex-start;
         align-items: center;
+        text-align: left;
       }
 
       .referrals-table tbody td.col-ref::before {
@@ -786,7 +896,6 @@
         content: none;
       }
 
-      .desktop-ref-company,
       .referrals-table tbody td.col-status {
         display: none;
       }
@@ -796,10 +905,7 @@
         flex-wrap: wrap;
         gap: var(--space-1);
         justify-content: flex-end;
-      }
-
-      .referrals-table tbody td.mobile-only-cell {
-        display: flex;
+        flex-shrink: 0;
       }
 
       .inline-assign-select {
@@ -1457,34 +1563,34 @@
         </div>
       </div>
 
-      <!-- Four Neutral Stat Cards -->
+      <!-- Four Borderless Stat Strip Metrics -->
       <div class="stat-grid">
         <div class="stat-card">
           <div class="stat-card-label">Active cases</div>
-          <div class="stat-card-value tabular-nums" id="kpiActiveCases">0</div>
+          <div class="stat-card-value tabular-nums" id="kpiActiveCases"><span class="skeleton stat-skeleton-value" aria-hidden="true"></span></div>
           <div class="stat-card-helper" id="kpiActiveCasesHelper">In your queue</div>
         </div>
 
         <div class="stat-card">
           <div class="stat-card-label">Awaiting appointment</div>
-          <div class="stat-card-value tabular-nums" id="kpiAwaitingAppt">0</div>
+          <div class="stat-card-value tabular-nums" id="kpiAwaitingAppt"><span class="skeleton stat-skeleton-value" aria-hidden="true"></span></div>
           <div class="stat-card-helper" id="kpiAwaitingApptHelper">Not yet scheduled</div>
         </div>
 
         <div class="stat-card">
           <div class="stat-card-label">Completed this month</div>
-          <div class="stat-card-value tabular-nums" id="kpiCompletedMonth">0</div>
+          <div class="stat-card-value tabular-nums" id="kpiCompletedMonth"><span class="skeleton stat-skeleton-value" aria-hidden="true"></span></div>
           <div class="stat-card-helper" id="kpiCompletedMonthHelper">Closed this month</div>
         </div>
 
         <div class="stat-card">
           <div class="stat-card-label" id="kpiOutstandingLabel">Outstanding (GHS)</div>
-          <div class="stat-card-value tabular-nums" id="kpiOutstandingAmount">0.00</div>
+          <div class="stat-card-value tabular-nums" id="kpiOutstandingAmount"><span class="skeleton stat-skeleton-value" aria-hidden="true"></span></div>
           <div class="stat-card-helper" id="kpiOutstandingHelper">0 unsettled invoices</div>
         </div>
       </div>
 
-      <!-- Controls: Underline Status Tabs + Retained Horizontal Filter Bar + Chips -->
+      <!-- Controls: Underline Status Tabs + Search & Filters Popover + Chips -->
       <div class="controls-stack">
         <div class="tabs-underline" role="tablist" aria-label="Referral status views">
           <button type="button" class="tab-underline-item active" id="statusTabActive" role="tab" aria-selected="true" onclick="selectStatusTab('active')">Active</button>
@@ -1492,52 +1598,99 @@
           <button type="button" class="tab-underline-item" id="statusTabAll" role="tab" aria-selected="false" onclick="selectStatusTab('all')">All</button>
         </div>
 
-        <div class="filter-strip" aria-label="Filter referrals">
+        <div class="controls-toolbar" aria-label="Filter referrals">
           <div class="search-box">
             <span class="search-box-icon" aria-hidden="true">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </span>
-            <input type="text" id="searchInput" class="input" placeholder="Search reference, patient, phone, department..." aria-label="Search referrals" oninput="handleSearchChange()">
+            <input type="text" id="searchInput" class="input" placeholder="Search company, reference, patient, phone..." aria-label="Search referrals" oninput="handleSearchChange()">
           </div>
 
-          <select class="select filter-select" id="companyFilterSelect" aria-label="Filter by client company" onchange="applyQueueFilter()">
-            <option value="all">All client companies</option>
-          </select>
+          <div class="filters-menu-wrap" id="filtersMenuWrap">
+            <button
+              type="button"
+              class="btn btn-secondary filters-trigger-btn"
+              id="filtersToggleBtn"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              aria-controls="filtersPopover"
+              onclick="toggleFiltersPopover(event)"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+              <span>Filters</span>
+              <span class="filters-count-badge" id="filtersActiveCount">0</span>
+            </button>
 
-          <select class="select filter-select" id="doctorFilterSelect" aria-label="Filter by clinician" onchange="applyQueueFilter()" style="display: none;">
-            <option value="all">All clinicians</option>
-            <option value="unassigned">Unassigned only</option>
-          </select>
+            <div class="filters-backdrop" id="filtersBackdrop" onclick="closeFiltersPopover()"></div>
 
-          <select class="select filter-select" id="statusFilterSelect" aria-label="Filter by status" onchange="applyQueueFilter()">
-            <option value="active">Active cases</option>
-            <option value="pending">Pending</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="archived">Archived</option>
-            <option value="all">All active &amp; closed</option>
-            <option value="all_including_archived">All (including archived)</option>
-          </select>
+            <div class="filters-popover" id="filtersPopover" role="dialog" aria-label="Filter referrals options">
+              <div class="filters-popover-head">
+                <span class="filters-popover-title">Filters</span>
+                <button type="button" class="modal-close-btn" onclick="closeFiltersPopover()" aria-label="Close filters">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
 
-          <select class="select filter-select" id="settlementFilterSelect" aria-label="Filter by settlement status" onchange="applyQueueFilter()">
-            <option value="all">All settlements</option>
-            <option value="settled">Settled</option>
-            <option value="pending_payment">Pending payment</option>
-            <option value="unbilled">Unbilled</option>
-          </select>
+              <div class="filters-popover-field" id="companyFilterField">
+                <label for="companyFilterSelect">Client company</label>
+                <select class="select" id="companyFilterSelect" onchange="applyQueueFilter()">
+                  <option value="all">All client companies</option>
+                </select>
+              </div>
 
-          <select class="select filter-select" id="datePresetSelect" aria-label="Filter by date range" onchange="handleDatePresetChange()">
-            <option value="all">All dates</option>
-            <option value="this_month">This month</option>
-            <option value="last_month">Last month</option>
-            <option value="custom">Custom range...</option>
-          </select>
+              <div class="filters-popover-field" id="doctorFilterField" style="display: none;">
+                <label for="doctorFilterSelect">Clinician</label>
+                <select class="select" id="doctorFilterSelect" onchange="applyQueueFilter()">
+                  <option value="all">All clinicians</option>
+                  <option value="unassigned">Unassigned only</option>
+                </select>
+              </div>
 
-          <div id="customDateRangeContainer" class="custom-date-range">
-            <input type="date" id="customStartDate" class="input" aria-label="Start date" onchange="applyQueueFilter()">
-            <span class="text-muted-sm">to</span>
-            <input type="date" id="customEndDate" class="input" aria-label="End date" onchange="applyQueueFilter()">
+              <div class="filters-popover-field">
+                <label for="statusFilterSelect">Case status</label>
+                <select class="select" id="statusFilterSelect" onchange="applyQueueFilter()">
+                  <option value="active">Active cases</option>
+                  <option value="pending">Pending</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="archived">Archived</option>
+                  <option value="all">All active &amp; closed</option>
+                  <option value="all_including_archived">All (including archived)</option>
+                </select>
+              </div>
+
+              <div class="filters-popover-field">
+                <label for="settlementFilterSelect">Settlement status</label>
+                <select class="select" id="settlementFilterSelect" onchange="applyQueueFilter()">
+                  <option value="all">All settlements</option>
+                  <option value="settled">Settled</option>
+                  <option value="pending_payment">Pending payment</option>
+                  <option value="unbilled">Unbilled</option>
+                </select>
+              </div>
+
+              <div class="filters-popover-field">
+                <label for="datePresetSelect">Date range</label>
+                <select class="select" id="datePresetSelect" onchange="handleDatePresetChange()">
+                  <option value="all">All dates</option>
+                  <option value="this_month">This month</option>
+                  <option value="last_month">Last month</option>
+                  <option value="custom">Custom range...</option>
+                </select>
+
+                <div id="customDateRangeContainer" class="custom-date-range">
+                  <input type="date" id="customStartDate" class="input" aria-label="Start date" onchange="applyQueueFilter()">
+                  <span class="text-muted-sm">to</span>
+                  <input type="date" id="customEndDate" class="input" aria-label="End date" onchange="applyQueueFilter()">
+                </div>
+              </div>
+
+              <div class="filters-popover-footer">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="clearAllQueueFilters()">Clear all</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="closeFiltersPopover()">Done</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1547,10 +1700,16 @@
       <!-- Referrals Data Table -->
       <div class="data-table-container">
         <div class="referrals-table-scroll">
-          <table class="data-table referrals-table">
+          <table class="data-table referrals-table" id="referralsTable">
             <thead>
               <tr>
-                <th id="thSortRef" aria-sort="none">
+                <th id="thSortCompany" class="col-company" aria-sort="none">
+                  <button type="button" class="th-sort-btn" onclick="sortTable('company')">
+                    <span>Company</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th id="thSortRef" class="col-ref" aria-sort="none">
                   <button type="button" class="th-sort-btn" onclick="sortTable('referenceCode')">
                     <span>Reference</span>
                     <span class="sort-icon" aria-hidden="true"></span>
@@ -1576,7 +1735,7 @@
             </thead>
             <tbody id="assessorQueueTableBody">
               <tr class="empty-row">
-                <td colspan="7">
+                <td colspan="8">
                   <div class="empty-state-inline">
                     <p>Loading assigned clinical referrals...</p>
                   </div>
@@ -1767,6 +1926,64 @@
                 <label class="form-label" for="excuseDutyStaffIdInput">Employee / staff ID (optional)</label>
                 <input type="text" id="excuseDutyStaffIdInput" class="input" placeholder="e.g. EMP-0428">
                 <div class="form-hint">Printed on the PDF only for employer attendance matching; never exposed on public QR lookup.</div>
+              </div>
+
+              <div id="excuseDutyOshRow" class="form-grid-2">
+                <div class="form-field">
+                  <label class="form-label" for="excuseDutyFitnessSelect">Fitness disposition</label>
+                  <select id="excuseDutyFitnessSelect" class="select" onchange="onExcuseDutyFitnessManualChange()">
+                    <option value="temporarily_unfit">Temporarily unfit for duty</option>
+                    <option value="fit_with_restrictions">Fit with temporary restrictions</option>
+                    <option value="fit_full_duty">Fit for full regular duty</option>
+                    <option value="pending_review">Pending specialist / diagnostic review</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="excuseDutyReassessmentDateInput">Next review date (optional)</label>
+                  <input type="date" id="excuseDutyReassessmentDateInput" class="input" onchange="onExcuseDutyOshChange()">
+                </div>
+              </div>
+
+              <label id="excuseDutyReassessmentWrap" style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-3); cursor: pointer;">
+                <input type="checkbox" id="excuseDutyReassessmentCheck">
+                <span>Clinical re-assessment required before resuming full / safety-sensitive duties</span>
+              </label>
+
+              <div id="excuseDutyRestrictionsWrap" style="margin-bottom: var(--space-3);">
+                <details id="excuseDutyRestrictionsDetails" style="border: 1px solid var(--border); border-radius: var(--radius-control); background-color: var(--bg); padding: var(--space-2) var(--space-3);">
+                  <summary style="font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--text); cursor: pointer;">
+                    Workplace duty restrictions (optional, non-diagnostic)
+                  </summary>
+                  <div style="margin-top: var(--space-2); display: flex; flex-direction: column; gap: 6px; font-size: var(--text-xs); color: var(--text-muted);">
+                    <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
+                      <input type="checkbox" class="excuse-duty-restriction-cb" value="No heavy lifting or strenuous manual handling">
+                      <span>No heavy lifting or strenuous manual handling</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
+                      <input type="checkbox" class="excuse-duty-restriction-cb" value="No operating heavy machinery, forklifts, or commercial vehicles">
+                      <span>No operating heavy machinery, forklifts, or commercial vehicles</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
+                      <input type="checkbox" class="excuse-duty-restriction-cb" value="No working at heights or in confined spaces">
+                      <span>No working at heights or in confined spaces</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
+                      <input type="checkbox" class="excuse-duty-restriction-cb" value="No night-shift or overtime duties">
+                      <span>No night-shift or overtime duties</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
+                      <input type="checkbox" class="excuse-duty-restriction-cb" value="Desk, sedentary, or remote duties only">
+                      <span>Desk, sedentary, or remote duties only</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
+                      <input type="checkbox" class="excuse-duty-restriction-cb" value="Frequent rest or posture breaks required">
+                      <span>Frequent rest or posture breaks required</span>
+                    </label>
+                    <div class="form-field" style="margin-top: var(--space-1); margin-bottom: 0;">
+                      <input type="text" id="excuseDutyCustomRestrictionInput" class="input" maxlength="120" placeholder="Other non-diagnostic restriction (e.g. Avoid dust exposure)">
+                    </div>
+                  </div>
+                </details>
               </div>
 
               <div id="excuseDutyBackdateWarning" class="alert-banner alert-banner-warning" style="display: none; margin-bottom: var(--space-3); font-size: var(--text-xs);">
@@ -2345,7 +2562,7 @@
   </div>
 
   <script src="/js/havilahCall.js?v=2.7.0" defer></script>
-  <script src="/js/assessorPortal.js?v=2.4.0"></script>
+  <script src="/js/assessorPortal.js?v=2.6.0"></script>
   <script src="/js/tour.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {

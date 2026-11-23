@@ -188,7 +188,7 @@
     hrInvitesTableBody.innerHTML = '';
 
     if (!state.invites || state.invites.length === 0) {
-      hrInvitesTableBody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">No activation codes generated yet.</td></tr>';
+      hrInvitesTableBody.innerHTML = '<tr class="empty-row"><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">No activation codes generated yet.</td></tr>';
       return;
     }
 
@@ -290,6 +290,7 @@
     const totalCountEl = document.getElementById('billingTotalCount');
     const totalAmountEl = document.getElementById('billingTotalAmount');
     const billedCountEl = document.getElementById('billingBilledCount');
+    const billedHintEl = document.getElementById('billingBilledHint');
     const staleCountEl = document.getElementById('billingStaleCount');
 
     let totalAmount = 0;
@@ -307,11 +308,18 @@
       }
     });
 
+    const billedPct = referrals.length > 0 ? Math.round((billedCount / referrals.length) * 100) : 0;
+
     if (totalCountEl) totalCountEl.innerText = referrals.length;
     if (totalAmountEl) {
       totalAmountEl.innerText = totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
-    if (billedCountEl) billedCountEl.innerText = `${billedCount} of ${referrals.length}`;
+    if (billedCountEl) billedCountEl.innerText = `${billedPct}%`;
+    if (billedHintEl) {
+      billedHintEl.innerText = billedCount === 0
+        ? 'No invoiced cases'
+        : `${billedCount} invoiced ${billedCount === 1 ? 'case' : 'cases'}`;
+    }
     if (staleCountEl) staleCountEl.innerText = staleCount;
 
     if (referrals.length === 0) {
@@ -379,7 +387,7 @@
         : '<span class="badge badge-neutral">No</span>';
 
       tr.innerHTML = `
-        <td data-label="Reference code" style="font-family: monospace; font-weight: 600; font-size: var(--text-sm); letter-spacing: 0.02em;">
+        <td data-label="Reference code" class="tabular-nums" style="font-size: var(--text-sm); color: var(--text-muted); font-weight: var(--weight-normal); white-space: nowrap;">
           ${escapeHrHtml(r.referenceCode || '-')}
         </td>
         <td data-label="Department" style="font-weight: 500;">
@@ -412,6 +420,7 @@
       renderInvites();
     } catch (e) {
       console.error('Invites load error', e);
+      renderInvites();
     }
   }
 
@@ -490,9 +499,12 @@
       if (data && data.success) {
         state.ethicsReports = data.reports || [];
         renderEthicsReports();
+      } else {
+        renderEthicsReports();
       }
     } catch (e) {
       console.error('Ethics reports load error', e);
+      renderEthicsReports();
     }
   }
 
@@ -515,7 +527,7 @@
 
     if (rawReports.length === 0) {
       const periodText = escapeHrHtml(formatPeriodLabel('ethics'));
-      tableBody.innerHTML = `<tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">No whistleblower or ethics reports for ${periodText}.</td></tr>`;
+      tableBody.innerHTML = `<tr class="empty-row"><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">No whistleblower or ethics reports for ${periodText}.</td></tr>`;
       return;
     }
 
@@ -533,7 +545,7 @@
     }
 
     if (reports.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">No reports matching selected urgency filter.</td></tr>';
+      tableBody.innerHTML = '<tr class="empty-row"><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted); font-size: var(--text-sm);">No reports matching selected urgency filter.</td></tr>';
       return;
     }
 
@@ -1146,11 +1158,11 @@
         actionSection = `
           <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;">
             <div>
-              <label class="form-label" style="margin-bottom: 4px; font-size: 0.8rem;">Reason for removal (required, 5–300 characters)</label>
+              <label class="form-label" style="margin-bottom: 4px; font-size: 0.8rem;">Reason for removal (required, 5-300 characters)</label>
               <input type="text" id="hrUserRemoveReason" class="form-input" placeholder="e.g. Used wrong department activation code" style="max-width: 480px;" />
             </div>
             <div>
-              <button type="button" class="btn btn-primary" id="hrUserRemoveBtn" style="background: #dc2626; border-color: #dc2626;" onclick="window.removeHrUserAccount()">Remove &amp; allow re-registration</button>
+              <button type="button" class="btn btn-destructive-solid btn-sm" id="hrUserRemoveBtn" onclick="window.removeHrUserAccount()">Remove &amp; allow re-registration</button>
             </div>
           </div>
         `;
@@ -1315,7 +1327,7 @@
       if (invoicesBody) {
         const invoices = Array.isArray(sub.invoices) ? sub.invoices : [];
         if (invoices.length === 0) {
-          invoicesBody.innerHTML = '<tr><td colspan="6" style="padding: 18px; text-align: center; color: var(--text-subtle); font-size: var(--text-xs);">No corporate invoices requested yet.</td></tr>';
+          invoicesBody.innerHTML = '<tr class="empty-row"><td colspan="6" style="padding: 18px; text-align: center; color: var(--text-subtle); font-size: var(--text-xs);">No corporate invoices requested yet.</td></tr>';
         } else {
           invoicesBody.innerHTML = invoices.slice().reverse().map((inv) => {
             const st = String(inv.status || 'pending').toUpperCase();
@@ -1324,7 +1336,7 @@
               <td data-label="Invoice #" style="font-family:monospace;font-weight:600;">${escapeBillingHtml(inv.invoiceNumber)}</td>
               <td data-label="Plan / Cycle">${escapeBillingHtml((inv.tier || '').toUpperCase())} (${escapeBillingHtml(inv.interval || 'monthly')})</td>
               <td data-label="PO / Email">${escapeBillingHtml(inv.poNumber || '-')} · ${escapeBillingHtml(inv.billingEmail || '')}</td>
-              <td data-label="Amount (GHS)" style="font-weight:600;">GHS ${Number(inv.amountGhs || 0).toLocaleString()}</td>
+              <td data-label="Amount (GHS)" class="tabular-nums num" style="text-align: right; font-weight: 600;">${Number(inv.amountGhs || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
               <td data-label="Status"><span class="badge ${badgeCls}">${escapeBillingHtml(st)}</span></td>
               <td data-label="Requested">${(inv.issuedAt || inv.requestedAt) ? new Date(inv.issuedAt || inv.requestedAt).toLocaleDateString() : '-'}</td>
             </tr>`;

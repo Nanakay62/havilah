@@ -1097,10 +1097,55 @@ router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res,
     const clinicianSpecialty = String((req.doctor ? req.doctor.specialty : 'Lead Medical Assessor') || '').trim();
     const twoFactorVerified = Boolean(req.doctor ? req.doctor.totp_enabled : req.assessor.totp_enabled);
 
+    // Optional Occupational Safety and Health (OSH) fitness disposition & duty restrictions
+    const allowedFitness = ['temporarily_unfit', 'fit_with_restrictions', 'fit_full_duty', 'pending_review'];
+    const defaultFitnessMap = {
+      excuse_duty: 'temporarily_unfit',
+      light_duty: 'fit_with_restrictions',
+      fit_to_return: 'fit_full_duty',
+      attendance: '',
+    };
+    let fitnessStatus = '';
+    if (certificateType !== 'attendance') {
+      const requestedFitness = typeof req.body?.fitnessStatus === 'string' ? req.body.fitnessStatus.trim() : '';
+      fitnessStatus = allowedFitness.includes(requestedFitness)
+        ? requestedFitness
+        : (defaultFitnessMap[certificateType] || '');
+    }
+
+    const workRestrictions = [];
+    if (certificateType !== 'attendance' && Array.isArray(req.body?.workRestrictions)) {
+      const seen = new Set();
+      for (const rawItem of req.body.workRestrictions) {
+        const cleaned = String(rawItem || '').trim().slice(0, 120);
+        if (cleaned && !seen.has(cleaned.toLowerCase())) {
+          seen.add(cleaned.toLowerCase());
+          workRestrictions.push(cleaned);
+          if (workRestrictions.length >= 8) break;
+        }
+      }
+    }
+
+    let reassessmentDate = '';
+    if (certificateType !== 'attendance' && req.body?.reassessmentDate && String(req.body.reassessmentDate).trim()) {
+      const parsedReview = parseIsoDateOnly(String(req.body.reassessmentDate));
+      if (!parsedReview) {
+        return res.status(400).json({
+          success: false,
+          error: 'INVALID_DATE',
+          message: 'Next clinical review date must be a valid YYYY-MM-DD date.',
+        });
+      }
+      reassessmentDate = parsedReview.iso;
+    }
+    const reassessmentRequired = certificateType !== 'attendance'
+      ? Boolean(req.body?.reassessmentRequired || reassessmentDate)
+      : false;
+
     const certificateId = IssuedCertificate.generateCertificateId();
     const issuedAt = new Date();
     const integrityHash = IssuedCertificate.computeIntegrityHash({
-      schemaVersion: 2,
+      schemaVersion: 3,
       certificateId,
       referralId: referral._id,
       assessorId: req.assessor._id,
@@ -1118,10 +1163,14 @@ router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res,
       returnDate,
       issuedAt,
       pdfSha256: '',
+      fitnessStatus,
+      reassessmentRequired,
+      reassessmentDate,
+      workRestrictions,
     });
 
     const record = await IssuedCertificate.create({
-      schemaVersion: 2,
+      schemaVersion: 3,
       certificateId,
       integrityHash,
       referralId: referral._id,
@@ -1139,6 +1188,10 @@ router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res,
       endDate,
       durationDays,
       returnDate,
+      fitnessStatus,
+      workRestrictions,
+      reassessmentRequired,
+      reassessmentDate,
       isBackdated,
       hrSafePrivacy,
       attestationConfirmed: true,
@@ -1166,6 +1219,10 @@ router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res,
           startDate,
           endDate,
           durationDays,
+          fitnessStatus,
+          reassessmentRequired,
+          reassessmentDate,
+          workRestrictionsCount: workRestrictions.length,
           isBackdated,
           twoFactorVerified,
           ip: req.ip || '',
@@ -1200,6 +1257,10 @@ router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res,
         endDate: record.endDate,
         durationDays: record.durationDays,
         returnDate: record.returnDate,
+        fitnessStatus: record.fitnessStatus || '',
+        workRestrictions: record.workRestrictions || [],
+        reassessmentRequired: Boolean(record.reassessmentRequired),
+        reassessmentDate: record.reassessmentDate || '',
         isBackdated: record.isBackdated,
         verifyUrl,
       },
@@ -1345,6 +1406,10 @@ router.get('/referrals/:id/certificates', requireAssessorAuth, async (req, res, 
       endDate: rec.endDate || '',
       durationDays: rec.durationDays != null ? rec.durationDays : null,
       returnDate: rec.returnDate || '',
+      fitnessStatus: rec.fitnessStatus || '',
+      workRestrictions: Array.isArray(rec.workRestrictions) ? rec.workRestrictions : [],
+      reassessmentRequired: Boolean(rec.reassessmentRequired),
+      reassessmentDate: rec.reassessmentDate || '',
       isBackdated: Boolean(rec.isBackdated),
       fileHashProtected: Boolean(rec.pdfSha256),
       pdfSha256Prefix: rec.pdfSha256 ? String(rec.pdfSha256).slice(0, 12) : '',

@@ -66,6 +66,22 @@
     telehealth: 'Telehealth consultation'
   };
 
+  const FITNESS_STATUSES = {
+    temporarily_unfit: 'Temporarily unfit for duty',
+    fit_with_restrictions: 'Fit for duty with temporary restrictions',
+    fit_full_duty: 'Fit for full regular duty',
+    pending_review: 'Pending specialist / diagnostic review'
+  };
+
+  const DEFAULT_WORK_RESTRICTIONS = [
+    'No heavy lifting or strenuous manual handling',
+    'No operating heavy machinery, forklifts, or commercial vehicles',
+    'No working at heights or in confined spaces',
+    'No night-shift or overtime duties',
+    'Desk, sedentary, or remote duties only',
+    'Frequent rest or posture breaks required'
+  ];
+
   function getJsPDFClass() {
     return (typeof window !== 'undefined' && ((window.jspdf && window.jspdf.jsPDF) || window.jsPDF))
       || (typeof global !== 'undefined' && global.window && global.window.jspdf && global.window.jspdf.jsPDF)
@@ -187,6 +203,39 @@
     const employeeStaffId = (input.employeeStaffId && String(input.employeeStaffId).trim()) || '';
     const hrSafePrivacy = input.hrSafePrivacy !== false;
 
+    const rawFitness = typeof input.fitnessStatus === 'string' ? input.fitnessStatus.trim() : '';
+    const defaultFitnessMap = {
+      excuse_duty: 'temporarily_unfit',
+      light_duty: 'fit_with_restrictions',
+      fit_to_return: 'fit_full_duty',
+      attendance: ''
+    };
+    const fitnessStatus = typeKey === 'attendance'
+      ? ''
+      : (FITNESS_STATUSES[rawFitness] ? rawFitness : (input.fitnessStatus === '' ? '' : defaultFitnessMap[typeKey] || ''));
+    const fitnessStatusLabel = FITNESS_STATUSES[fitnessStatus] || '';
+
+    const workRestrictions = [];
+    if (typeKey !== 'attendance' && Array.isArray(input.workRestrictions)) {
+      const seen = new Set();
+      for (const item of input.workRestrictions) {
+        const cleaned = String(item || '').trim().slice(0, 120);
+        if (cleaned && !seen.has(cleaned.toLowerCase())) {
+          seen.add(cleaned.toLowerCase());
+          workRestrictions.push(cleaned);
+          if (workRestrictions.length >= 8) break;
+        }
+      }
+    }
+
+    const reassessmentDate = (typeKey !== 'attendance' && input.reassessmentDate)
+      ? String(input.reassessmentDate).trim()
+      : '';
+    const reassessmentRequired = typeKey !== 'attendance'
+      ? Boolean(input.reassessmentRequired || reassessmentDate)
+      : false;
+    const reassessmentDateFormatted = reassessmentDate ? formatDisplayDate(reassessmentDate) : '';
+
     const safePatientSlug = String(input.patientName || 'Employee')
       .trim()
       .replace(/[^A-Za-z0-9]+/g, '_')
@@ -217,6 +266,12 @@
       startDate,
       endDate,
       schedule,
+      fitnessStatus,
+      fitnessStatusLabel,
+      workRestrictions,
+      reassessmentRequired,
+      reassessmentDate,
+      reassessmentDateFormatted,
       hrSafePrivacy,
       remarks,
       clinic,
@@ -375,8 +430,25 @@
       ]);
     }
 
+    const showOshRow = Boolean(
+      data.typeKey !== 'attendance' &&
+      (data.fitnessStatusLabel || data.reassessmentRequired)
+    );
+    if (showOshRow) {
+      const reviewLabel = data.reassessmentRequired
+        ? (data.reassessmentDateFormatted ? `Required on ${data.reassessmentDateFormatted}` : 'Required prior to full duty')
+        : 'Not required';
+      kvRows.push([
+        { label: 'Fitness disposition', value: data.fitnessStatusLabel || '-' },
+        { label: 'Clinical re-assessment', value: reviewLabel, emphasize: Boolean(data.reassessmentRequired) }
+      ]);
+    }
+
+    const hasRestrictions = Boolean(data.workRestrictions && data.workRestrictions.length > 0);
+    const compactVertical = Boolean(hasRestrictions || kvRows.length >= 5);
+
     Components.drawRule(pdf, y, COLORS.ink);
-    y += r(3.2);
+    y += r(compactVertical ? 2.4 : 3.2);
 
     kvRows.forEach((pair, idx) => {
       const [leftItem, rightItem] = pair;
@@ -388,10 +460,10 @@
         pdf.text(item.label.toUpperCase(), col.x, y);
 
         pdf.setFont(fonts.sans, item.emphasize ? 'bold' : fonts.semiboldStyle);
-        pdf.setFontSize(TYPE.body);
+        pdf.setFontSize(compactVertical ? 9.0 : TYPE.body);
         pdf.setTextColor(...(item.emphasize ? COLORS.accent : COLORS.ink));
         const valLines = pdf.splitTextToSize(String(item.value || '-'), col.width);
-        pdf.text(valLines, col.x, y + 4.3);
+        pdf.text(valLines, col.x, y + (compactVertical ? 3.8 : 4.3));
         return valLines.length;
       };
 
@@ -399,29 +471,56 @@
       const rLines = drawCell(rightItem, colRight);
       const maxLines = Math.max(lLines, rLines, 1);
 
-      y += 4.3 + (maxLines * 4.1) + r(1.4);
+      y += (compactVertical ? 3.8 : 4.3) + (maxLines * (compactVertical ? 3.7 : 4.1)) + r(compactVertical ? 0.9 : 1.4);
       Components.drawRule(pdf, y, idx === kvRows.length - 1 ? COLORS.ink : COLORS.rule);
-      y += r(3.2);
+      y += r(compactVertical ? 2.3 : 3.2);
     });
 
-    y += r(2.5);
+    y += r(compactVertical ? 1.5 : 2.5);
 
     // -------------------------------------------------------------------------
-    // 4. FORMAL CERTIFICATION PARAGRAPH (Source Serif 4) + LEGAL PRIVACY LINE
+    // 4. FORMAL CERTIFICATION PARAGRAPH (Source Serif 4) + OSH RESTRICTIONS + PRIVACY LINE
     // -------------------------------------------------------------------------
     pdf.setFont(fonts.sans, fonts.semiboldStyle);
     pdf.setFontSize(TYPE.label);
     pdf.setTextColor(...COLORS.muted);
     pdf.text('CLINICAL CERTIFICATION', m, y);
-    y += r(3.8);
+    y += r(compactVertical ? 3.2 : 3.8);
 
     // Formal serif salutation & certification body
     pdf.setFont(fonts.serif, 'normal');
-    pdf.setFontSize(TYPE.subheading);
+    pdf.setFontSize(hasRestrictions ? 10.2 : TYPE.subheading);
     pdf.setTextColor(...COLORS.ink);
     const certLines = pdf.splitTextToSize(data.remarks, PAGE.contentWidth);
-    pdf.text(certLines, m, y, { lineHeightFactor: 1.5 });
-    y += (certLines.length * 5.6) + r(4.0);
+    pdf.text(certLines, m, y, { lineHeightFactor: hasRestrictions ? 1.38 : 1.5 });
+    y += (certLines.length * (hasRestrictions ? 4.9 : 5.6)) + r(hasRestrictions ? 2.8 : 4.0);
+
+    // Optional Non-Diagnostic Workplace Duty Restrictions (2-column compact block)
+    if (hasRestrictions) {
+      pdf.setFont(fonts.sans, fonts.semiboldStyle);
+      pdf.setFontSize(TYPE.label);
+      pdf.setTextColor(...COLORS.accent);
+      pdf.text('WORKPLACE DUTY RESTRICTIONS (NON-DIAGNOSTIC)', m, y);
+      y += r(2.9);
+
+      pdf.setFont(fonts.sans, 'normal');
+      pdf.setFontSize(8.5);
+      pdf.setTextColor(...COLORS.ink);
+
+      for (let i = 0; i < data.workRestrictions.length; i += 2) {
+        const leftText = `- ${data.workRestrictions[i]}`;
+        const rightText = data.workRestrictions[i + 1] ? `- ${data.workRestrictions[i + 1]}` : '';
+        const leftLines = pdf.splitTextToSize(leftText, colLeft.width);
+        const rightLines = rightText ? pdf.splitTextToSize(rightText, colRight.width) : [];
+        pdf.text(leftLines, colLeft.x, y);
+        if (rightLines.length) {
+          pdf.text(rightLines, colRight.x, y);
+        }
+        const pairLines = Math.max(leftLines.length, rightLines.length, 1);
+        y += (pairLines * 3.6) + 0.9;
+      }
+      y += r(2.0);
+    }
 
     // Single legal/privacy-basis line stated ONCE in the document
     pdf.setFont(fonts.sans, 'normal');
@@ -432,7 +531,7 @@
       : (COPY.certificateConsentedBasis || COPY.certificatePrivacyBasis);
     const privacyLines = pdf.splitTextToSize(legalLine, PAGE.contentWidth);
     pdf.text(privacyLines, m, y);
-    y += (privacyLines.length * 3.6) + r(5);
+    y += (privacyLines.length * 3.5) + r(compactVertical ? 3.0 : 5.0);
 
     // -------------------------------------------------------------------------
     // 5. SIGNATURE BLOCK + CLINIC STAMP AREA
@@ -666,12 +765,14 @@
     const dataUri = `data:application/pdf;base64,${base64}`;
     const pdfSha256 = await computeSha256Hex(bytes);
     const blobSize = bytes.byteLength;
+    const pageCount = typeof pdf.getNumberOfPages === 'function' ? pdf.getNumberOfPages() : 1;
 
     return {
       dataUri,
       base64,
       blobSize,
       pdfSha256,
+      pageCount,
       fileName: data.fileName,
       certificateId: data.certificateId,
       data
@@ -703,6 +804,7 @@
       certificateId: data.certificateId,
       pdfSha256,
       blobSize: bytes.byteLength,
+      pageCount: typeof pdf.getNumberOfPages === 'function' ? pdf.getNumberOfPages() : 1,
       data
     };
   }
@@ -710,6 +812,8 @@
   return {
     CERTIFICATE_TYPES,
     CONSULTATION_MODES,
+    FITNESS_STATUSES,
+    DEFAULT_WORK_RESTRICTIONS,
     calculateExcuseDutySchedule,
     buildCertificatePayload,
     buildExcuseDutyPdf,

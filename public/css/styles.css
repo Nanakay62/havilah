@@ -546,7 +546,7 @@ textarea:focus-visible {
 }
 
 /* ── Cards (Microsoft Fluent / Acrylic Material Card System) ──── */
-.acrylic-card, .card, .assessment-card, .dashboard-card, .cosmic-card, .stat-card, .kpi-card, .risk-card, .heatmap-card {
+.acrylic-card, .card, .assessment-card, .dashboard-card, .cosmic-card, .risk-card, .heatmap-card {
   /* Translucent background with hardware-accelerated blur */
   background: rgba(255, 255, 255, 0.85) !important;
   backdrop-filter: blur(20px) saturate(125%);
@@ -567,7 +567,7 @@ textarea:focus-visible {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.acrylic-card:hover, .card:hover, .assessment-card:hover, .dashboard-card:hover, .cosmic-card:hover, .stat-card:hover, .kpi-card:hover, .risk-card:hover, .heatmap-card:hover {
+.acrylic-card:hover, .card:hover, .assessment-card:hover, .dashboard-card:hover, .cosmic-card:hover, .risk-card:hover, .heatmap-card:hover {
   box-shadow: 
     0 4px 8px rgba(0, 0, 0, 0.04),
     0 12px 24px -6px rgba(0, 0, 0, 0.08) !important;
@@ -814,43 +814,7 @@ textarea:focus-visible {
   border-color: var(--accent);
 }
 
-/* ── Tables ───────────────────────────────────────────────────── */
-.data-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.data-table th {
-  padding: 10px 16px;
-  text-align: left;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-2);
-  background: var(--bg-2);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.data-table th:first-child {
-  border-radius: var(--radius-md) 0 0 0;
-}
-
-.data-table th:last-child {
-  border-radius: 0 var(--radius-md) 0 0;
-}
-
-.data-table td {
-  padding: 12px 16px;
-  font-size: 0.875rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  color: var(--text-1);
-}
-
-.data-table tr:hover td {
-  background-color: rgba(0, 120, 212, 0.03);
-}
+/* Tables now inherit shared flat desktop / mobile card styles from components.css */
 
 /* ── Badges & Pills ───────────────────────────────────────────── */
 .badge {

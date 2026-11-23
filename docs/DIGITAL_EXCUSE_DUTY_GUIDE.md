@@ -47,6 +47,8 @@ Follow these steps inside the Medical Assessor Portal after examining the patien
    - **Consultation modality *:** Select **In-person clinical examination** or **Telehealth / virtual consultation**.
    - **From date * / To date (inclusive) *:** If `From date` is earlier than the `Date of examination`, the portal displays a **Backdated leave notice** reminding you to document clinical justification in your case notes in accordance with MDC Ghana guidelines.
    - **Employee / staff ID (optional):** Helps HR match attendance records; printed on the PDF only and never exposed on the public QR verification page.
+   - **Fitness disposition & re-assessment date (OSH optional):** Automatically defaults based on Certificate type (*Temporarily unfit for duty*, *Fit with temporary restrictions*, or *Fit for full regular duty*). Tick **Clinical re-assessment required** and set a **Next review date** if the employee must be re-examined before resuming safety-sensitive or full duties.
+   - **Workplace duty restrictions (OSH optional, non-diagnostic):** Open this panel (automatically expanded for **Fit for Light / Modified Duty**) to tick practical workplace accommodations such as *No heavy lifting or strenuous manual handling*, *No operating heavy machinery, forklifts, or commercial vehicles*, *No working at heights or in confined spaces*, *No night-shift or overtime duties*, or add a custom restriction without disclosing any medical diagnosis.
 5. **Review remarks and HR-safe privacy mode:**
    - **HR-safe privacy mode** is checked by default so confidential medical diagnoses are omitted.
    - Only uncheck it if the patient explicitly consents to specific clinical disclosure under the Data Protection Act, 2012 (Act 843).
@@ -95,6 +97,7 @@ Employers and HR officers can verify any Havilah Excuse Duty certificate in unde
    - **Certificate ID**
    - **Certificate type** and **Certified duration** (number of days, if applicable)
    - **Consultation modality** (In-person or Telehealth)
+   - **Fitness disposition** and **Clinical re-assessment** requirement (when applicable)
    - **Issuing clinic** and **HeFRA / Practice Reg. No.**
    - **Attending clinician** and **MDC Reg. No.**
    - **Issue date (UTC)**
@@ -117,9 +120,9 @@ Because QR codes prove a certificate ID exists, **Step B** proves the PDF file i
 | --- | --- |
 | **Health Professions Regulatory Bodies Act, 2013 (Act 857) & Medical and Dental Council (MDC) Ghana** | Mandatory clinician **MDC registration number** on server validation and PDF; documented **Date of examination**, **Consultation modality**, **Backdated leave warning**, personal **Clinician attestation** prior to issuance, approved **Clinician signature**, and optional **MDC annual retention expiry** alerts. |
 | **Health Institutions and Facilities Act, 2011 (Act 829) / HeFRA** | Mandatory **HeFRA / practice registration no.** configured in Clinic settings before official issuance, printed directly on the clinic letterhead and public verification record, with **HeFRA licence expiry** tracking and **Official clinic stamp** support. |
-| **Electronic Transactions Act, 2008 (Act 772) Sections 6, 7, 10, 11 & 12** | **Tamper-evident electronic integrity:** Server-side HMAC-SHA256 signature binding all authoritative certificate fields (`schemaVersion: 2`), immutable **SHA-256 PDF seal** (`pdfSha256`) checked in constant time, **2FA status tracking** and authenticated session identity, revocation lifecycle, and append-only SHA-256 hash-chained **AuditLog**. |
-| **Data Protection Act, 2012 (Act 843)** | **Medical confidentiality by default:** HR-safe privacy mode omits diagnoses on certificates; explicit consent warning when privacy omission is unchecked; public `/verify` API exposes zero patient names, staff IDs, diagnoses, or dates of leave. |
-| **Labour Act, 2003 (Act 651)** | Clear statement of **Certified fitness / excused period**, **Total duration (days)**, **Return-to-duty date**, and **Consultation attendance** formatted for statutory sick-leave administration. |
+| **Electronic Transactions Act, 2008 (Act 772) Sections 6, 7, 10, 11 & 12** | **Tamper-evident electronic integrity:** Server-side HMAC-SHA256 signature binding all authoritative certificate fields (`schemaVersion: 2` and `3`), immutable **SHA-256 PDF seal** (`pdfSha256`) checked in constant time, **2FA status tracking** and authenticated session identity, revocation lifecycle, and append-only SHA-256 hash-chained **AuditLog**. |
+| **Data Protection Act, 2012 (Act 843)** | **Medical confidentiality by default:** HR-safe privacy mode omits diagnoses on certificates; explicit consent warning when privacy omission is unchecked; public `/verify` API exposes zero patient names, staff IDs, diagnoses, leave dates, or restriction specifics. |
+| **Labour Act, 2003 (Act 651), Act 328 & ISO 45001 / 45003** | Clear statement of **Certified fitness disposition**, **Total duration (days)**, **Return-to-duty date**, **Mandatory re-assessment flag**, and non-diagnostic **Workplace duty restrictions** for safe return-to-work administration. |
 
 ### Deployment Note for System Administrators
 In production, set a dedicated, high-entropy environment variable **`CERTIFICATE_SIGNING_SECRET`** (separate from `JWT_SECRET`) on the backend server so certificate HMAC keys remain independent of session JWT key rotations. Never rotate `CERTIFICATE_SIGNING_SECRET` without keeping verification compatibility for previously issued certificates.

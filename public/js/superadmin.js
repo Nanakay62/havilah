@@ -229,11 +229,11 @@ async function fetchTenants() {
         tr.setAttribute('data-state', (t.lifecycle_state || 'active').toLowerCase());
 
         tr.innerHTML = `
-          <td>
+          <td data-label="Tenant Name">
             <div class="company-cell-title">${escapeHtmlSafe(t.company_name)}</div>
             <div class="company-cell-sub">${escapeHtmlSafe(slugDisplay)}</div>
           </td>
-          <td>
+          <td data-label="Billing Tier">
             <select class="tier-select-dropdown" onchange="changeTenantTier('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(t.company_name)}', '${escapeJsAttrSafe(t.billing_tier || 'trial')}', this.value, this)" style="padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; cursor: pointer; border: 1px solid var(--border); background: var(--bg-elev); color: var(--accent);">
               <option value="trial" ${t.billing_tier === 'trial' ? 'selected' : ''}>TRIAL</option>
               <option value="starter" ${t.billing_tier === 'starter' ? 'selected' : ''}>STARTER</option>
@@ -241,7 +241,7 @@ async function fetchTenants() {
               <option value="enterprise" ${t.billing_tier === 'enterprise' ? 'selected' : ''}>ENTERPRISE</option>
             </select>
           </td>
-          <td>
+          <td data-label="Active / Max Seats">
             <div class="seat-meter-container">
               <div class="seat-count-label" style="display: flex; align-items: center; justify-content: space-between;">
                 <span>${used.toLocaleString()} / <strong>${max.toLocaleString()}</strong></span>
@@ -252,14 +252,14 @@ async function fetchTenants() {
               </div>
             </div>
           </td>
-          <td>${ssoHtml}</td>
-          <td>
+          <td data-label="SSO Status">${ssoHtml}</td>
+          <td data-label="Lifecycle State">
             <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
               <span class="badge ${stateClass}">${stateText}</span>
               ${expiryBadge}
             </div>
           </td>
-          <td>
+          <td data-label="Actions">
             <div style="display: flex; gap: 6px; align-items: center; position: relative; flex-wrap: wrap;">
               <button class="btn-action-toggle ${btnClass}" onclick="toggleStatus('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(nextState)}')">${escapeHtmlSafe(btnText)}</button>
               <button class="btn-action-toggle" style="background:#EEF2FF; color:#4F46E5; border-color:#C7D2FE;" onclick="impersonateHR('${escapeJsAttrSafe(t.company_id)}')">Impersonate</button>
@@ -1302,12 +1302,12 @@ function renderAssessorsTable(assessors) {
     const safeIdJs = escapeJsAttrSafe(a._id);
 
     tr.innerHTML = `
-      <td style="font-weight:700; color:var(--text-1); font-size:13px;">${escapeHtmlSafe(a.name)}</td>
-      <td style="font-family:monospace; color:#0284c7; font-size:12px; font-weight:600;">${escapeHtmlSafe(a.email)}</td>
-      <td style="color:var(--text-1); font-size:13px;">${escapeHtmlSafe(a.organization || 'Independent Practice')}</td>
-      <td>${statusBadge}</td>
-      <td style="color:var(--text-2); font-size:12px;">${dateStr}</td>
-      <td>
+      <td data-label="Assessor Name" style="font-weight:700; color:var(--text-1); font-size:13px;">${escapeHtmlSafe(a.name)}</td>
+      <td data-label="Email" style="font-family:monospace; color:#0284c7; font-size:12px; font-weight:600;">${escapeHtmlSafe(a.email)}</td>
+      <td data-label="Organization" style="color:var(--text-1); font-size:13px;">${escapeHtmlSafe(a.organization || 'Independent Practice')}</td>
+      <td data-label="Status">${statusBadge}</td>
+      <td data-label="Created" style="color:var(--text-2); font-size:12px;">${dateStr}</td>
+      <td data-label="Actions">
         <button class="btn-action-danger" style="padding:4px 10px; font-size:11px; background:#ef4444; color:#ffffff; border:none; border-radius:6px; font-weight:600; cursor:pointer;" onclick="deleteAssessor('${safeIdJs}', '${escapeJsAttrSafe(a.name || '')}')">
           Delete
         </button>
@@ -1388,10 +1388,10 @@ function renderTenantAssessorTable(tenants) {
     });
 
     tr.innerHTML = `
-      <td style="font-weight:700; color:var(--text-1); font-size:13px;">${escapeHtmlSafe(t.company_name)}</td>
-      <td style="font-family:monospace; font-size:12px; color:var(--text-2);">${escapeHtmlSafe(t.slug || t.company_id)}</td>
-      <td>${currentAssessorName}</td>
-      <td>
+      <td data-label="Company Name" style="font-weight:700; color:var(--text-1); font-size:13px;">${escapeHtmlSafe(t.company_name)}</td>
+      <td data-label="Slug / Domain" style="font-family:monospace; font-size:12px; color:var(--text-2);">${escapeHtmlSafe(t.slug || t.company_id)}</td>
+      <td data-label="Active Assessor">${currentAssessorName}</td>
+      <td data-label="Actions">
         <div style="display:flex; align-items:center; gap:8px;">
           <select id="tenant-assessor-select-${escapeHtmlSafe(t.company_id)}" style="padding:6px 10px; background:#ffffff; border:1px solid var(--border); border-radius:6px; color:var(--text-1); font-size:12px;">
             ${selectOptions}
@@ -1476,18 +1476,18 @@ function renderStaleReferralsTable(staleList) {
     }
 
     tr.innerHTML = `
-      <td style="font-family:monospace; font-weight:700; color:var(--accent); font-size:13px;">${escapeHtmlSafe(r.referenceCode)}</td>
-      <td style="font-weight:700; color:var(--text-1);">${escapeHtmlSafe(companyName)}</td>
-      <td style="color:#dc2626; font-weight:600;">${escapeHtmlSafe(assessorName)}</td>
-      <td style="color:var(--text-1);">${escapeHtmlSafe(r.departmentName || 'General')}</td>
-      <td style="font-size:12px; color:var(--text-2);">${escapeHtmlSafe(r.preferredTime || 'As soon as available')}</td>
-      <td>
+      <td data-label="Reference Code" style="font-family:monospace; font-weight:700; color:var(--accent); font-size:13px;">${escapeHtmlSafe(r.referenceCode)}</td>
+      <td data-label="Company" style="font-weight:700; color:var(--text-1);">${escapeHtmlSafe(companyName)}</td>
+      <td data-label="Assigned Assessor" style="color:#dc2626; font-weight:600;">${escapeHtmlSafe(assessorName)}</td>
+      <td data-label="Department" style="color:var(--text-1);">${escapeHtmlSafe(r.departmentName || 'General')}</td>
+      <td data-label="Preferred Schedule" style="font-size:12px; color:var(--text-2);">${escapeHtmlSafe(r.preferredTime || 'As soon as available')}</td>
+      <td data-label="Pending Time">
         <span style="background:rgba(239,68,68,0.12); color:#dc2626; border:1px solid #fca5a5; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700;">
           ⏱️ ${r.hoursPending || 48}+ hrs
         </span>
       </td>
-      <td>${reassignHistory}</td>
-      <td>
+      <td data-label="Reassigned History">${reassignHistory}</td>
+      <td data-label="Actions">
         <button class="btn-action-primary" style="padding:4px 10px; font-size:12px; background:#dc2626;" onclick="openReassignModal('${escapeJsAttrSafe(r._id)}')">
           Reassign Case
         </button>
@@ -1714,26 +1714,26 @@ function renderConflictReports() {
 
     return `
       <tr>
-        <td>
+        <td data-label="Tracking Code">
           <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; font-weight: 700; background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; padding: 4px 8px; border-radius: 6px; display: inline-block;">
             ${escapeHtmlSafe(r.trackingCode || '-')}
           </span>
         </td>
-        <td>
+        <td data-label="Organization">
           <div class="company-cell-title">${escapeHtmlSafe(orgName)}</div>
           <div class="company-cell-sub">${escapeHtmlSafe(orgSlug)}</div>
         </td>
-        <td>
+        <td data-label="Category">
           <span class="badge badge-billing">${escapeHtmlSafe(r.category || 'General')}</span>
         </td>
-        <td>
+        <td data-label="Urgency">
           ${urgencyBadge}
         </td>
-        <td style="color: var(--text-2); font-size: 13px; font-weight: 500;">${dateStr}</td>
-        <td>
+        <td data-label="Date Filed" style="color: var(--text-2); font-size: 13px; font-weight: 500;">${dateStr}</td>
+        <td data-label="Status">
           ${stBadge}
         </td>
-        <td>
+        <td data-label="Actions">
           <button class="btn-action-primary" onclick="openSuperAdminReportModal('${escapeJsAttrSafe(r._id)}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; gap: 4px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <span>Investigate &amp; Reply</span>

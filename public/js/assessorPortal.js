@@ -6,6 +6,7 @@
     doctors: [],
     queue: [],
     filteredQueue: [],
+    hasMultipleCompanies: false,
     selectedCase: null,
     pagination: {
       page: 1,
@@ -276,6 +277,7 @@
       const menuEmail = document.getElementById('assessorMenuEmail');
       const avatarEl = document.getElementById('assessorAvatarInitials');
       const manageStaffBtn = document.getElementById('manageStaffBtn');
+      const doctorFilterField = document.getElementById('doctorFilterField');
       const doctorFilterSelect = document.getElementById('doctorFilterSelect');
 
       const displayName = res.assessor.name || 'Practitioner';
@@ -285,6 +287,7 @@
       if (avatarEl) avatarEl.textContent = computeInitials(displayName);
 
       if (manageStaffBtn) manageStaffBtn.style.display = isClinicAdmin ? 'inline-flex' : 'none';
+      if (doctorFilterField) doctorFilterField.style.display = isClinicAdmin ? 'flex' : 'none';
       if (doctorFilterSelect) doctorFilterSelect.style.display = isClinicAdmin ? '' : 'none';
 
       if (loginSection) loginSection.style.display = 'none';
@@ -637,6 +640,29 @@
     }
   };
 
+  window.closeFiltersPopover = () => {
+    const popover = document.getElementById('filtersPopover');
+    const backdrop = document.getElementById('filtersBackdrop');
+    const btn = document.getElementById('filtersToggleBtn');
+    if (popover) popover.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  };
+
+  window.toggleFiltersPopover = (event) => {
+    if (event) event.stopPropagation();
+    window.closeAssessorUserMenu();
+    window.closeExportMenu();
+    window.closeAllRowActionMenus();
+    const popover = document.getElementById('filtersPopover');
+    const backdrop = document.getElementById('filtersBackdrop');
+    const btn = document.getElementById('filtersToggleBtn');
+    if (!popover || !btn) return;
+    const isOpen = popover.classList.toggle('open');
+    if (backdrop) backdrop.classList.toggle('open', isOpen);
+    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  };
+
   window.closeAssessorUserMenu = () => {
     const menu = document.getElementById('assessorUserMenu');
     const btn = document.getElementById('assessorUserMenuBtn');
@@ -647,6 +673,7 @@
   window.toggleAssessorUserMenu = (event) => {
     if (event) event.stopPropagation();
     window.closeExportMenu();
+    window.closeFiltersPopover();
     window.closeAllRowActionMenus();
     const menu = document.getElementById('assessorUserMenu');
     const btn = document.getElementById('assessorUserMenuBtn');
@@ -665,6 +692,7 @@
   window.toggleExportMenu = (event) => {
     if (event) event.stopPropagation();
     window.closeAssessorUserMenu();
+    window.closeFiltersPopover();
     window.closeAllRowActionMenus();
     const menu = document.getElementById('exportMenuDropdown');
     const btn = document.getElementById('exportMenuBtn');
@@ -682,12 +710,17 @@
     if (exportWrap && !exportWrap.contains(e.target)) {
       window.closeExportMenu();
     }
+    const filtersWrap = document.getElementById('filtersMenuWrap');
+    if (filtersWrap && !filtersWrap.contains(e.target)) {
+      window.closeFiltersPopover();
+    }
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       window.closeAssessorUserMenu();
       window.closeExportMenu();
+      window.closeFiltersPopover();
       window.closeAllRowActionMenus();
       const openBackdrop = document.querySelector('.modal-backdrop.show');
       if (openBackdrop && openBackdrop.id) {
@@ -723,7 +756,19 @@
   };
 
   // --- Queue Data & Processing ---
+  function showKpiSkeletons() {
+    ['kpiActiveCases', 'kpiAwaitingAppt', 'kpiCompletedMonth', 'kpiOutstandingAmount'].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node) {
+        node.innerHTML = '<span class="skeleton stat-skeleton-value" aria-hidden="true"></span>';
+      }
+    });
+  }
+
   window.fetchAssessorQueue = async () => {
+    if (!state.queue || state.queue.length === 0) {
+      showKpiSkeletons();
+    }
     try {
       const res = await assessorApiFetch(`${API_BASE}/queue`);
       state.queue = res.data || [];
@@ -735,6 +780,7 @@
       initDoctorCallSignaling();
     } catch (err) {
       console.error('Queue load error', err);
+      updateKPIs();
       showToast('Error loading queue: ' + err.message);
     }
   };
@@ -902,6 +948,16 @@
         companies.set(String(id), name);
       }
     });
+
+    state.hasMultipleCompanies = companies.size > 1;
+    const table = document.getElementById('referralsTable');
+    if (table) {
+      table.classList.toggle('hide-company-col', !state.hasMultipleCompanies);
+    }
+    if (!state.hasMultipleCompanies && state.sorting.field === 'company') {
+      state.sorting.field = 'createdAt';
+      state.sorting.asc = false;
+    }
 
     let optionsHtml = '<option value="all">All client companies</option>';
     companies.forEach((name, id) => {
@@ -1076,7 +1132,7 @@
 
   function renderActiveFilterChips() {
     const container = document.getElementById('activeFilterChips');
-    if (!container) return;
+    const countBadge = document.getElementById('filtersActiveCount');
 
     const chips = [];
     if (state.filters.search) {
@@ -1108,6 +1164,14 @@
       chips.push({ key: 'datePreset', label: `Dates: ${txt}` });
     }
 
+    if (countBadge) {
+      const popoverFilterCount = chips.filter((c) => c.key !== 'search').length;
+      countBadge.textContent = String(popoverFilterCount);
+      countBadge.style.display = popoverFilterCount > 0 ? 'inline-flex' : 'none';
+    }
+
+    if (!container) return;
+
     if (chips.length === 0) {
       container.style.display = 'none';
       container.innerHTML = '';
@@ -1126,6 +1190,7 @@
 
   function updateSortHeaders() {
     const mappings = [
+      { id: 'thSortCompany', field: 'company' },
       { id: 'thSortRef', field: 'referenceCode' },
       { id: 'thSortPatient', field: 'patientName' },
       { id: 'thSortAppt', field: 'createdAt' },
@@ -1245,14 +1310,14 @@
     result.sort((a, b) => {
       let valA, valB;
       if (field === 'referenceCode') {
-        valA = a.referenceCode || '';
-        valB = b.referenceCode || '';
+        valA = (a.referenceCode || '').toLowerCase();
+        valB = (b.referenceCode || '').toLowerCase();
       } else if (field === 'company') {
-        valA = a.tenantId?.company_name || '';
-        valB = b.tenantId?.company_name || '';
+        valA = (a.tenantId?.company_name || a.tenantId?.companyName || '').toLowerCase();
+        valB = (b.tenantId?.company_name || b.tenantId?.companyName || '').toLowerCase();
       } else if (field === 'patientName') {
-        valA = a.clinicalDetails?.patientName || '';
-        valB = b.clinicalDetails?.patientName || '';
+        valA = (a.clinicalDetails?.patientName || '').toLowerCase();
+        valB = (b.clinicalDetails?.patientName || '').toLowerCase();
       } else {
         valA = new Date(a.createdAt || 0).getTime();
         valB = new Date(b.createdAt || 0).getTime();
@@ -1316,11 +1381,12 @@
     if (nextBtn) nextBtn.disabled = page >= totalPages;
 
     tableBody.innerHTML = '';
+    const visibleColCount = state.hasMultipleCompanies ? 8 : 7;
     if (pageItems.length === 0) {
       if (state.queue.length === 0) {
         tableBody.innerHTML = `
           <tr class="empty-row">
-            <td colspan="7">
+            <td colspan="${visibleColCount}">
               <div class="empty-state-inline">
                 <strong>No referrals yet</strong>
                 <p>Assigned referrals for your clinic will appear here.</p>
@@ -1331,7 +1397,7 @@
       } else {
         tableBody.innerHTML = `
           <tr class="empty-row">
-            <td colspan="7">
+            <td colspan="${visibleColCount}">
               <div class="empty-state-inline">
                 <strong>No results for these filters</strong>
                 <p>Try adjusting your search or filter selections.</p>
@@ -1471,18 +1537,17 @@
       }
 
       tr.innerHTML = `
-        <td class="col-ref" data-label="Reference">
-          <div>
-            <div class="cell-ref-code tabular-nums">
-              <span id="presence-dot-${safeRefAttr}" class="presence-dot ${isOnline ? 'is-online' : ''}" title="${dotTitle}"></span>
-              <span>${escapeHtml(r.referenceCode)}</span>
-            </div>
-            <div class="cell-sub desktop-ref-company">${escapeHtml(companyName)}</div>
+        <td class="col-company" data-label="Company">
+          <div class="cell-company-wrap">
+            <div class="cell-company">${escapeHtml(companyName)}</div>
+            <div class="mobile-only-badge">${statusBadge}${completedBillingBadge}</div>
           </div>
-          <div class="mobile-only-badge">${statusBadge}${completedBillingBadge}</div>
         </td>
-        <td class="mobile-only-cell" data-label="Client">
-          <span>${escapeHtml(companyName)}</span>
+        <td class="col-ref" data-label="Reference">
+          <div class="cell-ref-code tabular-nums">
+            <span id="presence-dot-${safeRefAttr}" class="presence-dot ${isOnline ? 'is-online' : ''}" title="${dotTitle}"></span>
+            <span>${escapeHtml(r.referenceCode)}</span>
+          </div>
         </td>
         <td class="col-patient" data-label="Patient">
           <div>
@@ -1572,6 +1637,7 @@
     if (event) event.stopPropagation();
     window.closeAssessorUserMenu();
     window.closeExportMenu();
+    window.closeFiltersPopover();
 
     const targetMenu = document.getElementById(menuId);
     if (!targetMenu) return;
@@ -1926,6 +1992,8 @@
     if (docsPanel) docsPanel.style.display = isDocs ? 'flex' : 'none';
   };
 
+  let excuseDutyFitnessEdited = false;
+
   function initExcuseDutyFormForCase(item) {
     const today = new Date().toISOString().split('T')[0];
     const typeEl = document.getElementById('excuseDutyTypeSelect');
@@ -1935,11 +2003,26 @@
     const endEl = document.getElementById('excuseDutyEndInput');
     const staffIdEl = document.getElementById('excuseDutyStaffIdInput');
     const mdcEl = document.getElementById('excuseDutyMdcInput');
+    const fitnessEl = document.getElementById('excuseDutyFitnessSelect');
+    const reassessDateEl = document.getElementById('excuseDutyReassessmentDateInput');
+    const reassessCheckEl = document.getElementById('excuseDutyReassessmentCheck');
+    const customRestrictEl = document.getElementById('excuseDutyCustomRestrictionInput');
+    const detailsEl = document.getElementById('excuseDutyRestrictionsDetails');
     const remarksEl = document.getElementById('excuseDutyRemarksInput');
     const privacyEl = document.getElementById('excuseDutyPrivacyCheck');
     const attestEl = document.getElementById('excuseDutyAttestationCheck');
 
+    excuseDutyFitnessEdited = false;
     if (typeEl) typeEl.value = 'excuse_duty';
+    if (fitnessEl) fitnessEl.value = 'temporarily_unfit';
+    if (reassessDateEl) reassessDateEl.value = '';
+    if (reassessCheckEl) reassessCheckEl.checked = false;
+    if (customRestrictEl) customRestrictEl.value = '';
+    if (detailsEl) detailsEl.open = false;
+    document.querySelectorAll('.excuse-duty-restriction-cb').forEach((cb) => {
+      cb.checked = false;
+    });
+
     let defaultConsultDate = today;
     if (item && item.scheduledAt) {
       const schedIso = new Date(item.scheduledAt).toISOString().split('T')[0];
@@ -1969,6 +2052,18 @@
       loadCaseCertificates(item._id);
     }
   }
+
+  window.onExcuseDutyFitnessManualChange = () => {
+    excuseDutyFitnessEdited = true;
+  };
+
+  window.onExcuseDutyOshChange = () => {
+    const dateVal = (document.getElementById('excuseDutyReassessmentDateInput')?.value || '').trim();
+    const checkEl = document.getElementById('excuseDutyReassessmentCheck');
+    if (dateVal && checkEl) {
+      checkEl.checked = true;
+    }
+  };
 
   function updateExcuseDutyComplianceBanner() {
     const alertEl = document.getElementById('excuseDutyComplianceAlert');
@@ -2028,6 +2123,29 @@
     const needsRange = typeKey === 'excuse_duty' || typeKey === 'light_duty';
     if (endCol) endCol.style.display = needsRange ? 'block' : 'none';
 
+    const oshRow = document.getElementById('excuseDutyOshRow');
+    const reassessWrap = document.getElementById('excuseDutyReassessmentWrap');
+    const restrictWrap = document.getElementById('excuseDutyRestrictionsWrap');
+    const fitnessEl = document.getElementById('excuseDutyFitnessSelect');
+    const detailsEl = document.getElementById('excuseDutyRestrictionsDetails');
+    const isAttendance = typeKey === 'attendance';
+    if (oshRow) oshRow.style.display = isAttendance ? 'none' : 'grid';
+    if (reassessWrap) reassessWrap.style.display = isAttendance ? 'none' : 'flex';
+    if (restrictWrap) restrictWrap.style.display = isAttendance ? 'none' : 'block';
+    if (!isAttendance && !excuseDutyFitnessEdited && fitnessEl) {
+      const defaultFitnessByType = {
+        excuse_duty: 'temporarily_unfit',
+        light_duty: 'fit_with_restrictions',
+        fit_to_return: 'fit_full_duty',
+      };
+      if (defaultFitnessByType[typeKey]) {
+        fitnessEl.value = defaultFitnessByType[typeKey];
+      }
+    }
+    if (detailsEl && typeKey === 'light_duty') {
+      detailsEl.open = true;
+    }
+
     if (startEl && endEl && needsRange && startEl.value && (!endEl.value || endEl.value < startEl.value)) {
       endEl.value = startEl.value;
     }
@@ -2080,6 +2198,22 @@
     const hrSafePrivacy = Boolean((document.getElementById('excuseDutyPrivacyCheck') || {}).checked);
     const attestationConfirmed = Boolean((document.getElementById('excuseDutyAttestationCheck') || {}).checked);
 
+    let fitnessStatus = '';
+    let workRestrictions = [];
+    let reassessmentRequired = false;
+    let reassessmentDate = '';
+    if (typeKey !== 'attendance') {
+      fitnessStatus = ((document.getElementById('excuseDutyFitnessSelect') || {}).value || '').trim();
+      reassessmentDate = ((document.getElementById('excuseDutyReassessmentDateInput') || {}).value || '').trim();
+      reassessmentRequired = Boolean((document.getElementById('excuseDutyReassessmentCheck') || {}).checked || reassessmentDate);
+      document.querySelectorAll('.excuse-duty-restriction-cb:checked').forEach((cb) => {
+        const val = String(cb.value || '').trim();
+        if (val) workRestrictions.push(val);
+      });
+      const customRestrict = ((document.getElementById('excuseDutyCustomRestrictionInput') || {}).value || '').trim();
+      if (customRestrict) workRestrictions.push(customRestrict);
+    }
+
     if (mdcNumber) {
       try { localStorage.setItem('havilah_clinician_mdc_number', mdcNumber); } catch (e) {}
     }
@@ -2130,6 +2264,10 @@
       remarks,
       hrSafePrivacy,
       attestationConfirmed,
+      fitnessStatus,
+      workRestrictions,
+      reassessmentRequired,
+      reassessmentDate,
       clinicianName,
       clinicianSpecialty,
       clinicName,
@@ -2210,6 +2348,10 @@
           endDate: payload.endDate,
           mdcNumber: payload.mdcNumber,
           hrSafePrivacy: payload.hrSafePrivacy,
+          fitnessStatus: payload.fitnessStatus,
+          workRestrictions: payload.workRestrictions,
+          reassessmentRequired: payload.reassessmentRequired,
+          reassessmentDate: payload.reassessmentDate,
           attestationConfirmed: true
         })
       });

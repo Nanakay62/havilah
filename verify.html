@@ -275,6 +275,14 @@
         <span class="kv-label">Consultation modality</span>
         <span id="valModality" class="kv-val">-</span>
       </div>
+      <div class="kv-row" id="rowFitness" style="display:none;">
+        <span class="kv-label">Fitness disposition</span>
+        <span id="valFitness" class="kv-val">-</span>
+      </div>
+      <div class="kv-row" id="rowReassessment" style="display:none;">
+        <span class="kv-label">Clinical re-assessment</span>
+        <span id="valReassessment" class="kv-val">-</span>
+      </div>
       <div class="kv-row" id="rowIssuedAt">
         <span class="kv-label">Issue date (UTC)</span>
         <span id="valIssuedAt" class="kv-val">-</span>
@@ -325,6 +333,12 @@
       const MODE_LABELS = {
         in_person: 'In-person clinical examination',
         telehealth: 'Telehealth consultation'
+      };
+      const FITNESS_LABELS = {
+        temporarily_unfit: 'Temporarily unfit for duty',
+        fit_with_restrictions: 'Fit with temporary restrictions',
+        fit_full_duty: 'Fit for full regular duty',
+        pending_review: 'Pending specialist / diagnostic review'
       };
 
       let activeCertId = '';
@@ -395,6 +409,12 @@
               : '';
             setOptionalRow('rowDuration', 'valDuration', durText);
             setOptionalRow('rowModality', 'valModality', data.consultationMode ? (MODE_LABELS[data.consultationMode] || data.consultationMode) : '');
+            setOptionalRow('rowFitness', 'valFitness', data.fitnessStatus ? (FITNESS_LABELS[data.fitnessStatus] || data.fitnessStatus) : '');
+            setOptionalRow(
+              'rowReassessment',
+              'valReassessment',
+              data.reassessmentRequired === true ? 'Required prior to full duty' : (data.reassessmentRequired === false ? 'Not required' : '')
+            );
 
             const dt = new Date(data.issuedAt);
             document.getElementById('valIssuedAt').textContent = isNaN(dt.getTime())
@@ -429,6 +449,8 @@
               document.getElementById('valSeal').textContent = 'Revoked';
               setOptionalRow('rowDuration', 'valDuration', '');
               setOptionalRow('rowModality', 'valModality', '');
+              setOptionalRow('rowFitness', 'valFitness', '');
+              setOptionalRow('rowReassessment', 'valReassessment', '');
               setOptionalRow('rowHefra', 'valHefra', '');
               setOptionalRow('rowClinician', 'valClinician', '');
               setOptionalRow('rowMdc', 'valMdc', '');

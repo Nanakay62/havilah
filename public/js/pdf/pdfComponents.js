@@ -482,8 +482,9 @@
     y += r(3.2);
 
     items.forEach((item, idx) => {
-      const score = Math.max(0, Math.min(100, Math.round(Number(item.score) || 0)));
-      const band = item.band || getScoreBand(score);
+      const isMissing = item.score === null || item.score === undefined || !Number.isFinite(Number(item.score));
+      const score = isMissing ? null : Math.max(0, Math.min(100, Math.round(Number(item.score))));
+      const band = isMissing ? null : (item.band || getScoreBand(score));
 
       // Pillar title + instrument subtitle
       pdf.setFont(fonts.sans, fonts.semiboldStyle);
@@ -504,20 +505,22 @@
       pdf.setFillColor(...COLORS.barTrack);
       pdf.rect(barCol.x, barY, barCol.width, barH, 'F');
 
-      const fillW = Math.max(1.2, (score / 100) * barCol.width);
-      pdf.setFillColor(...band.color);
-      pdf.rect(barCol.x, barY, fillW, barH, 'F');
+      if (!isMissing) {
+        const fillW = Math.max(1.2, (score / 100) * barCol.width);
+        pdf.setFillColor(...band.color);
+        pdf.rect(barCol.x, barY, fillW, barH, 'F');
+      }
 
       // Numeric score + band label right-aligned
       pdf.setFont(fonts.sans, 'bold');
       pdf.setFontSize(TYPE.body);
-      pdf.setTextColor(...COLORS.ink);
-      pdf.text(`${score}/100`, scoreCol.x + 12, y, { align: 'right' });
+      pdf.setTextColor(...(isMissing ? COLORS.muted : COLORS.ink));
+      pdf.text(isMissing ? '--/100' : `${score}/100`, scoreCol.x + 12, y, { align: 'right' });
 
       pdf.setFont(fonts.sans, fonts.semiboldStyle);
       pdf.setFontSize(TYPE.label);
-      pdf.setTextColor(...band.color);
-      pdf.text(band.label, rightX, y, { align: 'right' });
+      pdf.setTextColor(...(isMissing ? COLORS.muted : band.color));
+      pdf.text(isMissing ? 'Not yet completed' : band.label, rightX, y, { align: 'right' });
 
       y += item.sublabel ? 7.2 : 5.6;
 

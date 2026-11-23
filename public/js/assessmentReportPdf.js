@@ -102,6 +102,34 @@
     return 'overall';
   }
 
+  function getClinicalPdfBand(moduleKey, rawScore, isCrisisFlag) {
+    if (moduleKey === 'phq9') {
+      if (isCrisisFlag) return Object.assign({}, Config.SCORE_BANDS[0], { label: 'Immediate support' });
+      if (rawScore >= 20) return Object.assign({}, Config.SCORE_BANDS[0], { label: 'Severe' });
+      if (rawScore >= 15) return Object.assign({}, Config.SCORE_BANDS[0], { label: 'Moderately severe' });
+      if (rawScore >= 10) return Object.assign({}, Config.SCORE_BANDS[1], { label: 'Moderate' });
+      if (rawScore >= 5) return Object.assign({}, Config.SCORE_BANDS[1], { label: 'Mild' });
+      return Object.assign({}, Config.SCORE_BANDS[2], { label: 'Minimal' });
+    }
+    if (moduleKey === 'gad7') {
+      if (rawScore >= 15) return Object.assign({}, Config.SCORE_BANDS[0], { label: 'Severe' });
+      if (rawScore >= 10) return Object.assign({}, Config.SCORE_BANDS[1], { label: 'Moderate' });
+      if (rawScore >= 5) return Object.assign({}, Config.SCORE_BANDS[1], { label: 'Mild' });
+      return Object.assign({}, Config.SCORE_BANDS[2], { label: 'Minimal' });
+    }
+    if (moduleKey === 'pss10') {
+      if (rawScore >= 27) return Object.assign({}, Config.SCORE_BANDS[0], { label: 'High stress' });
+      if (rawScore >= 14) return Object.assign({}, Config.SCORE_BANDS[1], { label: 'Moderate stress' });
+      return Object.assign({}, Config.SCORE_BANDS[2], { label: 'Low stress' });
+    }
+    if (moduleKey === 'fas10') {
+      if (rawScore >= 35) return Object.assign({}, Config.SCORE_BANDS[0], { label: 'Substantial fatigue' });
+      if (rawScore >= 22) return Object.assign({}, Config.SCORE_BANDS[1], { label: 'Moderate fatigue' });
+      return Object.assign({}, Config.SCORE_BANDS[2], { label: 'No fatigue' });
+    }
+    return getScoreBand(rawScore);
+  }
+
   function sumIndices(arr, indices, reverseIndices = null, reverseBase = 0) {
     return indices.reduce((acc, idx) => {
       const v = Number(arr[idx]);
@@ -159,7 +187,7 @@
 
       const q9Val = hasFullAnswers ? (Number(answers[8]) || 0) : (options.isCrisisQ9 ? 1 : 0);
       const isCrisisFlag = Boolean(options.isCrisisQ9 || q9Val >= 1);
-      const band = isCrisisFlag ? Config.SCORE_BANDS[0] : getScoreBand(wellbeingScore);
+      const band = getClinicalPdfBand('phq9', rawScore, isCrisisFlag);
 
       let interpretation = '';
       if (isCrisisFlag) {
@@ -256,7 +284,7 @@
         ? Math.max(0, Math.min(100, Math.round(Number(options.score))))
         : Math.max(0, Math.min(100, Math.round(100 - (rawScore / 21) * 100)));
 
-      const band = getScoreBand(wellbeingScore);
+      const band = getClinicalPdfBand('gad7', rawScore, false);
       const interpretation = band.key === 'healthy'
         ? 'Your GAD-7 check-in indicates minimal anxiety symptoms over the past two weeks and good day-to-day composure.'
         : band.key === 'moderate'
@@ -346,7 +374,7 @@
         ? Math.max(0, Math.min(100, Math.round(Number(options.score))))
         : Math.max(0, Math.min(100, Math.round(100 - (rawScore / 40) * 100)));
 
-      const band = getScoreBand(wellbeingScore);
+      const band = getClinicalPdfBand('pss10', rawScore, false);
       const interpretation = band.key === 'healthy'
         ? 'Your PSS-10 check-in reflects manageable day-to-day stress and solid confidence handling unexpected demands.'
         : band.key === 'moderate'
@@ -429,7 +457,7 @@
         ? Math.max(0, Math.min(100, Math.round(Number(options.score))))
         : Math.max(0, Math.min(100, Math.round(100 - ((rawScore - 10) / 40) * 100)));
 
-      const band = getScoreBand(wellbeingScore);
+      const band = getClinicalPdfBand('fas10', rawScore, false);
       const interpretation = band.key === 'healthy'
         ? 'Your FAS-10 check-in indicates healthy physical stamina and clear mental energy with minimal fatigue.'
         : band.key === 'moderate'
@@ -500,58 +528,140 @@
     // MODULE 5: COPSOQ-III (ISO 45003 Workplace Psychosocial Risk Assessment)
     // -------------------------------------------------------------------------
     if (moduleKey === 'copsoq3') {
-      const hasFullAnswers = answers && answers.length >= 12;
+      const g = (typeof window !== 'undefined' && window.COPSOQ3_DIM_META)
+        ? window
+        : ((typeof global !== 'undefined' && global.COPSOQ3_DIM_META) ? global : {});
+      const rawVer = String(options.surveyVersion || options.surveyType || '').trim().toLowerCase();
+      let versionKey = (rawVer === 'copsoq3_middle' || rawVer === 'copsoq3_long' || rawVer === 'copsoq3_core')
+        ? rawVer
+        : null;
+      if (!versionKey && Array.isArray(answers)) {
+        if (answers.length > 60 && g.copsoq3_long) versionKey = 'copsoq3_long';
+        else if (answers.length > 32 && g.copsoq3_middle) versionKey = 'copsoq3_middle';
+        else versionKey = 'copsoq3_core';
+      }
+      if (!versionKey) versionKey = 'copsoq3_core';
+
+      const surveyObj = g[versionKey] || g.copsoq3_core || null;
+      const dimMeta = g.COPSOQ3_DIM_META || null;
+
       const copsoqAreas = [
         {
+          isoArea: 0,
           name: 'Work organization & job demands',
           clause: 'ISO 45003 Cl. 6.1.2.2',
-          indices: [0, 1, 2],
-          higherIsBetter: false,
-          desc: 'Workload sustainability, work pace, and recovery time between tasks.'
+          desc: 'Workload sustainability, work pace, emotional demands, and recovery time between tasks.'
         },
         {
+          isoArea: 1,
           name: 'Influence, clarity & development',
           clause: 'ISO 45003 Cl. 6.1.2.3',
-          indices: [3, 4, 5],
-          higherIsBetter: true,
-          desc: 'Role clarity, autonomy over work methods, and meaningful work.'
+          desc: 'Role clarity, autonomy over work methods, possibilities for development, and meaningful work.'
         },
         {
+          isoArea: 2,
           name: 'Social support & leadership quality',
           clause: 'ISO 45003 Cl. 6.1.2.4',
-          indices: [6, 7, 8],
-          higherIsBetter: true,
-          desc: 'Peer support, supervisor responsiveness, and recognition.'
+          desc: 'Peer support, supervisor responsiveness, recognition, and predictability.'
         },
         {
+          isoArea: 3,
           name: 'Workplace safety & respect',
           clause: 'ISO 45003 Cl. 7.3 / 8.1',
-          indices: [9, 10, 11],
-          higherIsBetter: true,
-          desc: 'Psychological safety, fairness, and respect across the team.'
+          desc: 'Psychological safety, mutual trust, fairness, and respect across the team.'
         }
       ];
 
-      let domainScores = [];
-      if (hasFullAnswers) {
-        domainScores = copsoqAreas.map((area) => {
-          const vals = area.indices.map((i) => Number(answers[i])).filter(Number.isFinite);
-          const avg = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : 2;
-          // Normalize 0..4 (or 1..5) safely to 0..100
-          const maxVal = Math.max(...answers, 4);
-          const minVal = Math.min(...answers, 0);
-          const span = Math.max(1, maxVal - minVal);
-          const pct = ((avg - minVal) / span) * 100;
-          return Math.max(0, Math.min(100, Math.round(area.higherIsBetter ? pct : (100 - pct))));
+      let domainScores = [null, null, null, null];
+      if (surveyObj && Array.isArray(surveyObj.questions) && dimMeta) {
+        const dimTotalCounts = {};
+        const dimValues = {};
+        const qById = {};
+        const mappings = g.COPSOQ3_CORE_MAPPINGS || {};
+
+        surveyObj.questions.forEach((q) => {
+          if (!q || typeof q !== 'object') return;
+          if (q.dim && q.responseType !== '5M') {
+            dimTotalCounts[q.dim] = (dimTotalCounts[q.dim] || 0) + 1;
+          }
+          if (q.id) qById[q.id] = q;
         });
-      } else {
+
+        const longById = {};
+        if (g.copsoq3_long && Array.isArray(g.copsoq3_long.questions)) {
+          g.copsoq3_long.questions.forEach((q) => {
+            if (q && q.id) longById[q.id] = q;
+          });
+        }
+
+        if (Array.isArray(options.responses) && options.responses.length > 0) {
+          options.responses.forEach((resp) => {
+            if (!resp) return;
+            const q = (resp.item_code && (qById[resp.item_code] || longById[resp.item_code]))
+              || (Number.isInteger(resp.question_index) ? surveyObj.questions[resp.question_index] : null);
+            if (!q || !q.dim || q.responseType === '5M') return;
+
+            let sc = null;
+            if (resp.score !== undefined && resp.score !== null && Number.isFinite(Number(resp.score))) {
+              sc = Number(resp.score);
+            } else if (resp.value !== undefined && resp.value !== null && Number.isFinite(Number(resp.value))) {
+              const rawVal = Number(resp.value);
+              if (q.responseType === 8) {
+                sc = rawVal <= 10 ? rawVal * 10 : rawVal;
+              } else if (q.responseType && mappings[q.responseType]) {
+                const vals = Object.values(mappings[q.responseType]);
+                sc = (rawVal >= 0 && rawVal < vals.length) ? vals[rawVal] : null;
+              } else {
+                sc = rawVal <= 4 ? rawVal * 25 : rawVal;
+              }
+            }
+            if (sc === null || !Number.isFinite(sc) || sc < 0) return;
+            if (!dimValues[q.dim]) dimValues[q.dim] = [];
+            dimValues[q.dim].push(sc);
+          });
+        } else if (answers && answers.length > 0) {
+          surveyObj.questions.forEach((q, idx) => {
+            if (idx >= answers.length || !q || !q.dim || q.responseType === '5M') return;
+            const sc = Number(answers[idx]);
+            if (!Number.isFinite(sc) || sc < 0) return;
+            if (!dimValues[q.dim]) dimValues[q.dim] = [];
+            dimValues[q.dim].push(sc);
+          });
+        }
+
+        const areaBuckets = { 0: [], 1: [], 2: [], 3: [] };
+        Object.keys(dimValues).forEach((dim) => {
+          const vals = dimValues[dim];
+          const totalInVer = dimTotalCounts[dim] || vals.length;
+          if (vals.length < totalInVer * 0.5) return;
+          const meta = dimMeta[dim];
+          if (!meta) return;
+          const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+          const aligned = meta.valence === 'hazard' ? (100 - avg) : avg;
+          if (areaBuckets[meta.isoArea]) {
+            areaBuckets[meta.isoArea].push(aligned);
+          }
+        });
+
+        domainScores = copsoqAreas.map((area) => {
+          const vals = areaBuckets[area.isoArea];
+          if (!vals || vals.length === 0) return null;
+          return Math.max(0, Math.min(100, Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)));
+        });
+      }
+
+      const hasMeasuredAreas = domainScores.some((s) => s !== null);
+      if (!hasMeasuredAreas) {
         const fallback = Math.max(0, Math.min(100, Math.round(Number(options.score ?? 65))));
         domainScores = [fallback, fallback, fallback, fallback];
       }
 
-      const wellbeingScore = options.score !== undefined
+      const validAreaScores = domainScores.filter((s) => s !== null && Number.isFinite(s));
+      const wellbeingScore = (options.score !== undefined && options.score !== null && Number.isFinite(Number(options.score)))
         ? Math.max(0, Math.min(100, Math.round(Number(options.score))))
-        : Math.round(domainScores.reduce((a, b) => a + b, 0) / domainScores.length);
+        : (validAreaScores.length
+          ? Math.round(validAreaScores.reduce((a, b) => a + b, 0) / validAreaScores.length)
+          : 0);
 
       const band = getScoreBand(wellbeingScore);
       const interpretation = band.key === 'healthy'
@@ -562,29 +672,38 @@
 
       const rows = copsoqAreas.map((area, idx) => {
         const sc = domainScores[idx];
-        const rowBand = getScoreBand(sc);
+        const isMissing = sc === null || !Number.isFinite(sc);
+        const rowBand = isMissing ? { key: 'moderate', label: 'No data', color: COLORS.muted } : getScoreBand(sc);
         return {
           name: area.name,
           subtext: area.clause,
-          scoreText: `${sc}/100`,
-          barPct: sc,
-          barScore: sc,
+          scoreText: isMissing ? '--/100' : `${sc}/100`,
+          barPct: isMissing ? 0 : sc,
+          barScore: isMissing ? 0 : sc,
           band: rowBand,
           description: area.desc
         };
       });
 
-      const lowestIdx = domainScores.indexOf(Math.min(...domainScores));
+      let lowestIdx = 0;
+      let lowestAreaScore = Infinity;
+      domainScores.forEach((sc, idx) => {
+        if (sc !== null && sc < lowestAreaScore) {
+          lowestAreaScore = sc;
+          lowestIdx = idx;
+        }
+      });
+      if (!Number.isFinite(lowestAreaScore)) lowestAreaScore = wellbeingScore;
       const lowestArea = copsoqAreas[lowestIdx];
 
       const actions = band.key === 'needs_attention'
         ? [
-            { title: `Address ${lowestArea.name.toLowerCase()}`, timeframe: 'Priority', body: `This was your lowest-scoring ISO 45003 area (${domainScores[lowestIdx]}/100). Document concrete friction points before any manager or clinical discussion.` },
+            { title: `Address ${lowestArea.name.toLowerCase()}`, timeframe: 'Priority', body: `This was your lowest-scoring ISO 45003 area (${lowestAreaScore}/100). Document concrete friction points before any manager or clinical discussion.` },
             { title: 'Request a confidential occupational health consult', timeframe: 'This week', body: 'A clinician can advise on workload pacing or workplace accommodation options privately.' },
             { title: 'Use anonymous workplace feedback channels if unsafe', timeframe: 'As needed', body: 'You can log systemic workplace hazards anonymously inside the Havilah portal.' }
           ]
         : [
-            { title: `Strengthen ${lowestArea.name.toLowerCase()}`, timeframe: 'This month', body: `Focus small adjustments on your lowest-scoring area (${domainScores[lowestIdx]}/100) to improve weekly sustainability.` },
+            { title: `Strengthen ${lowestArea.name.toLowerCase()}`, timeframe: 'This month', body: `Focus small adjustments on your lowest-scoring area (${lowestAreaScore}/100) to improve weekly sustainability.` },
             { title: 'Clarify priorities and boundaries with your lead', timeframe: 'Next 1:1', body: 'Aligning on realistic deadlines reduces hidden role ambiguity and after-hours spillover.' },
             { title: 'Re-check COPSOQ-III next assessment cycle', timeframe: 'Quarterly', body: 'Track how changes in workload or team support affect your psychosocial fit.' }
           ];
@@ -608,10 +727,10 @@
         },
         actions,
         tableTitle: 'ISO 45003 psychosocial areas',
-        tableSubtitle: 'Domain scores (0–100, higher indicates healthier psychosocial conditions) with ISO 45003 clause references.',
+        tableSubtitle: 'Domain scores (0-100, higher indicates healthier psychosocial conditions) with ISO 45003 clause references.',
         tableHeaders: ['ISO 45003 AREA', 'SCORE', 'BAND', 'SCOPE'],
         rows,
-        indexFootnote: 'Composite COPSOQ-III score averages the four ISO 45003 psychosocial domains equally on a 0–100 scale.'
+        indexFootnote: 'Composite COPSOQ-III score averages evaluated ISO 45003 psychosocial domains (50% minimum item response rule per dimension).'
       };
     }
 
@@ -629,79 +748,113 @@
       }
       // Fallback to latest matching entry in history if present
       if (Array.isArray(history) && history.length) {
-        const match = history.find((h) => {
-          const t = normalizeModuleKey(h.surveyType || h.type || h.module);
-          return keys.includes(t);
-        });
-        if (match && Number.isFinite(Number(match.score ?? match.wellbeingIndex))) {
-          return Math.max(0, Math.min(100, Math.round(Number(match.score ?? match.wellbeingIndex))));
+        for (let i = history.length - 1; i >= 0; i--) {
+          const h = history[i];
+          if (!h) continue;
+          const t = normalizeModuleKey(h.surveyType || h.type || h.module || h.source || h.survey_type);
+          if (keys.includes(t)) {
+            const rawVal = h.score ?? h.wellbeingIndex ?? h.overallIndex;
+            if (rawVal !== undefined && rawVal !== null && Number.isFinite(Number(rawVal))) {
+              return Math.max(0, Math.min(100, Math.round(Number(rawVal))));
+            }
+          }
         }
       }
       return fallback;
     };
 
     const pillars = [
-      { key: 'phq9', label: 'Mood & emotional health', sublabel: 'PHQ-9 Depression Self-Check', score: lookupScore(['phq9', 'phq-9'], 0) },
-      { key: 'gad7', label: 'Calm & anxiety balance', sublabel: 'GAD-7 Anxiety Scale', score: lookupScore(['gad7', 'gad-7'], 0) },
-      { key: 'pss10', label: 'Perceived stress resilience', sublabel: 'PSS-10 Perceived Stress Scale', score: lookupScore(['pss10', 'pss-10'], 0) },
-      { key: 'fas10', label: 'Energy & fatigue recovery', sublabel: 'FAS-10 Fatigue Assessment', score: lookupScore(['fas10', 'fas-10'], 0) },
-      { key: 'copsoq3', label: 'Workplace psychosocial fit', sublabel: 'COPSOQ-III (ISO 45003)', score: lookupScore(['copsoq3', 'copsoq-iii'], 0) }
+      { key: 'phq9', label: 'Mood & emotional health', sublabel: 'PHQ-9 Depression Self-Check', score: lookupScore(['phq9', 'phq-9'], null) },
+      { key: 'gad7', label: 'Calm & anxiety balance', sublabel: 'GAD-7 Anxiety Scale', score: lookupScore(['gad7', 'gad-7'], null) },
+      { key: 'pss10', label: 'Perceived stress resilience', sublabel: 'PSS-10 Perceived Stress Scale', score: lookupScore(['pss10', 'pss-10'], null) },
+      { key: 'fas10', label: 'Energy & fatigue recovery', sublabel: 'FAS-10 Fatigue Assessment', score: lookupScore(['fas10', 'fas-10'], null) },
+      { key: 'copsoq3', label: 'Workplace psychosocial fit', sublabel: 'COPSOQ-III (ISO 45003)', score: lookupScore(['copsoq3', 'copsoq-iii'], null) }
     ];
 
-    // Sort lowest to highest as required
-    const sortedPillars = [...pillars].sort((a, b) => a.score - b.score);
-    const sum = pillars.reduce((acc, p) => acc + p.score, 0);
-    const wellbeingScore = options.score !== undefined && sum === 0
-      ? Math.max(0, Math.min(100, Math.round(Number(options.score))))
-      : Math.round(sum / pillars.length);
+    // Sort completed pillars lowest to highest, followed by uncompleted pillars
+    const completedPillars = pillars.filter((p) => p.score !== null && p.score !== undefined && Number.isFinite(p.score));
+    const uncompletedPillars = pillars.filter((p) => p.score === null || p.score === undefined || !Number.isFinite(p.score));
+    const sortedCompleted = [...completedPillars].sort((a, b) => a.score - b.score);
+    const sortedPillars = [...sortedCompleted, ...uncompletedPillars];
+
+    const sum = completedPillars.reduce((acc, p) => acc + p.score, 0);
+    const wellbeingScore = completedPillars.length > 0
+      ? Math.round(sum / completedPillars.length)
+      : (options.score !== undefined && options.score !== null && Number.isFinite(Number(options.score))
+        ? Math.max(0, Math.min(100, Math.round(Number(options.score))))
+        : 0);
 
     const band = getScoreBand(wellbeingScore);
-    const lowestPillar = sortedPillars[0];
-    const hasNeedsAttention = band.key === 'needs_attention' || sortedPillars.some((p) => p.score <= 39);
+    const lowestPillar = sortedCompleted.length > 0 ? sortedCompleted[0] : null;
+    const hasNeedsAttention = (completedPillars.length > 0 && band.key === 'needs_attention')
+      || sortedCompleted.some((p) => p.score <= 39);
 
-    const interpretation = band.key === 'healthy'
-      ? `Your overall wellbeing index is healthy, with ${lowestPillar.label.toLowerCase()} (${lowestPillar.score}/100) as the main area to keep watching.`
-      : band.key === 'moderate'
-        ? `Your overall wellbeing is moderate, with pressure concentrated in ${lowestPillar.label.toLowerCase()} (${lowestPillar.score}/100).`
-        : `Your overall wellbeing needs attention, particularly in ${lowestPillar.label.toLowerCase()} (${lowestPillar.score}/100); confidential clinical support is advised.`;
+    let interpretation = '';
+    if (!lowestPillar) {
+      interpretation = 'No formal check-in modules have been completed yet. Complete at least one module to establish your personalized five-pillar wellbeing baseline.';
+    } else if (band.key === 'healthy') {
+      interpretation = `Your overall wellbeing index across ${completedPillars.length} completed module${completedPillars.length === 1 ? '' : 's'} is healthy, with ${lowestPillar.label.toLowerCase()} (${lowestPillar.score}/100) as the main area to keep watching.`;
+    } else if (band.key === 'moderate') {
+      interpretation = `Your overall wellbeing across ${completedPillars.length} completed module${completedPillars.length === 1 ? '' : 's'} is moderate, with pressure concentrated in ${lowestPillar.label.toLowerCase()} (${lowestPillar.score}/100).`;
+    } else {
+      interpretation = `Your overall wellbeing across ${completedPillars.length} completed module${completedPillars.length === 1 ? '' : 's'} needs attention, particularly in ${lowestPillar.label.toLowerCase()} (${lowestPillar.score}/100); confidential clinical support is advised.`;
+    }
 
-    const actions = hasNeedsAttention
+    const actions = !lowestPillar
       ? [
           {
-            title: `Start with ${lowestPillar.label.toLowerCase()} (${lowestPillar.score}/100)`,
-            timeframe: 'Priority',
-            body: 'Focus your first recovery step on your lowest-scoring pillar rather than trying to change everything at once.'
-          },
-          {
-            title: 'Book a confidential occupational health check-in',
+            title: 'Complete your initial wellbeing screening modules',
             timeframe: 'This week',
-            body: 'One or more scores fall in the Needs attention band (0–39). Speak with a clinician for tailored recovery guidance.'
+            body: 'Finish the short validated check-ins (PHQ-9, GAD-7, PSS-10, FAS-10, and COPSOQ-III) to populate all five pillars.'
           },
           {
-            title: 'Re-check your lowest pillar in 14 days',
-            timeframe: 'In 2 weeks',
-            body: 'Download the individual module PDF after your next check-in to review item-level progress.'
+            title: 'Log a brief Daily Pulse check-in',
+            timeframe: 'Today',
+            body: 'Track day-to-day shifts in mood, calm, stress resilience, energy, and work fit.'
+          },
+          {
+            title: 'Reach out if you need private clinical support',
+            timeframe: 'Anytime',
+            body: 'Confidential occupational health support is available through your clinic contact below regardless of completion status.'
           }
         ]
-      : [
-          {
-            title: `Focus recovery on ${lowestPillar.label.toLowerCase()} (${lowestPillar.score}/100)`,
-            timeframe: 'This week',
-            body: 'Small, steady adjustments in your lowest-scoring pillar deliver the largest lift to overall balance.'
-          },
-          {
-            title: 'Protect daily sleep and decompression windows',
-            timeframe: 'Daily',
-            body: 'Keep consistent rest boundaries between work demands and personal recovery time.'
-          },
-          {
-            title: 'Review trends at your next check-in cycle',
-            timeframe: 'In 30 days',
-            body: 'Periodic check-ins help spot early shifts in energy, mood, or workplace strain.'
-          }
-        ];
+      : hasNeedsAttention
+        ? [
+            {
+              title: `Start with ${lowestPillar.label.toLowerCase()} (${lowestPillar.score}/100)`,
+              timeframe: 'Priority',
+              body: 'Focus your first recovery step on your lowest-scoring pillar rather than trying to change everything at once.'
+            },
+            {
+              title: 'Book a confidential occupational health check-in',
+              timeframe: 'This week',
+              body: 'One or more scores fall in the Needs attention band (0-39). Speak with a clinician for tailored recovery guidance.'
+            },
+            {
+              title: 'Re-check your lowest pillar in 14 days',
+              timeframe: 'In 2 weeks',
+              body: 'Download the individual module PDF after your next check-in to review item-level progress.'
+            }
+          ]
+        : [
+            {
+              title: `Focus recovery on ${lowestPillar.label.toLowerCase()} (${lowestPillar.score}/100)`,
+              timeframe: 'This week',
+              body: 'Small, steady adjustments in your lowest-scoring pillar deliver the largest lift to overall balance.'
+            },
+            {
+              title: 'Protect daily sleep and decompression windows',
+              timeframe: 'Daily',
+              body: 'Keep consistent rest boundaries between work demands and personal recovery time.'
+            },
+            {
+              title: 'Review trends at your next check-in cycle',
+              timeframe: 'In 30 days',
+              body: 'Periodic check-ins help spot early shifts in energy, mood, or workplace strain.'
+            }
+          ];
 
-    const formulaNums = pillars.map((p) => p.score).join(' + ');
+    const formulaNums = completedPillars.map((p) => p.score).join(' + ');
 
     return {
       moduleKey: 'overall',
@@ -715,14 +868,16 @@
       prominentHelplines: hasNeedsAttention,
       hero: {
         metricLabel: 'OVERALL WELLBEING',
-        primaryValue: `${wellbeingScore}/100`,
-        secondaryValue: '5-module index',
+        primaryValue: completedPillars.length > 0 ? `${wellbeingScore}/100` : '--/100',
+        secondaryValue: `${completedPillars.length} of 5 modules completed`,
         clinicalSubLabel: '',
         interpretation
       },
       sortedPillars,
       actions,
-      indexFootnote: `Index calculation: equal average of all 5 completed modules (${formulaNums}) / 5 = ${wellbeingScore}/100.`
+      indexFootnote: completedPillars.length > 0
+        ? `Index calculation: equal average of ${completedPillars.length} completed module${completedPillars.length === 1 ? '' : 's'} (${formulaNums}) / ${completedPillars.length} = ${wellbeingScore}/100.`
+        : 'Index calculation: complete at least one wellbeing module to calculate your overall score.'
     };
   }
 

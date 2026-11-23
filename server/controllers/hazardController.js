@@ -10,6 +10,7 @@ const { enforceTenantScope } = require('../middleware/tenantIsolation');
 const { buildNSizeAggregation } = require('../aggregations/nSizePrivacy');
 const { coarsenTimestamp } = require('../utils/crypto');
 const { scoreCOPSOQ3 } = require('../utils/copsoq3Scoring');
+const { scorePHQ9, scoreGAD7, scorePSS10, scoreFAS10 } = require('../utils/clinicalScoring');
 const { generateInsights, computeEmpiricalCorrelations } = require('../services/correlationEngine');
 
 const router = express.Router();
@@ -40,196 +41,8 @@ const DEFAULT_RISK_CATEGORY = {
   copsoq3_long: 'organizational',
 };
 
-/**
- * PSS-10 reverse-scored item indices (0-indexed).
- * Items 3, 4, 6, 7 use reverse scoring (0→4, 1→3, 2→2, 3→1, 4→0).
- * @type {Set<number>}
- */
-const PSS10_REVERSE_ITEMS = new Set([3, 4, 6, 7]);
+// Clinical scoring functions (scorePHQ9, scoreGAD7, scorePSS10, scoreFAS10) imported from ../utils/clinicalScoring.js.
 
-/**
- * FAS-10 reverse-scored item indices (0-indexed).
- * Items 3 and 9 use reverse scoring on a 1–5 scale (1→5, 2→4, 3→3, 4→2, 5→1).
- * @type {Set<number>}
- */
-const FAS10_REVERSE_ITEMS = new Set([3, 9]);
-
-/* ─────────────────────────────────────────────
- *  Scoring functions
- * ───────────────────────────────────────────── */
-
-/**
- * Scores a PHQ-9 assessment.
- * Range: 0–27. Bands: 0–4 healthy, 5–9 mild, 10–14 moderate, 15+ severe.
- *
- * @param {Array<{question_index: number, value: number}>} responses
- * @returns {{ raw_score: number, severity_band: string, composite_score: number, likelihood: number, severity: number, dimension_scores: Map<string, number> }}
- */
-function scorePHQ9(responses) {
-  const raw = responses.reduce((sum, r) => sum + r.value, 0);
-  const maxScore = 27;
-  const composite = Math.round((raw / maxScore) * 100 * 100) / 100;
-
-  let severity_band;
-  let severity;
-  let likelihood;
-
-  if (raw <= 4) {
-    severity_band = 'healthy';
-    severity = 1;
-    likelihood = 1;
-  } else if (raw <= 9) {
-    severity_band = 'mild';
-    severity = 2;
-    likelihood = 2;
-  } else if (raw <= 14) {
-    severity_band = 'moderate';
-    severity = 3;
-    likelihood = 3;
-  } else {
-    severity_band = 'severe';
-    severity = raw <= 19 ? 4 : 5;
-    likelihood = raw <= 19 ? 4 : 5;
-  }
-
-  const dimension_scores = new Map([['depression', composite]]);
-
-  return { raw_score: raw, severity_band, composite_score: composite, likelihood, severity, dimension_scores };
-}
-
-/**
- * Scores a GAD-7 assessment.
- * Range: 0–21. Bands: 0–4 healthy, 5–9 mild, 10–14 moderate, 15+ severe.
- *
- * @param {Array<{question_index: number, value: number}>} responses
- * @returns {{ raw_score: number, severity_band: string, composite_score: number, likelihood: number, severity: number, dimension_scores: Map<string, number> }}
- */
-function scoreGAD7(responses) {
-  const raw = responses.reduce((sum, r) => sum + r.value, 0);
-  const maxScore = 21;
-  const composite = Math.round((raw / maxScore) * 100 * 100) / 100;
-
-  let severity_band;
-  let severity;
-  let likelihood;
-
-  if (raw <= 4) {
-    severity_band = 'healthy';
-    severity = 1;
-    likelihood = 1;
-  } else if (raw <= 9) {
-    severity_band = 'mild';
-    severity = 2;
-    likelihood = 2;
-  } else if (raw <= 14) {
-    severity_band = 'moderate';
-    severity = 3;
-    likelihood = 3;
-  } else {
-    severity_band = 'severe';
-    severity = raw <= 18 ? 4 : 5;
-    likelihood = raw <= 18 ? 4 : 5;
-  }
-
-  const dimension_scores = new Map([['anxiety', composite]]);
-
-  return { raw_score: raw, severity_band, composite_score: composite, likelihood, severity, dimension_scores };
-}
-
-/**
- * Scores a PSS-10 (Perceived Stress Scale) assessment.
- * Range: 0–40. Reverse-score items 3, 4, 6, 7 (0-indexed).
- * Bands: 0–13 healthy, 14–26 mild, 27+ severe.
- *
- * @param {Array<{question_index: number, value: number}>} responses
- * @returns {{ raw_score: number, severity_band: string, composite_score: number, likelihood: number, severity: number, dimension_scores: Map<string, number> }}
- */
-function scorePSS10(responses) {
-  let raw = 0;
-  for (const r of responses) {
-    if (PSS10_REVERSE_ITEMS.has(r.question_index)) {
-      raw += (4 - r.value); // Reverse: 0→4, 1→3, 2→2, 3→1, 4→0
-    } else {
-      raw += r.value;
-    }
-  }
-
-  const maxScore = 40;
-  const composite = Math.round((raw / maxScore) * 100 * 100) / 100;
-
-  let severity_band;
-  let severity;
-  let likelihood;
-
-  if (raw <= 13) {
-    severity_band = 'healthy';
-    severity = 1;
-    likelihood = 1;
-  } else if (raw <= 26) {
-    severity_band = 'mild';
-    severity = 2;
-    likelihood = 2 + Math.floor((raw - 14) / 7); // 2 or 3
-  } else {
-    severity_band = 'severe';
-    severity = 4 + (raw >= 34 ? 1 : 0); // 4 or 5
-    likelihood = 4 + (raw >= 34 ? 1 : 0);
-  }
-
-  const dimension_scores = new Map([['perceived_stress', composite]]);
-
-  return { raw_score: raw, severity_band, composite_score: composite, likelihood, severity, dimension_scores };
-}
-
-/**
- * Scores a FAS-10 (Fatigue Assessment Scale) assessment.
- * Range: 10–50 (each item 1–5). Reverse-score items 3, 9 (0-indexed).
- * Bands: 10–21 healthy, 22–34 mild, 35+ severe.
- *
- * @param {Array<{question_index: number, value: number}>} responses
- * @returns {{ raw_score: number, severity_band: string, composite_score: number, likelihood: number, severity: number, dimension_scores: Map<string, number> }}
- */
-function scoreFAS10(responses) {
-  let raw = 0;
-  for (const r of responses) {
-    if (FAS10_REVERSE_ITEMS.has(r.question_index)) {
-      raw += (6 - r.value); // Reverse on 1–5 scale: 1→5, 2→4, 3→3, 4→2, 5→1
-    } else {
-      raw += r.value;
-    }
-  }
-
-  const maxScore = 50;
-  const minScore = 10;
-  const composite = Math.round(((raw - minScore) / (maxScore - minScore)) * 100 * 100) / 100;
-
-  let severity_band;
-  let severity;
-  let likelihood;
-
-  if (raw <= 21) {
-    severity_band = 'healthy';
-    severity = 1;
-    likelihood = 1;
-  } else if (raw <= 34) {
-    severity_band = 'mild';
-    severity = 2;
-    likelihood = 2 + Math.floor((raw - 22) / 7); // 2 or 3
-  } else {
-    severity_band = 'severe';
-    severity = 4 + (raw >= 43 ? 1 : 0);
-    likelihood = 4 + (raw >= 43 ? 1 : 0);
-  }
-
-  const dimension_scores = new Map([['fatigue', composite]]);
-
-  return { raw_score: raw, severity_band, composite_score: composite, likelihood, severity, dimension_scores };
-}
-
-/**
- * Main switch for scoring assessments
- * @param {string} surveyType
- * @param {Array<{question_index?: number, item_code?: string, value: number}>} responses
- */
 function scoreAssessment(surveyType, responses) {
   switch (surveyType) {
     case 'phq9':  return scorePHQ9(responses);
@@ -238,7 +51,7 @@ function scoreAssessment(surveyType, responses) {
     case 'fas10': return scoreFAS10(responses);
     case 'copsoq3_core':
     case 'copsoq3_middle':
-    case 'copsoq3_long': return scoreCOPSOQ3(responses);
+    case 'copsoq3_long': return scoreCOPSOQ3(responses, { version: surveyType });
     default:
       throw new Error(`Unsupported survey type: ${surveyType}`);
   }
@@ -295,7 +108,8 @@ const submitLog = async (req, res, next) => {
       for (let i = 0; i < responses.length; i++) {
         const r = responses[i];
         const hasIdentifier = (typeof r.question_index === 'number') || (typeof r.item_code === 'string');
-        if (!hasIdentifier || typeof r.value !== 'number') {
+        const hasNumericScore = (typeof r.value === 'number' && Number.isFinite(r.value)) || (typeof r.score === 'number' && Number.isFinite(r.score));
+        if (!hasIdentifier || !hasNumericScore) {
           return res.status(400).json({
             success: false,
             error: 'VALIDATION_ERROR',
@@ -483,24 +297,27 @@ router.get(
 
         if (logs.length >= 5) {
           const pairedData = {};
-          const dims = ['mood', 'calm', 'stress', 'energy', 'work_fit'];
+          const clinicalKeys = ['phq9', 'gad7', 'pss10', 'fas10'];
 
-          dims.forEach(dim => {
+          clinicalKeys.forEach((key) => {
             const copsoqScores = [];
             const clinicalScores = [];
-            logs.forEach(l => {
-              if (l.dimension_scores && l.dimension_scores[dim] != null) {
-                const outcome = l.clinical_score != null ? l.clinical_score : (l.composite_score != null ? l.composite_score : 50);
-                copsoqScores.push(l.dimension_scores[dim]);
-                clinicalScores.push(outcome);
+            logs.forEach((l) => {
+              const normType = String(l.survey_type || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              if (normType !== key) return;
+              const workFit = l.dimension_scores ? l.dimension_scores.work_fit : null;
+              const wellbeingIdx = l.composite_score != null ? l.composite_score : l.overallIndex;
+              if (typeof workFit === 'number' && Number.isFinite(workFit) && typeof wellbeingIdx === 'number' && Number.isFinite(wellbeingIdx)) {
+                copsoqScores.push(workFit);
+                clinicalScores.push(Math.max(0, Math.min(100, Math.round((100 - wellbeingIdx) * 100) / 100)));
               }
             });
 
             if (copsoqScores.length >= 5) {
-              pairedData[dim] = {
+              pairedData[`${key}_vs_work_fit`] = {
                 copsoqScores,
                 clinicalScores,
-                surveyType: 'wellness_survey'
+                surveyType: key,
               };
             }
           });

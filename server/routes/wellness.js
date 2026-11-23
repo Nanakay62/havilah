@@ -6,6 +6,15 @@ const User = require('../models/User');
 const PersonalWellnessLog = require('../models/PersonalWellnessLog');
 const { validateSession, requireConsent } = require('../middleware/auth');
 const hazardController = require('../controllers/hazardController');
+const { scoreCOPSOQ3, VERSION_ITEM_LISTS } = require('../utils/copsoq3Scoring');
+const { coarsenTimestamp } = require('../utils/crypto');
+const {
+  getIsoWeekNumber,
+  normalizeDailyPulseRating,
+  classifyDailyPulse,
+  scoreClinicalAssessment,
+  reconstructRawFromIndex,
+} = require('../utils/clinicalScoring');
 
 // Helper to compute core dimensions and clinical scales
 function evaluateCrisisRisk(surveyType, answers, rawScore, hotlineConfig = {}) {
@@ -37,7 +46,7 @@ function evaluateCrisisRisk(surveyType, answers, rawScore, hotlineConfig = {}) {
       reason: 'phq9_self_harm',
       phq9_item9_score: phq9Item9Score,
       headline: 'Immediate Support Is Available',
-      message: 'Your response indicates thoughts of self-harm or being better off dead. You do not have to carry this alone — confidential crisis support and an urgent clinician callback are available right now.',
+      message: 'Your response indicates thoughts of self-harm or being better off dead. You do not have to carry this alone: confidential crisis support and an urgent clinician callback are available right now.',
       hotlines
     };
   }
@@ -62,63 +71,56 @@ function evaluateCrisisRisk(surveyType, answers, rawScore, hotlineConfig = {}) {
   };
 }
 
-function computeDimensions(surveyType, answers) {
-  let rawScore = 0;
-  let normalized = 0;
-  let dimLabel = 'work_fit';
-  let maxScore = 100;
-  let severityLabel = '';
-
+function computeDimensions(surveyType, answers, structuredResponses = null) {
   const normType = (surveyType || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  if (normType.includes('PHQ9')) {
-    answers.forEach(v => rawScore += (Number(v) || 0));
-    maxScore = 27;
-    normalized = 100 - ((rawScore / 27) * 100);
-    dimLabel = 'mood';
-    severityLabel = rawScore >= 20 ? 'Severe Depression' : rawScore >= 15 ? 'Moderately Severe' : rawScore >= 10 ? 'Moderate Depression' : rawScore >= 5 ? 'Mild Depression' : 'Minimal';
-  } else if (normType.includes('GAD7')) {
-    answers.forEach(v => rawScore += (Number(v) || 0));
-    maxScore = 21;
-    normalized = 100 - ((rawScore / 21) * 100);
-    dimLabel = 'calm';
-    severityLabel = rawScore >= 15 ? 'Severe Anxiety' : rawScore >= 10 ? 'Moderate Anxiety' : rawScore >= 5 ? 'Mild Anxiety' : 'Minimal';
-  } else if (normType.includes('PSS10')) {
-    const reverse = [3, 4, 6, 7];
-    answers.forEach((v, i) => {
-      const num = Number(v) || 0;
-      rawScore += reverse.includes(i) ? (4 - num) : num;
-    });
-    maxScore = 40;
-    normalized = 100 - ((rawScore / 40) * 100);
-    dimLabel = 'stress';
-    severityLabel = rawScore >= 27 ? 'High Stress' : rawScore >= 14 ? 'Moderate Stress' : 'Low Stress';
-  } else if (normType.includes('FAS10')) {
-    const reverse = [3, 9];
-    answers.forEach((v, i) => {
-      const num = Number(v) || 0;
-      rawScore += reverse.includes(i) ? (6 - num) : num;
-    });
-    maxScore = 50;
-    normalized = 100 - (((rawScore - 10) / 40) * 100);
-    dimLabel = 'energy';
-    severityLabel = rawScore >= 35 ? 'Severe Fatigue' : rawScore >= 22 ? 'Moderate Fatigue' : 'Low Fatigue';
-  } else if (normType.includes('COPSOQ')) {
-    answers.forEach(v => rawScore += (Number(v) || 0));
-    maxScore = 100;
-    normalized = answers.length > 0 ? (rawScore / answers.length) : 0;
-    dimLabel = 'work_fit';
-    severityLabel = normalized >= 75 ? 'Optimal' : normalized >= 50 ? 'Moderate Risk Tier' : 'High Risk Tier';
-  } else {
-    answers.forEach(v => rawScore += (Number(v) || 0));
-    maxScore = 100;
-    normalized = answers.length > 0 ? (rawScore / answers.length) : 0;
-    dimLabel = 'work_fit';
-    severityLabel = normalized >= 75 ? 'Optimal' : normalized >= 50 ? 'Moderate Risk Tier' : 'High Risk Tier';
+  if (normType.includes('COPSOQ')) {
+    const versionList = VERSION_ITEM_LISTS[surveyType] || VERSION_ITEM_LISTS.copsoq3_core;
+    const copsoqInput = Array.isArray(structuredResponses) && structuredResponses.length > 0
+      ? structuredResponses
+      : (Array.isArray(answers) ? answers : []).map((v, idx) => {
+          const obj = (v !== null && typeof v === 'object') ? v : null;
+          if (obj) return obj;
+          const code = versionList[idx];
+          const num = Number(v);
+          return Number.isFinite(num) ? { item_code: code, question_index: idx, score: num } : null;
+        }).filter(Boolean);
+
+    const scored = scoreCOPSOQ3(copsoqInput, { version: VERSION_ITEM_LISTS[surveyType] ? surveyType : undefined });
+    const normalized = scored.wellbeing_index;
+    const severityLabel = normalized >= 75
+      ? 'Optimal Psychosocial Fit'
+      : normalized >= 50
+        ? 'Moderate Psychosocial Risk'
+        : 'Elevated Psychosocial Risk';
+
+    const dimsObj = {};
+    if (scored.dimension_scores instanceof Map) {
+      for (const [k, v] of scored.dimension_scores.entries()) {
+        dimsObj[k] = v;
+      }
+    }
+
+    return {
+      dimLabel: 'work_fit',
+      normalized,
+      rawScore: normalized,
+      maxScore: 100,
+      severityLabel,
+      severity_band: scored.severity_band,
+      dimension_scores: dimsObj,
+    };
   }
 
-  normalized = Math.max(0, Math.min(100, Math.round(normalized)));
-  return { dimLabel, normalized, rawScore, maxScore, severityLabel };
+  const clinical = scoreClinicalAssessment(surveyType, Array.isArray(answers) ? answers : []);
+  return {
+    dimLabel: clinical.dim_label,
+    normalized: clinical.wellbeing_index,
+    rawScore: clinical.raw_score,
+    maxScore: clinical.max_score,
+    severityLabel: clinical.severity_label,
+    severity_band: clinical.severity_band,
+  };
 }
 
 // Ensure the user has consented before submitting check-ins
@@ -172,18 +174,13 @@ router.post('/daily-pulse', async (req, res, next) => {
     const userId = req.sessionData.user_id;
     const companyId = req.sessionData.company_id;
 
-    // Normalize ratings (1-5 scale mapped to 0-100 scale)
-    const normalizeScore = (val) => {
-      if (typeof val !== 'number') return 50;
-      return val <= 5 ? Math.round(val * 20) : Math.min(100, Math.max(0, val));
-    };
-
+    // Normalize ratings (1-5 Likert scale mapped linearly to 0-100: (val - 1) * 25)
     const profileScores = {
-      mood: normalizeScore(mood),
-      calm: normalizeScore(calm),
-      stress: normalizeScore(stress),
-      energy: normalizeScore(energy),
-      work_fit: normalizeScore(work_fit),
+      mood: normalizeDailyPulseRating(mood),
+      calm: normalizeDailyPulseRating(calm),
+      stress: normalizeDailyPulseRating(stress),
+      energy: normalizeDailyPulseRating(energy),
+      work_fit: normalizeDailyPulseRating(work_fit),
     };
 
     // 1. Update User baseline profile
@@ -197,12 +194,14 @@ router.post('/daily-pulse', async (req, res, next) => {
     const overallBalance = Math.round(
       (profileScores.mood + profileScores.calm + profileScores.stress + profileScores.energy + profileScores.work_fit) / 5
     );
+    const pulseRiskComposite = Math.max(0, Math.min(100, 100 - overallBalance));
+    const pulseClassification = classifyDailyPulse(overallBalance);
 
     // 2. Log to PersonalWellnessLog
     await PersonalWellnessLog.create({
       user_id: userId,
       company_id: companyId,
-      department_id: req.sessionData.department_id || user.department_id || 'unassigned',
+      department_id: req.sessionData.department_id || (user && user.department_id) || 'unassigned',
       survey_type: 'daily_pulse',
       composite_score: overallBalance,
       overallIndex: overallBalance,
@@ -211,12 +210,13 @@ router.post('/daily-pulse', async (req, res, next) => {
 
     // 3. Dual-write to AnonHazardLog for department aggregate tracking (N >= 5 protected)
     const AnonHazardLog = require('../models/AnonHazardLog');
+    const submittedAt = coarsenTimestamp(new Date());
 
     const anonDoc = new AnonHazardLog({
       company_id: companyId,
       department_id: req.sessionData.department_id || 'GENERAL',
       department_snapshot_id: req.sessionData.department_id || 'GENERAL',
-      survey_type: 'copsoq3_core',
+      survey_type: 'daily_pulse',
       risk_category: 'psychosocial',
       dimension_scores: {
         mood: profileScores.mood,
@@ -226,14 +226,14 @@ router.post('/daily-pulse', async (req, res, next) => {
         work_fit: profileScores.work_fit,
         overall_balance: overallBalance,
       },
-      composite_score: overallBalance,
-      likelihood: 3,
-      severity: 3,
-      severity_band: overallBalance >= 70 ? 'healthy' : overallBalance >= 40 ? 'moderate' : 'severe',
-      submitted_at: new Date(),
-      period_year: new Date().getUTCFullYear(),
-      period_month: new Date().getUTCMonth() + 1,
-      period_week: 1,
+      composite_score: pulseRiskComposite,
+      likelihood: pulseClassification.likelihood,
+      severity: pulseClassification.severity,
+      severity_band: pulseClassification.severity_band,
+      submitted_at: submittedAt,
+      period_year: submittedAt.getUTCFullYear(),
+      period_month: submittedAt.getUTCMonth() + 1,
+      period_week: getIsoWeekNumber(submittedAt),
     });
     await anonDoc.save().catch(e => console.warn('[DailyPulse] AnonHazardLog write bypassed:', e.message));
 
@@ -358,7 +358,7 @@ router.use(requireConsent);
 
 router.post('/submit-checkin', async (req, res, next) => {
   try {
-    const { survey_type, answers, scores } = req.body;
+    const { survey_type, answers, scores, responses: structuredInput } = req.body;
     if (!survey_type) {
       return res.status(400).json({ error: 'survey_type is required' });
     }
@@ -376,6 +376,7 @@ router.post('/submit-checkin', async (req, res, next) => {
 
     let anonLogId = null;
     let crisisProtocol = null;
+    let scoreSummary = null;
 
     if (survey_type !== 'checkin_slider') {
       const AssessmentCycle = require('../models/AssessmentCycle');
@@ -399,13 +400,16 @@ router.post('/submit-checkin', async (req, res, next) => {
     }
 
     if (survey_type === 'checkin_slider') {
-      // 1. Direct check-in with 7 core dimensions
       if (!scores) {
         return res.status(400).json({ error: 'scores object is required for checkin_slider' });
       }
-      
-      const { mood, calm, stress, energy, work_fit } = scores;
-      
+
+      const mood = normalizeDailyPulseRating(scores.mood);
+      const calm = normalizeDailyPulseRating(scores.calm);
+      const stress = normalizeDailyPulseRating(scores.stress);
+      const energy = normalizeDailyPulseRating(scores.energy);
+      const work_fit = normalizeDailyPulseRating(scores.work_fit);
+
       user.baseline_profile.mood = mood;
       user.baseline_profile.calm = calm;
       user.baseline_profile.stress = stress;
@@ -414,84 +418,136 @@ router.post('/submit-checkin', async (req, res, next) => {
       user.baseline_profile.last_updated = new Date();
 
       const overall_balance = Math.round((mood + calm + stress + energy + work_fit) / 5);
+      const pulseClassification = classifyDailyPulse(overall_balance);
+      const submittedAt = coarsenTimestamp(new Date());
 
-      // We might need to write to AnonHazardLog. Since hazardController handles standard clinical surveys,
-      // we can do a direct write for this checkin if desired, or skip it. The prompt says:
-      // "Parse the 6 core scores from the client, compute the 'Overall Balance', and execute a concurrent dual-write saving to both 'PersonalWellnessLog'... and 'AnonHazardLog'..."
       const AnonHazardLog = require('../models/AnonHazardLog');
       const anonDoc = new AnonHazardLog({
         company_id: companyId,
         department_id: req.sessionData.department_id,
-        department_snapshot_id: req.sessionData.department_id, // simplified mapping
-        survey_type: 'copsoq3_core', // use a valid enum value from AnonHazardLog
+        department_snapshot_id: req.sessionData.department_id,
+        survey_type: 'daily_pulse',
         risk_category: 'psychosocial',
         dimension_scores: {
           mood, calm, stress, energy, work_fit, overall_balance
         },
-        composite_score: overall_balance,
-        likelihood: 3, // default dummy
-        severity: 3, // default dummy
-        severity_band: 'moderate', // default dummy
-        submitted_at: new Date(),
-        period_year: new Date().getUTCFullYear(),
-        period_month: new Date().getUTCMonth() + 1,
-        period_week: 1, // simplified mapping
+        composite_score: Math.max(0, Math.min(100, 100 - overall_balance)),
+        likelihood: pulseClassification.likelihood,
+        severity: pulseClassification.severity,
+        severity_band: pulseClassification.severity_band,
+        submitted_at: submittedAt,
+        period_year: submittedAt.getUTCFullYear(),
+        period_month: submittedAt.getUTCMonth() + 1,
+        period_week: getIsoWeekNumber(submittedAt),
       });
       await anonDoc.save();
       anonLogId = anonDoc.log_id;
-
     } else {
-      // Classic clinical survey path (e.g. phq9, pss10)
-      if (!Array.isArray(answers)) {
+      const hasStructured = Array.isArray(structuredInput) && structuredInput.length > 0;
+      if (!Array.isArray(answers) && !hasStructured) {
         return res.status(400).json({ error: 'answers array is required' });
       }
-      
-      const mockReq = {
-        body: {
-          survey_type,
-          responses: answers.map((val, idx) => ({ question_index: idx, value: val }))
-        },
-        sessionData: req.sessionData,
-        anonymizedContext: { company_id: companyId, department_id: req.sessionData.department_id },
-        ip: null
-      };
-      
-      const mockRes = {
-        json: (data) => { if (data && data.success) anonLogId = data.log_id; },
-        status: () => mockRes
-      };
-      await hazardController.submitLog(mockReq, mockRes, next);
 
-      const { dimLabel, normalized, rawScore, maxScore, severityLabel } = computeDimensions(survey_type, answers);
+      const normSurvey = String(survey_type || '').toLowerCase();
+      const versionList = VERSION_ITEM_LISTS[normSurvey] || VERSION_ITEM_LISTS.copsoq3_core;
+
+      let hazardResponses = [];
+      if (hasStructured) {
+        hazardResponses = structuredInput
+          .map((item, idx) => {
+            if (!item || typeof item !== 'object') return null;
+            const val = typeof item.value === 'number' && Number.isFinite(item.value) ? item.value : undefined;
+            const sc = typeof item.score === 'number' && Number.isFinite(item.score) ? item.score : undefined;
+            if ((sc !== undefined && sc < 0) || (sc === undefined && val !== undefined && val < 0)) return null;
+            if (val === undefined && sc === undefined) return null;
+            return {
+              item_code: item.item_code || versionList[idx],
+              question_index: typeof item.question_index === 'number' ? item.question_index : idx,
+              value: val !== undefined ? val : sc,
+              score: sc,
+            };
+          })
+          .filter(Boolean);
+      } else if (normSurvey.startsWith('copsoq')) {
+        hazardResponses = (answers || [])
+          .map((val, idx) => {
+            const num = Number(val);
+            if (!Number.isFinite(num) || num < 0) return null;
+            return {
+              item_code: versionList[idx],
+              question_index: idx,
+              value: num,
+              score: num,
+            };
+          })
+          .filter(Boolean);
+      } else {
+        hazardResponses = (answers || [])
+          .map((val, idx) => {
+            const num = Number(val);
+            if (!Number.isFinite(num)) return null;
+            return { question_index: idx, value: num };
+          })
+          .filter(Boolean);
+      }
+
+      if (hazardResponses.length > 0) {
+        const mockReq = {
+          body: {
+            survey_type,
+            responses: hazardResponses,
+          },
+          sessionData: req.sessionData,
+          anonymizedContext: { company_id: companyId, department_id: req.sessionData.department_id },
+          ip: null,
+        };
+
+        const mockRes = {
+          json: (data) => { if (data && data.success) anonLogId = data.log_id; },
+          status: () => mockRes,
+        };
+        await hazardController.submitLog(mockReq, mockRes, next);
+      }
+
+      const computed = computeDimensions(survey_type, answers || [], hazardResponses);
       const tenantDoc = companyId ? await Tenant.findOne({ company_id: companyId }).select('hotline_config').lean() : null;
-      crisisProtocol = evaluateCrisisRisk(survey_type, answers, rawScore, tenantDoc?.hotline_config || {});
+      crisisProtocol = evaluateCrisisRisk(survey_type, answers || hazardResponses, computed.rawScore, tenantDoc?.hotline_config || {});
       const effectiveSeverityLabel = (crisisProtocol.triggered && crisisProtocol.level === 'crisis')
         ? 'Crisis Attention Required'
-        : severityLabel;
-      user.baseline_profile[dimLabel] = normalized;
+        : computed.severityLabel;
+      user.baseline_profile[computed.dimLabel] = computed.normalized;
       user.baseline_profile.last_updated = new Date();
       await user.save();
 
-      // Push to PersonalWellnessLog
       await PersonalWellnessLog.create({
         user_id: userId,
         company_id: companyId,
         department_id: req.sessionData.department_id || user.department_id || 'unassigned',
         survey_type,
-        composite_score: normalized,
-        overallIndex: normalized,
-        clinical_score: rawScore,
-        max_score: maxScore,
+        composite_score: computed.normalized,
+        overallIndex: computed.normalized,
+        clinical_score: computed.rawScore,
+        max_score: computed.maxScore,
         severity_label: effectiveSeverityLabel,
-        dimension_scores: user.baseline_profile
+        dimension_scores: user.baseline_profile,
       });
+
+      scoreSummary = {
+        raw_score: computed.rawScore,
+        max_score: computed.maxScore,
+        wellbeing_index: computed.normalized,
+        severity_label: effectiveSeverityLabel,
+        severity_band: computed.severity_band,
+        dimension_scores: computed.dimension_scores || null,
+      };
     }
 
     res.json({
       success: true,
       baseline_profile: user.baseline_profile,
-      anon_log_id: anonLogId, // For auditing if necessary
-      crisis_protocol: crisisProtocol
+      anon_log_id: anonLogId,
+      crisis_protocol: crisisProtocol,
+      score_summary: scoreSummary,
     });
 
   } catch (err) {
@@ -522,23 +578,23 @@ router.get('/dashboard-data', async (req, res, next) => {
 
       if (isDaily) {
         const dims = log.dimension_scores || {};
-        let rawMood = dims.mood ?? dims.Mood;
-        let rawCalm = dims.calm ?? dims.Calm;
-        let rawStress = dims.stress ?? dims.Stress;
-        let rawEnergy = dims.energy ?? dims.Energy;
-        let rawWorkFit = dims.work_fit ?? dims.workFit ?? dims.WorkFit;
+        const rawMood = dims.mood ?? dims.Mood;
+        const rawCalm = dims.calm ?? dims.Calm;
+        const rawStress = dims.stress ?? dims.Stress;
+        const rawEnergy = dims.energy ?? dims.Energy;
+        const rawWorkFit = dims.work_fit ?? dims.workFit ?? dims.WorkFit;
 
-        const nonZeroScores = [rawMood, rawCalm, rawStress, rawEnergy, rawWorkFit].filter(v => typeof v === 'number' && v > 0);
-        const composite = nonZeroScores.length > 0
-          ? Math.round(nonZeroScores.reduce((a, b) => a + b, 0) / nonZeroScores.length)
-          : (log.composite_score || log.overallIndex || 64);
+        const validScores = [rawMood, rawCalm, rawStress, rawEnergy, rawWorkFit].filter(v => typeof v === 'number' && Number.isFinite(v));
+        const composite = validScores.length > 0
+          ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
+          : (log.composite_score ?? log.overallIndex ?? 50);
 
-        // Preserve actual distinct values, or generate distinct offsets if raw values were unsegmented
-        const mood = typeof rawMood === 'number' && rawMood > 0 ? rawMood : Math.min(100, Math.max(10, composite + 4));
-        const calm = typeof rawCalm === 'number' && rawCalm > 0 ? rawCalm : Math.min(100, Math.max(10, composite - 3));
-        const stress = typeof rawStress === 'number' && rawStress > 0 ? rawStress : Math.min(100, Math.max(10, composite + 6));
-        const energy = typeof rawEnergy === 'number' && rawEnergy > 0 ? rawEnergy : Math.min(100, Math.max(10, composite - 2));
-        const workFit = typeof rawWorkFit === 'number' && rawWorkFit > 0 ? rawWorkFit : Math.min(100, Math.max(10, composite + 1));
+        const resolveDim = (val) => (typeof val === 'number' && Number.isFinite(val) ? val : composite);
+        const mood = resolveDim(rawMood);
+        const calm = resolveDim(rawCalm);
+        const stress = resolveDim(rawStress);
+        const energy = resolveDim(rawEnergy);
+        const workFit = resolveDim(rawWorkFit);
 
         dailyMap.set(dateKey, {
           date: dateKey,
@@ -558,7 +614,7 @@ router.get('/dashboard-data', async (req, res, next) => {
         });
       } else {
         // Formal Clinical Assessment (PHQ-9, GAD-7, PSS-10, FAS-10, COPSOQ III)
-        const overallIndex = log.composite_score || log.overallIndex || log.score || 64;
+        const overallIndex = log.composite_score ?? log.overallIndex ?? log.score ?? 0;
         let clinicalScore = log.clinical_score ?? log.raw_score;
         let maxScore = log.max_score;
         let severityLabel = log.severity_label;
@@ -566,27 +622,27 @@ router.get('/dashboard-data', async (req, res, next) => {
         const normType = (surveyType || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
         if (normType.includes('PHQ9')) {
           maxScore = maxScore || 27;
-          if (clinicalScore === undefined) clinicalScore = Math.round((1 - (overallIndex / 100)) * 27);
-          severityLabel = severityLabel || (clinicalScore >= 20 ? 'Severe Depression' : clinicalScore >= 15 ? 'Moderately Severe' : clinicalScore >= 10 ? 'Moderate Depression' : clinicalScore >= 5 ? 'Mild Depression' : 'Minimal');
+          if (clinicalScore === undefined || clinicalScore === null) clinicalScore = reconstructRawFromIndex('phq9', overallIndex);
+          severityLabel = severityLabel || (clinicalScore >= 20 ? 'Severe Depression' : clinicalScore >= 15 ? 'Moderately Severe Depression' : clinicalScore >= 10 ? 'Moderate Depression' : clinicalScore >= 5 ? 'Mild Depression' : 'Minimal');
         } else if (normType.includes('GAD7')) {
           maxScore = maxScore || 21;
-          if (clinicalScore === undefined) clinicalScore = Math.round((1 - (overallIndex / 100)) * 21);
+          if (clinicalScore === undefined || clinicalScore === null) clinicalScore = reconstructRawFromIndex('gad7', overallIndex);
           severityLabel = severityLabel || (clinicalScore >= 15 ? 'Severe Anxiety' : clinicalScore >= 10 ? 'Moderate Anxiety' : clinicalScore >= 5 ? 'Mild Anxiety' : 'Minimal');
         } else if (normType.includes('PSS10')) {
           maxScore = maxScore || 40;
-          if (clinicalScore === undefined) clinicalScore = Math.round((1 - (overallIndex / 100)) * 40);
-          severityLabel = severityLabel || (clinicalScore >= 27 ? 'High Stress' : clinicalScore >= 14 ? 'Moderate Stress' : 'Low Stress');
+          if (clinicalScore === undefined || clinicalScore === null) clinicalScore = reconstructRawFromIndex('pss10', overallIndex);
+          severityLabel = severityLabel || (clinicalScore >= 27 ? 'High Perceived Stress' : clinicalScore >= 14 ? 'Moderate Stress' : 'Low Stress');
         } else if (normType.includes('FAS10')) {
           maxScore = maxScore || 50;
-          if (clinicalScore === undefined) clinicalScore = Math.round((1 - (overallIndex / 100)) * 50);
-          severityLabel = severityLabel || (clinicalScore >= 35 ? 'Severe Fatigue' : clinicalScore >= 22 ? 'Moderate Fatigue' : 'Low Fatigue');
+          if (clinicalScore === undefined || clinicalScore === null) clinicalScore = reconstructRawFromIndex('fas10', overallIndex);
+          severityLabel = severityLabel || (clinicalScore >= 35 ? 'Severe Fatigue' : clinicalScore >= 22 ? 'Mild-Moderate Fatigue' : 'Not Fatigued');
         } else if (normType.includes('COPSOQ')) {
           maxScore = maxScore || 100;
-          if (clinicalScore === undefined) clinicalScore = overallIndex;
-          severityLabel = severityLabel || (overallIndex >= 75 ? 'Optimal' : overallIndex >= 50 ? 'Moderate Risk Tier' : 'High Risk Tier');
+          if (clinicalScore === undefined || clinicalScore === null) clinicalScore = overallIndex;
+          severityLabel = severityLabel || (overallIndex >= 75 ? 'Optimal Psychosocial Fit' : overallIndex >= 50 ? 'Moderate Psychosocial Risk' : 'Elevated Psychosocial Risk');
         } else {
           maxScore = maxScore || 100;
-          if (clinicalScore === undefined) clinicalScore = overallIndex;
+          if (clinicalScore === undefined || clinicalScore === null) clinicalScore = overallIndex;
           severityLabel = severityLabel || (overallIndex >= 75 ? 'Optimal' : overallIndex >= 50 ? 'Moderate Risk Tier' : 'High Risk Tier');
         }
 
@@ -597,7 +653,7 @@ router.get('/dashboard-data', async (req, res, next) => {
           score: overallIndex,
           overallIndex: overallIndex,
           source: surveyType,
-          dimensions: null, // DO NOT return 5 dimensions for formal clinical assessments
+          dimensions: null,
           is_clinical: true,
           clinical_score: clinicalScore,
           max_score: maxScore,

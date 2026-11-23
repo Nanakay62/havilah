@@ -7,6 +7,7 @@ const { validateSession, requireRole } = require('../middleware/auth');
 const Invitation = require('../models/Invitation');
 const Department = require('../models/Department');
 const { buildNSizeAggregation } = require('../aggregations/nSizePrivacy');
+const { roundPercentagesLargestRemainder } = require('../utils/clinicalScoring');
 
 // Ensure HR Admins, Tenant Admins, or Super Admins can access these routes
 router.use(validateSession);
@@ -64,27 +65,36 @@ router.get('/analytics', async (req, res, next) => {
 
     const [aggResult] = await PersonalWellnessLog.aggregate([
       { $match: matchQuery },
+      { $sort: { submitted_at: -1 } },
+      {
+        $group: {
+          _id: '$user_id',
+          user_responses: { $sum: 1 },
+          mood: { $first: '$dimension_scores.mood' },
+          calm: { $first: '$dimension_scores.calm' },
+          stress: { $first: '$dimension_scores.stress' },
+          energy: { $first: '$dimension_scores.energy' },
+          work_fit: { $first: '$dimension_scores.work_fit' }
+        }
+      },
       {
         $group: {
           _id: null,
-          total_responses: { $sum: 1 },
-          avgMood: { $avg: { $ifNull: ['$dimension_scores.mood', 70] } },
-          avgCalm: { $avg: { $ifNull: ['$dimension_scores.calm', 70] } },
-          avgStress: { $avg: { $ifNull: ['$dimension_scores.stress', 40] } },
-          avgEnergy: { $avg: { $ifNull: ['$dimension_scores.energy', 70] } },
-          avgWorkFit: { $avg: { $ifNull: ['$dimension_scores.work_fit', 70] } },
-          // Privacy: individual per-respondent score arrays omitted to protect employee confidentiality
-
-
-
-
+          unique_respondents: { $sum: 1 },
+          total_responses: { $sum: '$user_responses' },
+          avgMood: { $avg: '$mood' },
+          avgCalm: { $avg: '$calm' },
+          avgStress: { $avg: '$stress' },
+          avgEnergy: { $avg: '$energy' },
+          avgWorkFit: { $avg: '$work_fit' }
         }
       }
     ]);
 
-    const deptResponseCount = aggResult ? aggResult.total_responses : 0;
+    const deptResponseCount = aggResult ? (aggResult.total_responses || 0) : 0;
+    const uniqueRespondents = aggResult ? (aggResult.unique_respondents ?? deptResponseCount) : 0;
 
-    if (deptResponseCount < 5) {
+    if (uniqueRespondents < 5) {
       return res.json({
         success: true,
         status: 'SUPPRESSED',
@@ -100,6 +110,8 @@ router.get('/analytics', async (req, res, next) => {
       });
     }
 
+    const roundOrNull = (val) => (typeof val === 'number' && Number.isFinite(val) ? Math.round(val) : null);
+
     return res.json({
       success: true,
       status: 'OK',
@@ -109,22 +121,19 @@ router.get('/analytics', async (req, res, next) => {
       max_allowed_seats: maxSeats,
       N_threshold: 5,
       total_responses: deptResponseCount,
+      unique_respondents: uniqueRespondents,
       meets_n_threshold: true,
       raw_employee_objects_exposed: false,
       departments: deptNames,
       aggregated_scores: {
         individual_series_omitted: true
-
-
-
-
       },
       averages: {
-        mood: Math.round(aggResult?.avgMood || 70),
-        calm: Math.round(aggResult?.avgCalm || 70),
-        stress: Math.round(aggResult?.avgStress || 40),
-        energy: Math.round(aggResult?.avgEnergy || 70),
-        work_fit: Math.round(aggResult?.avgWorkFit || 70)
+        mood: roundOrNull(aggResult?.avgMood),
+        calm: roundOrNull(aggResult?.avgCalm),
+        stress: roundOrNull(aggResult?.avgStress),
+        energy: roundOrNull(aggResult?.avgEnergy),
+        work_fit: roundOrNull(aggResult?.avgWorkFit)
       }
     });
   } catch (err) {
@@ -585,11 +594,11 @@ router.get('/radar', async (req, res, next) => {
     });
     
     const radarData = [
-       averages['mood'] || 50,
-       averages['calm'] || 50,
-       averages['stress'] || 50,
-       averages['energy'] || 50,
-       averages['work_fit'] || 50
+       averages['mood'] ?? 50,
+       averages['calm'] ?? 50,
+       averages['stress'] ?? 50,
+       averages['energy'] ?? 50,
+       averages['work_fit'] ?? 50
     ];
     
     res.json({ success: true, data: radarData, averages });
@@ -697,15 +706,11 @@ router.get('/severity-trends', async (req, res, next) => {
     const totals = [];
 
     labels.forEach(w => {
-      const tot = weeks[w].total || 1;
-      const h = Math.round((weeks[w].healthy / tot) * 100);
-      const mi = Math.round((weeks[w].mild / tot) * 100);
-      const mo = Math.round((weeks[w].moderate / tot) * 100);
-      const s = Math.max(0, 100 - (h + mi + mo));
-      datasets.healthy.push(h);
-      datasets.mild.push(mi);
-      datasets.moderate.push(mo);
-      datasets.severe.push(s);
+      const pct = roundPercentagesLargestRemainder(weeks[w], ['healthy', 'mild', 'moderate', 'severe']);
+      datasets.healthy.push(pct.healthy);
+      datasets.mild.push(pct.mild);
+      datasets.moderate.push(pct.moderate);
+      datasets.severe.push(pct.severe);
       totals.push(weeks[w].total);
     });
 

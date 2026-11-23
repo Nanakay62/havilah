@@ -1921,12 +1921,13 @@ async function generateComplianceReport() {
     y += 8;
 
     const d = analyticsData?.dimensions;
+    const isDimValid = (v) => !isColdStart && d && v !== null && v !== undefined && Number.isFinite(Number(v));
     const dimensions = [
-      { name: 'Mood (Depression Risk)', score: (isColdStart || !d) ? '-- / 100' : `${d.mood} / 100`, bench: '70 / 100', risk: (isColdStart || !d) ? 'No Data' : (d.mood >= 70 ? 'Low Risk' : 'Moderate Risk'), color: (isColdStart || !d) ? [148, 163, 184] : (d.mood >= 70 ? [34, 197, 94] : [245, 158, 11]), trend: (isColdStart || !d) ? 'Pending' : 'Baseline' },
-      { name: 'Calm (Anxiety Control)', score: (isColdStart || !d) ? '-- / 100' : `${d.calm} / 100`, bench: '65 / 100', risk: (isColdStart || !d) ? 'No Data' : (d.calm >= 65 ? 'Low Risk' : 'Moderate Risk'), color: (isColdStart || !d) ? [148, 163, 184] : (d.calm >= 65 ? [34, 197, 94] : [245, 158, 11]), trend: (isColdStart || !d) ? 'Pending' : 'Baseline' },
-      { name: 'Stress* (Perceived Stress)', score: (isColdStart || !d) ? '-- / 100' : `${d.stress} / 100`, bench: '35 / 100', risk: (isColdStart || !d) ? 'No Data' : (d.stress <= 35 ? 'Low Risk' : 'Moderate Risk'), color: (isColdStart || !d) ? [148, 163, 184] : (d.stress <= 35 ? [34, 197, 94] : [245, 158, 11]), trend: (isColdStart || !d) ? 'Pending' : 'Baseline' },
-      { name: 'Energy (Fatigue Level)', score: (isColdStart || !d) ? '-- / 100' : `${d.energy} / 100`, bench: '68 / 100', risk: (isColdStart || !d) ? 'No Data' : (d.energy >= 68 ? 'Low Risk' : 'Moderate Risk'), color: (isColdStart || !d) ? [148, 163, 184] : (d.energy >= 68 ? [34, 197, 94] : [245, 158, 11]), trend: (isColdStart || !d) ? 'Pending' : 'Baseline' },
-      { name: 'Work-Fit (Occupational Fit)', score: (isColdStart || !d) ? '-- / 100' : `${d.workFit} / 100`, bench: '75 / 100', risk: (isColdStart || !d) ? 'No Data' : (d.workFit >= 75 ? 'Low Risk' : 'Moderate Risk'), color: (isColdStart || !d) ? [148, 163, 184] : (d.workFit >= 75 ? [34, 197, 94] : [245, 158, 11]), trend: (isColdStart || !d) ? 'Pending' : 'Baseline' }
+      { name: 'Mood (Depression Risk)', score: isDimValid(d?.mood) ? `${d.mood} / 100` : '-- / 100', bench: '70 / 100', risk: isDimValid(d?.mood) ? (d.mood >= 70 ? 'Low Risk' : 'Moderate Risk') : 'No Data', color: isDimValid(d?.mood) ? (d.mood >= 70 ? [34, 197, 94] : [245, 158, 11]) : [148, 163, 184], trend: isDimValid(d?.mood) ? 'Baseline' : 'Pending' },
+      { name: 'Calm (Anxiety Control)', score: isDimValid(d?.calm) ? `${d.calm} / 100` : '-- / 100', bench: '65 / 100', risk: isDimValid(d?.calm) ? (d.calm >= 65 ? 'Low Risk' : 'Moderate Risk') : 'No Data', color: isDimValid(d?.calm) ? (d.calm >= 65 ? [34, 197, 94] : [245, 158, 11]) : [148, 163, 184], trend: isDimValid(d?.calm) ? 'Baseline' : 'Pending' },
+      { name: 'Stress resilience (PSS-10)', score: isDimValid(d?.stress) ? `${d.stress} / 100` : '-- / 100', bench: '70 / 100', risk: isDimValid(d?.stress) ? (d.stress >= 70 ? 'Low Risk' : 'Moderate Risk') : 'No Data', color: isDimValid(d?.stress) ? (d.stress >= 70 ? [34, 197, 94] : [245, 158, 11]) : [148, 163, 184], trend: isDimValid(d?.stress) ? 'Baseline' : 'Pending' },
+      { name: 'Energy (Fatigue Level)', score: isDimValid(d?.energy) ? `${d.energy} / 100` : '-- / 100', bench: '68 / 100', risk: isDimValid(d?.energy) ? (d.energy >= 68 ? 'Low Risk' : 'Moderate Risk') : 'No Data', color: isDimValid(d?.energy) ? (d.energy >= 68 ? [34, 197, 94] : [245, 158, 11]) : [148, 163, 184], trend: isDimValid(d?.energy) ? 'Baseline' : 'Pending' },
+      { name: 'Work-Fit (Occupational Fit)', score: isDimValid(d?.workFit) ? `${d.workFit} / 100` : '-- / 100', bench: '75 / 100', risk: isDimValid(d?.workFit) ? (d.workFit >= 75 ? 'Low Risk' : 'Moderate Risk') : 'No Data', color: isDimValid(d?.workFit) ? (d.workFit >= 75 ? [34, 197, 94] : [245, 158, 11]) : [148, 163, 184], trend: isDimValid(d?.workFit) ? 'Baseline' : 'Pending' }
     ];
 
     dimensions.forEach((dim, idx) => {
@@ -1958,7 +1959,7 @@ async function generateComplianceReport() {
     pdf.setFontSize(8);
     pdf.setFont('helvetica', 'italic');
     pdf.setTextColor(100, 116, 139);
-    pdf.text('*Note: Higher scores reflect positive wellbeing, except for Stress where lower scores indicate lower risk.', margin, y + 3);
+    pdf.text('Note: Higher scores (0-100) indicate healthier wellbeing and stronger resilience across all five dimensions.', margin, y + 3);
 
     y += 16;
 
@@ -3242,9 +3243,10 @@ const App = (() => {
   function getRadarData() {
     if (state.analytics && state.analytics.meets_n_threshold && state.analytics.averages) {
       const a = state.analytics.averages;
-      return [a.mood || 70, a.calm || 70, a.stress || 40, a.energy || 70, a.work_fit || 70];
+      const numOrZero = (v) => (v !== null && v !== undefined && Number.isFinite(Number(v))) ? Number(v) : 0;
+      return [numOrZero(a.mood), numOrZero(a.calm), numOrZero(a.stress), numOrZero(a.energy), numOrZero(a.work_fit)];
     }
-    return [70, 70, 40, 70, 70];
+    return [0, 0, 0, 0, 0];
   }
 
   function renderKPIs() {
@@ -3260,9 +3262,17 @@ const App = (() => {
     let avgIndex = '--';
     let avgHint = 'Requires N ≥ 5 responses';
     if (meetsThreshold && avgObj) {
-      const composite = Math.round(((avgObj.mood || 70) + (avgObj.calm || 70) + (100 - (avgObj.stress || 40)) + (avgObj.energy || 70) + (avgObj.work_fit || 70)) / 5);
-      avgIndex = String(composite);
-      avgHint = 'Aggregated across 5 dimensions';
+      const vals = [avgObj.mood, avgObj.calm, avgObj.stress, avgObj.energy, avgObj.work_fit]
+        .filter(v => v !== null && v !== undefined && Number.isFinite(Number(v)))
+        .map(Number);
+      if (vals.length > 0) {
+        const composite = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+        avgIndex = String(composite);
+        avgHint = vals.length === 5 ? 'Aggregated across 5 dimensions' : `Aggregated across ${vals.length} dimensions`;
+      } else {
+        avgIndex = '--';
+        avgHint = 'Awaiting dimension submissions';
+      }
     }
 
     const criticalAlertsCount = (state.alertsList || []).filter(a => a.severity === 'CRITICAL' || a.icon === 'critical').length;
@@ -3344,10 +3354,10 @@ const App = (() => {
     state.charts.radar = new Chart(ctx, {
       type: 'radar',
       data: {
-        labels: ['Mood', 'Calm', 'Stress', 'Energy', 'Work-Fit'],
+        labels: ['Mood', 'Calm', 'Stress resilience', 'Energy', 'Work-Fit'],
         datasets: [
           { label: 'Current Org Average', data: getRadarData(), backgroundColor: 'rgba(15, 118, 110, 0.16)', borderColor: t.chart1, borderWidth: 2, pointBackgroundColor: t.chart1, pointBorderColor: '#FFFFFF', pointBorderWidth: 2, pointRadius: 4 },
-          { label: 'Target', data: [80, 78, 30, 78, 80], backgroundColor: 'rgba(100, 116, 139, 0.08)', borderColor: t.chart5, borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0 }
+          { label: 'Target', data: [80, 78, 78, 78, 80], backgroundColor: 'rgba(100, 116, 139, 0.08)', borderColor: t.chart5, borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0 }
         ]
       },
       options: {
@@ -3384,7 +3394,7 @@ const App = (() => {
         }
         renderKPIs();
         if (state.charts.radar && res.meets_n_threshold && res.averages) {
-          state.charts.radar.data.datasets[0].data = [res.averages.mood || 70, res.averages.calm || 70, res.averages.stress || 40, res.averages.energy || 70, res.averages.work_fit || 70];
+          state.charts.radar.data.datasets[0].data = getRadarData();
           state.charts.radar.update();
         } else {
           initRadarChart();

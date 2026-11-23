@@ -18,7 +18,7 @@ const { coarsenTimestamp } = require('../utils/crypto');
  * accidental PII leakage.
  */
 
-const SURVEY_TYPES = ['phq9', 'gad7', 'pss10', 'fas10', 'copsoq3_core', 'copsoq3_middle', 'copsoq3_long'];
+const SURVEY_TYPES = ['phq9', 'gad7', 'pss10', 'fas10', 'copsoq3_core', 'copsoq3_middle', 'copsoq3_long', 'daily_pulse'];
 const RISK_CATEGORIES = ['psychosocial', 'workload', 'interpersonal', 'environmental', 'organizational'];
 const SEVERITY_BANDS = ['healthy', 'mild', 'moderate', 'severe'];
 

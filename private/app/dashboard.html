@@ -4972,11 +4972,11 @@ const App = (() => {
       composite_score: 0,
       marker: 0,
       dimensions: [
-        { label: 'Mood', value: 0, status: 'healthy' },
-        { label: 'Calm', value: 0, status: 'healthy' },
-        { label: 'Stress', value: 0, status: 'healthy' },
-        { label: 'Energy', value: 0, status: 'healthy' },
-        { label: 'Work-fit', value: 0, status: 'healthy' }
+        { label: 'Mood', value: 0, hasValue: false, status: 'healthy' },
+        { label: 'Calm', value: 0, hasValue: false, status: 'healthy' },
+        { label: 'Stress', value: 0, hasValue: false, status: 'healthy' },
+        { label: 'Energy', value: 0, hasValue: false, status: 'healthy' },
+        { label: 'Work-fit', value: 0, hasValue: false, status: 'healthy' }
       ]
     },
     hrFilters: {
@@ -5436,7 +5436,8 @@ const App = (() => {
       tenantId: tenantId,
       departmentCode: departmentCode,
       currentQuestion: 0,
-      answers: []
+      answers: [],
+      answerMeta: []
     };
     
     const backdropEl = document.getElementById('surveyBackdrop');
@@ -5451,6 +5452,13 @@ const App = (() => {
     
     const modalTitleEl = document.getElementById('modalTitle');
     if (modalTitleEl) modalTitleEl.innerText = survey.name || survey.title;
+
+    const modalQNumEl = document.getElementById('modalQNum');
+    if (modalQNumEl) modalQNumEl.style.display = '';
+    const modalBackEl = document.getElementById('modalBack');
+    if (modalBackEl) modalBackEl.style.display = '';
+    const modalNextEl = document.getElementById('modalNext');
+    if (modalNextEl) modalNextEl.style.display = '';
     
     openModal('surveyBackdrop');
     renderQuestion();
@@ -5461,9 +5469,32 @@ const App = (() => {
     closeModal('surveyBackdrop');
   }
 
+  function isConditionalQuestionSkipped(survey, index) {
+    if (!survey || !Array.isArray(survey.questions)) return false;
+    const qObj = survey.questions[index];
+    if (!qObj || typeof qObj !== 'object' || !qObj.conditionalOn) return false;
+    const triggerIdx = survey.questions.findIndex(q => q && typeof q === 'object' && q.id === qObj.conditionalOn);
+    if (triggerIdx === -1) return false;
+    const triggerVal = state.surveyState.answers[triggerIdx];
+    return triggerVal === undefined || triggerVal === null || Number(triggerVal) <= 0;
+  }
+
   function renderQuestion() {
     const sType = state.surveyState.type;
     const survey = surveys[sType];
+    while (
+      survey &&
+      Array.isArray(survey.questions) &&
+      state.surveyState.currentQuestion < survey.questions.length &&
+      isConditionalQuestionSkipped(survey, state.surveyState.currentQuestion)
+    ) {
+      const skippedIdx = state.surveyState.currentQuestion;
+      state.surveyState.answers[skippedIdx] = -1;
+      if (Array.isArray(state.surveyState.answerMeta)) {
+        state.surveyState.answerMeta[skippedIdx] = null;
+      }
+      state.surveyState.currentQuestion++;
+    }
     const currentIndex = state.surveyState.currentQuestion;
     
     if (currentIndex >= survey.questions.length) {
@@ -5506,12 +5537,23 @@ const App = (() => {
       if (state.surveyState.answers[currentIndex] === opt.value) {
         btn.classList.add('selected');
       }
+      const valueBadge = Number(opt.value) >= 0
+        ? ` <span style="color: var(--text-3); font-size: 0.85em; margin-left: 6px;">(${opt.value})</span>`
+        : '';
       btn.innerHTML = `
         <div class="option-radio"></div>
-        <div class="option-text">${opt.text} <span style="color: var(--text-3); font-size: 0.85em; margin-left: 6px;">(${opt.value})</span></div>
+        <div class="option-text">${opt.text}${valueBadge}</div>
       `;
       btn.onclick = () => {
         state.surveyState.answers[currentIndex] = opt.value;
+        if (!Array.isArray(state.surveyState.answerMeta)) state.surveyState.answerMeta = [];
+        state.surveyState.answerMeta[currentIndex] = {
+          item_code: (qObj && typeof qObj === 'object' && qObj.id) ? qObj.id : undefined,
+          question_index: currentIndex,
+          value: (qObj && qObj.responseType === 8) ? Math.round(Number(opt.value) / 10) : idx,
+          score: Number(opt.value),
+          responseType: qObj && typeof qObj === 'object' ? qObj.responseType : undefined
+        };
         if (sType === 'phq9' && currentIndex === 8 && Number(opt.value) >= 1) {
           state.surveyState.crisisTriggeredImmediate = true;
           if (window.WF_CrisisDetector && typeof window.WF_CrisisDetector.showCrisisBanner === 'function') {
@@ -5525,8 +5567,15 @@ const App = (() => {
   }
   
   function surveyBack() {
+    const survey = surveys[state.surveyState.type];
     if (state.surveyState.currentQuestion > 0) {
       state.surveyState.currentQuestion--;
+      while (
+        state.surveyState.currentQuestion > 0 &&
+        isConditionalQuestionSkipped(survey, state.surveyState.currentQuestion)
+      ) {
+        state.surveyState.currentQuestion--;
+      }
       renderQuestion();
     }
   }
@@ -5542,6 +5591,10 @@ const App = (() => {
   async function completeSurvey() {
     const sType = state.surveyState.type;
     const answers = state.surveyState.answers;
+    const structuredResponses = Array.isArray(state.surveyState.answerMeta)
+      ? state.surveyState.answerMeta.filter(r => r && r.item_code && Number(r.score) >= 0 && r.responseType !== '5M')
+      : [];
+    let submitData = {};
     
     // Show Loading
     document.getElementById('modalQText').innerHTML = `
@@ -5556,18 +5609,23 @@ const App = (() => {
     document.getElementById('modalQNum').style.display = 'none';
 
     try {
+      const payloadBody = {
+        survey_type: sType,
+        instrument_code: state.surveyState.instrumentCode || normalizeInstrumentCode(sType),
+        tenant_id: state.surveyState.tenantId || getWorkerTenantId(),
+        department_code: state.surveyState.departmentCode || getWorkerDepartmentCode(),
+        answers
+      };
+      if (structuredResponses.length > 0) {
+        payloadBody.responses = structuredResponses;
+      }
+
       const res = await apiFetch('/api/v1/wellness/submit-checkin', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ 
-          survey_type: sType, 
-          instrument_code: state.surveyState.instrumentCode || normalizeInstrumentCode(sType),
-          tenant_id: state.surveyState.tenantId || getWorkerTenantId(),
-          department_code: state.surveyState.departmentCode || getWorkerDepartmentCode(),
-          answers 
-        })
+        body: JSON.stringify(payloadBody)
       });
 
       const cType = res.headers.get('content-type') || '';
@@ -5579,6 +5637,7 @@ const App = (() => {
           data = {};
         }
       }
+      submitData = data || {};
       
       if (!res.ok || !data.success) {
         if (res.status === 403 && (data.error === 'CONSENT_REQUIRED' || String(data.message || '').includes('consent') || String(data.error || '').includes('CONSENT'))) {
@@ -5593,9 +5652,11 @@ const App = (() => {
         state.wellbeing.dimensions.forEach(d => {
           const dimKey = d.label === 'Work-fit' ? 'work_fit' : d.label.toLowerCase();
           const val = data.baseline_profile[dimKey];
-          if (val !== null) {
-            d.value = val;
-            d.status = val >= 75 ? 'healthy' : val >= 50 ? 'moderate' : 'at-risk';
+          if (val !== null && val !== undefined && Number.isFinite(Number(val))) {
+            const numVal = Math.round(Number(val));
+            d.value = numVal;
+            d.hasValue = true;
+            d.status = numVal >= 75 ? 'healthy' : numVal >= 50 ? 'moderate' : 'at-risk';
           }
         });
         if (typeof populateSettingsProfile === 'function') populateSettingsProfile();
@@ -5618,39 +5679,72 @@ const App = (() => {
     }
 
     // Accurate Scoring Logic for UI Display
+    const surveyDef = surveys[sType];
+    const summary = (submitData && submitData.score_summary) ? submitData.score_summary : null;
     let rawScore = 0;
+    let maxScore = 100;
     let normalized = 0;
     
     if (sType === 'phq9') {
-      answers.forEach(v => rawScore += v);
+      maxScore = 27;
+      rawScore = (surveyDef && typeof surveyDef.score === 'function')
+        ? surveyDef.score(answers)
+        : answers.reduce((acc, v) => acc + (Number(v) || 0), 0);
       normalized = 100 - ((rawScore / 27) * 100);
     } else if (sType === 'gad7') {
-      answers.forEach(v => rawScore += v);
+      maxScore = 21;
+      rawScore = (surveyDef && typeof surveyDef.score === 'function')
+        ? surveyDef.score(answers)
+        : answers.reduce((acc, v) => acc + (Number(v) || 0), 0);
       normalized = 100 - ((rawScore / 21) * 100);
     } else if (sType === 'pss10') {
+      maxScore = 40;
       const reverse = [3, 4, 6, 7];
-      answers.forEach((v, i) => {
-        rawScore += reverse.includes(i) ? (4 - v) : v;
-      });
+      rawScore = (surveyDef && typeof surveyDef.score === 'function')
+        ? surveyDef.score(answers)
+        : answers.reduce((acc, v, i) => acc + (reverse.includes(i) ? (4 - (Number(v) || 0)) : (Number(v) || 0)), 0);
       normalized = 100 - ((rawScore / 40) * 100);
     } else if (sType === 'fas10') {
+      maxScore = 50;
       const reverse = [3, 9];
-      answers.forEach((v, i) => {
-        rawScore += reverse.includes(i) ? (6 - v) : v;
-      });
+      rawScore = (surveyDef && typeof surveyDef.score === 'function')
+        ? surveyDef.score(answers)
+        : answers.reduce((acc, v, i) => acc + (reverse.includes(i) ? (6 - (Number(v) || 1)) : (Number(v) || 1)), 0);
       normalized = 100 - (((rawScore - 10) / 40) * 100);
     } else if (sType.startsWith('copsoq')) {
-      answers.forEach(v => rawScore += v);
-      normalized = answers.length > 0 ? (rawScore / answers.length) : 0;
+      maxScore = 100;
+      normalized = (surveyDef && typeof surveyDef.score === 'function')
+        ? surveyDef.score(answers)
+        : 0;
+      rawScore = normalized;
+    }
+
+    if (summary && summary.raw_score !== null && summary.raw_score !== undefined && Number.isFinite(Number(summary.raw_score))) {
+      rawScore = Number(summary.raw_score);
+    }
+    if (summary && summary.max_score !== null && summary.max_score !== undefined && Number.isFinite(Number(summary.max_score))) {
+      maxScore = Number(summary.max_score);
+    }
+    if (summary && summary.wellbeing_index !== null && summary.wellbeing_index !== undefined && Number.isFinite(Number(summary.wellbeing_index))) {
+      normalized = Number(summary.wellbeing_index);
     }
     
     normalized = Math.max(0, Math.min(100, Math.round(normalized)));
     const phq9Q9Score = (sType === 'phq9' && Array.isArray(answers)) ? (Number(answers[8]) || 0) : 0;
-    const clinicalSum = (Array.isArray(answers) ? answers : []).reduce((acc, v) => acc + (Number(v) || 0), 0);
     const isCrisisQ9 = phq9Q9Score >= 1;
-    const isSevereClinical = (sType === 'phq9' && clinicalSum >= 20) || (sType === 'gad7' && clinicalSum >= 15);
-    let statusLabel = normalized >= 75 ? 'Healthy' : normalized >= 50 ? 'Moderate' : 'At Risk';
-    let statusColor = normalized >= 75 ? 'var(--healthy)' : normalized >= 50 ? '#f59e0b' : 'var(--critical)';
+    const isSevereClinical = (sType === 'phq9' && rawScore >= 20) || (sType === 'gad7' && rawScore >= 15);
+    const sevObj = (!sType.startsWith('copsoq') && surveyDef && typeof surveyDef.severity === 'function')
+      ? surveyDef.severity(rawScore)
+      : null;
+    const severityBand = (summary && summary.severity_band)
+      || (sevObj ? sevObj.band : (normalized >= 75 ? 'healthy' : normalized >= 50 ? 'moderate' : 'at-risk'));
+    const severityLabel = (summary && summary.severity_label)
+      || (sevObj ? sevObj.label : (normalized >= 75 ? 'Healthy' : normalized >= 50 ? 'Moderate' : 'At Risk'));
+
+    let statusLabel = severityLabel;
+    let statusColor = (sevObj && sevObj.color)
+      ? sevObj.color
+      : (normalized >= 75 ? 'var(--healthy)' : normalized >= 50 ? '#f59e0b' : 'var(--critical)');
     if (isCrisisQ9) {
       statusLabel = 'Immediate Support Needed';
       statusColor = '#dc2626';
@@ -5660,17 +5754,28 @@ const App = (() => {
     }
 
     // Update Dimension Mapping
-    const dimMap = { 'phq9': 'Mood', 'gad7': 'Calm', 'pss10': 'Stress', 'fas10': 'Energy', 'copsoq3_core': 'Work-fit' };
+    const dimMap = {
+      'phq9': 'Mood',
+      'gad7': 'Calm',
+      'pss10': 'Stress',
+      'fas10': 'Energy',
+      'copsoq3_core': 'Work-fit',
+      'copsoq3_middle': 'Work-fit',
+      'copsoq3_long': 'Work-fit'
+    };
     const dimLabel = dimMap[sType] || 'Work-fit';
     
     const dimIndex = state.wellbeing.dimensions.findIndex(d => d.label === dimLabel);
     if (dimIndex !== -1) {
       state.wellbeing.dimensions[dimIndex].value = normalized;
-      state.wellbeing.dimensions[dimIndex].status = statusLabel.toLowerCase().replace(' ', '-');
+      state.wellbeing.dimensions[dimIndex].hasValue = true;
+      state.wellbeing.dimensions[dimIndex].status = statusLabel.toLowerCase().replace(/\s+/g, '-');
     }
     
-    state.surveyProgress[sType].completed = true;
-    state.surveyProgress[sType].score = normalized;
+    if (state.surveyProgress[sType]) {
+      state.surveyProgress[sType].completed = true;
+      state.surveyProgress[sType].score = normalized;
+    }
 
     // Refresh history and trend chart cleanly from backend database
     if (typeof fetchDashboardData === 'function') {
@@ -5733,17 +5838,26 @@ const App = (() => {
 
     state.lastCompletedAssessment = {
       surveyType: sType,
+      surveyVersion: sType,
       score: normalized,
       rawScore: rawScore,
+      maxScore: maxScore,
+      severityBand: severityBand,
+      severityLabel: severityLabel,
       answers: Array.isArray(answers) ? answers.slice() : [],
+      responses: structuredResponses,
       isCrisisQ9: Boolean(isCrisisQ9)
     };
+
+    const rawScoreSuffix = (!sType.startsWith('copsoq') && maxScore)
+      ? ` (Raw score: ${rawScore}/${maxScore})`
+      : '';
 
     document.getElementById('modalProgress').style.width = '100%';
     document.getElementById('modalQText').innerHTML = `<div style="text-align:center; padding: 20px 0;">
       <svg viewBox="0 0 24 24" fill="none" stroke="${statusColor}" stroke-width="2" style="width: 64px; height: 64px; margin-bottom: 16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
       <h3 style="font-size: 1.5rem; margin-bottom: 8px;">Check-in Complete</h3>
-      <p style="color: var(--text-2); font-size: 1.05rem; margin-bottom: 14px;">You scored <strong>${normalized}</strong> on the ${dimLabel} scale.</p>
+      <p style="color: var(--text-2); font-size: 1.05rem; margin-bottom: 14px;">You scored <strong>${normalized}/100</strong> on the ${dimLabel} scale${rawScoreSuffix}.</p>
       <div style="display: inline-block; padding: 6px 14px; border-radius: 100px; background: ${statusColor}22; color: ${statusColor}; font-weight: 600; font-size: 0.9rem; margin-bottom: 14px;">Status: ${statusLabel}</div>
       ${lowScoreTriggerHtml}
       <div style="display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 20px; flex-wrap: wrap;">
@@ -5974,16 +6088,16 @@ const App = (() => {
 
     if (code.includes('PHQ9')) {
       maxScore = maxScore || 27;
-      if (rawScore === undefined || rawScore === null) rawScore = Math.round((overallIndex / 100) * 27);
+      if (rawScore === undefined || rawScore === null) rawScore = Math.round((1 - (overallIndex / 100)) * 27);
     } else if (code.includes('GAD7')) {
       maxScore = maxScore || 21;
-      if (rawScore === undefined || rawScore === null) rawScore = Math.round((overallIndex / 100) * 21);
+      if (rawScore === undefined || rawScore === null) rawScore = Math.round((1 - (overallIndex / 100)) * 21);
     } else if (code.includes('PSS10')) {
       maxScore = maxScore || 40;
       if (rawScore === undefined || rawScore === null) rawScore = Math.round((1 - (overallIndex / 100)) * 40);
     } else if (code.includes('FAS10')) {
       maxScore = maxScore || 50;
-      if (rawScore === undefined || rawScore === null) rawScore = Math.round((1 - (overallIndex / 100)) * 50);
+      if (rawScore === undefined || rawScore === null) rawScore = Math.round(10 + (1 - (overallIndex / 100)) * 40);
     } else if (code.includes('COPSOQ')) {
       maxScore = maxScore || 100;
       if (rawScore === undefined || rawScore === null) rawScore = overallIndex;
@@ -6099,7 +6213,7 @@ const App = (() => {
                   { key: 'workFit', altKey: 'work_fit', label: 'Work-Fit' }
                 ].map((item, idx) => {
                   let rawVal = dims[item.key] ?? (item.altKey ? dims[item.altKey] : undefined);
-                  if (typeof rawVal !== 'number' || rawVal <= 0) {
+                  if (typeof rawVal !== 'number' || !Number.isFinite(rawVal)) {
                     rawVal = overallIndex;
                   }
                   const val = Math.min(100, Math.max(0, Math.round(rawVal)));
@@ -6199,7 +6313,7 @@ const App = (() => {
     gad7: { code: 'GAD-7', name: 'GAD-7 (Anxiety Self-Check)', title: 'GAD-7 Anxiety Check', description: '7-item generalized anxiety disorder scale.', estimatedMinutes: 2 },
     pss10: { code: 'PSS-10', name: 'PSS-10 (Perceived Stress)', title: 'PSS-10 Perceived Stress', description: '10-item measure of perceived life stress.', estimatedMinutes: 4 },
     fas10: { code: 'FAS-10', name: 'FAS-10 (Fatigue Assessment)', title: 'FAS-10 Fatigue Assessment', description: '10-item fatigue assessment scale evaluating physical and mental exhaustion.', estimatedMinutes: 4 },
-    copsoq3_core: { code: 'COPSOQ III', name: 'COPSOQ III (Core)', title: 'COPSOQ III - Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Core edition).', estimatedMinutes: 5 },
+    copsoq3_core: { code: 'COPSOQ III', name: 'COPSOQ III (Core)', title: 'COPSOQ III - Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Core edition).', estimatedMinutes: 8 },
     copsoq3_middle: { code: 'COPSOQ III', name: 'COPSOQ III (Middle)', title: 'COPSOQ III - Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Middle edition).', estimatedMinutes: 10 },
     copsoq3_long: { code: 'COPSOQ III', name: 'COPSOQ III (Long)', title: 'COPSOQ III - Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Long edition).', estimatedMinutes: 15 }
   };
@@ -6368,7 +6482,9 @@ const App = (() => {
     const dims = Array.isArray(state.wellbeing?.dimensions) ? state.wellbeing.dimensions : [];
     const dimVal = (label) => {
       const found = dims.find(d => (d.label || '').toLowerCase() === label.toLowerCase());
-      return found && Number(found.value) > 0 ? Math.round(Number(found.value)) : null;
+      return (found && found.hasValue && Number.isFinite(Number(found.value)))
+        ? Math.round(Number(found.value))
+        : null;
     };
     const latestFromHistory = (matcher) => {
       for (let i = history.length - 1; i >= 0; i--) {
@@ -6504,8 +6620,12 @@ const App = (() => {
       state.wellbeing.dimensions.forEach(dim => {
         const div = document.createElement('div');
         div.className = 'wb-dim';
+        const displayVal = dim.hasValue ? dim.value : '--';
+        const valColor = !dim.hasValue
+          ? 'var(--text-3)'
+          : (dim.status === 'healthy' ? 'var(--healthy)' : dim.status === 'thriving' ? '#10b981' : dim.status === 'moderate' ? '#f59e0b' : 'var(--critical)');
         div.innerHTML = `
-          <div style="font-size: 1.25rem; font-weight: 700; color: ${dim.status === 'healthy' ? 'var(--healthy)' : dim.status === 'thriving' ? '#10b981' : dim.status === 'moderate' ? '#f59e0b' : 'var(--critical)'}">${dim.value}</div>
+          <div style="font-size: 1.25rem; font-weight: 700; color: ${valColor}">${displayVal}</div>
           <div style="font-size: 0.75rem; color: var(--text-3); font-weight: 500; text-transform: uppercase;">${dim.label}</div>
         `;
         breakdown.appendChild(div);
@@ -6597,9 +6717,13 @@ const App = (() => {
         state.wellbeing.dimensions.forEach(d => {
           const dimKey = d.label === 'Work-fit' ? 'work_fit' : d.label.toLowerCase();
           const val = data.baseline_profile[dimKey];
-          if (val !== null) {
-            d.value = val;
-            d.status = val >= 75 ? 'healthy' : val >= 50 ? 'moderate' : 'at-risk';
+          if (val !== null && val !== undefined && Number.isFinite(Number(val))) {
+            const numVal = Math.round(Number(val));
+            d.value = numVal;
+            d.hasValue = true;
+            d.status = numVal >= 75 ? 'healthy' : numVal >= 50 ? 'moderate' : 'at-risk';
+          } else {
+            d.hasValue = false;
           }
         });
         
@@ -6615,14 +6739,19 @@ const App = (() => {
             dimensions: item.dimensions !== undefined ? item.dimensions : null
           }));
           
-          // Latest composite score
-          const latest = data.history[data.history.length - 1];
-          if (latest) {
-            state.wellbeing.composite_score = latest.score;
+          const populatedDims = state.wellbeing.dimensions.filter(d => d.hasValue && Number.isFinite(Number(d.value)));
+          if (populatedDims.length > 0) {
+            state.wellbeing.composite_score = Math.round(populatedDims.reduce((acc, d) => acc + Number(d.value), 0) / populatedDims.length);
+          } else {
+            const latest = data.history[data.history.length - 1];
+            state.wellbeing.composite_score = (latest && Number.isFinite(Number(latest.score))) ? Number(latest.score) : 0;
           }
         } else {
           state.employeeHistoryPayload = [];
-          state.wellbeing.composite_score = 0;
+          const populatedDims = state.wellbeing.dimensions.filter(d => d.hasValue && Number.isFinite(Number(d.value)));
+          state.wellbeing.composite_score = populatedDims.length > 0
+            ? Math.round(populatedDims.reduce((acc, d) => acc + Number(d.value), 0) / populatedDims.length)
+            : 0;
         }
       }
       updateTrendChart();

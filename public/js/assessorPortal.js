@@ -934,6 +934,16 @@
     }
   }
 
+  function getReferralCompanyName(r, fallback = '') {
+    return (
+      r?.tenantId?.company_name ||
+      r?.tenantId?.companyName ||
+      r?.companyName ||
+      r?.company_name ||
+      fallback
+    );
+  }
+
   function updateCompanyFilter() {
     const select = document.getElementById('companyFilterSelect');
     const exportSelect = document.getElementById('exportCompanySelect');
@@ -944,20 +954,12 @@
     state.queue.forEach((r) => {
       if (r.tenantId) {
         const id = r.tenantId._id || r.tenantId;
-        const name = r.tenantId.company_name || r.tenantId.companyName || 'Company';
+        const name = getReferralCompanyName(r, 'Company');
         companies.set(String(id), name);
       }
     });
 
     state.hasMultipleCompanies = companies.size > 1;
-    const table = document.getElementById('referralsTable');
-    if (table) {
-      table.classList.toggle('hide-company-col', !state.hasMultipleCompanies);
-    }
-    if (!state.hasMultipleCompanies && state.sorting.field === 'company') {
-      state.sorting.field = 'createdAt';
-      state.sorting.asc = false;
-    }
 
     let optionsHtml = '<option value="all">All client companies</option>';
     companies.forEach((name, id) => {
@@ -1298,7 +1300,7 @@
         const pName = (r.clinicalDetails?.patientName || '').toLowerCase();
         const pContact = (r.clinicalDetails?.patientContact || '').toLowerCase();
         const dept = (r.departmentName || '').toLowerCase();
-        const comp = (r.tenantId?.company_name || '').toLowerCase();
+        const comp = getReferralCompanyName(r).toLowerCase();
         const docName = (r.assignedDoctorId?.fullName || '').toLowerCase();
         return ref.includes(q) || pName.includes(q) || pContact.includes(q) || dept.includes(q) || comp.includes(q) || docName.includes(q);
       });
@@ -1313,8 +1315,8 @@
         valA = (a.referenceCode || '').toLowerCase();
         valB = (b.referenceCode || '').toLowerCase();
       } else if (field === 'company') {
-        valA = (a.tenantId?.company_name || a.tenantId?.companyName || '').toLowerCase();
-        valB = (b.tenantId?.company_name || b.tenantId?.companyName || '').toLowerCase();
+        valA = getReferralCompanyName(a).toLowerCase();
+        valB = getReferralCompanyName(b).toLowerCase();
       } else if (field === 'patientName') {
         valA = (a.clinicalDetails?.patientName || '').toLowerCase();
         valB = (b.clinicalDetails?.patientName || '').toLowerCase();
@@ -1381,7 +1383,7 @@
     if (nextBtn) nextBtn.disabled = page >= totalPages;
 
     tableBody.innerHTML = '';
-    const visibleColCount = state.hasMultipleCompanies ? 8 : 7;
+    const visibleColCount = 8;
     if (pageItems.length === 0) {
       if (state.queue.length === 0) {
         tableBody.innerHTML = `
@@ -1417,7 +1419,7 @@
     pageItems.forEach((r) => {
       const tr = document.createElement('tr');
 
-      const companyName = r.tenantId?.company_name || r.tenantId?.companyName || 'Organization';
+      const companyName = getReferralCompanyName(r, 'Organization');
       const patientName = r.clinicalDetails?.patientName || '-';
       const patientContact = r.clinicalDetails?.patientContact || '-';
       const receivedStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';

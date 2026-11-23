@@ -2388,16 +2388,18 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
   <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
     
     <h3 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0 0 4px 0; text-align: center; width: 100%;">Wellbeing Balance</h3>
-    <p style="font-size: 0.875rem; color: #4b5563; margin: 0 0 24px 0; text-align: center; width: 100%;">Wellbeing Wellness Dimensions</p>
+    <p style="font-size: 0.875rem; color: #4b5563; margin: 0 0 24px 0; text-align: center; width: 100%;">Composite score across 5 dimensions</p>
     
     <div style="cursor: pointer; display: flex; flex-direction: column; align-items: center;" onclick="App.toggleContextDrawer()">
-      <svg style="width: 128px; height: 128px; transform: rotate(-90deg);" viewBox="0 0 100 100">
-        <circle stroke-width="8" stroke="#2d3748" fill="transparent" r="42" cx="50" cy="50"/>
-        <circle id="wellbeing-progress-ring" style="transition: stroke-dashoffset 0.7s ease-out, stroke 0.7s ease-out;" stroke-width="8" stroke-dasharray="263.89" stroke-dashoffset="263.89" stroke-linecap="round" stroke="#f59e0b" fill="transparent" r="42" cx="50" cy="50"/>
-      </svg>
-      <div style="margin-top: 12px; text-align: center;">
-        <span id="wellbeing-ring-percent" style="font-size: 0.875rem; font-weight: 600; color: #1f2937;"></span>
-        <span style="font-size: 0.875rem; color: #4b5563; margin-left: 4px;">Details</span>
+      <div style="position: relative; width: 128px; height: 128px; display: inline-flex; align-items: center; justify-content: center;">
+        <svg style="width: 128px; height: 128px; transform: rotate(-90deg);" viewBox="0 0 100 100">
+          <circle stroke-width="8" stroke="#2d3748" fill="transparent" r="42" cx="50" cy="50"/>
+          <circle id="wellbeing-progress-ring" style="transition: stroke-dashoffset 0.7s ease-out, stroke 0.7s ease-out;" stroke-width="8" stroke-dasharray="263.89" stroke-dashoffset="263.89" stroke-linecap="round" stroke="#f59e0b" fill="transparent" r="42" cx="50" cy="50"/>
+        </svg>
+        <span id="wellbeing-ring-percent" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.625rem; font-weight: 700; color: #111827; font-variant-numeric: tabular-nums; line-height: 1; pointer-events: none;"></span>
+      </div>
+      <div style="margin-top: 10px; text-align: center;">
+        <span style="font-size: 0.8125rem; font-weight: 500; color: #4b5563;">Details</span>
       </div>
     </div>
   </div>
@@ -6580,7 +6582,7 @@ const App = (() => {
     } else {
       if (emptyState) emptyState.style.display = 'none';
       if (heroCard) heroCard.style.display = 'flex';
-      // context drawer manages its own height, so don't force it to block
+      if (contextDrawer) contextDrawer.style.display = 'block';
       if (trendCard) trendCard.style.display = 'block';
     }
 

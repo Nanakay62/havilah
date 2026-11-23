@@ -1,437 +1,433 @@
 /**
- * heroViz.js - Anonymity & Aggregation Hero Simulation
- * Havilah Landing Page
+ * heroViz.js - Autonomous N >= 5 Team Cohort Aggregation Simulation
+ * Havilah Landing Page Privacy Shield Hero Card
  *
- * Demonstrates the core privacy promise:
- * - Individual answers stay strictly private (permanent grey "You" dot, labeled "Your answer: never shown").
- * - Results only become visible to HR when a group reaches ANONYMITY_THRESHOLD (5 or more).
- * - Floating aggregate card: "HR sees: 6 responses · Wellbeing 72 · Sample".
- * - 3-step story caption advances every ~2.5s.
- * - Reads colors strictly from design tokens via getComputedStyle.
- * - Pauses on IntersectionObserver & visibilitychange; handles prefers-reduced-motion.
+ * Demonstrates zero-click organic privacy threshold aggregation:
+ * - 15 floating employee response dots (#64748B slate by default).
+ * - Dot 0 carries a subtle protective outer ring representing "Your answer".
+ * - Autonomous Director cycles target attracted group size across [3, 6, 2, 7, 4, 5, 8, 3],
+ *   holding unlocked states (~4.5s) longer than locked states (~3.5s).
+ * - Nearest particles drift organically into the central gravity well with soft repulsion.
+ * - Updates dedicated non-overlapping DOM status row, bottom HR readout pill, and story caption.
+ * - 60fps HTML5 2D Canvas with DPR capping (max 2), visibility pause, and reduced-motion support.
  */
 
 (function () {
   'use strict';
 
-  const ANONYMITY_THRESHOLD = 5;
-  const GROUPS = 7;
-  const MIGRATION_INTERVAL = 2600;
-  const FADE_DURATION = 400;
-  const STORY_INTERVAL = 2500;
+  const THRESHOLD = 5;
+  const DOT_COUNT = 15;
+  const DIRECTOR_SEQUENCE = [3, 6, 2, 7, 4, 5, 8, 3];
+  const LOCKED_HOLD_MS = 3500;
+  const UNLOCKED_HOLD_MS = 4500;
 
-  const STORY_STEPS = [
-    'Your answer stays private.',
-    'Together with 4 or more colleagues…',
-    'HR sees only the group.',
-  ];
-
-  const parseRgb = (s, fallback) => {
-    if (!s) return fallback;
-    const m = s.match(/\d+/g);
-    return m && m.length >= 3 ? [+m[0], +m[1], +m[2]] : fallback;
+  // Deterministic calm sample wellbeing scores per group size (70 to 76)
+  const SAMPLE_WELLBEING_BY_N = {
+    5: 71,
+    6: 73,
+    7: 74,
+    8: 76,
+    9: 75,
   };
 
-  function init() {
+  const SLATE = [100, 116, 139]; // #64748B
+  const TEAL = [15, 118, 110];   // #0F766E
+
+  function initCohortSimulation() {
     const canvas = document.getElementById('heroAnonymityCanvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const statusLabelEl = document.getElementById('cohortStatusLabel');
+    const hrPillEl = document.getElementById('cohortHrOutputPill');
+    const hrTextEl = document.getElementById('cohortHrOutputText');
+    const hrLockIconEl = document.getElementById('cohortHrLockIcon');
+    const hrDotEl = document.getElementById('cohortHrDot');
     const captionEl = document.getElementById('heroStoryCaption');
-    const stepIndicators = [
+    const stepPills = [
       document.getElementById('heroStep1'),
       document.getElementById('heroStep2'),
       document.getElementById('heroStep3'),
     ].filter(Boolean);
 
-    // Read colors from CSS tokens
-    const cs = getComputedStyle(document.documentElement);
-    const brand = parseRgb(cs.getPropertyValue('--brand'), [15, 118, 110]);
-    const grey = parseRgb(cs.getPropertyValue('--text-subtle') || cs.getPropertyValue('--text-muted'), [100, 116, 139]);
-    const textPrimary = parseRgb(cs.getPropertyValue('--text'), [15, 23, 42]);
-    const textMuted = parseRgb(cs.getPropertyValue('--text-muted'), [71, 85, 105]);
-    const surface = cs.getPropertyValue('--surface').trim() || '#FFFFFF';
-    const border = cs.getPropertyValue('--border').trim() || '#E2E8F0';
+    const prefersReduced =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+    let w = 0;
+    let h = 0;
+    let dpr = 1;
+    let cx = 0;
+    let cy = 0;
+    let wellRadius = 64;
 
-    let w = 0, h = 0, dpr = 1;
-    let dots = [], groups = [];
-    let running = false, rafId = null, lastT = 0, migrationTimer = 0;
-    let storyIndex = 0, storyTimer = 0;
-    let frames = 0, fTime = 0, throttled = false;
+    let particles = [];
+    let seqIdx = 0;
+    let targetGroupSize = prefersReduced ? 6 : DIRECTOR_SEQUENCE[0];
+    let phaseTimer = 0;
+    let unlockAlpha = prefersReduced ? 1 : 0;
+    let lastReportedCount = -1;
+    let lastReportedUnlocked = null;
 
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let running = false;
+    let inView = true;
+    let rafId = null;
+    let lastT = 0;
+    let clock = 0;
 
-    function reset() {
-      groups = [];
-      const m = 48, cols = 3, rows = 2.4;
-      for (let i = 0; i < GROUPS; i++) {
-        const c = i % cols, r = Math.floor(i / cols);
-        groups.push({
-          x: m + ((w - m * 2) / cols) * (c + 0.5) + (Math.random() - 0.5) * 16,
-          y: m + ((h - m * 2) / rows) * (r + 0.5) + (Math.random() - 0.5) * 14,
-          vx: (Math.random() - 0.5) * 0.08,
-          vy: (Math.random() - 0.5) * 0.08,
-          tealAlpha: 0,
-          dots: [],
+    function createParticles() {
+      particles = [];
+      const outerMinR = wellRadius + 28;
+      const outerMaxR = Math.max(outerMinR + 24, Math.min(w * 0.44, h * 0.43));
+
+      for (let i = 0; i < DOT_COUNT; i++) {
+        const angle = (i / DOT_COUNT) * Math.PI * 2 + (i % 2 === 0 ? 0.18 : -0.14);
+        const startInWell = prefersReduced ? i < 6 : i < targetGroupSize;
+        const dist = startInWell
+          ? 16 + (i % 4) * 9
+          : outerMinR + ((i * 37) % 100) / 100 * (outerMaxR - outerMinR);
+
+        const px = cx + Math.cos(angle) * dist;
+        const py = cy + Math.sin(angle) * dist;
+
+        particles.push({
+          id: i,
+          isYou: i === 0,
+          x: px,
+          y: py,
+          vx: 0,
+          vy: 0,
+          attracted: startInWell,
+          orbitAngle: angle,
+          orbitSpeed: (i % 2 === 0 ? 1 : -1) * (0.22 + (i % 5) * 0.045),
+          orbitRadiusRatio: 0.24 + ((i * 29) % 58) / 100,
+          outerDistRatio: 0.2 + ((i * 41) % 75) / 100,
+          tealBlend: startInWell && prefersReduced ? 1 : 0,
+          wobblePhase: i * 1.17,
         });
       }
+      assignNearestAttracted(targetGroupSize);
+    }
 
-      dots = [];
-      const total = window.innerWidth < 640 ? 24 : 30;
-      // Pre-distribute so at least one group meets threshold >= 5
-      const counts = total === 24 ? [6, 3, 2, 5, 3, 3, 2] : [6, 4, 3, 5, 4, 4, 4];
-      let gIdx = 0, inG = 0;
+    function assignNearestAttracted(count) {
+      // Sort particles by current distance to the central gravity well so nearest dots drift in organically
+      const ordered = particles
+        .map((p) => ({
+          p,
+          dist: Math.hypot(p.x - cx, p.y - cy) - (p.isYou ? 6 : 0),
+        }))
+        .sort((a, b) => a.dist - b.dist);
 
-      for (let i = 0; i < total; i++) {
-        if (inG >= counts[gIdx] && gIdx < GROUPS - 1) {
-          gIdx++;
-          inG = 0;
-        }
-        const grp = groups[gIdx];
-        const a = Math.random() * 6.28;
-        const d = 14 + Math.random() * 24;
-        const tx = grp.x + Math.cos(a) * d;
-        const ty = grp.y + Math.sin(a) * d;
-
-        const isYou = i === 0; // Dot 0 is the permanent "You" dot
-        const dot = {
-          x: tx,
-          y: ty,
-          tx,
-          ty,
-          sx: tx,
-          sy: ty,
-          g: gIdx,
-          isYou,
-          jOff: Math.random() * 6.28,
-          jSpd: 0.6 + Math.random() * 0.4,
-          m: false,
-          p: 1,
-        };
-        grp.dots.push(dot);
-        dots.push(dot);
-        inG++;
+      for (let i = 0; i < ordered.length; i++) {
+        ordered[i].p.attracted = i < count;
       }
-
-      groups.forEach((g) => {
-        g.tealAlpha = g.dots.length >= ANONYMITY_THRESHOLD ? 1 : 0;
-      });
     }
 
     function resize() {
-      const r = canvas.getBoundingClientRect();
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
       dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = r.width;
-      h = r.height;
-      if (w === 0 || h === 0) return;
+      w = rect.width;
+      h = rect.height;
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      reset();
-      if (prefersReduced || throttled) {
-        render();
-      }
-    }
 
-    function migrate() {
-      if (dots.length < 2) return;
-      const d = dots[Math.floor(Math.random() * dots.length)];
-      const oldG = d.g;
-      let newG = Math.floor(Math.random() * (GROUPS - 1));
-      if (newG >= oldG) newG++;
+      cx = w * 0.5;
+      cy = h * 0.5;
+      wellRadius = Math.max(54, Math.min(w, h) * 0.245);
 
-      const oldDots = groups[oldG].dots;
-      const idx = oldDots.indexOf(d);
-      if (idx !== -1) oldDots.splice(idx, 1);
-      groups[newG].dots.push(d);
-
-      d.g = newG;
-      d.sx = d.x;
-      d.sy = d.y;
-      const a = Math.random() * 6.28;
-      d.tx = groups[newG].x + Math.cos(a) * (14 + Math.random() * 22);
-      d.ty = groups[newG].y + Math.sin(a) * (14 + Math.random() * 22);
-      d.m = true;
-      d.p = 0;
-    }
-
-    function updateStory(dt) {
-      storyTimer += dt;
-      if (storyTimer >= STORY_INTERVAL) {
-        storyTimer = 0;
-        storyIndex = (storyIndex + 1) % STORY_STEPS.length;
-        if (captionEl) {
-          captionEl.textContent = STORY_STEPS[storyIndex];
+      if (particles.length === 0) {
+        createParticles();
+      } else {
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x = Math.max(18, Math.min(w - 18, p.x));
+          p.y = Math.max(18, Math.min(h - 18, p.y));
         }
-        stepIndicators.forEach((pill, idx) => {
-          pill.classList.toggle('active', idx === storyIndex);
-        });
       }
+
+      const initialInside = countInsideWell();
+      syncDomReadout(initialInside, initialInside >= THRESHOLD);
+      render();
+    }
+
+    function countInsideWell() {
+      let inside = 0;
+      const thresholdR = wellRadius + 7;
+      for (let i = 0; i < particles.length; i++) {
+        if (Math.hypot(particles[i].x - cx, particles[i].y - cy) <= thresholdR) {
+          inside++;
+        }
+      }
+      return inside;
+    }
+
+    function syncDomReadout(insideCount, unlocked) {
+      if (insideCount === lastReportedCount && unlocked === lastReportedUnlocked) return;
+      lastReportedCount = insideCount;
+      lastReportedUnlocked = unlocked;
+
+      if (statusLabelEl) {
+        if (unlocked) {
+          statusLabelEl.textContent = `Group of ${insideCount}`;
+          statusLabelEl.classList.add('is-unlocked');
+        } else {
+          statusLabelEl.textContent = `${insideCount} ${insideCount === 1 ? 'response' : 'responses'} nearby`;
+          statusLabelEl.classList.remove('is-unlocked');
+        }
+      }
+
+      if (hrPillEl && hrTextEl) {
+        hrPillEl.classList.toggle('is-unlocked', unlocked);
+        if (hrLockIconEl) hrLockIconEl.style.display = unlocked ? 'none' : 'inline-flex';
+        if (hrDotEl) hrDotEl.style.display = unlocked ? 'inline-block' : 'none';
+
+        if (unlocked) {
+          const sampleScore = SAMPLE_WELLBEING_BY_N[insideCount] || (70 + (insideCount % 7));
+          hrTextEl.textContent = `HR sees: ${insideCount} responses · Wellbeing ${sampleScore} · Sample`;
+        } else {
+          hrTextEl.textContent = 'HR sees: Privacy locked (fewer than 5 responses)';
+        }
+      }
+
+      // Sync story step pills and footer caption cleanly with current privacy state
+      let stepIdx = 0;
+      let caption = 'Your answer stays private.';
+      if (unlocked) {
+        stepIdx = 2;
+        caption = 'HR sees only the group.';
+      } else if (targetGroupSize >= THRESHOLD || insideCount >= 3) {
+        stepIdx = 1;
+        caption = 'Together with 4 or more colleagues...';
+      }
+
+      if (captionEl) captionEl.textContent = caption;
+      stepPills.forEach((pill, idx) => {
+        pill.classList.toggle('active', idx === stepIdx);
+      });
     }
 
     function update(dt) {
-      migrationTimer += dt;
-      if (migrationTimer >= MIGRATION_INTERVAL) {
-        migrationTimer = 0;
-        migrate();
+      const sec = dt * 0.001;
+      clock += sec;
+
+      // Autonomous Director cycle (no manual clicks required)
+      const holdDuration = targetGroupSize >= THRESHOLD ? UNLOCKED_HOLD_MS : LOCKED_HOLD_MS;
+      phaseTimer += dt;
+      if (phaseTimer >= holdDuration) {
+        phaseTimer = 0;
+        seqIdx = (seqIdx + 1) % DIRECTOR_SEQUENCE.length;
+        targetGroupSize = DIRECTOR_SEQUENCE[seqIdx];
+        assignNearestAttracted(targetGroupSize);
       }
 
-      updateStory(dt);
+      const outerPad = 24;
+      const rxOuter = Math.max(wellRadius + 34, w * 0.5 - outerPad);
+      const ryOuter = Math.max(wellRadius + 28, h * 0.5 - outerPad);
 
-      const m = 38;
-      for (let i = 0; i < GROUPS; i++) {
-        const g = groups[i];
-        g.x += g.vx;
-        g.y += g.vy;
-        if (g.x < m || g.x > w - m) g.vx *= -1;
-        if (g.y < m || g.y > h - m) g.vy *= -1;
+      // Update particle target steering + soft particle-to-particle repulsion
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.orbitAngle += p.orbitSpeed * sec;
 
-        const target = g.dots.length >= ANONYMITY_THRESHOLD ? 1 : 0;
-        const step = dt / FADE_DURATION;
-        if (g.tealAlpha < target) g.tealAlpha = Math.min(target, g.tealAlpha + step);
-        else if (g.tealAlpha > target) g.tealAlpha = Math.max(target, g.tealAlpha - step);
-      }
-
-      const now = performance.now() * 0.001;
-      for (let i = 0; i < dots.length; i++) {
-        const d = dots[i];
-        const grp = groups[d.g];
-        if (d.m) {
-          d.p += dt / 600;
-          if (d.p >= 1) {
-            d.p = 1;
-            d.m = false;
-          }
-          const t = d.p;
-          const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-          d.x = d.sx + (d.tx - d.sx) * ease;
-          d.y = d.sy + (d.ty - d.sy) * ease;
+        let tx;
+        let ty;
+        if (p.attracted) {
+          const innerR = Math.max(14, wellRadius * (0.24 + p.orbitRadiusRatio * 0.62));
+          tx = cx + Math.cos(p.orbitAngle) * innerR;
+          ty = cy + Math.sin(p.orbitAngle) * innerR;
         } else {
-          const a = d.jOff + now * d.jSpd;
-          const dist = 14 + (i % 5) * 3;
-          d.x += (grp.x + Math.cos(a) * dist - d.x) * 0.08;
-          d.y += (grp.y + Math.sin(a) * dist - d.y) * 0.08;
+          const band = 0.72 + p.outerDistRatio * 0.28;
+          const ox = Math.max(wellRadius + 32, rxOuter * band);
+          const oy = Math.max(wellRadius + 26, ryOuter * band);
+          tx = cx + Math.cos(p.orbitAngle) * ox + Math.sin(clock * 0.7 + p.wobblePhase) * 6;
+          ty = cy + Math.sin(p.orbitAngle) * oy + Math.cos(clock * 0.65 + p.wobblePhase) * 6;
+        }
+
+        // Smooth critically damped spring toward orbital target
+        const stiffness = p.attracted ? 7.8 : 4.6;
+        p.vx += (tx - p.x) * stiffness * sec;
+        p.vy += (ty - p.y) * stiffness * sec;
+      }
+
+      // Pairwise soft repulsion so dots never stack
+      const minSep = w < 420 ? 22 : 26;
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const a = particles[i];
+          const b = particles[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const dist = Math.hypot(dx, dy) || 0.001;
+          if (dist < minSep) {
+            const push = ((minSep - dist) / minSep) * 260 * sec;
+            const nx = dx / dist;
+            const ny = dy / dist;
+            a.vx -= nx * push;
+            a.vy -= ny * push;
+            b.vx += nx * push;
+            b.vy += ny * push;
+          }
         }
       }
-    }
 
-    function drawRoundedRect(ctx, x, y, width, height, radius) {
-      if (ctx.roundRect) {
-        ctx.roundRect(x, y, width, height, radius);
-      } else {
-        ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + width - radius, y);
-        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        ctx.lineTo(x + width, y + height - radius);
-        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        ctx.lineTo(x + radius, y + height);
-        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
-        ctx.closePath();
+      const damping = Math.exp(-4.4 * sec);
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.vx *= damping;
+        p.vy *= damping;
+        p.x += p.vx * sec;
+        p.y += p.vy * sec;
+
+        // Keep strictly inside canvas bounds
+        p.x = Math.max(16, Math.min(w - 16, p.x));
+        p.y = Math.max(16, Math.min(h - 16, p.y));
       }
+
+      const insideCount = countInsideWell();
+      const unlocked = insideCount >= THRESHOLD;
+
+      const targetAlpha = unlocked ? 1 : 0;
+      const blendSpeed = Math.min(1, sec * 3.8);
+      unlockAlpha += (targetAlpha - unlockAlpha) * blendSpeed;
+
+      const thresholdR = wellRadius + 7;
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const isIn = Math.hypot(p.x - cx, p.y - cy) <= thresholdR;
+        const targetTeal = unlocked && isIn ? 1 : 0;
+        p.tealBlend += (targetTeal - p.tealBlend) * Math.min(1, sec * 4.5);
+      }
+
+      syncDomReadout(insideCount, unlocked);
     }
 
     function render() {
       ctx.clearRect(0, 0, w, h);
 
-      let primaryAggregateGroup = null;
-      let primaryGroupMaxDots = 0;
+      const thresholdR = wellRadius + 7;
 
-      // 1. Draw Groups (Circles, connecting lines, and group labels)
-      for (let i = 0; i < GROUPS; i++) {
-        const g = groups[i];
-        const al = g.tealAlpha;
-        if (al > 0.01 && g.dots.length) {
-          let maxD = 26;
-          for (let j = 0; j < g.dots.length; j++) {
-            maxD = Math.max(maxD, Math.hypot(g.dots[j].x - g.x, g.dots[j].y - g.y));
-          }
-          const r = maxD + 10;
-
-          if (g.dots.length >= ANONYMITY_THRESHOLD && g.dots.length > primaryGroupMaxDots) {
-            primaryGroupMaxDots = g.dots.length;
-            primaryAggregateGroup = { group: g, r, al };
-          }
-
-          // Faint teal background circle
-          ctx.beginPath();
-          ctx.arc(g.x, g.y, r, 0, 6.28);
-          ctx.fillStyle = rgba(brand, 0.04 * al);
-          ctx.fill();
-
-          // 1.5px teal outline
-          ctx.strokeStyle = rgba(brand, 0.28 * al);
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-
-          // Light connecting lines between group members
-          ctx.strokeStyle = rgba(brand, 0.16 * al);
-          ctx.lineWidth = 1;
-          for (let j = 0; j < g.dots.length; j++) {
-            for (let k = j + 1; k < g.dots.length; k++) {
-              if (Math.hypot(g.dots[j].x - g.dots[k].x, g.dots[j].y - g.dots[k].y) < 72) {
-                ctx.beginPath();
-                ctx.moveTo(g.dots[j].x, g.dots[j].y);
-                ctx.lineTo(g.dots[k].x, g.dots[k].y);
-                ctx.stroke();
-              }
-            }
-          }
-
-          // Group of N label
-          ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          ctx.fillStyle = rgba(brand, al * 0.95);
-          ctx.fillText(`Group of ${g.dots.length}`, g.x, g.y - r - 3);
-        }
-      }
-
-      // 2. Draw Dots
-      const isMobile = w < 640;
-      const dotRadius = isMobile ? 3 : 4; // 6px diameter on mobile, 8px on desktop
-
-      for (let i = 0; i < dots.length; i++) {
-        const d = dots[i];
-        const g = groups[d.g];
-
-        // "You" dot is PERMANENTLY GREY. Others fade to teal when group >= 5.
-        const isYou = d.isYou;
-        const al = isYou ? 0 : g.tealAlpha;
-
-        const cr = Math.round(grey[0] + (brand[0] - grey[0]) * al);
-        const cg = Math.round(grey[1] + (brand[1] - grey[1]) * al);
-        const cb = Math.round(grey[2] + (brand[2] - grey[2]) * al);
-
+      // 1. Central Privacy Well Glow (#CCFBF1 when N >= 5)
+      if (unlockAlpha > 0.01) {
+        const glowR = wellRadius * 1.65;
+        const grad = ctx.createRadialGradient(cx, cy, 4, cx, cy, glowR);
+        grad.addColorStop(0, `rgba(204, 251, 241, ${(0.72 * unlockAlpha).toFixed(3)})`);
+        grad.addColorStop(0.58, `rgba(204, 251, 241, ${(0.28 * unlockAlpha).toFixed(3)})`);
+        grad.addColorStop(1, 'rgba(204, 251, 241, 0)');
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(d.x, d.y, dotRadius, 0, 6.28);
-        ctx.fillStyle = `rgb(${cr},${cg},${cb})`;
+        ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = al > 0.5 ? rgba(brand, 0.4) : 'rgba(255,255,255,0.85)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // If this is the "You" dot, draw callout badge ("Your answer: never shown" with lock)
-        if (isYou) {
-          const pulse = (Math.sin(performance.now() * 0.003) + 1) * 0.5;
-          ctx.beginPath();
-          ctx.arc(d.x, d.y, dotRadius + 3 + pulse * 2, 0, 6.28);
-          ctx.strokeStyle = rgba(grey, 0.35 - pulse * 0.15);
-          ctx.lineWidth = 1;
-          ctx.stroke();
-
-          const labelText = 'Your answer: never shown';
-          ctx.font = '500 10.5px system-ui, -apple-system, sans-serif';
-          const textMetrics = ctx.measureText(labelText);
-          const badgeW = textMetrics.width + 24;
-          const badgeH = 20;
-
-          let bx = d.x + 8;
-          let by = d.y - 10;
-          if (bx + badgeW > w - 10) bx = d.x - badgeW - 8;
-          if (by < 10) by = d.y + 12;
-
-          ctx.save();
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.06)';
-          ctx.shadowBlur = 4;
-          ctx.shadowOffsetY = 2;
-
-          ctx.beginPath();
-          drawRoundedRect(ctx, bx, by, badgeW, badgeH, 4);
-          ctx.fillStyle = surface;
-          ctx.fill();
-          ctx.shadowColor = 'transparent';
-
-          ctx.strokeStyle = border;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-
-          // Procedural lock icon
-          const lockX = bx + 7;
-          const lockY = by + 6;
-          ctx.strokeStyle = rgba(textMuted, 0.9);
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.arc(lockX + 3.5, lockY + 2.5, 2.5, Math.PI, 0);
-          ctx.stroke();
-          ctx.fillStyle = rgba(textMuted, 0.85);
-          ctx.fillRect(lockX + 1, lockY + 2.5, 5, 4.5);
-
-          // Text
-          ctx.textAlign = 'left';
-          ctx.textBaseline = 'middle';
-          ctx.fillStyle = rgba(textMuted, 0.95);
-          ctx.fillText(labelText, bx + 16, by + badgeH / 2);
-          ctx.restore();
-        }
-      }
-
-      // 3. Floating Aggregate Card for group >= 5 ("HR sees: 6 responses · Wellbeing 72 · Sample")
-      if (primaryAggregateGroup && primaryAggregateGroup.al > 0.3) {
-        const { group: g, r, al } = primaryAggregateGroup;
-        const cardText = `HR sees: ${g.dots.length} responses · Wellbeing 72 · Sample`;
-        ctx.font = '500 11px system-ui, -apple-system, sans-serif';
-        const cardMetrics = ctx.measureText(cardText);
-        const cardW = cardMetrics.width + 28;
-        const cardH = 26;
-
-        let cx = g.x - cardW / 2;
-        let cy = g.y + r + 6;
-        if (cy + cardH > h - 8) cy = g.y - r - cardH - 14;
-        if (cx < 10) cx = 10;
-        if (cx + cardW > w - 10) cx = w - cardW - 10;
+        // Concentric pulsing teal privacy-shield rings (#0F766E / #0D9488)
+        const pulse1 = (Math.sin(clock * 2.1) + 1) * 0.5;
+        const pulse2 = (Math.sin(clock * 2.1 - 1.4) + 1) * 0.5;
 
         ctx.save();
-        ctx.globalAlpha = Math.min(1, al);
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
-        ctx.shadowBlur = 8;
-        ctx.shadowOffsetY = 3;
-
         ctx.beginPath();
-        drawRoundedRect(ctx, cx, cy, cardW, cardH, 6);
-        ctx.fillStyle = surface;
-        ctx.fill();
-        ctx.shadowColor = 'transparent';
-
-        ctx.strokeStyle = rgba(brand, 0.35);
-        ctx.lineWidth = 1;
+        ctx.arc(cx, cy, wellRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(15, 118, 110, ${(0.36 * unlockAlpha).toFixed(3)})`;
+        ctx.lineWidth = 1.6;
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(cx + 12, cy + cardH / 2, 3.5, 0, 6.28);
-        ctx.fillStyle = rgba(brand, 1);
+        ctx.arc(cx, cy, wellRadius + 10 + pulse1 * 7, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(13, 148, 136, ${((0.22 - pulse1 * 0.12) * unlockAlpha).toFixed(3)})`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, wellRadius + 22 + pulse2 * 10, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(20, 184, 166, ${((0.14 - pulse2 * 0.08) * unlockAlpha).toFixed(3)})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 2. Dashed Slate Perimeter Ring when Locked (N < 5)
+      if (unlockAlpha < 0.99) {
+        const lockedAlpha = 1 - unlockAlpha;
+        ctx.save();
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(cx, cy, wellRadius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(241, 245, 249, ${(0.45 * lockedAlpha).toFixed(3)})`;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(100, 116, 139, ${(0.36 * lockedAlpha).toFixed(3)})`;
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 3. Faint connecting lines between grouped dots when N >= 5
+      if (unlockAlpha > 0.05) {
+        const grouped = [];
+        for (let i = 0; i < particles.length; i++) {
+          if (Math.hypot(particles[i].x - cx, particles[i].y - cy) <= thresholdR) {
+            grouped.push(particles[i]);
+          }
+        }
+        ctx.save();
+        ctx.lineWidth = 1;
+        for (let i = 0; i < grouped.length; i++) {
+          for (let j = i + 1; j < grouped.length; j++) {
+            const d = Math.hypot(grouped[i].x - grouped[j].x, grouped[i].y - grouped[j].y);
+            if (d < wellRadius * 1.45) {
+              const lineAlpha = (1 - d / (wellRadius * 1.45)) * 0.24 * unlockAlpha;
+              ctx.strokeStyle = `rgba(15, 118, 110, ${lineAlpha.toFixed(3)})`;
+              ctx.beginPath();
+              ctx.moveTo(grouped[i].x, grouped[i].y);
+              ctx.lineTo(grouped[j].x, grouped[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.restore();
+      }
+
+      // 4. Draw 15 employee response dots
+      const dotRadius = w < 420 ? 4.5 : 5.2;
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        // Smoothly interpolate from slate (#64748B) to teal (#0F766E); keep "You" dot protected in slate
+        const t = p.isYou ? 0 : p.tealBlend;
+        const r = Math.round(SLATE[0] + (TEAL[0] - SLATE[0]) * t);
+        const g = Math.round(SLATE[1] + (TEAL[1] - SLATE[1]) * t);
+        const b = Math.round(SLATE[2] + (TEAL[2] - SLATE[2]) * t);
+
+        // Subtle outer ring on "Your answer" dot (always personal & protected)
+        if (p.isYou) {
+          const haloPulse = (Math.sin(clock * 2.8) + 1) * 0.5;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, dotRadius + 4.5 + haloPulse * 2, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(100, 116, 139, ${(0.45 - haloPulse * 0.16).toFixed(3)})`;
+          ctx.lineWidth = 1.4;
+          ctx.stroke();
+        } else if (t > 0.2) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, dotRadius + 2.6, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(20, 184, 166, ${(0.18 * t).toFixed(3)})`;
+          ctx.fill();
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, dotRadius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         ctx.fill();
 
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = rgba(textPrimary, 0.95);
-        ctx.fillText(cardText, cx + 20, cy + cardH / 2);
-        ctx.restore();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
       }
     }
 
     function animate(t) {
       if (!running) return;
       if (!lastT) lastT = t;
-      const dt = Math.min(t - lastT, 100);
+      const dt = Math.min(t - lastT, 64);
       lastT = t;
-
-      if (frames < 60) {
-        frames++;
-        fTime += dt;
-        if (frames === 60 && fTime / 60 > 32) {
-          throttled = true;
-          stop();
-          render();
-          return;
-        }
-      }
 
       update(dt);
       render();
@@ -439,18 +435,13 @@
     }
 
     function start() {
-      if (running || throttled) return;
-      if (prefersReduced) {
-        render();
-        return;
-      }
+      if (running || !inView || document.hidden || prefersReduced) return;
       running = true;
       lastT = 0;
       rafId = requestAnimationFrame(animate);
     }
 
     function stop() {
-      if (!running) return;
       running = false;
       if (rafId) {
         cancelAnimationFrame(rafId);
@@ -458,44 +449,35 @@
       }
     }
 
-    new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting && !document.hidden) start();
-          else if (!e.isIntersecting) stop();
-        });
-      },
-      { threshold: 0.1 }
-    ).observe(canvas);
+    if ('IntersectionObserver' in window) {
+      const obs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            inView = entry.isIntersecting;
+            if (inView) start();
+            else stop();
+          });
+        },
+        { threshold: 0.05 }
+      );
+      obs.observe(canvas);
+    }
 
+    window.addEventListener('resize', resize, { passive: true });
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        stop();
-      } else {
-        const rect = canvas.getBoundingClientRect();
-        if (rect.top < window.innerHeight && rect.bottom > 0) {
-          start();
-        }
-      }
+      if (document.hidden) stop();
+      else start();
     });
 
-    let resizeTimer = null;
-    window.addEventListener(
-      'resize',
-      () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(resize, 150);
-      },
-      { passive: true }
-    );
-
     resize();
-    start();
+    if (!prefersReduced) {
+      start();
+    }
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', initCohortSimulation);
   } else {
-    init();
+    initCohortSimulation();
   }
 })();

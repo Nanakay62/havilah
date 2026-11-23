@@ -3,14 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Havilah - Workplace Wellbeing &amp; Psychosocial Health</title>
-  <meta name="description" content="Confidential employee mental health check-ins, anonymous N >= 5 organizational analytics, COPSOQ-III screening, and clinical occupational health referrals aligned with the Ghana Data Protection Act, 2012 (Act 843).">
+  <title>Havilah - Workplace Wellbeing, Psychosocial Compliance &amp; Digital Excuse Duty</title>
+  <meta name="description" content="Confidential employee mental health check-ins (PHQ-9, GAD-7, PSS-10, FAS-10, COPSOQ III), anonymous N >= 5 organizational analytics, and tamper-evident digital excuse duty certificates aligned with the Ghana Data Protection Act, 2012 (Act 843).">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="theme-color" content="#0F766E">
   <link rel="canonical" href="https://havilah.dic20016.workers.dev/">
   <link rel="icon" type="image/svg+xml" href="/assets/havilah-mark.svg">
   <link rel="apple-touch-icon" href="/assets/havilah-mark.svg">
   <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 
   <!-- Open Graph & Social Cards -->
   <meta property="og:site_name" content="Havilah">
@@ -56,7 +59,7 @@
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
         "url": "https://havilah.dic20016.workers.dev/",
-        "description": "Confidential workplace mental health check-ins (PHQ-9, GAD-7, PSS-10, FAS-10, COPSOQ-III), anonymous N >= 5 group analytics, whistleblower dropbox, and occupational health clinician referrals.",
+        "description": "Confidential workplace mental health check-ins (PHQ-9, GAD-7, PSS-10, FAS-10, COPSOQ-III), anonymous N >= 5 group analytics, tamper-evident HMAC-SHA256 digital excuse duty certificates, whistleblower dropbox, and occupational health clinician referrals.",
         "provider": { "@id": "https://havilah.dic20016.workers.dev/#organization" },
         "offers": [
           {
@@ -184,14 +187,65 @@
       transform: translateY(0);
     }
 
-    /* Sticky Top Bar (1px bottom border, solid surface, no blur or shadow) */
+    /* Base Typography, Surface & Ambient Canvas Layer */
+    html, body {
+      background-color: #F8FAFC;
+      color: #0F172A;
+      font-family: 'Inter', var(--font-sans);
+      overflow-x: clip;
+    }
+
+    h1, h2, h3, h4,
+    .hero-title,
+    .section-title,
+    .summary-card-title,
+    .feature-title,
+    .site-brand-wordmark {
+      font-family: 'Plus Jakarta Sans', var(--font-sans);
+    }
+
+    /* Component 1: Full-bleed Concentric Gravity Contours Background */
+    #spacetimeBgCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      display: block;
+    }
+
+    .site-header,
+    main#main-content,
+    .site-footer {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      box-sizing: border-box;
+    }
+
+    @media (min-width: 768px) {
+      .hero-container {
+        padding: 0 28px;
+      }
+    }
+
+    /* Sticky Top Bar (Frosted Glass over Spacetime Canvas) */
     .site-header {
       position: sticky;
       top: 0;
       z-index: 50;
-      height: 56px;
-      background-color: var(--surface);
-      border-bottom: 1px solid var(--border);
+      height: 64px;
+      background-color: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(15, 118, 110, 0.12);
     }
 
     .site-header-inner {
@@ -203,32 +257,45 @@
     }
 
     .site-brand {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: var(--space-2);
-      color: var(--text);
-      font-size: var(--text-md);
-      font-weight: var(--weight-semibold);
+      gap: 10px;
+      color: #0F172A;
+      font-size: 18px;
+      font-weight: 700;
       text-decoration: none;
-      letter-spacing: -0.015em;
+      letter-spacing: -0.025em;
+    }
+
+    .site-brand:hover {
+      text-decoration: none;
+      color: #0F172A;
     }
 
     .site-brand-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: var(--radius-control);
-      background-color: var(--brand);
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0F766E 0%, #0D9488 100%);
       color: #FFFFFF;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(15, 118, 110, 0.22);
     }
 
     .site-brand-icon svg {
-      width: 16px;
-      height: 16px;
+      width: 19px;
+      height: 19px;
       stroke: currentColor;
+    }
+
+    .site-brand-wordmark {
+      font-size: 19px;
+      font-weight: 800;
+      color: #0F172A;
+      letter-spacing: -0.03em;
     }
 
     .site-nav {
@@ -383,30 +450,30 @@
       line-height: 1.6;
     }
 
-    /* Hero Section (Two-Column on Desktop, Background: --bg) */
+    /* Hero Section (Two-Column on Desktop over Transparent Spacetime Canvas) */
     .hero-section {
-      background-color: var(--bg);
-      padding: 40px 0;
-      border-bottom: 1px solid var(--border);
+      background-color: transparent;
+      padding: 40px 0 56px;
+      border-bottom: 1px solid rgba(15, 118, 110, 0.1);
     }
 
     @media (min-width: 1024px) {
       .hero-section {
-        padding: 64px 0;
+        padding: 64px 0 76px;
       }
     }
 
     .hero-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: var(--space-6);
+      gap: 36px;
       align-items: center;
     }
 
     @media (min-width: 1024px) {
       .hero-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: var(--space-8);
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 48px;
       }
     }
 
@@ -414,56 +481,197 @@
       text-align: left;
     }
 
-    .hero-title {
-      font-size: clamp(36px, 5.2vw, 58px);
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background-color: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(15, 118, 110, 0.18);
+      color: #0F766E;
+      font-size: 12.5px;
       font-weight: 600;
-      letter-spacing: -0.025em;
-      line-height: 1.12;
-      color: var(--text);
-      margin-bottom: var(--space-4);
-      max-width: 680px;
+      letter-spacing: 0.01em;
+      margin-bottom: 18px;
+      max-width: 100%;
+    }
+
+    .hero-eyebrow-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: #14B8A6;
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.22);
+      flex-shrink: 0;
+    }
+
+    .hero-title {
+      font-size: clamp(32px, 4.4vw, 52px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: #0F172A;
+      margin: 0 0 18px 0;
+      max-width: 620px;
     }
 
     .hero-subtitle {
-      font-size: 18px;
-      color: var(--text-muted);
-      line-height: 1.6;
-      margin-bottom: var(--space-6);
-      max-width: 580px;
+      font-size: 16.5px;
+      color: #475569;
+      line-height: 1.65;
+      margin: 0 0 26px 0;
+      max-width: 570px;
     }
 
     .hero-cta-group {
       display: flex;
       align-items: center;
-      gap: var(--space-3);
+      gap: 12px;
       flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .btn-hero-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 22px;
+      min-height: 46px;
+      border-radius: 8px;
+      background-color: #0F766E;
+      border: 1px solid #0F766E;
+      color: #FFFFFF;
+      font-family: 'Inter', var(--font-sans);
+      font-size: 14.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 4px 14px rgba(15, 118, 110, 0.2);
+    }
+
+    .btn-hero-primary:hover {
+      background-color: #0D9488;
+      border-color: #0D9488;
+      color: #FFFFFF;
+      text-decoration: none;
+    }
+
+    .btn-hero-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      min-height: 46px;
+      border-radius: 8px;
+      background-color: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(15, 118, 110, 0.28);
+      color: #0F766E;
+      font-family: 'Inter', var(--font-sans);
+      font-size: 14.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-hero-secondary:hover {
+      background-color: #F0FDFA;
+      border-color: #0F766E;
+      color: #0F766E;
+      text-decoration: none;
+    }
+
+    .hero-trust-strip {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .hero-trust-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      border-radius: 9999px;
+      background-color: rgba(255, 255, 255, 0.84);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(15, 118, 110, 0.14);
+      font-size: 12px;
+      font-weight: 500;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    .hero-trust-pill svg {
+      width: 14px;
+      height: 14px;
+      color: #0F766E;
+      flex-shrink: 0;
+    }
+
+    .hero-cohort-col {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .hero-overview-trigger-wrap {
+      display: flex;
+      justify-content: center;
     }
 
     .hero-video-link {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: none;
-      border: 1px solid transparent;
-      padding: 8px 14px;
-      color: var(--brand);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(15, 118, 110, 0.16);
+      padding: 7px 14px;
+      color: #0F766E;
       font-family: inherit;
-      font-size: 15px;
-      font-weight: var(--weight-medium);
+      font-size: 13.5px;
+      font-weight: 600;
       cursor: pointer;
-      border-radius: var(--radius-control);
-      transition: all 0.15s ease;
+      border-radius: 9999px;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
       touch-action: manipulation;
     }
 
     .hero-video-link:hover {
-      background-color: var(--brand-subtle);
-      color: var(--brand-hover);
+      background-color: #F0FDFA;
+      border-color: rgba(15, 118, 110, 0.35);
+      color: #0D9488;
     }
 
     .hero-video-link:focus-visible {
-      outline: 2px solid var(--brand);
+      outline: 2px solid #0F766E;
       outline-offset: 2px;
+    }
+
+    .hero-play-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background-color: rgba(15, 118, 110, 0.12);
+      color: #0F766E;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
 
     @media (max-width: 639px) {
@@ -471,38 +679,84 @@
         flex-direction: column;
         align-items: stretch;
       }
-      .hero-cta-group .btn {
+      .btn-hero-primary,
+      .btn-hero-secondary {
         width: 100%;
       }
-      .hero-video-link {
-        justify-content: center;
-        width: 100%;
-        padding: 10px;
+      .hero-trust-pill {
+        white-space: normal;
       }
     }
 
-    /* Hero Anonymity Animation Card (Background: --surface) */
+    /* Component 2: Zero-Overlap Frosted Cohort Privacy-Shield Card */
     .hero-anim-card {
-      background-color: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-modal);
-      box-shadow: var(--shadow-card);
+      background-color: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(15, 118, 110, 0.14);
+      border-radius: 16px;
+      box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 118, 110, 0.05);
       overflow: hidden;
       display: flex;
       flex-direction: column;
     }
 
+    /* Dedicated Top Status Row (above canvas, never overlapping dots) */
+    .cohort-status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(15, 118, 110, 0.1);
+      background-color: rgba(248, 250, 252, 0.65);
+      flex-wrap: wrap;
+    }
+
+    .cohort-status-label {
+      font-family: 'Plus Jakarta Sans', var(--font-sans);
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #475569;
+      font-variant-numeric: tabular-nums;
+      transition: color 0.3s ease;
+    }
+
+    .cohort-status-label.is-unlocked {
+      color: #0F766E;
+    }
+
+    .cohort-privacy-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background-color: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(100, 116, 139, 0.22);
+      font-size: 12px;
+      font-weight: 500;
+      color: #475569;
+      white-space: nowrap;
+    }
+
+    .cohort-privacy-pill svg {
+      width: 12px;
+      height: 12px;
+      color: #64748B;
+      flex-shrink: 0;
+    }
+
     .hero-canvas-wrap {
       position: relative;
       width: 100%;
-      height: 320px;
-      min-height: 280px;
-      background-color: var(--surface);
+      height: 295px;
+      background-color: transparent;
     }
 
     @media (min-width: 1024px) {
       .hero-canvas-wrap {
-        height: 360px;
+        height: 312px;
       }
     }
 
@@ -512,14 +766,65 @@
       height: 100%;
     }
 
+    /* Dedicated Bottom HR Output Row (below canvas, never overlapping dots) */
+    .cohort-hr-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 16px;
+      border-top: 1px solid rgba(15, 118, 110, 0.08);
+      background-color: rgba(255, 255, 255, 0.68);
+    }
+
+    .cohort-hr-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 9999px;
+      background-color: #F1F5F9;
+      border: 1px solid #CBD5E1;
+      color: #475569;
+      font-size: 12.5px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease;
+      max-width: 100%;
+    }
+
+    .cohort-hr-pill.is-unlocked {
+      background-color: rgba(240, 253, 250, 0.92);
+      border-color: #99F6E4;
+      color: #0F766E;
+    }
+
+    .cohort-hr-lock {
+      display: inline-flex;
+      align-items: center;
+      color: #64748B;
+      flex-shrink: 0;
+    }
+
+    .cohort-hr-dot {
+      display: none;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #0D9488;
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.25);
+      flex-shrink: 0;
+    }
+
     .hero-story-strip {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: var(--space-3);
-      padding: 10px var(--space-4);
-      background-color: var(--bg);
-      border-top: 1px solid var(--border);
+      gap: 10px;
+      padding: 10px 16px;
+      background-color: rgba(248, 250, 252, 0.72);
+      border-top: 1px solid rgba(15, 118, 110, 0.08);
     }
 
     .hero-story-step-pills {
@@ -532,40 +837,47 @@
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background-color: var(--border);
+      background-color: #CBD5E1;
       transition: background-color 0.3s ease, transform 0.3s ease;
     }
 
     .hero-step-pill.active {
-      background-color: var(--brand);
+      background-color: #0F766E;
       transform: scale(1.25);
     }
 
     .hero-story-caption {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
-      color: var(--text);
+      color: #0F172A;
       margin: 0;
       line-height: 1.4;
     }
 
     .hero-legend-row {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: var(--space-6);
-      padding: var(--space-3) var(--space-4);
-      background-color: var(--surface);
-      border-top: 1px solid var(--border);
-      font-size: var(--text-sm);
-      color: var(--text-muted);
-      flex-wrap: wrap;
+      gap: 6px;
+      padding: 11px 16px 13px;
+      background-color: rgba(255, 255, 255, 0.78);
+      border-top: 1px solid rgba(15, 118, 110, 0.08);
+      font-size: 12.5px;
+      color: #475569;
+    }
+
+    @media (min-width: 520px) {
+      .hero-legend-row {
+        flex-direction: row;
+        gap: 20px;
+      }
     }
 
     .hero-legend-item {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
+      gap: 7px;
     }
 
     .legend-dot {
@@ -576,11 +888,169 @@
     }
 
     .legend-dot-grey {
-      background-color: var(--text-subtle);
+      background-color: #64748B;
     }
 
     .legend-dot-teal {
-      background-color: var(--brand);
+      background-color: #0F766E;
+    }
+
+    /* Excuse Duty Showcase Section */
+    .excuse-duty-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    @media (min-width: 1024px) {
+      .excuse-duty-grid {
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 48px;
+      }
+    }
+
+    .excuse-duty-list {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0 24px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .excuse-duty-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 15px;
+      color: #475569;
+      line-height: 1.55;
+    }
+
+    .excuse-duty-list li strong {
+      color: #0F172A;
+    }
+
+    .excuse-duty-list svg {
+      width: 18px;
+      height: 18px;
+      color: #0F766E;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    .cert-preview-card {
+      background-color: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(15, 118, 110, 0.16);
+      border-radius: 14px;
+      box-shadow: 0 12px 28px -8px rgba(15, 23, 42, 0.08);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .cert-preview-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(15, 118, 110, 0.12);
+    }
+
+    .cert-verified-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background-color: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      color: #15803D;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .cert-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 480px) {
+      .cert-meta-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .cert-meta-box {
+      background-color: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .cert-meta-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #64748B;
+      margin-bottom: 3px;
+    }
+
+    .cert-meta-val {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #0F172A;
+    }
+
+    .cert-verify-form {
+      display: flex;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid #E2E8F0;
+      flex-wrap: wrap;
+    }
+
+    .cert-verify-form input {
+      flex: 1 1 180px;
+      min-width: 0;
+      height: 40px;
+      padding: 0 12px;
+      border-radius: 6px;
+      border: 1px solid #CBD5E1;
+      background-color: #FFFFFF;
+      color: #0F172A;
+      font-family: inherit;
+      font-size: 13.5px;
+    }
+
+    .cert-verify-form input:focus {
+      outline: 2px solid rgba(15, 118, 110, 0.25);
+      border-color: #0F766E;
+    }
+
+    /* Translucent Section Surfaces for Ambient Spacetime Depth */
+    .surface-frosted {
+      background-color: rgba(255, 255, 255, 0.84) !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .surface-ambient {
+      background-color: transparent !important;
+    }
+
+    .privacy-section-wrapper {
+      background-color: rgba(240, 253, 250, 0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
 
     /* Summary Row (3 Larger Items with Icons, 24px padding, 18px title, 16px body) */
@@ -1400,30 +1870,38 @@
   </style>
 </head>
 <body>
+  <!-- Component 1: Full-bleed Concentric Gravity Contours Background -->
+  <canvas id="spacetimeBgCanvas" aria-hidden="true"></canvas>
+
   <!-- Accessible skip link -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <!-- Top Sticky Navigation Bar (Background: --surface) -->
+  <!-- Top Sticky Navigation Bar -->
   <header class="site-header" role="banner">
-    <div class="page-container site-header-inner">
-      <!-- Logo + Wordmark -->
+    <div class="hero-container site-header-inner">
+      <!-- Minimal Shield + Pulse Brand Mark & Wordmark -->
       <a href="#hero" class="site-brand" aria-label="Havilah Home">
-        <img src="/assets/havilah-logo.svg" alt="Havilah" style="height: 32px; width: auto; display: block;">
+        <span class="site-brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <polyline points="7.5 12.5 10 12.5 11.5 9.5 13 15 14.5 12.5 16.5 12.5"></polyline>
+          </svg>
+        </span>
+        <span class="site-brand-wordmark">Havilah</span>
       </a>
 
       <!-- Desktop Nav Links -->
       <nav class="site-nav" aria-label="Main Navigation">
-        <a href="#product" class="site-nav-link">Product</a>
-        <a href="#how-it-works" class="site-nav-link">How it works</a>
-        <a href="#privacy" class="site-nav-link">Privacy</a>
-        <a href="#pricing" class="site-nav-link">Pricing</a>
-        <a href="#faq" class="site-nav-link">FAQ</a>
+        <a href="#product" class="site-nav-link">Platform</a>
+        <a href="#privacy" class="site-nav-link">Privacy Shield</a>
+        <a href="#excuse-duty" class="site-nav-link">Compliance</a>
+        <a href="/verify" class="site-nav-link">Verify Certificate</a>
       </nav>
 
-      <!-- Desktop Header Actions (Single primary button per viewport) -->
+      <!-- Desktop Header Actions -->
       <div class="site-header-actions">
         <a href="/login" class="btn btn-ghost">Login</a>
-        <button type="button" class="btn btn-primary" id="topBarBookDemo" onclick="App.bookDemo()">Book a demo</button>
+        <button type="button" class="btn btn-primary" id="topBarBookDemo" onclick="App.bookDemo()">Request Demo</button>
       </div>
 
       <!-- Mobile Hamburger Button (< 1024px) -->
@@ -1442,7 +1920,13 @@
   <aside class="mobile-drawer" id="mobileDrawer" aria-label="Mobile Navigation" aria-hidden="true">
     <div class="mobile-drawer-header">
       <div class="site-brand">
-        <img src="/assets/havilah-logo.svg" alt="Havilah" style="height: 30px; width: auto; display: block;">
+        <span class="site-brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <polyline points="7.5 12.5 10 12.5 11.5 9.5 13 15 14.5 12.5 16.5 12.5"></polyline>
+          </svg>
+        </span>
+        <span class="site-brand-wordmark">Havilah</span>
       </div>
       <button type="button" class="modal-close-btn" onclick="toggleMobileMenu()" aria-label="Close menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
@@ -1452,64 +1936,123 @@
       </button>
     </div>
     <div class="mobile-drawer-links">
-      <a href="#product" class="mobile-drawer-link" onclick="toggleMobileMenu()">Product</a>
-      <a href="#how-it-works" class="mobile-drawer-link" onclick="toggleMobileMenu()">How it works</a>
-      <a href="#privacy" class="mobile-drawer-link" onclick="toggleMobileMenu()">Privacy</a>
+      <a href="#product" class="mobile-drawer-link" onclick="toggleMobileMenu()">Platform</a>
+      <a href="#privacy" class="mobile-drawer-link" onclick="toggleMobileMenu()">Privacy Shield</a>
+      <a href="#excuse-duty" class="mobile-drawer-link" onclick="toggleMobileMenu()">Compliance</a>
+      <a href="/verify" class="mobile-drawer-link">Verify Certificate</a>
       <a href="#pricing" class="mobile-drawer-link" onclick="toggleMobileMenu()">Pricing</a>
       <a href="#faq" class="mobile-drawer-link" onclick="toggleMobileMenu()">FAQ</a>
     </div>
     <div style="border-top: 1px solid var(--border); padding-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2);">
       <a href="/login" class="btn btn-secondary" style="width: 100%;">Login</a>
-      <button type="button" class="btn btn-primary" style="width: 100%;" onclick="toggleMobileMenu(); App.bookDemo();">Book a demo</button>
+      <button type="button" class="btn btn-primary" style="width: 100%;" onclick="toggleMobileMenu(); App.bookDemo();">Request Demo</button>
     </div>
   </aside>
 
   <!-- Main Content Landmark -->
   <main id="main-content">
-    <!-- Hero Section (Background: --bg, Two Columns on Desktop) -->
+    <!-- Hero Section (Two Columns on Desktop, Transparent over Topographic Spacetime Canvas) -->
     <section class="hero-section" id="hero" aria-labelledby="hero-heading">
-      <div class="page-container">
+      <div class="hero-container">
         <div class="hero-grid">
-          <!-- Left Column: Copy & Actions -->
+          <!-- Left Column: Eyebrow, Copy, CTAs & Trust Strip -->
           <div class="hero-text-col reveal-on-scroll">
-            <h1 id="hero-heading" class="hero-title">Know how your people are really doing, without ever seeing who said what.</h1>
-            <p class="hero-subtitle">Confidential check-ins for employees. Anonymous group insight for HR.</p>
+            <div class="hero-eyebrow">
+              <span class="hero-eyebrow-dot" aria-hidden="true"></span>
+              <span>ISO 45003 Workplace Wellness &amp; Compliance</span>
+            </div>
+            <h1 id="hero-heading" class="hero-title">Turn Workplace Stress Into Measurable Workforce Resilience.</h1>
+            <p class="hero-subtitle">Confidential clinical screening (PHQ-9, GAD-7, PSS-10, FAS-10, COPSOQ III), N &gt;= 5 anonymized HR analytics, and tamper-evident digital excuse duty certificates aligned with Ghana's Data Protection Act 843.</p>
             <div class="hero-cta-group">
-              <button type="button" class="btn btn-primary" onclick="App.bookDemo()">Book a demo</button>
-              <button type="button" class="btn btn-secondary" id="heroStartTrialBtn" onclick="App.startTrial()">Start 30-day trial</button>
-              <button type="button" class="hero-video-link" id="heroWatchVideoBtn" onclick="App.openVideoModal()" aria-haspopup="dialog">
-                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width: 15px; height: 15px;" aria-hidden="true">
-                  <polygon points="6 3 20 12 6 21 6 3"></polygon>
+              <button type="button" class="btn-hero-primary" onclick="App.bookDemo()">Request Employer Demo</button>
+              <a href="/verify" class="btn-hero-secondary">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <polyline points="9 12 11 14 15 10"></polyline>
                 </svg>
-                <span>Watch 30-second overview</span>
-              </button>
+                <span>Verify Excuse Duty</span>
+              </a>
+            </div>
+            <div class="hero-trust-strip" aria-label="Compliance and Security Highlights">
+              <span class="hero-trust-pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>N &gt;= 5 Anonymity Threshold</span>
+              </span>
+              <span class="hero-trust-pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span>Act 843 &amp; ISO 45003 Ready</span>
+              </span>
+              <span class="hero-trust-pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>HMAC-SHA256 Signed Certificates</span>
+              </span>
             </div>
           </div>
 
-          <!-- Right Column: Anonymity Animation Card (Background: --surface) -->
-          <div class="hero-anim-card reveal-on-scroll">
-            <div class="hero-canvas-wrap">
-              <canvas id="heroAnonymityCanvas" role="img" aria-label="Simulation of employee check-in anonymity. Individual responses stay private; groups of five or more become visible aggregate insight."></canvas>
-              <!-- Visually hidden sentence for screen reader users -->
-              <p class="sr-only">Individual responses stay private. Groups of five or more become visible insight.</p>
+          <!-- Right Column: Top Action + Autonomous N >= 5 Privacy-Shield Card -->
+          <div class="hero-cohort-col reveal-on-scroll">
+            <div class="hero-overview-trigger-wrap">
+              <button type="button" class="hero-video-link" id="heroWatchVideoBtn" onclick="App.openVideoModal()" aria-haspopup="dialog">
+                <span class="hero-play-badge" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="11" height="11">
+                    <polygon points="7 4 20 12 7 20 7 4"></polygon>
+                  </svg>
+                </span>
+                <span>Watch 30-second overview</span>
+              </button>
             </div>
-            <!-- Story Step Advancing Caption -->
-            <div class="hero-story-strip">
-              <div class="hero-story-step-pills" aria-hidden="true">
-                <span class="hero-step-pill active" id="heroStep1"></span>
-                <span class="hero-step-pill" id="heroStep2"></span>
-                <span class="hero-step-pill" id="heroStep3"></span>
+
+            <div class="hero-anim-card" aria-label="Autonomous N >= 5 Privacy Shield Simulation">
+              <!-- Dedicated Top Status Row -->
+              <div class="cohort-status-row">
+                <span class="cohort-status-label" id="cohortStatusLabel" aria-live="polite">3 responses nearby</span>
+                <span class="cohort-privacy-pill">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  <span>Your answer: never shown</span>
+                </span>
               </div>
-              <p class="hero-story-caption" id="heroStoryCaption" aria-live="polite">Your answer stays private.</p>
-            </div>
-            <div class="hero-legend-row" aria-hidden="true">
-              <div class="hero-legend-item">
-                <span class="legend-dot legend-dot-grey"></span>
-                <span>Individual: always private</span>
+
+              <!-- Autonomous Simulation Stage -->
+              <div class="hero-canvas-wrap">
+                <canvas id="heroAnonymityCanvas" role="img" aria-label="Autonomous simulation of employee check-in anonymity. Dots float and gather into a central privacy well; results stay locked below 5 responses and unlock aggregate HR insights at 5 or more."></canvas>
+                <p class="sr-only">Individual responses remain private. Groups of five or more unlock aggregate HR wellbeing metrics.</p>
               </div>
-              <div class="hero-legend-item">
-                <span class="legend-dot legend-dot-teal"></span>
-                <span>Group of 5 or more: visible to HR</span>
+
+              <!-- Dedicated Bottom HR Output Pill -->
+              <div class="cohort-hr-row">
+                <div class="cohort-hr-pill" id="cohortHrOutputPill" aria-live="polite">
+                  <span class="cohort-hr-lock" id="cohortHrLockIcon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </span>
+                  <span class="cohort-hr-dot" id="cohortHrDot" aria-hidden="true"></span>
+                  <span id="cohortHrOutputText">HR sees: Privacy locked (fewer than 5 responses)</span>
+                </div>
+              </div>
+
+              <!-- Footer Story Strip & Legend -->
+              <div class="hero-story-strip">
+                <div class="hero-story-step-pills" aria-hidden="true">
+                  <span class="hero-step-pill" id="heroStep1"></span>
+                  <span class="hero-step-pill active" id="heroStep2"></span>
+                  <span class="hero-step-pill" id="heroStep3"></span>
+                </div>
+                <p class="hero-story-caption" id="heroStoryCaption" aria-live="polite">Together with 4 or more colleagues...</p>
+              </div>
+              <div class="hero-legend-row" aria-hidden="true">
+                <div class="hero-legend-item">
+                  <span class="legend-dot legend-dot-grey"></span>
+                  <span>Individual: always private</span>
+                </div>
+                <div class="hero-legend-item">
+                  <span class="legend-dot legend-dot-teal"></span>
+                  <span>Group of 5 or more: visible to HR</span>
+                </div>
               </div>
             </div>
           </div>
@@ -1517,8 +2060,8 @@
       </div>
     </section>
 
-    <!-- Product Summary Row (Background: --surface) -->
-    <section class="landing-section" style="background-color: var(--surface);" aria-label="Product Highlights">
+    <!-- Product Summary Row -->
+    <section class="landing-section surface-frosted" aria-label="Product Highlights">
       <div class="page-container">
         <div class="summary-grid">
           <!-- Item 1: Anonymous by design -->
@@ -1531,7 +2074,7 @@
               </svg>
             </div>
             <h2 class="summary-card-title">Anonymous by design</h2>
-            <p class="summary-card-desc">HR sees results only for groups of 5 or more.</p>
+            <p class="summary-card-desc">HR sees aggregated group metrics only when 5 or more unique employees respond.</p>
           </div>
 
           <!-- Item 2: Validated screening tools -->
@@ -1542,32 +2085,32 @@
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
               </svg>
             </div>
-            <h2 class="summary-card-title">Validated screening tools</h2>
-            <p class="summary-card-desc">PHQ-9, GAD-7, PSS-10, FAS-10, and COPSOQ-III check-ins.</p>
+            <h2 class="summary-card-title">Validated clinical screening</h2>
+            <p class="summary-card-desc">PHQ-9, GAD-7, PSS-10, FAS-10, and official 32-item COPSOQ III check-ins scored to clinical standards.</p>
           </div>
 
-          <!-- Item 3: Confidential medical assessor access -->
+          <!-- Item 3: Tamper-evident Excuse Duty & clinical assessor care -->
           <div class="summary-card reveal-on-scroll">
             <div class="summary-icon-wrap" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                <line x1="9" y1="9" x2="15" y2="9"></line>
-                <line x1="9" y1="13" x2="13" y2="13"></line>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <path d="M9 15l2 2 4-4"></path>
               </svg>
             </div>
-            <h2 class="summary-card-title">Confidential medical assessor access</h2>
-            <p class="summary-card-desc">Direct referrals and secure chat with a clinician.</p>
+            <h2 class="summary-card-title">Digital Excuse Duty &amp; OSH care</h2>
+            <p class="summary-card-desc">Confidential medical assessor referrals, fitness dispositions, and HMAC-SHA256 verifiable certificates.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Features Section (#product - Background: --surface) -->
-    <section class="landing-section" id="product" aria-labelledby="features-heading" style="background-color: var(--surface);">
+    <!-- Features Section (#product) -->
+    <section class="landing-section surface-frosted" id="product" aria-labelledby="features-heading">
       <div class="page-container">
         <div class="section-header reveal-on-scroll">
           <h2 id="features-heading" class="section-title">Core capabilities</h2>
-          <p class="section-subtitle">A balanced workplace wellbeing platform built for confidential care and aggregate risk intelligence.</p>
+          <p class="section-subtitle">A unified workplace wellbeing and occupational health platform built for confidential care, aggregate risk intelligence, and verifiable fitness documentation.</p>
         </div>
 
         <div class="features-grid">
@@ -1583,7 +2126,7 @@
               </svg>
             </div>
             <h3 class="feature-title">Validated instruments</h3>
-            <p class="feature-desc">Standardized PHQ-9, GAD-7, PSS-10, FAS-10, and COPSOQ-III questionnaires scored objectively.</p>
+            <p class="feature-desc">Standardized PHQ-9, GAD-7, PSS-10, FAS-10, and COPSOQ III (Core, Middle, Long) scored accurately with ISO 45003 alignment.</p>
           </div>
 
           <!-- Item 2: Anonymous group reporting -->
@@ -1597,10 +2140,22 @@
               </svg>
             </div>
             <h3 class="feature-title">Anonymous group reporting</h3>
-            <p class="feature-desc">HR dashboards display aggregated wellbeing distributions only when at least 5 employees respond.</p>
+            <p class="feature-desc">HR dashboards display aggregated wellbeing distributions only when at least 5 unique employees respond.</p>
           </div>
 
-          <!-- Item 3: Medical assessor referrals and chat -->
+          <!-- Item 3: Digital Excuse Duty & OSH Fitness Certificates -->
+          <div class="feature-card reveal-on-scroll">
+            <div class="feature-icon-row" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <polyline points="9 12 11 14 15 10"></polyline>
+              </svg>
+            </div>
+            <h3 class="feature-title">Digital Excuse Duty &amp; fitness certificates</h3>
+            <p class="feature-desc">HeFRA and MDC registered assessors issue QR-verifiable, HMAC-SHA256 sealed sick leave, fit-for-duty, and light-duty certificates without exposing medical diagnoses.</p>
+          </div>
+
+          <!-- Item 4: Medical assessor referrals and chat -->
           <div class="feature-card reveal-on-scroll">
             <div class="feature-icon-row" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1608,10 +2163,10 @@
               </svg>
             </div>
             <h3 class="feature-title">Medical assessor referrals and chat</h3>
-            <p class="feature-desc">Employees connect directly with licensed medical assessors through confidential triage and secure messaging.</p>
+            <p class="feature-desc">Employees connect directly with licensed medical assessors through confidential triage, video consultations, and encrypted messaging.</p>
           </div>
 
-          <!-- Item 4: Pulse check-ins on a schedule -->
+          <!-- Item 5: Pulse check-ins on a schedule -->
           <div class="feature-card reveal-on-scroll">
             <div class="feature-icon-row" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1621,22 +2176,11 @@
                 <line x1="3" y1="10" x2="21" y2="10"></line>
               </svg>
             </div>
-            <h3 class="feature-title">Pulse check-ins on a schedule</h3>
-            <p class="feature-desc">Automated check-in cadences allow organizations to track wellbeing trends over time.</p>
+            <h3 class="feature-title">Scheduled pulse check-ins</h3>
+            <p class="feature-desc">Automated Daily Pulse and formal assessment cycles help organizations monitor team resilience and burnout risk over time.</p>
           </div>
 
-          <!-- Item 5: Ethics and hazard reporting -->
-          <div class="feature-card reveal-on-scroll">
-            <div class="feature-icon-row" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              </svg>
-            </div>
-            <h3 class="feature-title">Ethics and hazard reporting</h3>
-            <p class="feature-desc">Safe reporting channels for workplace psychosocial hazards and confidential concerns.</p>
-          </div>
-
-          <!-- Item 6: Role-based access -->
+          <!-- Item 6: Ethics, hazard reporting & role partitions -->
           <div class="feature-card reveal-on-scroll">
             <div class="feature-icon-row" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1644,15 +2188,88 @@
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </div>
-            <h3 class="feature-title">Role-based access</h3>
-            <p class="feature-desc">Strict data partitions protect employee privacy, HR administrative controls, and clinical documentation.</p>
+            <h3 class="feature-title">Ethics reporting &amp; role partitions</h3>
+            <p class="feature-desc">Anonymous whistleblower dropbox with conflict-of-interest routing and strict separation between HR and clinical documentation.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Three-Portal Showcase Section (#product-showcase - Background: --surface) -->
-    <section class="landing-section portal-showcase-section" id="product-showcase" aria-labelledby="showcase-heading" style="background-color: var(--surface);">
+    <!-- Digital Excuse Duty & Occupational Fitness Section (#excuse-duty / #compliance) -->
+    <section class="landing-section surface-ambient" id="excuse-duty" aria-labelledby="excuse-duty-heading">
+      <div id="compliance" style="position: relative; top: -64px;" aria-hidden="true"></div>
+      <div class="page-container">
+        <div class="excuse-duty-grid">
+          <div class="reveal-on-scroll">
+            <div class="hero-eyebrow" style="margin-bottom: 14px;">
+              <span class="hero-eyebrow-dot" aria-hidden="true"></span>
+              <span>Ghana HeFRA, MDC &amp; Act 843 Compliant</span>
+            </div>
+            <h2 id="excuse-duty-heading" class="section-title" style="text-align: left; margin-bottom: 12px;">Tamper-evident Digital Excuse Duty &amp; Fitness for Work</h2>
+            <p class="section-subtitle" style="text-align: left; margin: 0;">Replace forged paper sick notes with cryptographically sealed occupational health certificates that verify authenticity in seconds while keeping medical diagnoses strictly confidential.</p>
+            <ul class="excuse-duty-list">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><strong>HMAC-SHA256 cryptographic seal &amp; QR verification:</strong> Every issued certificate carries a unique ID and tamper-evident digital hash verifiable instantly by HR.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><strong>Non-diagnostic OSH work restrictions:</strong> Clinicians specify clear fitness dispositions (Fit for Full Duty, Fit for Light / Modified Duty, or Unfit) and safe duty adjustments without revealing clinical diagnoses.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><strong>Verified clinician credentials:</strong> Tied directly to HeFRA facility licensing and Medical &amp; Dental Council (MDC) practitioner numbers with immutable audit trails.</span>
+              </li>
+            </ul>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <a href="/verify" class="btn-hero-primary" style="min-height: 42px; padding: 10px 18px;">Open Verification Portal</a>
+              <button type="button" class="btn-hero-secondary" style="min-height: 42px; padding: 10px 18px;" onclick="App.bookDemo()">See Assessor Workflow</button>
+            </div>
+          </div>
+
+          <div class="cert-preview-card reveal-on-scroll" aria-label="Sample Digital Excuse Duty Certificate Verification Preview">
+            <div class="cert-preview-head">
+              <div>
+                <div style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #0F766E;">Digital Excuse Duty Certificate</div>
+                <div style="font-family: 'Plus Jakarta Sans', var(--font-sans); font-size: 16px; font-weight: 700; color: #0F172A; margin-top: 2px;">HAV-ED-2026-8419</div>
+              </div>
+              <span class="cert-verified-pill">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Verified Authentic</span>
+              </span>
+            </div>
+
+            <div class="cert-meta-grid">
+              <div class="cert-meta-box">
+                <div class="cert-meta-label">Fitness Disposition</div>
+                <div class="cert-meta-val" style="color: #0F766E;">Fit for Light / Modified Duty</div>
+              </div>
+              <div class="cert-meta-box">
+                <div class="cert-meta-label">Issuing Clinician</div>
+                <div class="cert-meta-val">HeFRA &amp; MDC Verified</div>
+              </div>
+              <div class="cert-meta-box">
+                <div class="cert-meta-label">Clinical Diagnosis</div>
+                <div class="cert-meta-val" style="color: #64748B;">Withheld (Act 843 Protected)</div>
+              </div>
+              <div class="cert-meta-box">
+                <div class="cert-meta-label">Integrity Check</div>
+                <div class="cert-meta-val">HMAC-SHA256 Seal Valid</div>
+              </div>
+            </div>
+
+            <form class="cert-verify-form" onsubmit="App.verifyCertificateQuick(event)">
+              <label for="quickVerifyCertId" class="sr-only">Certificate ID to verify</label>
+              <input type="text" id="quickVerifyCertId" placeholder="Enter Certificate ID (e.g. HAV-ED-...)" autocomplete="off">
+              <button type="submit" class="btn btn-primary" style="height: 40px; padding: 0 16px;">Verify ID</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Three-Portal Showcase Section (#product-showcase) -->
+    <section class="landing-section portal-showcase-section surface-frosted" id="product-showcase" aria-labelledby="showcase-heading">
       <div class="page-container" style="max-width: 1280px;">
         <div class="section-header reveal-on-scroll" style="margin-bottom: var(--space-4);">
           <h2 id="showcase-heading" class="section-title">One platform, three secure portals.</h2>
@@ -1694,12 +2311,12 @@
       </div>
     </section>
 
-    <!-- How It Works Section (#how-it-works - Background: --bg) -->
-    <section class="landing-section" id="how-it-works" aria-labelledby="how-it-works-heading" style="background-color: var(--bg);">
+    <!-- How It Works Section (#how-it-works) -->
+    <section class="landing-section surface-ambient" id="how-it-works" aria-labelledby="how-it-works-heading">
       <div class="page-container">
         <div class="section-header reveal-on-scroll">
           <h2 id="how-it-works-heading" class="section-title">How it works</h2>
-          <p class="section-subtitle">Three straightforward steps to establish confidential, measured wellbeing in your organization.</p>
+          <p class="section-subtitle">Three straightforward steps to establish confidential, measured wellbeing and verifiable occupational health in your organization.</p>
         </div>
 
         <div class="steps-grid">
@@ -1717,19 +2334,19 @@
 
           <div class="step-card reveal-on-scroll">
             <div class="step-badge">3</div>
-            <h3 class="step-title">HR sees anonymous group results and can refer employees to a medical assessor</h3>
-            <p class="step-desc">Leadership monitors group-level wellbeing indicators and employees can access confidential clinical consultations.</p>
+            <h3 class="step-title">Anonymous HR trends, clinician care &amp; Excuse Duty</h3>
+            <p class="step-desc">Leadership monitors group-level indicators (N &gt;= 5) while employees access confidential medical assessors who issue QR-verifiable digital Excuse Duty and fitness certificates.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Privacy and Data Protection Section (#privacy - Background: --brand-subtle #F0FDFA) -->
+    <!-- Privacy and Data Protection Section (#privacy) -->
     <section class="privacy-section-wrapper" id="privacy" aria-labelledby="privacy-heading">
       <div class="page-container">
         <div class="section-header reveal-on-scroll">
           <h2 id="privacy-heading" class="section-title">Privacy and data protection</h2>
-          <p class="section-subtitle">Built around employee confidentiality and clear role boundaries.</p>
+          <p class="section-subtitle">Built around employee confidentiality, strict role boundaries, and Ghana Act 843 compliance.</p>
         </div>
 
         <div class="privacy-layout-grid reveal-on-scroll">
@@ -1764,16 +2381,27 @@
               </div>
             </div>
 
-            <div style="padding-top: var(--space-2); text-align: left;">
+            <div class="privacy-point">
+              <svg class="privacy-point-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <div class="privacy-point-text">
+                <strong>Non-diagnostic Excuse Duty verification.</strong>
+                Public certificate checks verify HMAC-SHA256 authenticity, leave dates, and fitness disposition while withholding clinical diagnoses and patient notes.
+              </div>
+            </div>
+
+            <div style="padding-top: var(--space-2); display: flex; gap: 10px; flex-wrap: wrap;">
               <button type="button" class="btn btn-secondary" onclick="App.openPrivacyModal()">Read our Privacy Policy</button>
+              <a href="/verify" class="btn btn-ghost" style="color: #0F766E;">Verify a Certificate</a>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Pricing Section (#pricing - Background: --bg) -->
-    <section class="landing-section" id="pricing" aria-labelledby="pricing-heading" style="background-color: var(--bg);">
+    <!-- Pricing Section (#pricing) -->
+    <section class="landing-section surface-ambient" id="pricing" aria-labelledby="pricing-heading">
       <div class="page-container">
         <div class="section-header reveal-on-scroll">
           <h2 id="pricing-heading" class="section-title">Transparent pricing for every organization</h2>
@@ -1860,6 +2488,10 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   <span>Scheduled pulse check-ins</span>
                 </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Digital Excuse Duty &amp; QR certificate verification</span>
+                </li>
               </ul>
             </div>
 
@@ -1903,6 +2535,10 @@
                 <li class="pricing-feature-item">
                   <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   <span>Multi-dimensional psychosocial risk reporting</span>
+                </li>
+                <li class="pricing-feature-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>OSH fitness restrictions &amp; HMAC-SHA256 sealed Excuse Duty PDFs</span>
                 </li>
                 <li class="pricing-feature-item">
                   <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -1955,12 +2591,12 @@
       </div>
     </section>
 
-    <!-- FAQ Section (#faq - Background: --surface) -->
-    <section class="landing-section" id="faq" aria-labelledby="faq-heading" style="background-color: var(--surface);">
+    <!-- FAQ Section (#faq) -->
+    <section class="landing-section surface-frosted" id="faq" aria-labelledby="faq-heading">
       <div class="page-container">
         <div class="section-header reveal-on-scroll">
           <h2 id="faq-heading" class="section-title">Frequently asked questions</h2>
-          <p class="section-subtitle">Common questions about confidentiality, data protection, and platform billing.</p>
+          <p class="section-subtitle">Common questions about confidentiality, digital Excuse Duty verification, data protection, and platform billing.</p>
         </div>
 
         <div class="faq-container reveal-on-scroll">
@@ -1971,6 +2607,16 @@
             </summary>
             <div class="faq-content">
               Individual responses are strictly confidential. HR administrators and employers only see aggregated group metrics when at least 5 employees have completed an assessment. Individual screening answers are never revealed.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-summary">
+              <span>How does Digital Excuse Duty verification protect medical privacy?</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </summary>
+            <div class="faq-content">
+              Every certificate issued by a licensed HeFRA and MDC registered assessor is sealed with an HMAC-SHA256 cryptographic signature and QR code. When HR verifies a certificate ID at /verify, the portal confirms authenticity, issuing clinic credentials, leave dates, and non-diagnostic fitness disposition (such as Fit for Light Duty) while keeping medical diagnoses and clinical notes strictly private.
             </div>
           </details>
 
@@ -2024,7 +2670,7 @@
           <h2 id="cta-heading" class="cta-heading">Talk to us about your organization.</h2>
           <p class="cta-subtext">Schedule a personal walkthrough with our team or request an official quote for your workplace.</p>
           <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center; margin-top: var(--space-2);">
-            <button type="button" class="btn cta-btn-primary" onclick="App.bookDemo()">Book a demo</button>
+            <button type="button" class="btn cta-btn-primary" onclick="App.bookDemo()">Request Employer Demo</button>
             <button type="button" class="btn cta-btn-outline" onclick="App.openQuoteModal()">Request a quote</button>
           </div>
         </div>
@@ -2032,12 +2678,13 @@
     </section>
   </main>
 
-  <!-- Single-Line Footer (Background: --surface) -->
+  <!-- Single-Line Footer -->
   <footer class="site-footer" role="contentinfo">
     <div class="page-container site-footer-inner">
       <div class="footer-links">
         <a href="/privacy" class="footer-btn-link" onclick="event.preventDefault(); App.openPrivacyModal()">Privacy Policy</a>
         <a href="/terms" class="footer-btn-link" onclick="event.preventDefault(); App.openTermsModal()">Terms of Service</a>
+        <a href="/verify" class="footer-btn-link">Verify Certificate</a>
         <button type="button" class="footer-btn-link" onclick="App.openContactModal()">Contact</button>
         <a href="/register" class="footer-btn-link">Register</a>
         <a href="/login" class="footer-btn-link">Sign In</a>
@@ -2280,7 +2927,7 @@
           <span class="stat-value" style="font-size: var(--text-md); margin-top: 4px;">
             <a href="mailto:nanakwamedickson553@gmail.com" style="color: var(--brand);">nanakwamedickson553@gmail.com</a>
           </span>
-          <span class="stat-hint" style="margin-top: 4px;">Business hours: Monday to Friday, 8:00 AM – 5:00 PM GMT</span>
+          <span class="stat-hint" style="margin-top: 4px;">Business hours: Monday to Friday, 8:00 AM - 5:00 PM GMT</span>
         </div>
 
         <p style="font-size: var(--text-sm); color: var(--text-subtle); margin-bottom: 0;">
@@ -2345,7 +2992,8 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- Page Scripts (Strictly under 15 KB unminified, zero external dependencies) -->
+  <!-- Page Scripts (Zero external dependencies, lightweight 2D Canvas) -->
+  <script src="/js/spacetimeBg.js"></script>
   <script src="/js/heroViz.js"></script>
   <script src="/js/portalMorph.js"></script>
   <script>
@@ -2395,6 +3043,11 @@ function toggleMobileMenu() {
 
 window.App = {
   switchShowcase: (role) => window.HavilahPortalMorph && window.HavilahPortalMorph.jumpToRole(['hr', 'employee', 'assessor'].indexOf(role)),
+  verifyCertificateQuick: e => {
+    if (e?.preventDefault) e.preventDefault();
+    const certId = val('quickVerifyCertId');
+    window.location.href = certId ? ('/verify/' + encodeURIComponent(certId)) : '/verify';
+  },
   openModal: id => { const m = $(id); if (m) m.classList.add('is-open'); },
   closeModal: id => { const m = $(id); if (m) m.classList.remove('is-open'); },
   openDemoModal: (title, plan) => {

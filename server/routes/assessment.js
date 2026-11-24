@@ -4,7 +4,9 @@ const express = require('express');
 const router = express.Router();
 const PersonalWellnessLog = require('../models/PersonalWellnessLog');
 const AssessmentCycle = require('../models/AssessmentCycle');
+const Tenant = require('../models/Tenant');
 const { validateSession, requireRole } = require('../middleware/auth');
+const { requireCompanyTenant } = require('../middleware/tierGate');
 
 // Active SSE client connections indexed by tenant_id
 const sseClientsByTenant = new Map(); // tenant_id -> Set of Express res objects
@@ -114,8 +116,31 @@ router.get('/stream-availability', async (req, res, next) => {
     tenantClients.add(res);
 
     // Send initial snapshot on connection
-    const activeMap = await AssessmentCycle.getActiveForEmployee(tenantId, null).catch(() => ({}));
-    const unlockedInstruments = getUnlockedInstrumentCodes(activeMap);
+    let activeMap = {};
+    let unlockedInstruments = [];
+    const tenantDoc = tenantId && tenantId !== 'ten-123'
+      ? await Tenant.findOne({ company_id: tenantId }).catch(() => null)
+      : null;
+
+    if (tenantDoc && tenantDoc.account_type === 'individual') {
+      const effectiveTier = typeof tenantDoc.getEffectiveTier === 'function' ? tenantDoc.getEffectiveTier() : 'free';
+      if (effectiveTier === 'personal') {
+        unlockedInstruments = ['DAILY_PULSE', 'COPSOQ_III', 'PHQ-9', 'GAD-7', 'PSS-10', 'FAS-10'];
+        activeMap = {
+          phq9: { status: 'unlocked' },
+          gad7: { status: 'unlocked' },
+          pss10: { status: 'unlocked' },
+          fas10: { status: 'unlocked' },
+          copsoq3: { status: 'unlocked', copsoq_depth: 'core' },
+        };
+      } else {
+        unlockedInstruments = ['DAILY_PULSE'];
+        activeMap = {};
+      }
+    } else {
+      activeMap = await AssessmentCycle.getActiveForEmployee(tenantId, null).catch(() => ({}));
+      unlockedInstruments = getUnlockedInstrumentCodes(activeMap);
+    }
 
     const initialPayload = JSON.stringify({
       type: 'connected',
@@ -317,7 +342,7 @@ async function handleToggleAssessment(req, res, next) {
  * @route   POST /api/v1/assessments/toggle
  * @desc    HR Admin toggle assessment availability endpoint
  */
-router.post('/toggle', validateSession, requireRole('hr_admin', 'tenant_admin', 'super_admin'), handleToggleAssessment);
+router.post('/toggle', validateSession, requireCompanyTenant, requireRole('hr_admin', 'tenant_admin', 'super_admin'), handleToggleAssessment);
 
 module.exports = {
   router,

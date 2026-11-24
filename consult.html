@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Havilah — Guest Doctor Consultation &amp; Digital Excuse Duty (GHS 349)</title>
+  <meta name="description" content="Book a confidential consultation with a licensed Havilah clinician for GHS 349 — no account required. Includes a QR-verifiable Digital Excuse Duty certificate if clinically indicated.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0F766E">
+  <link rel="canonical" href="https://havilah.dic20016.workers.dev/consult">
+  <link rel="icon" type="image/svg+xml" href="/assets/havilah-mark.svg">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" href="/fonts/Roboto.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/tailwind.css">
+  <link rel="stylesheet" href="/css/loader.css">
+  <script src="/js/icons.js"></script>
+  <script src="/js/havilahLoader.js"></script>
+  <style>
+    .consult-card { max-width: 560px !important; }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-scheduled { background: #ccfbf1; color: #0f766e; }
+    .status-completed { background: #dcfce7; color: #166534; }
+    .thread-box { max-height: 260px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: var(--bg); display: flex; flex-direction: column; gap: 8px; }
+    .thread-msg { padding: 8px 12px; border-radius: 8px; font-size: 0.875rem; line-height: 1.45; }
+    .thread-msg.assessor { background: #f0fdfa; border: 1px solid #99f6e4; align-self: flex-start; max-width: 88%; }
+    .thread-msg.employee { background: #fff; border: 1px solid var(--border); align-self: flex-end; max-width: 88%; }
+  </style>
+</head>
+<body class="auth-page">
+  <main class="auth-card consult-card" id="consultCard">
+    <header class="auth-header">
+      <a href="/" aria-label="Back to Havilah home" style="display: inline-block; margin-bottom: 12px;">
+        <img src="/assets/havilah-logo.svg" alt="Havilah" style="height: 36px; width: auto;">
+      </a>
+      <h1 class="auth-title" id="consultTitle">Doctor Consultation &amp; Excuse Duty</h1>
+      <p class="auth-subtitle" id="consultSubtitle">No account required. Speak with a licensed medical practitioner for <strong>GHS 349</strong>. Includes an official QR-verifiable Digital Excuse Duty certificate if clinically warranted.</p>
+    </header>
+
+    <div id="consultStatusBox" class="hidden alert-banner alert-success" style="margin-bottom: var(--space-4);" role="status"></div>
+    <div id="consultErrorBox" class="hidden alert-banner alert-danger" style="margin-bottom: var(--space-4);" role="alert"></div>
+
+    <!-- VIEW A: Guest Booking & Checkout -->
+    <section id="guestIntakeSection">
+      <div style="background: rgba(15, 118, 110, 0.06); border: 1px solid rgba(15, 118, 110, 0.22); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.8125rem; color: var(--text-2);">
+        <strong>One-time fee: GHS 349</strong> (Mobile Money or Card via Paystack).<br>
+        Want self-screening tools too? <a href="/register?mode=individual" style="color: var(--brand); font-weight: 600;">Start a 30-day Individual free trial</a> instead.
+      </div>
+
+      <form id="guestConsultForm" novalidate>
+        <div class="form-field">
+          <label for="guestName" class="form-label">Full name *</label>
+          <input type="text" id="guestName" required class="input" placeholder="e.g. Kwame Mensah" autocomplete="name">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-field">
+            <label for="guestEmail" class="form-label">Email address *</label>
+            <input type="email" id="guestEmail" required class="input" placeholder="you@example.com" autocomplete="email">
+          </div>
+          <div class="form-field">
+            <label for="guestPhone" class="form-label">Phone / WhatsApp *</label>
+            <input type="tel" id="guestPhone" required class="input" placeholder="024 000 0000" autocomplete="tel">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-field">
+            <label for="guestPreferredTime" class="form-label">Preferred time</label>
+            <select id="guestPreferredTime" class="select">
+              <option value="As soon as available">As soon as available</option>
+              <option value="Morning (8 AM - 12 PM)">Morning (8 AM - 12 PM)</option>
+              <option value="Afternoon (12 PM - 4 PM)">Afternoon (12 PM - 4 PM)</option>
+              <option value="Evening (4 PM - 8 PM)">Evening (4 PM - 8 PM)</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="guestPriority" class="form-label">Urgency</label>
+            <select id="guestPriority" class="select">
+              <option value="standard">Standard Consultation</option>
+              <option value="urgent">Urgent (Today)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="guestNotes" class="form-label">Symptoms or reason for consultation *</label>
+          <textarea id="guestNotes" rows="3" required class="input" placeholder="Briefly describe how you're feeling or why you need medical review..."></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-field">
+            <label for="guestEmployerName" class="form-label">Employer name <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
+            <input type="text" id="guestEmployerName" class="input" placeholder="For certificate PDF only">
+          </div>
+          <div class="form-field">
+            <label for="guestStaffId" class="form-label">Staff ID <span style="color: var(--text-muted); font-weight: 400;">(optional)</span></label>
+            <input type="text" id="guestStaffId" class="input" placeholder="e.g. EMP-1042">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="auth-checkbox-label">
+            <input type="checkbox" id="guestDisclaimer" required>
+            <span>I understand that <strong>GHS 349</strong> covers a licensed medical consultation. An Excuse Duty certificate is included at no extra charge <strong>only if clinically warranted</strong> after clinical examination; consultation fees are non-refundable if sick leave is not medically indicated.</span>
+          </label>
+        </div>
+
+        <button type="submit" id="guestSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: var(--space-3);">
+          <span>Continue to Pay GHS 349 &amp; Book Doctor</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- VIEW B: Token-Protected Live Consultation Room -->
+    <section id="guestRoomSection" class="hidden">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Consultation Reference</div>
+          <div id="roomRefCode" class="font-mono" style="font-size: 1.05rem; font-weight: 700; color: var(--text);">REF-</div>
+        </div>
+        <span id="roomStatusBadge" class="status-pill status-pending">Pending</span>
+      </div>
+
+      <div id="roomScheduleBox" class="hidden" style="padding: 12px; border-radius: 10px; background: #f0fdfa; border: 1px solid #99f6e4; margin-bottom: 14px; font-size: 0.875rem;">
+        <div><strong>Scheduled:</strong> <span id="roomScheduledTime">-</span></div>
+        <div id="roomNotesWrap" class="hidden" style="margin-top: 4px; color: var(--text-2);"></div>
+        <a id="roomVideoBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm hidden" style="margin-top: 10px; display: inline-flex;">Join Telehealth Video Call</a>
+      </div>
+
+      <!-- Certificates / Attachments -->
+      <div id="roomAttachmentsBox" class="hidden" style="margin-bottom: 16px;">
+        <h2 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 8px; color: var(--text);">Issued Documents &amp; Excuse Duty</h2>
+        <div id="roomAttachmentsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+
+      <!-- Clinician Two-Way Chat -->
+      <div style="margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label style="font-size: 0.8125rem; font-weight: 700; color: var(--text);">Secure Clinician Chat</label>
+          <button type="button" id="roomRefreshBtn" style="font-size: 0.75rem; color: var(--brand); background: none; border: none; cursor: pointer; font-weight: 600;">Refresh</button>
+        </div>
+        <div id="roomThreadBox" class="thread-box">
+          <div style="font-size: 0.8125rem; color: var(--text-muted);">Your clinician will message you here shortly.</div>
+        </div>
+        <form id="roomChatForm" style="display: flex; gap: 8px; margin-top: 8px;">
+          <input type="text" id="roomChatInput" class="input" placeholder="Send a message to the doctor..." required style="flex: 1;">
+          <button type="submit" id="roomChatSendBtn" class="btn btn-secondary">Send</button>
+        </form>
+      </div>
+
+      <!-- Convert Guest to Individual Free Account -->
+      <div style="padding: 12px 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); font-size: 0.8125rem; color: var(--text-2); margin-top: 16px;">
+        <strong>Keep your records safe:</strong> Create a Havilah Individual account (30-day free trial) to save this consultation and access COPSOQ-III &amp; wellbeing check-ins.
+        <div style="margin-top: 8px;">
+          <a id="saveRecordSignupLink" href="/register?mode=individual" class="btn btn-secondary btn-sm" style="display: inline-block;">Create Free Account</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="auth-footer">
+      Already have an account? <a href="/login.html">Sign in</a> &middot; <a href="/register?mode=individual">Individual 30-day trial</a>
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const refCode = (params.get('ref') || '').trim().toUpperCase();
+      const guestToken = (params.get('token') || '').trim();
+      const paystackRef = (params.get('reference') || params.get('trxref') || '').trim();
+
+      const statusBox = document.getElementById('consultStatusBox');
+      const errorBox = document.getElementById('consultErrorBox');
+      const intakeSection = document.getElementById('guestIntakeSection');
+      const roomSection = document.getElementById('guestRoomSection');
+
+      function showErr(msg) {
+        errorBox.textContent = msg;
+        errorBox.classList.remove('hidden');
+      }
+      function hideErr() {
+        errorBox.classList.add('hidden');
+      }
+      function showStatus(msg) {
+        statusBox.textContent = msg;
+        statusBox.classList.remove('hidden');
+      }
+
+      if (refCode && guestToken) {
+        intakeSection.classList.add('hidden');
+        roomSection.classList.remove('hidden');
+        document.getElementById('consultTitle').textContent = 'Your Private Consultation Room';
+        document.getElementById('consultSubtitle').textContent = 'Bookmark this private link to message your clinician and download your Digital Excuse Duty certificate once issued.';
+        document.getElementById('roomRefCode').textContent = refCode;
+        document.getElementById('saveRecordSignupLink').href =
+          `/register?mode=individual&guestRef=${encodeURIComponent(refCode)}&guestToken=${encodeURIComponent(guestToken)}`;
+
+        async function verifyPaymentIfReturned() {
+          if (!paystackRef) return;
+          try {
+            const vRes = await fetch(`/api/v1/referrals/guest-verify/${encodeURIComponent(paystackRef)}?ref=${encodeURIComponent(refCode)}&token=${encodeURIComponent(guestToken)}`);
+            const vData = await vRes.json().catch(() => ({}));
+            if (vRes.ok && vData.success) {
+              showStatus('Payment of GHS 349 confirmed! Our medical assessor has been notified.');
+            } else {
+              showErr(vData.message || 'Could not confirm Paystack payment automatically yet. Please refresh shortly.');
+            }
+          } catch (_) {
+            showErr('Network error verifying payment. Refresh in a moment.');
+          }
+        }
+
+        async function loadRoom() {
+          try {
+            const res = await fetch(`/api/v1/referrals/status/${encodeURIComponent(refCode)}?token=${encodeURIComponent(guestToken)}`);
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+              if (res.status === 402) {
+                showErr('Payment has not completed yet for this consultation.');
+              } else {
+                showErr(data.message || 'Unable to load consultation.');
+              }
+              return;
+            }
+            const r = data.data;
+            const badge = document.getElementById('roomStatusBadge');
+            badge.textContent = r.status || 'pending';
+            badge.className = 'status-pill ' + (r.status === 'completed' ? 'status-completed' : r.status === 'scheduled' ? 'status-scheduled' : 'status-pending');
+
+            if (r.scheduledAt || r.meetingLink || r.appointmentNotes) {
+              document.getElementById('roomScheduleBox').classList.remove('hidden');
+              document.getElementById('roomScheduledTime').textContent = r.scheduledAt ? new Date(r.scheduledAt).toLocaleString() : (r.preferredTime || 'To be confirmed');
+              if (r.appointmentNotes) {
+                const nw = document.getElementById('roomNotesWrap');
+                nw.textContent = r.appointmentNotes;
+                nw.classList.remove('hidden');
+              }
+              if (r.meetingLink) {
+                const vb = document.getElementById('roomVideoBtn');
+                vb.href = r.meetingLink;
+                vb.classList.remove('hidden');
+              }
+            }
+
+            const attBox = document.getElementById('roomAttachmentsBox');
+            const attList = document.getElementById('roomAttachmentsList');
+            attList.innerHTML = '';
+            if (Array.isArray(r.attachments) && r.attachments.length > 0) {
+              attBox.classList.remove('hidden');
+              r.attachments.forEach((att) => {
+                const card = document.createElement('div');
+                card.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;gap:10px;';
+                const info = document.createElement('div');
+                info.style.fontSize = '0.8125rem';
+                info.innerHTML = `<strong>${(att.fileName || 'Certificate.pdf').replace(/</g, '&lt;')}</strong>` +
+                  (att.certificateId ? `<div class="font-mono" style="font-size:0.75rem;color:var(--text-muted);">ID: ${att.certificateId} &middot; <a href="/verify/${encodeURIComponent(att.certificateId)}" target="_blank">Verify QR</a></div>` : '');
+                const dl = document.createElement('a');
+                dl.className = 'btn btn-primary btn-sm';
+                dl.textContent = 'Download';
+                if (att.fileData) {
+                  dl.href = att.fileData.startsWith('data:') ? att.fileData : `data:${att.fileType || 'application/pdf'};base64,${att.fileData}`;
+                  dl.download = att.fileName || 'Havilah_Excuse_Duty.pdf';
+                } else if (att.fileUrl) {
+                  dl.href = att.fileUrl;
+                  dl.target = '_blank';
+                }
+                card.appendChild(info);
+                card.appendChild(dl);
+                attList.appendChild(card);
+              });
+            }
+
+            const threadBox = document.getElementById('roomThreadBox');
+            threadBox.innerHTML = '';
+            if (Array.isArray(r.thread) && r.thread.length > 0) {
+              r.thread.forEach((m) => {
+                const div = document.createElement('div');
+                div.className = `thread-msg ${m.sender === 'assessor' ? 'assessor' : 'employee'}`;
+                const who = document.createElement('div');
+                who.style.cssText = 'font-size:0.7rem;font-weight:700;color:var(--text-muted);margin-bottom:2px;';
+                who.textContent = m.sender === 'assessor' ? (m.senderName || 'Clinician') : 'You';
+                const txt = document.createElement('div');
+                txt.textContent = m.message;
+                div.appendChild(who);
+                div.appendChild(txt);
+                threadBox.appendChild(div);
+              });
+              threadBox.scrollTop = threadBox.scrollHeight;
+            } else {
+              threadBox.innerHTML = '<div style="font-size:0.8125rem;color:var(--text-muted);">No messages yet. Our clinician will reach out shortly.</div>';
+            }
+          } catch (_) {
+            showErr('Error fetching consultation status.');
+          }
+        }
+
+        document.getElementById('roomRefreshBtn').addEventListener('click', loadRoom);
+        document.getElementById('roomChatForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          hideErr();
+          const input = document.getElementById('roomChatInput');
+          const msg = input.value.trim();
+          if (!msg) return;
+          const sendBtn = document.getElementById('roomChatSendBtn');
+          sendBtn.disabled = true;
+          try {
+            const res = await fetch(`/api/v1/referrals/status/${encodeURIComponent(refCode)}/message?token=${encodeURIComponent(guestToken)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: msg, token: guestToken }),
+            });
+            if (res.ok) {
+              input.value = '';
+              await loadRoom();
+            } else {
+              const d = await res.json().catch(() => ({}));
+              showErr(d.message || 'Could not send message.');
+            }
+          } finally {
+            sendBtn.disabled = false;
+          }
+        });
+
+        verifyPaymentIfReturned().then(loadRoom);
+        setInterval(loadRoom, 15000);
+        return;
+      }
+
+      document.getElementById('guestConsultForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideErr();
+        const patientName = document.getElementById('guestName').value.trim();
+        const patientEmail = document.getElementById('guestEmail').value.trim();
+        const patientPhone = document.getElementById('guestPhone').value.trim();
+        const preferredTime = document.getElementById('guestPreferredTime').value;
+        const priority = document.getElementById('guestPriority').value;
+        const notes = document.getElementById('guestNotes').value.trim();
+        const employerName = document.getElementById('guestEmployerName').value.trim();
+        const staffId = document.getElementById('guestStaffId').value.trim();
+        const clinicalDisclaimerAccepted = document.getElementById('guestDisclaimer').checked;
+
+        if (!patientName || !patientEmail || !patientPhone || !notes) {
+          showErr('Please fill in your name, email, phone number, and symptoms/reason.');
+          return;
+        }
+        if (!clinicalDisclaimerAccepted) {
+          showErr('Please accept the consultation and Excuse Duty clinical discretion notice.');
+          return;
+        }
+
+        const btn = document.getElementById('guestSubmitBtn');
+        if (window.HavilahLoader) HavilahLoader.setButtonLoading(btn, true, 'Connecting to Paystack...');
+        try {
+          const res = await fetch('/api/v1/referrals/guest-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              patientName,
+              patientEmail,
+              patientPhone,
+              preferredTime,
+              priority,
+              notes,
+              employerName,
+              staffId,
+              clinicalDisclaimerAccepted,
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.success && data.authorization_url) {
+            window.location.href = data.authorization_url;
+          } else {
+            showErr(data.message || data.error || 'Unable to start Paystack checkout.');
+          }
+        } catch (_) {
+          showErr('Network error starting checkout. Please try again.');
+        } finally {
+          if (window.HavilahLoader) HavilahLoader.setButtonLoading(btn, false, '<span>Continue to Pay GHS 349 &amp; Book Doctor</span>');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

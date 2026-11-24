@@ -13,10 +13,15 @@ const ReferralSchema = new mongoose.Schema({
   departmentName: { type: String, default: 'General' },
   preferredTime: { type: String, default: 'As soon as available' },
   priority: { type: String, enum: ['standard', 'urgent', 'crisis'], default: 'standard', index: true },
-  status: { type: String, enum: ['pending', 'scheduled', 'completed', 'cancelled', 'archived'], default: 'pending' },
+  status: { type: String, enum: ['awaiting_payment', 'pending', 'scheduled', 'completed', 'cancelled', 'archived'], default: 'pending' },
   previousStatus: { type: String, default: 'pending' },
   scheduledAt: { type: Date, default: null },
   appointmentNotes: { type: String, default: '' },
+  guestAccessTokenHash: { type: String, default: null },
+  patientProvidedEmployer: {
+    name: { type: String, trim: true, default: '' },
+    staffId: { type: String, trim: true, default: '' },
+  },
   billing: {
     amount: { type: Number, default: 0, min: 0 },
     currency: { type: String, default: 'GHS' },
@@ -28,6 +33,15 @@ const ReferralSchema = new mongoose.Schema({
       default: 'unbilled',
     },
     settledAt: { type: Date, default: null },
+    payerType: {
+      type: String,
+      enum: ['company_covered', 'welcome_credit', 'welcome_discount', 'self_pay', 'guest_pay'],
+      default: 'company_covered',
+      index: true,
+    },
+    payerUserId: { type: String, default: null },
+    paystackReference: { type: String, default: null, index: true },
+    expectedAmountPesewas: { type: Number, default: 0, min: 0 },
   },
   clinicalDetails: {
     patientName: { type: String, required: true },

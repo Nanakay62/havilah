@@ -2405,11 +2405,24 @@
     <section class="landing-section surface-ambient" id="pricing" aria-labelledby="pricing-heading">
       <div class="page-container">
         <div class="section-header reveal-on-scroll">
-          <h2 id="pricing-heading" class="section-title">Transparent pricing for every organization</h2>
-          <p class="section-subtitle">All prices in Ghana Cedis (GHS). 30-day Pro trial. No card required. When the trial ends you can pay, request an invoice, or request an extension.</p>
+          <h2 id="pricing-heading" class="section-title">Transparent pricing for individuals &amp; organizations</h2>
+          <p class="section-subtitle">All prices in Ghana Cedis (GHS). 30-day free trial with no card required. Or book a one-off doctor consultation anytime without an account.</p>
+          <div style="display: inline-flex; gap: 6px; padding: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-top: 16px;" role="tablist" aria-label="Pricing audience">
+            <button type="button" id="pricingTabTeams" class="btn btn-primary btn-sm" onclick="App.switchPricingAudience('teams')">For Organizations</button>
+            <button type="button" id="pricingTabIndividuals" class="btn btn-secondary btn-sm" onclick="App.switchPricingAudience('individuals')">For Individuals</button>
+          </div>
         </div>
 
-        <div class="pricing-grid">
+        <!-- Guest Consultation Quick Banner -->
+        <div class="invoice-banner reveal-on-scroll" style="margin-bottom: var(--space-6); border-color: rgba(15,118,110,0.3); background: rgba(15,118,110,0.04);">
+          <div class="invoice-banner-text">
+            <strong>Need a licensed doctor consultation or Excuse Duty today? Book as a Guest — GHS 349</strong>
+            <p>No account required. Includes a telehealth/in-person clinician review and an official QR-verifiable Digital Excuse Duty certificate if clinically warranted.</p>
+          </div>
+          <a href="/consult" class="btn btn-primary">Book Guest Consultation</a>
+        </div>
+
+        <div class="pricing-grid" id="pricingGridTeams">
           <!-- Card 1: Free (Community) -->
           <div class="pricing-card reveal-on-scroll">
             <div>
@@ -2550,6 +2563,83 @@
 
             <div>
               <button type="button" class="btn btn-primary" style="width: 100%;" onclick="App.openRegisterModal('pro')">Start 30-day trial</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Individual B2C Pricing Grid -->
+        <div class="pricing-grid" id="pricingGridIndividuals" style="display: none;">
+          <div class="pricing-card">
+            <div>
+              <div class="pricing-header">
+                <div class="pricing-tier-row">
+                  <span class="pricing-tier-name">Free (Post-Trial)</span>
+                  <span class="badge badge-neutral">Always Free</span>
+                </div>
+                <div>
+                  <span class="pricing-price">GHS 0</span>
+                  <span class="pricing-period">/ month</span>
+                </div>
+                <p class="pricing-summary">Daily wellbeing tracking and history after your 30-day trial.</p>
+              </div>
+              <ul class="pricing-features">
+                <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>30-day free trial of all screening tools (no card)</span></li>
+                <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Daily Pulse check-ins forever</span></li>
+                <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Personal wellbeing history &amp; articles</span></li>
+                <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Pay-per-use doctor consultations (GHS 349)</span></li>
+              </ul>
+            </div>
+            <div>
+              <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="App.openRegisterModal('individual')">Start 30-day Free Trial</button>
+            </div>
+          </div>
+
+          <div class="pricing-card is-recommended">
+            <div>
+              <div class="pricing-header">
+                <div class="pricing-tier-row">
+                  <span class="pricing-tier-name">Personal Monthly</span>
+                  <span class="badge badge-success">Popular</span>
+                </div>
+                <div>
+                  <span class="pricing-price">GHS 150</span>
+                  <span class="pricing-period">/ month</span>
+                </div>
+                <p class="pricing-summary">Validated Self-Assessment &amp; Clinical Screening Tools.</p>
+              </div>
+              <ul class="pricing-features">
+                <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Full COPSOQ-III, PHQ-9, GAD-7, PSS-10 &amp; FAS-10 screenings</span></li>
+                <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Longitudinal trend analytics &amp; JSON/PDF export</span></li>
+                <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>One-time GHS 150 credit toward your first doctor consultation (GHS 199 vs. GHS 349)</span></li>
+                <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Additional consultations billed separately (GHS 349)</span></li>
+              </ul>
+            </div>
+            <div>
+              <button type="button" class="btn btn-primary" style="width: 100%;" onclick="App.openRegisterModal('individual')">Start 30-day Free Trial</button>
+            </div>
+          </div>
+
+          <div class="pricing-card">
+            <div>
+              <div class="pricing-header">
+                <div class="pricing-tier-row">
+                  <span class="pricing-tier-name">Personal Annual</span>
+                  <span class="badge badge-neutral">2 Months Free</span>
+                </div>
+                <div>
+                  <span class="pricing-price">GHS 1,500</span>
+                  <span class="pricing-period">/ year</span>
+                </div>
+                <p class="pricing-summary">Best value for year-round personal screening &amp; care.</p>
+              </div>
+              <ul class="pricing-features">
+                <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Everything in Personal Monthly (save GHS 300/yr)</span></li>
+                <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>1 complimentary Welcome Clinician Consultation (+ Excuse Duty if indicated)</span></li>
+                <li class="pricing-feature-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Additional consultations billed separately (GHS 349)</span></li>
+              </ul>
+            </div>
+            <div>
+              <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="App.openRegisterModal('individual')">Choose Annual Trial</button>
             </div>
           </div>
         </div>
@@ -2765,11 +2855,16 @@
         </button>
       </div>
       <form id="registerForm" onsubmit="App.submitRegister(event)" class="modal-body">
-        <p style="font-size: var(--text-sm); color: var(--text-muted); margin-bottom: var(--space-4);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: var(--space-3);">
+          <button type="button" id="regTypeCompanyBtn" class="btn btn-primary btn-sm" onclick="App.setRegModalType('company')">Organization</button>
+          <button type="button" id="regTypeIndividualBtn" class="btn btn-secondary btn-sm" onclick="App.setRegModalType('individual')">Individual</button>
+        </div>
+
+        <p id="regModalSubcopy" style="font-size: var(--text-sm); color: var(--text-muted); margin-bottom: var(--space-4);">
           Set up your organization workspace. No credit card required.
         </p>
 
-        <div class="form-field">
+        <div class="form-field" id="regCompanyFieldWrap">
           <label class="form-label" for="regCompanyName">Organization name *</label>
           <input type="text" id="regCompanyName" class="input" placeholder="e.g. Acme Corporation" required>
         </div>
@@ -2780,21 +2875,21 @@
         </div>
 
         <div class="form-field">
-          <label class="form-label" for="regEmail">Work email *</label>
+          <label class="form-label" for="regEmail" id="regEmailLabel">Work email *</label>
           <input type="email" id="regEmail" class="input" placeholder="you@company.com" required>
         </div>
 
         <div class="form-field">
           <label class="form-label" for="regPassword">Password *</label>
           <div style="position: relative;">
-            <input type="password" id="regPassword" class="input" placeholder="At least 8 characters" required minlength="8" style="padding-right: 40px;">
+            <input type="password" id="regPassword" class="input" placeholder="Min 12 chars (Aa1!)" required minlength="12" style="padding-right: 40px;">
             <button type="button" onclick="toggleRegPasswordVisibility('regPassword', this)" aria-label="Show password" aria-pressed="false" title="Show password" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 4px; color: var(--text-subtle, #64748b); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             </button>
           </div>
         </div>
 
-        <div class="form-field">
+        <div class="form-field" id="regIndustryFieldWrap">
           <label class="form-label" for="regIndustry">Industry</label>
           <select id="regIndustry" class="select">
             <option value="Healthcare">Healthcare</option>
@@ -3163,23 +3258,63 @@ window.App = {
     const trigger = $('heroWatchVideoBtn');
     if (trigger) trigger.focus();
   },
+  switchPricingAudience: audience => {
+    const isInd = audience === 'individuals';
+    const teamsGrid = $('pricingGridTeams');
+    const indGrid = $('pricingGridIndividuals');
+    const btnTeams = $('pricingTabTeams');
+    const btnInd = $('pricingTabIndividuals');
+    if (teamsGrid) teamsGrid.style.display = isInd ? 'none' : '';
+    if (indGrid) indGrid.style.display = isInd ? '' : 'none';
+    if (btnTeams) btnTeams.className = isInd ? 'btn btn-secondary btn-sm' : 'btn btn-primary btn-sm';
+    if (btnInd) btnInd.className = isInd ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+  },
+  _regModalType: 'company',
+  setRegModalType: type => {
+    App._regModalType = type === 'individual' ? 'individual' : 'company';
+    const isInd = App._regModalType === 'individual';
+    const compWrap = $('regCompanyFieldWrap');
+    const compInput = $('regCompanyName');
+    const indWrap = $('regIndustryFieldWrap');
+    const emailLabel = $('regEmailLabel');
+    const emailInput = $('regEmail');
+    const subcopy = $('regModalSubcopy');
+    const btnComp = $('regTypeCompanyBtn');
+    const btnInd = $('regTypeIndividualBtn');
+    const submitBtn = $('btnSubmitRegister');
+    if (compWrap) compWrap.style.display = isInd ? 'none' : '';
+    if (compInput) compInput.required = !isInd;
+    if (indWrap) indWrap.style.display = isInd ? 'none' : '';
+    if (emailLabel) emailLabel.textContent = isInd ? 'Email address *' : 'Work email *';
+    if (emailInput) emailInput.placeholder = isInd ? 'you@example.com' : 'you@company.com';
+    if (subcopy) subcopy.textContent = isInd
+      ? 'Start your 30-day Personal free trial. Full access to screening tools. No card required.'
+      : 'Set up your organization workspace. No credit card required.';
+    if (btnComp) btnComp.className = isInd ? 'btn btn-secondary btn-sm' : 'btn btn-primary btn-sm';
+    if (btnInd) btnInd.className = isInd ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+    if (submitBtn) submitBtn.textContent = isInd ? 'Start 30-day free trial' : 'Create workspace';
+  },
   startTrial: () => App.openRegisterModal('pro'),
   openRegisterModal: tier => {
     const title = $('registerModalTitle'), err = $('registerErrorMsg');
+    App.setRegModalType(tier === 'individual' ? 'individual' : 'company');
     if (title) {
-      title.textContent = tier === 'free' ? 'Choose Free plan' : (tier === 'starter' ? 'Choose Starter plan' : 'Start 30-day trial');
+      title.textContent = tier === 'individual'
+        ? 'Start Personal 30-day free trial'
+        : (tier === 'free' ? 'Choose Free plan' : (tier === 'starter' ? 'Choose Starter plan' : 'Start 30-day trial'));
     }
     if (err) { err.style.display = 'none'; err.textContent = ''; }
     App.openModal('registerModal');
-    setTimeout(() => $('regCompanyName')?.focus(), 100);
+    setTimeout(() => $(tier === 'individual' ? 'regFullName' : 'regCompanyName')?.focus(), 100);
   },
   closeRegisterModal: () => App.closeModal('registerModal'),
   submitRegister: async e => {
     if (e?.preventDefault) e.preventDefault();
+    const isInd = App._regModalType === 'individual';
     const cn = val('regCompanyName'), fn = val('regFullName'), em = val('regEmail');
     const pw = $('regPassword')?.value, ind = $('regIndustry')?.value;
     const err = $('registerErrorMsg'), btn = $('btnSubmitRegister');
-    if (!cn || !fn || !em || !pw) {
+    if ((!isInd && !cn) || !fn || !em || !pw) {
       if (err) { err.textContent = 'Please complete all required fields.'; err.style.display = 'flex'; }
       return;
     }
@@ -3191,7 +3326,11 @@ window.App = {
       btn.textContent = 'Creating workspace...';
     }
     try {
-      const res = await post('/api/v1/auth/register-tenant', { companyName: cn, fullName: fn, email: em, password: pw, industry: ind });
+      const endpoint = isInd ? '/api/v1/auth/register-individual' : '/api/v1/auth/register-tenant';
+      const bodyPayload = isInd
+        ? { fullName: fn, email: em, password: pw, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', consentAccepted: true }
+        : { companyName: cn, fullName: fn, email: em, password: pw, industry: ind };
+      const res = await post(endpoint, bodyPayload);
       const d = await res.json();
       if (res.ok && d.success) {
         if (d.token) {
@@ -3207,10 +3346,10 @@ window.App = {
         if (window.HavilahLoader) {
           window.HavilahLoader.showFullscreen({
             label: 'Creating your workspace',
-            sublabel: 'Preparing HR Analytics Portal...'
+            sublabel: isInd ? 'Opening Personal Wellbeing Workspace...' : 'Preparing HR Analytics Portal...'
           });
         }
-        window.location.href = d.redirectUrl || '/portal/hr.html';
+        window.location.href = d.redirectUrl || (isInd ? '/app/dashboard.html' : '/portal/hr.html');
       } else if (err) {
         err.textContent = d.error || d.message || 'Registration failed.';
         err.style.display = 'flex';
@@ -3218,11 +3357,12 @@ window.App = {
     } catch {
       if (err) { err.textContent = 'Network error. Please try again.'; err.style.display = 'flex'; }
     } finally {
+      const idleText = isInd ? 'Start 30-day free trial' : 'Create workspace';
       if (window.HavilahLoader && btn) {
-        window.HavilahLoader.setButtonLoading(btn, false, 'Create workspace');
+        window.HavilahLoader.setButtonLoading(btn, false, idleText);
       } else if (btn) {
         btn.disabled = false;
-        btn.textContent = 'Create workspace';
+        btn.textContent = idleText;
       }
     }
   }

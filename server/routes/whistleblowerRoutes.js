@@ -6,6 +6,7 @@ const WhistleblowerReport = require('../models/WhistleblowerReport');
 const Tenant = require('../models/Tenant');
 const { validateSession, requireRole } = require('../middleware/auth');
 const { enforceTenantScope } = require('../middleware/tenantIsolation');
+const { requireCompanyTenant } = require('../middleware/tierGate');
 const { sendWhistleblowerAlert } = require('../utils/emailService');
 const { encryptField, decryptField } = require('../utils/crypto');
 const logger = require('../utils/logger');
@@ -24,7 +25,7 @@ function coarsenTimestamp(date) {
  * @desc    Submit an anonymous whistleblower hazard report
  * @access  Authenticated (user_id is immediately discarded)
  */
-router.post('/submit', validateSession, async (req, res, next) => {
+router.post('/submit', validateSession, requireCompanyTenant, async (req, res, next) => {
   try {
     const { category, description, urgency } = req.body;
 

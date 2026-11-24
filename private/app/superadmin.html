@@ -821,14 +821,15 @@
       </div>
     </div>
 
+    <div class="data-table-container" id="saAssessorPayoutsPanel" style="margin-bottom: 28px;"><div class="data-table-header"><div><div class="registry-title">Assessor Payouts Summary</div><div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Aggregated consultation counts and GHS collected by Havilah across Company, Individual, and Guest sessions for offline assessor payout.</div></div><button class="btn-outline" type="button" onclick="loadAssessorPayouts()">Refresh Payouts</button></div><div class="data-table-scroll"><table class="data-table table-to-cards"><thead><tr><th>Medical Assessor</th><th>Total Consultations</th><th>Completed</th><th>Breakdown (Guest / Self-Pay / Welcome / B2B)</th><th>GHS Collected by Havilah</th></tr></thead><tbody id="saAssessorPayoutsBody"><tr class="empty-row"><td colspan="5" style="padding:12px;text-align:center;color:var(--text-muted);">Loading assessor payouts...</td></tr></tbody></table></div></div>
     <!-- Tenant Registry Table -->
     <div class="data-table-container">
       <div class="data-table-header">
         <div class="registry-title">Tenant Registry</div>
         <div class="registry-actions">
           <input type="text" id="tenantSearchInput" placeholder="Search company name, slug, or domain..." style="padding: 7px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; min-width: 240px;" oninput="filterTenantsTable()">
-          <select id="tenantTierFilter" style="padding: 7px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px;" onchange="filterTenantsTable()">
-            <option value="all">All Tiers</option>
+          <select id="tenantAccountTypeFilter" style="padding: 7px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px;" onchange="filterTenantsTable()"><option value="all">All Accounts</option><option value="company">Organizations (B2B)</option><option value="individual">Individuals (B2C)</option></select><select id="tenantTierFilter" style="padding: 7px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px;" onchange="filterTenantsTable()">
+            <option value="all">All Tiers</option><option value="free">Free</option><option value="personal">Personal Monthly</option><option value="personal_annual">Personal Annual</option>
             <option value="trial">Trial</option>
             <option value="starter">Starter</option>
             <option value="professional">Professional</option>
@@ -1967,7 +1968,8 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
     loadPendingBilling();
     if (typeof fetchTenants === 'function') fetchTenants();
   }
-  document.addEventListener('DOMContentLoaded', () => { loadPendingBilling(); });
+  async function loadAssessorPayouts() { const tbody = document.getElementById('saAssessorPayoutsBody'); if (!tbody) return; try { const res = await fetch('/api/v1/superadmin/assessor-payouts', { headers: saAuthHeaders() }); const data = await res.json().catch(() => ({})); if (!res.ok || !data.success) { tbody.innerHTML = '<tr><td colspan="5" style="padding:12px;text-align:center;color:#f87171;">Failed to load payouts</td></tr>'; return; } const rows = data.payouts || []; if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="padding:12px;text-align:center;color:var(--text-muted);">No consultations recorded yet.</td></tr>'; return; } tbody.innerHTML = rows.map(p => { const b = p.byPayerType || {}; const breakdown = `Guest: ${b.guest_pay || 0} &middot; Self-Pay: ${b.self_pay || 0} &middot; Welcome: ${(b.welcome_credit || 0) + (b.welcome_discount || 0)} &middot; B2B: ${b.company_covered || 0}`; return `<tr><td><strong>${(p.assessorName || 'Assessor').replace(/</g,'&lt;')}</strong><div style="font-size:11px;color:var(--text-muted);">${(p.organization || p.email || '').replace(/</g,'&lt;')}</div></td><td>${p.totalConsultations}</td><td>${p.completedConsultations}</td><td style="font-size:12px;">${breakdown}</td><td><strong>GHS ${Number(p.collectedGhs || 0).toFixed(2)}</strong></td></tr>`; }).join(''); } catch (_) { tbody.innerHTML = '<tr><td colspan="5" style="padding:12px;text-align:center;color:#f87171;">Error loading payouts</td></tr>'; } }
+  document.addEventListener('DOMContentLoaded', () => { loadPendingBilling(); loadAssessorPayouts(); });
 </script>
 </body>
 </html>

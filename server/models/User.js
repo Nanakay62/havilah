@@ -59,8 +59,8 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: {
-        values: ['employee', 'hr_admin', 'tenant_admin', 'super_admin'],
-        message: 'role must be one of: employee, hr_admin, tenant_admin, super_admin',
+        values: ['employee', 'individual', 'hr_admin', 'tenant_admin', 'super_admin'],
+        message: 'role must be one of: employee, individual, hr_admin, tenant_admin, super_admin',
       },
       default: 'employee',
     },

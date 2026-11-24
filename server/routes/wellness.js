@@ -5,6 +5,7 @@ const router = express.Router();
 const User = require('../models/User');
 const PersonalWellnessLog = require('../models/PersonalWellnessLog');
 const { validateSession, requireConsent } = require('../middleware/auth');
+const { requireFeature } = require('../middleware/tierGate');
 const hazardController = require('../controllers/hazardController');
 const { scoreCOPSOQ3, VERSION_ITEM_LISTS } = require('../utils/copsoq3Scoring');
 const { coarsenTimestamp } = require('../utils/crypto');
@@ -135,6 +136,47 @@ router.get('/active-cycles', async (req, res, next) => {
   try {
     const { company_id, department_id, user_id } = req.sessionData;
     const AssessmentCycle = require('../models/AssessmentCycle');
+    const TenantModel = require('../models/Tenant');
+    let tenant = null;
+    try {
+      tenant = await TenantModel.findOne({ company_id });
+    } catch (_) {}
+
+    if (tenant && tenant.account_type === 'individual') {
+      const effectiveTier = typeof tenant.getEffectiveTier === 'function' ? tenant.getEffectiveTier() : 'free';
+      const individualTypes = ['copsoq3', 'phq9', 'gad7', 'pss10', 'fas10'];
+      const recentCutoff = new Date();
+      recentCutoff.setDate(recentCutoff.getDate() - 90);
+      const completedLogs = await PersonalWellnessLog.find({
+        user_id,
+        survey_type: { $in: [...individualTypes, 'copsoq3_core', 'copsoq3_middle', 'copsoq3_long'] },
+        submitted_at: { $gte: recentCutoff },
+      }).select('survey_type submitted_at').lean();
+      const completedTypes = new Set(completedLogs.map((l) => (l.survey_type && l.survey_type.startsWith('copsoq') ? 'copsoq3' : l.survey_type)));
+
+      if (effectiveTier !== 'personal') {
+        return res.json({
+          success: true,
+          account_type: 'individual',
+          effective_tier: effectiveTier,
+          active_cycles: [],
+          locked_instruments: ['COPSOQ_III', 'PHQ-9', 'GAD-7', 'PSS-10', 'FAS-10'],
+        });
+      }
+
+      const cycles = individualTypes.map((type) => ({
+        survey_type: type,
+        status: 'unlocked',
+        ...(type === 'copsoq3' ? { copsoq_depth: 'core' } : {}),
+        completed: completedTypes.has(type),
+      }));
+      return res.json({
+        success: true,
+        account_type: 'individual',
+        effective_tier: effectiveTier,
+        active_cycles: cycles,
+      });
+    }
 
     // Get active unlocked cycles for this employee's company/department
     const activeMap = await AssessmentCycle.getActiveForEmployee(company_id, department_id);
@@ -208,34 +250,44 @@ router.post('/daily-pulse', async (req, res, next) => {
       dimension_scores: profileScores,
     });
 
-    // 3. Dual-write to AnonHazardLog for department aggregate tracking (N >= 5 protected)
-    const AnonHazardLog = require('../models/AnonHazardLog');
-    const submittedAt = coarsenTimestamp(new Date());
+    // 3. Dual-write to AnonHazardLog for department aggregate tracking (N >= 5 protected) on company tenants only
+    const TenantModel = require('../models/Tenant');
+    let tenantForPulse = null;
+    try {
+      const tq = TenantModel.findOne({ company_id: companyId });
+      tenantForPulse = (tq && typeof tq.select === 'function')
+        ? await tq.select('account_type').lean()
+        : (tq && typeof tq.lean === 'function' ? await tq.lean() : await tq);
+    } catch (_) {}
+    if (!tenantForPulse || tenantForPulse.account_type !== 'individual') {
+      const AnonHazardLog = require('../models/AnonHazardLog');
+      const submittedAt = coarsenTimestamp(new Date());
 
-    const anonDoc = new AnonHazardLog({
-      company_id: companyId,
-      department_id: req.sessionData.department_id || 'GENERAL',
-      department_snapshot_id: req.sessionData.department_id || 'GENERAL',
-      survey_type: 'daily_pulse',
-      risk_category: 'psychosocial',
-      dimension_scores: {
-        mood: profileScores.mood,
-        calm: profileScores.calm,
-        stress: profileScores.stress,
-        energy: profileScores.energy,
-        work_fit: profileScores.work_fit,
-        overall_balance: overallBalance,
-      },
-      composite_score: pulseRiskComposite,
-      likelihood: pulseClassification.likelihood,
-      severity: pulseClassification.severity,
-      severity_band: pulseClassification.severity_band,
-      submitted_at: submittedAt,
-      period_year: submittedAt.getUTCFullYear(),
-      period_month: submittedAt.getUTCMonth() + 1,
-      period_week: getIsoWeekNumber(submittedAt),
-    });
-    await anonDoc.save().catch(e => console.warn('[DailyPulse] AnonHazardLog write bypassed:', e.message));
+      const anonDoc = new AnonHazardLog({
+        company_id: companyId,
+        department_id: req.sessionData.department_id || 'GENERAL',
+        department_snapshot_id: req.sessionData.department_id || 'GENERAL',
+        survey_type: 'daily_pulse',
+        risk_category: 'psychosocial',
+        dimension_scores: {
+          mood: profileScores.mood,
+          calm: profileScores.calm,
+          stress: profileScores.stress,
+          energy: profileScores.energy,
+          work_fit: profileScores.work_fit,
+          overall_balance: overallBalance,
+        },
+        composite_score: pulseRiskComposite,
+        likelihood: pulseClassification.likelihood,
+        severity: pulseClassification.severity,
+        severity_band: pulseClassification.severity_band,
+        submitted_at: submittedAt,
+        period_year: submittedAt.getUTCFullYear(),
+        period_month: submittedAt.getUTCMonth() + 1,
+        period_week: getIsoWeekNumber(submittedAt),
+      });
+      await anonDoc.save().catch(e => console.warn('[DailyPulse] AnonHazardLog write bypassed:', e.message));
+    }
 
     res.json({
       success: true,
@@ -378,25 +430,49 @@ router.post('/submit-checkin', async (req, res, next) => {
     let crisisProtocol = null;
     let scoreSummary = null;
 
+    const TenantModel = require('../models/Tenant');
+    let callerTenant = null;
+    if (companyId) {
+      try {
+        callerTenant = await TenantModel.findOne({ company_id: companyId });
+      } catch (_) {}
+    }
+    const isIndividualTenant = Boolean(callerTenant && callerTenant.account_type === 'individual');
+
     if (survey_type !== 'checkin_slider') {
-      const AssessmentCycle = require('../models/AssessmentCycle');
-      const cycle = await AssessmentCycle.findOne({
-        company_id: companyId,
-        survey_type: survey_type.startsWith('copsoq3') ? 'copsoq3' : survey_type,
-        status: 'unlocked',
-        $or: [
-          { department_id: null },
-          { department_id: req.sessionData.department_id }
-        ]
-      }).sort({ created_at: -1 });
-      if (!cycle) {
-        return res.status(403).json({ success: false, error: 'ASSESSMENT_LOCKED', message: 'This assessment is not currently available. It must be unlocked by your HR administrator.' });
+      if (isIndividualTenant) {
+        const effectiveTier = typeof callerTenant.getEffectiveTier === 'function' ? callerTenant.getEffectiveTier() : 'free';
+        if (effectiveTier !== 'personal') {
+          return res.status(402).json({
+            success: false,
+            error: 'UPGRADE_REQUIRED',
+            feature: String(survey_type).toLowerCase().startsWith('copsoq') ? 'copsoq' : 'clinical_scales',
+            currentTier: effectiveTier,
+            requiredTier: 'personal',
+            upgradeUrl: '/app/dashboard.html?open=billing',
+            message: 'Your 30-day trial has ended. Upgrade to Havilah Personal (GHS 150/month or GHS 1,500/year) to run COPSOQ-III and clinical screenings.',
+          });
+        }
+      } else {
+        const AssessmentCycle = require('../models/AssessmentCycle');
+        const cycle = await AssessmentCycle.findOne({
+          company_id: companyId,
+          survey_type: survey_type.startsWith('copsoq3') ? 'copsoq3' : survey_type,
+          status: 'unlocked',
+          $or: [
+            { department_id: null },
+            { department_id: req.sessionData.department_id }
+          ]
+        }).sort({ created_at: -1 });
+        if (!cycle) {
+          return res.status(403).json({ success: false, error: 'ASSESSMENT_LOCKED', message: 'This assessment is not currently available. It must be unlocked by your HR administrator.' });
+        }
+        if (cycle.deadline && new Date() > new Date(cycle.deadline)) {
+          return res.status(403).json({ success: false, error: 'ASSESSMENT_EXPIRED', message: 'The deadline for this assessment has passed.' });
+        }
+        // Increment completion count
+        await AssessmentCycle.updateOne({ cycle_id: cycle.cycle_id }, { $inc: { completion_count: 1 } });
       }
-      if (cycle.deadline && new Date() > new Date(cycle.deadline)) {
-        return res.status(403).json({ success: false, error: 'ASSESSMENT_EXPIRED', message: 'The deadline for this assessment has passed.' });
-      }
-      // Increment completion count
-      await AssessmentCycle.updateOne({ cycle_id: cycle.cycle_id }, { $inc: { completion_count: 1 } });
     }
 
     if (survey_type === 'checkin_slider') {
@@ -491,7 +567,7 @@ router.post('/submit-checkin', async (req, res, next) => {
           .filter(Boolean);
       }
 
-      if (hazardResponses.length > 0) {
+      if (hazardResponses.length > 0 && !isIndividualTenant) {
         const mockReq = {
           body: {
             survey_type,
@@ -681,7 +757,7 @@ router.get('/dashboard-data', async (req, res, next) => {
  * GDPR Art. 20 - Right to data portability.
  * Exports all personal wellbeing check-ins as downloadable JSON.
  */
-router.get('/export', validateSession, requireConsent, async (req, res, next) => {
+router.get('/export', validateSession, requireConsent, requireFeature('pdf_export'), async (req, res, next) => {
   try {
     const { user_id } = req.sessionData;
     const logs = await PersonalWellnessLog.find({ user_id })

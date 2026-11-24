@@ -192,7 +192,7 @@ async function checkTenantStatus(req, res, next) {
 
   try {
     const tenant = await Tenant.findOne({ company_id })
-      .select('lifecycle_state locked_at access_expires_at')
+      .select('lifecycle_state locked_at access_expires_at account_type')
       .lean();
 
     if (!tenant) {
@@ -221,6 +221,11 @@ async function checkTenantStatus(req, res, next) {
         code: 'TENANT_CHURNED',
         action: 'FORCE_LOGOUT',
       });
+    }
+
+    // Individual and system_guest workspaces drop gracefully to Free tier rather than forcing logout
+    if (tenant.account_type === 'individual' || tenant.account_type === 'system_guest') {
+      return next();
     }
 
     // Check if access has expired

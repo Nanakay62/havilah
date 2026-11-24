@@ -89,6 +89,16 @@
   status = 200
 
 [[redirects]]
+  from = "/consult"
+  to = "/public/consult.html"
+  status = 200
+
+[[redirects]]
+  from = "/consult.html"
+  to = "/public/consult.html"
+  status = 200
+
+[[redirects]]
   from = "/activate"
   to = "/public/activate.html"
   status = 200

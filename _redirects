@@ -14,6 +14,7 @@
 
 /portal/clinical        /public/clinical-portal.html  200
 /clinical               /public/clinical-portal.html  200
+/consult                /public/consult.html          200
 
 # Static Asset Aliases
 /css/*                  /public/css/:splat            200

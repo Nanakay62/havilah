@@ -33,7 +33,13 @@
 </head>
 <body class="auth-page">
   <main class="auth-card" id="registerCard">
-    
+    <!-- Mode Tabs: Individual | Join Company | Register Company -->
+    <div id="regModeTabs" role="tablist" aria-label="Account type" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; margin-bottom: var(--space-4);">
+      <button type="button" id="tabBtnIndividual" role="tab" aria-selected="false" onclick="switchRegMode('individual')" style="padding: 8px 6px; border-radius: 7px; border: none; font-size: 0.75rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-muted);">Individual</button>
+      <button type="button" id="tabBtnInvite" role="tab" aria-selected="true" onclick="switchRegMode('invite')" style="padding: 8px 6px; border-radius: 7px; border: none; font-size: 0.75rem; font-weight: 600; cursor: pointer; background: #fff; color: var(--brand); box-shadow: 0 1px 2px rgba(0,0,0,0.06);">Join Team</button>
+      <button type="button" id="tabBtnCompany" role="tab" aria-selected="false" onclick="switchRegMode('company')" style="padding: 8px 6px; border-radius: 7px; border: none; font-size: 0.75rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-muted);">Company</button>
+    </div>
+
     <!-- Progress Indicator -->
     <div class="auth-progress" id="progress-bar" aria-label="Registration progress">
       <div class="auth-progress-step is-active" id="prog-1"></div>
@@ -45,6 +51,83 @@
     <div id="error-banner" class="hidden alert-banner alert-danger" style="margin-bottom: var(--space-4);" role="alert">
       <span class="alert-icon" id="error-banner-icon" style="flex-shrink: 0;"></span>
       <div id="error-banner-text" style="flex: 1;"></div>
+    </div>
+
+    <!-- INDIVIDUAL SIGNUP PANEL -->
+    <div id="panel-individual" class="hidden">
+      <header class="auth-header">
+        <img src="/assets/havilah-logo.svg" alt="Havilah" style="height: 36px; width: auto; display: block; margin: 0 auto 16px;">
+        <h1 class="auth-title">Personal 30-day free trial</h1>
+        <p class="auth-subtitle">Full access to COPSOQ-III, PHQ-9, GAD-7, PSS-10, and Daily Pulse. No card required. Drops to Free tier after 30 days or subscribe for GHS 150/mo.</p>
+      </header>
+      <form id="individual-form" novalidate>
+        <div class="form-field">
+          <label for="ind-name" class="form-label">Full name</label>
+          <input type="text" id="ind-name" required class="input" placeholder="e.g. Ama Boateng" autocomplete="name">
+        </div>
+        <div class="form-field">
+          <label for="ind-email" class="form-label">Email address</label>
+          <input type="email" id="ind-email" required class="input" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="form-field">
+          <label for="ind-password" class="form-label">Password</label>
+          <div class="input-with-button">
+            <input type="password" id="ind-password" required minlength="12" class="input" placeholder="••••••••" autocomplete="new-password">
+            <button type="button" id="toggleIndPasswordBtn" class="input-action-btn" title="Toggle password visibility" aria-label="Toggle password visibility"></button>
+          </div>
+          <p class="form-hint" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Minimum 12 characters with upper &amp; lowercase letters, a number, and a special character.</p>
+        </div>
+        <div class="form-field">
+          <label class="auth-checkbox-label">
+            <input type="checkbox" id="ind-terms" required>
+            <span>I agree to the <a href="/privacy.html" target="_blank">Privacy Policy</a> and <a href="/terms.html" target="_blank">Terms of Service</a>.</span>
+          </label>
+        </div>
+        <button type="submit" id="btn-ind-submit" class="btn btn-primary" style="width: 100%; margin-top: var(--space-3);">
+          <span>Start 30-day Free Trial</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- COMPANY SIGNUP PANEL -->
+    <div id="panel-company" class="hidden">
+      <header class="auth-header">
+        <img src="/assets/havilah-logo.svg" alt="Havilah" style="height: 36px; width: auto; display: block; margin: 0 auto 16px;">
+        <h1 class="auth-title">Create company workspace</h1>
+        <p class="auth-subtitle">30-day Pro trial for HR &amp; teams. No credit card required.</p>
+      </header>
+      <form id="company-form" novalidate>
+        <div class="form-field">
+          <label for="comp-org" class="form-label">Company / Organization name</label>
+          <input type="text" id="comp-org" required class="input" placeholder="e.g. Acme Ghana Ltd">
+        </div>
+        <div class="form-field">
+          <label for="comp-name" class="form-label">Your full name</label>
+          <input type="text" id="comp-name" required class="input" placeholder="Jane Doe" autocomplete="name">
+        </div>
+        <div class="form-field">
+          <label for="comp-email" class="form-label">Work email</label>
+          <input type="email" id="comp-email" required class="input" placeholder="hr@company.com" autocomplete="email">
+        </div>
+        <div class="form-field">
+          <label for="comp-password" class="form-label">Password</label>
+          <input type="password" id="comp-password" required minlength="12" class="input" placeholder="Min 12 chars (Aa1!)" autocomplete="new-password">
+        </div>
+        <div class="form-field">
+          <label for="comp-industry" class="form-label">Industry</label>
+          <select id="comp-industry" class="select">
+            <option value="Healthcare">Healthcare</option>
+            <option value="Financial Services">Financial Services</option>
+            <option value="Technology">Technology</option>
+            <option value="Manufacturing">Manufacturing</option>
+            <option value="Education">Education</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <button type="submit" id="btn-comp-submit" class="btn btn-primary" style="width: 100%; margin-top: var(--space-3);">
+          <span>Start Company 30-day Trial</span>
+        </button>
+      </form>
     </div>
 
     <!-- STEP 1 & 2: Verification -->
@@ -137,7 +220,7 @@
 
     <!-- Footer link -->
     <footer id="footer-links" class="auth-footer">
-      Already registered? <a href="/login.html">Log in</a>
+      Already registered? <a href="/login.html">Log in</a> &middot; <a href="/consult">Guest doctor (GHS 349)</a>
     </footer>
   </main>
 
@@ -201,6 +284,150 @@
       const banner = document.getElementById('error-banner');
       if (banner) banner.classList.add('hidden');
     }
+
+    function switchRegMode(mode) {
+      hideError();
+      const panels = {
+        individual: document.getElementById('panel-individual'),
+        invite: document.getElementById('step-verify'),
+        company: document.getElementById('panel-company'),
+      };
+      const stepSetupEl = document.getElementById('step-setup');
+      const progBar = document.getElementById('progress-bar');
+      if (stepSetupEl) stepSetupEl.classList.add('hidden');
+      if (progBar) progBar.style.display = mode === 'invite' ? '' : 'none';
+
+      Object.entries(panels).forEach(([k, el]) => {
+        if (!el) return;
+        if (k === mode) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+      });
+
+      const tabMap = {
+        individual: document.getElementById('tabBtnIndividual'),
+        invite: document.getElementById('tabBtnInvite'),
+        company: document.getElementById('tabBtnCompany'),
+      };
+      Object.entries(tabMap).forEach(([k, btn]) => {
+        if (!btn) return;
+        const active = k === mode;
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        btn.style.background = active ? '#fff' : 'transparent';
+        btn.style.color = active ? 'var(--brand)' : 'var(--text-muted)';
+        btn.style.boxShadow = active ? '0 1px 2px rgba(0,0,0,0.06)' : 'none';
+      });
+    }
+    window.switchRegMode = switchRegMode;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initPasswordToggle('ind-password', 'toggleIndPasswordBtn');
+      const p = new URLSearchParams(window.location.search);
+      const hasInvite = Boolean(p.get('invite') || p.get('code'));
+      const mode = (p.get('mode') || '').toLowerCase();
+      if (hasInvite) {
+        switchRegMode('invite');
+      } else if (mode === 'individual') {
+        switchRegMode('individual');
+      } else if (mode === 'company') {
+        switchRegMode('company');
+      }
+      if (p.get('email') && document.getElementById('ind-email')) {
+        document.getElementById('ind-email').value = p.get('email');
+      }
+      if (p.get('name') && document.getElementById('ind-name')) {
+        document.getElementById('ind-name').value = p.get('name');
+      }
+    });
+
+    document.getElementById('individual-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+      const fullName = document.getElementById('ind-name').value.trim();
+      const email = document.getElementById('ind-email').value.trim();
+      const password = document.getElementById('ind-password').value;
+      const consentAccepted = document.getElementById('ind-terms').checked;
+      const btn = document.getElementById('btn-ind-submit');
+
+      if (!fullName || !email || !password) {
+        showError('Please fill in your name, email, and password.');
+        return;
+      }
+      if (!consentAccepted) {
+        showError('Please accept the Privacy Policy and Terms of Service.');
+        return;
+      }
+
+      const p = new URLSearchParams(window.location.search);
+      const guestReference = p.get('guestRef') || undefined;
+      const guestToken = p.get('guestToken') || undefined;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+      HavilahLoader.setButtonLoading(btn, true, 'Creating account...');
+      try {
+        const res = await fetch('/api/v1/auth/register-individual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName, email, password, timezone, consentAccepted, guestReference, guestToken }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          if (data.token) {
+            ['havilah_token', 'token', 'session_token'].forEach(k => localStorage.setItem(k, data.token));
+            document.cookie = 'token=' + data.token + '; path=/; max-age=86400; SameSite=Lax';
+            if (data.user) {
+              const u = JSON.stringify(data.user);
+              ['havilah_user', 'wf_user'].forEach(k => localStorage.setItem(k, u));
+              if (data.user.full_name) localStorage.setItem('wf_user_name', data.user.full_name);
+            }
+          }
+          window.location.href = data.redirectUrl || '/app/dashboard.html';
+        } else {
+          showError(data.message || data.error || 'Registration failed.');
+        }
+      } catch (_) {
+        showError('Network error during registration.');
+      } finally {
+        HavilahLoader.setButtonLoading(btn, false, '<span>Start 30-day Free Trial</span>');
+      }
+    });
+
+    document.getElementById('company-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+      const companyName = document.getElementById('comp-org').value.trim();
+      const fullName = document.getElementById('comp-name').value.trim();
+      const email = document.getElementById('comp-email').value.trim();
+      const password = document.getElementById('comp-password').value;
+      const industry = document.getElementById('comp-industry').value;
+      const btn = document.getElementById('btn-comp-submit');
+
+      if (!companyName || !fullName || !email || !password) {
+        showError('Please complete all required company fields.');
+        return;
+      }
+      HavilahLoader.setButtonLoading(btn, true, 'Creating workspace...');
+      try {
+        const res = await fetch('/api/v1/auth/register-tenant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyName, fullName, email, password, industry }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          if (data.token) {
+            ['havilah_token', 'token', 'session_token'].forEach(k => localStorage.setItem(k, data.token));
+            document.cookie = 'token=' + data.token + '; path=/; max-age=86400; SameSite=Lax';
+          }
+          window.location.href = data.redirectUrl || '/portal/hr.html';
+        } else {
+          showError(data.message || data.error || 'Company registration failed.');
+        }
+      } catch (_) {
+        showError('Network error during registration.');
+      } finally {
+        HavilahLoader.setButtonLoading(btn, false, '<span>Start Company 30-day Trial</span>');
+      }
+    });
 
     // Clear error banner when typing
     ['verify-email', 'verify-code', 'setup-name', 'setup-password', 'setup-confirm'].forEach(id => {

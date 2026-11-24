@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const { validateSession, requireRole } = require('../middleware/auth');
+const { requireCompanyTenant } = require('../middleware/tierGate');
 const Invitation = require('../models/Invitation');
 const Department = require('../models/Department');
 const { buildNSizeAggregation } = require('../aggregations/nSizePrivacy');
@@ -11,6 +12,7 @@ const { roundPercentagesLargestRemainder } = require('../utils/clinicalScoring')
 
 // Ensure HR Admins, Tenant Admins, or Super Admins can access these routes
 router.use(validateSession);
+router.use(requireCompanyTenant);
 router.use(requireRole('hr_admin', 'tenant_admin', 'super_admin'));
 
 // GET /api/v1/hr/analytics - Privacy-Preserving Analytics Endpoint (N-threshold = 5)

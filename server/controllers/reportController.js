@@ -34,7 +34,7 @@ async function resolveTenantId(req) {
 
   if (tenantIdInput) {
     if (mongoose.Types.ObjectId.isValid(tenantIdInput)) {
-      const t = await Tenant.findById(tenantIdInput).select('_id company_name company_id slug').lean();
+      const t = await Tenant.findById(tenantIdInput).select('_id company_name company_id slug account_type').lean();
       if (t) return t;
     }
     const escapedTenant = String(tenantIdInput).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -45,7 +45,7 @@ async function resolveTenantId(req) {
         { company_name: new RegExp(`^${escapedTenant}$`, 'i') }
       ],
     })
-      .select('_id company_name company_id slug')
+      .select('_id company_name company_id slug account_type')
       .lean();
     if (tByCompanyId) return tByCompanyId;
   }
@@ -86,6 +86,13 @@ router.post('/submit', async (req, res, next) => {
         success: false,
         error: 'TENANT_REQUIRED',
         message: 'A valid organization identifier, tenant ID, or invite code is required to route this report.',
+      });
+    }
+    if (tenant.account_type === 'individual' || tenant.account_type === 'system_guest') {
+      return res.status(403).json({
+        success: false,
+        error: 'NOT_AVAILABLE_FOR_INDIVIDUALS',
+        message: 'Whistleblower drop-box reporting is only available for organization accounts.',
       });
     }
 

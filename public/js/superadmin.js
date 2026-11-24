@@ -225,6 +225,7 @@ async function fetchTenants() {
         const extendBtn = `<button onclick="openExtendModal('${escapeJsAttrSafe(t.company_id)}', '${escapeJsAttrSafe(t.company_name)}', '${escapeJsAttrSafe(t.access_expires_at || '')}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:6px 12px;color:#a78bfa;font-size:11px;cursor:pointer;">Extend</button>`;
 
         tr.setAttribute('data-company', (t.company_name + ' ' + (t.slug || '') + ' ' + (t.domain || '')).toLowerCase());
+        tr.setAttribute('data-account-type', (t.account_type || 'company').toLowerCase());
         tr.setAttribute('data-tier', (t.billing_tier || 'trial').toLowerCase());
         tr.setAttribute('data-state', (t.lifecycle_state || 'active').toLowerCase());
 
@@ -287,20 +288,20 @@ async function fetchTenants() {
 
 function filterTenantsTable() {
   const search = document.getElementById('tenantSearchInput') ? document.getElementById('tenantSearchInput').value.toLowerCase() : '';
-  const tierFilter = document.getElementById('tenantTierFilter') ? document.getElementById('tenantTierFilter').value.toLowerCase() : 'all';
+  const acctFilter = document.getElementById('tenantAccountTypeFilter') ? document.getElementById('tenantAccountTypeFilter').value.toLowerCase() : 'all'; const tierFilter = document.getElementById('tenantTierFilter') ? document.getElementById('tenantTierFilter').value.toLowerCase() : 'all';
   const stateFilter = document.getElementById('tenantStateFilter') ? document.getElementById('tenantStateFilter').value.toLowerCase() : 'all';
 
   const rows = document.querySelectorAll('#tenantsTable tbody tr');
   rows.forEach(tr => {
     const compData = tr.getAttribute('data-company') || '';
-    const tierData = tr.getAttribute('data-tier') || '';
+    const acctData = tr.getAttribute('data-account-type') || 'company'; const tierData = tr.getAttribute('data-tier') || '';
     const stateData = tr.getAttribute('data-state') || '';
 
     const matchesSearch = !search || compData.includes(search);
-    const matchesTier = tierFilter === 'all' || tierData === tierFilter;
+    const matchesAcct = acctFilter === 'all' || acctData === acctFilter; const matchesTier = tierFilter === 'all' || tierData === tierFilter;
     const matchesState = stateFilter === 'all' || stateData === stateFilter;
 
-    if (matchesSearch && matchesTier && matchesState) {
+    if (matchesSearch && matchesAcct && matchesTier && matchesState) {
       tr.style.display = '';
     } else {
       tr.style.display = 'none';

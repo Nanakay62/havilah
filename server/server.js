@@ -220,6 +220,7 @@ app.get('/robots.txt', (req, res) => {
     'Allow: /terms',
     'Allow: /login',
     'Allow: /register',
+    'Allow: /consult',
     'Allow: /assets/',
     'Allow: /css/',
     'Allow: /js/',
@@ -249,6 +250,7 @@ app.get('/sitemap.xml', (req, res) => {
     { path: '/terms', changefreq: 'monthly', priority: '0.6' },
     { path: '/login', changefreq: 'monthly', priority: '0.5' },
     { path: '/register', changefreq: 'monthly', priority: '0.5' },
+    { path: '/consult', changefreq: 'weekly', priority: '0.8' },
   ];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${paths
     .map((p) => `  <url>\n    <loc>${baseOrigin}${p.path}</loc>\n    <lastmod>2026-11-17</lastmod>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>\n  </url>`)
@@ -278,15 +280,14 @@ app.get(['/terms', '/terms.html'], (req, res) => {
 app.get(['/verify', '/verify/:certificateId'], (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'verify.html'));
 });
-app.get('/clinical-portal', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', 'clinical-portal.html'));
-});
+app.get('/clinical-portal', (req, res) => { res.sendFile(path.join(__dirname, '../public', 'clinical-portal.html')); });
+app.get(['/consult', '/consult.html'], (req, res) => { res.sendFile(path.join(__dirname, '../public', 'consult.html')); });
 
 app.use('/portal', requireViewRole('hr_admin', 'tenant_admin'), express.static(path.join(__dirname, '../private/portal'), { etag: false, lastModified: false }));
-app.use('/app', requireViewRole('employee', 'hr_admin', 'tenant_admin'), express.static(path.join(__dirname, '../private/app'), { etag: false, lastModified: false }));
+app.use('/app', requireViewRole('employee', 'individual', 'hr_admin', 'tenant_admin'), express.static(path.join(__dirname, '../private/app'), { etag: false, lastModified: false }));
 
 // Clean URL Aliases matching Netlify & Cloudflare _redirects
-app.get('/dashboard', requireViewRole('employee', 'hr_admin', 'tenant_admin'), (req, res) => {
+app.get('/dashboard', requireViewRole('employee', 'individual', 'hr_admin', 'tenant_admin'), (req, res) => {
   res.sendFile(path.join(__dirname, '../private/app/dashboard.html'));
 });
 app.get('/hr', requireViewRole('hr_admin', 'tenant_admin'), (req, res) => {

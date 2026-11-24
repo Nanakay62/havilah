@@ -208,13 +208,88 @@ router.get('/audit-log', async (req, res, next) => {
   }
 });
 
-// 2. List all Tenants
+// 2. List all Tenants (supports ?account_type=company|individual|all; hides system_guest unless requested)
 router.get('/tenants', async (req, res, next) => {
   try {
-    const tenants = await Tenant.find()
+    const typeFilter = String(req.query.account_type || 'all').toLowerCase();
+    const query = {};
+    if (typeFilter === 'company') {
+      query.$or = [{ account_type: 'company' }, { account_type: { $exists: false } }];
+    } else if (typeFilter === 'individual') {
+      query.account_type = 'individual';
+    } else if (typeFilter !== 'system_guest') {
+      query.account_type = { $ne: 'system_guest' };
+    }
+    const tenants = await Tenant.find(query)
       .populate('activeAssessorId', 'name email organization active')
       .sort({ created_at: -1 });
     res.json({ success: true, tenants });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 2b. Assessor Payout Summary across B2C, Guest & B2B consultations (for manual offline settlement)
+router.get('/assessor-payouts', async (req, res, next) => {
+  try {
+    const Referral = require('../models/Referral');
+    const Assessor = require('../models/Assessor');
+    const { parseMonthRangeQuery } = require('../utils/dateRangeFilter');
+
+    const query = {
+      status: { $nin: ['awaiting_payment', 'cancelled'] },
+    };
+
+    const dateFilter = parseMonthRangeQuery(req.query);
+    if (dateFilter.error) {
+      return res.status(400).json({ success: false, error: 'INVALID_DATE_RANGE', message: dateFilter.error });
+    }
+    if (dateFilter.active) {
+      query.createdAt = dateFilter.range;
+    }
+
+    const referrals = await Referral.find(query)
+      .select('assignedAssessorId status billing createdAt')
+      .lean();
+    const assessors = await Assessor.find().select('_id name email organization').lean();
+    const assessorMap = new Map(assessors.map((a) => [String(a._id), a]));
+
+    const grouped = new Map();
+    for (const r of referrals) {
+      const aId = String(r.assignedAssessorId || 'unassigned');
+      if (!grouped.has(aId)) {
+        const info = assessorMap.get(aId);
+        grouped.set(aId, {
+          assessorId: aId,
+          assessorName: info?.name || 'Unassigned Assessor',
+          organization: info?.organization || '',
+          email: info?.email || '',
+          totalConsultations: 0,
+          completedConsultations: 0,
+          collectedGhs: 0,
+          byPayerType: {
+            company_covered: 0,
+            welcome_credit: 0,
+            welcome_discount: 0,
+            self_pay: 0,
+            guest_pay: 0,
+          },
+        });
+      }
+      const bucket = grouped.get(aId);
+      bucket.totalConsultations += 1;
+      if (r.status === 'completed') bucket.completedConsultations += 1;
+      const pType = r.billing?.payerType || 'company_covered';
+      if (bucket.byPayerType[pType] !== undefined) {
+        bucket.byPayerType[pType] += 1;
+      }
+      if (['guest_pay', 'self_pay', 'welcome_discount'].includes(pType) && r.billing?.isBilled) {
+        bucket.collectedGhs += Number(r.billing?.amount || 0);
+      }
+    }
+
+    const payouts = Array.from(grouped.values()).sort((a, b) => b.totalConsultations - a.totalConsultations);
+    res.json({ success: true, payouts });
   } catch (err) {
     next(err);
   }

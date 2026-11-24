@@ -2304,6 +2304,10 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             My Profile
           </button>
+          <button class="dropdown-item" id="dropdownBillingBtn" style="display:none;" onclick="App.closeProfileDropdown(); App.openPersonalBillingModal();" role="menuitem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            Plan &amp; Billing
+          </button>
           <button class="dropdown-item" onclick="App.openSettings()" role="menuitem">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Settings
@@ -2353,6 +2357,10 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
 <!-- ============ EMPLOYEE VIEW ============ -->
 <section class="view active" id="view-employee" style="display:block;" aria-label="My wellness dashboard">
   <div class="page-container" style="max-width: 1280px; margin: 0 auto; padding: 24px 20px;">
+  <div id="personalTrialBanner" style="display:none; margin-bottom: 18px; padding: 12px 16px; border-radius: 10px; background: rgba(15, 118, 110, 0.08); border: 1px solid rgba(15, 118, 110, 0.28); align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+    <div id="personalTrialBannerText" style="font-size: 0.875rem; color: var(--text-1);"></div>
+    <button type="button" class="btn btn-primary btn-sm" id="personalTrialBannerBtn" onclick="App.openPersonalBillingModal()">Plan &amp; Billing</button>
+  </div>
   <div class="page-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
     <div>
       <h1 id="empGreeting" style="font-size: 24px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Welcome back.</h1>
@@ -3052,6 +3060,19 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
             <label for="consultNotesInput" class="help-form-label">Additional notes (optional)</label>
             <textarea id="consultNotesInput" name="notes" rows="3" class="help-form-control" style="min-height: 88px; resize: vertical;"></textarea>
           </div>
+
+          <div id="consultEmployerFields" style="display:none; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="help-form-group" style="margin-bottom: 0;">
+              <label for="consultEmployerNameInput" class="help-form-label">Employer name <span style="font-weight:400; color:var(--text-3);">(for Excuse Duty PDF, optional)</span></label>
+              <input type="text" id="consultEmployerNameInput" name="employerName" class="help-form-control" placeholder="e.g. Acme Ghana Ltd">
+            </div>
+            <div class="help-form-group" style="margin-bottom: 0;">
+              <label for="consultStaffIdInput" class="help-form-label">Staff ID <span style="font-weight:400; color:var(--text-3);">(optional)</span></label>
+              <input type="text" id="consultStaffIdInput" name="staffId" class="help-form-control" placeholder="e.g. EMP-1042">
+            </div>
+          </div>
+
+          <div id="consultPricingNotice" style="display:none; padding: 10px 14px; border-radius: 8px; background: rgba(15, 118, 110, 0.08); border: 1px solid rgba(15, 118, 110, 0.25); font-size: 0.8125rem; color: var(--text-1); margin-bottom: 12px;"></div>
 
           <div class="help-consent-box">
             Your name and contact details go to FZ Safety and Health Centre only. Your employer is not told.
@@ -5653,6 +5674,20 @@ const App = (() => {
       submitData = data || {};
       
       if (!res.ok || !data.success) {
+        if (res.status === 402 || data.error === 'UPGRADE_REQUIRED') {
+          const codeEl = document.getElementById('modalCode');
+          const titleEl = document.getElementById('modalTitle');
+          if (codeEl) codeEl.textContent = (state.surveyState && state.surveyState.instrumentCode) || 'PERSONAL';
+          if (titleEl) titleEl.textContent = 'Upgrade to Personal Plan';
+          document.getElementById('modalQText').innerHTML = `
+            <div style="text-align:center; padding: 24px 12px;">
+              <h3 style="margin:0 0 8px 0; font-size:1.1rem; color:var(--text-1);">Unlock COPSOQ-III &amp; Clinical Screenings</h3>
+              <p style="margin:0 0 16px 0; font-size:0.9rem; color:var(--text-2);">${data.message || 'Your 30-day free trial has ended. Upgrade to Havilah Personal (GHS 150/month or GHS 1,500/year) to continue running validated screenings.'}</p>
+              <button type="button" class="btn btn-primary" onclick="App.closeSurvey(); App.openPersonalBillingModal();">View Personal Plans</button>
+            </div>
+          `;
+          return;
+        }
         if (res.status === 403 && (data.error === 'CONSENT_REQUIRED' || String(data.message || '').includes('consent') || String(data.error || '').includes('CONSENT'))) {
           showConsentPromptModal();
           return;
@@ -6872,7 +6907,11 @@ const App = (() => {
             localStorage.setItem('havilah_user', JSON.stringify(u));
             localStorage.setItem('wf_user', JSON.stringify(u));
 
+            state.tenant = data.tenant || null;
             applyUserProfile(updatedProfile);
+            if (typeof hydrateAccountAndBilling === 'function') {
+              hydrateAccountAndBilling(u, data.tenant);
+            }
           }
         }
       } catch (err) {
@@ -8010,10 +8049,169 @@ const App = (() => {
     }
   }
 
+  async function hydrateAccountAndBilling(userObj, tenantObj) {
+    try {
+      const isInd = userObj?.role === 'individual' || tenantObj?.account_type === 'individual';
+      const urlParams = new URLSearchParams(window.location.search);
+      const payRef = (urlParams.get('reference') || urlParams.get('trxref') || '').trim();
+
+      if (urlParams.get('checkout') === 'success' && payRef) {
+        try {
+          const vRes = await apiFetch(`/api/v1/billing/verify/${encodeURIComponent(payRef)}`);
+          const vJson = await vRes.json().catch(() => ({}));
+          if (vRes.ok && vJson.success) {
+            showToast('Subscription Active', 'Your Personal plan is now active. All COPSOQ-III and clinical screenings are unlocked.', 'success');
+            if (typeof fetchAssessmentLocks === 'function') fetchAssessmentLocks();
+          }
+        } catch (_) {}
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (urlParams.get('consult_checkout') === 'success' && payRef) {
+        try {
+          const cRes = await apiFetch(`/api/v1/billing/consultation/verify/${encodeURIComponent(payRef)}`);
+          const cJson = await cRes.json().catch(() => ({}));
+          if (cRes.ok && cJson.success) {
+            if (cJson.referenceCode && typeof saveConsultRef === 'function') saveConsultRef(cJson.referenceCode);
+            showToast('Consultation Confirmed', `Payment confirmed (${cJson.referenceCode || ''}). Our medical assessor has been notified.`, 'success');
+          }
+        } catch (_) {}
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+
+      const employerFields = document.getElementById('consultEmployerFields');
+      const pricingNotice = document.getElementById('consultPricingNotice');
+
+      if (!isInd) {
+        if (tenantObj?.effectiveTier === 'free') {
+          if (employerFields) employerFields.style.display = 'grid';
+          if (pricingNotice) {
+            pricingNotice.style.display = 'block';
+            pricingNotice.innerHTML = '<strong>Private Self-Pay Consultation (GHS 349):</strong> Your employer\'s Free plan does not cover clinical consultations. You can continue privately for GHS 349 (completely invisible to HR). Includes an Excuse Duty certificate if clinically warranted.';
+          }
+        }
+        return;
+      }
+
+      const roleEl = document.getElementById('topbarProfileRole');
+      if (roleEl) roleEl.textContent = 'Personal Account';
+      const billBtn = document.getElementById('dropdownBillingBtn');
+      if (billBtn) billBtn.style.display = 'flex';
+      const deptRow = document.getElementById('settingsRowDepartment');
+      if (deptRow) deptRow.style.display = 'none';
+      if (employerFields) employerFields.style.display = 'grid';
+
+      const bRes = await apiFetch('/api/v1/billing/status');
+      const bData = bRes.ok ? await bRes.json().catch(() => null) : null;
+      if (!bData || !bData.success) return;
+
+      state.billing = bData;
+      const sub = bData.subscription || {};
+      if (state.tenant) state.tenant.effectiveTier = sub.effective_tier || state.tenant.effectiveTier;
+
+      const banner = document.getElementById('personalTrialBanner');
+      const bannerText = document.getElementById('personalTrialBannerText');
+      if (banner && bannerText) {
+        banner.style.display = 'flex';
+        if (sub.status === 'trialing' && sub.effective_tier === 'personal') {
+          bannerText.innerHTML = `<strong>Personal 30-Day Free Trial:</strong> ${sub.days_remaining ?? 30} day(s) remaining with full access to Validated Self-Assessment &amp; Clinical Screening Tools. Upgrade anytime (GHS 150/mo or GHS 1,500/yr).`;
+        } else if (sub.effective_tier === 'personal') {
+          const welcomeMsg = !sub.welcome_consultation_used
+            ? (sub.welcome_consultation_benefit === 'free_one'
+              ? ' &middot; <strong>1 Complimentary Welcome Consultation available</strong>'
+              : (sub.welcome_consultation_benefit === 'discount_150' ? ' &middot; <strong>GHS 150 Welcome Consultation Credit available (pay GHS 199)</strong>' : ''))
+            : '';
+          bannerText.innerHTML = `<strong>Personal Plan Active</strong> (${sub.tier === 'personal_annual' ? 'Annual' : 'Monthly'})${welcomeMsg}`;
+        } else {
+          bannerText.innerHTML = '<strong>Free Plan:</strong> Daily Pulse &amp; history stay free forever. Upgrade to <strong>Personal (GHS 150/mo)</strong> to unlock COPSOQ-III, PHQ-9, GAD-7 &amp; exports.';
+        }
+      }
+
+      if (pricingNotice) {
+        pricingNotice.style.display = 'block';
+        if (sub.effective_tier === 'personal' && sub.status === 'active' && !sub.welcome_consultation_used) {
+          if (sub.welcome_consultation_benefit === 'free_one') {
+            pricingNotice.innerHTML = '<strong>Complimentary Welcome Consultation (GHS 0):</strong> Included with your Annual plan. Covers Excuse Duty if clinically warranted.';
+          } else if (sub.welcome_consultation_benefit === 'discount_150') {
+            pricingNotice.innerHTML = '<strong>GHS 150 Welcome Credit Applied:</strong> Your first consultation is <strong>GHS 199</strong> (regularly GHS 349). Covers Excuse Duty if clinically warranted.';
+          } else {
+            pricingNotice.innerHTML = '<strong>Consultation Fee: GHS 349</strong> — Includes an official Excuse Duty certificate if clinically warranted.';
+          }
+        } else {
+          pricingNotice.innerHTML = '<strong>Consultation Fee: GHS 349</strong> (billed separately from screening tools). Includes an official Excuse Duty certificate if clinically warranted.';
+        }
+      }
+
+      if (urlParams.get('open') === 'billing') {
+        openPersonalBillingModal();
+      }
+    } catch (e) {
+      console.warn('[Dashboard] Billing hydration notice:', e.message);
+    }
+  }
+
+  function openPersonalBillingModal() {
+    const modal = document.getElementById('personalBillingModal');
+    if (!modal) return;
+    const sub = state.billing?.subscription || state.tenant?.subscription || {};
+    const statusBox = document.getElementById('personalBillingStatusSummary');
+    const cancelBtn = document.getElementById('btnCancelPersonalSub');
+    if (statusBox) {
+      const tierLabel = sub.effective_tier === 'free'
+        ? 'Free Tier (Daily Pulse + History)'
+        : (sub.status === 'trialing' ? `30-Day Free Trial (${sub.days_remaining ?? ''} days left)` : (sub.tier === 'personal_annual' ? 'Personal Annual (GHS 1,500/yr)' : 'Personal Monthly (GHS 150/mo)'));
+      statusBox.innerHTML = `<strong>Current Plan:</strong> ${tierLabel}`;
+    }
+    if (cancelBtn) {
+      cancelBtn.style.display = (sub.status === 'active' && !sub.cancel_at_period_end) ? 'inline-flex' : 'none';
+    }
+    modal.style.display = 'flex';
+  }
+
+  function closePersonalBillingModal() {
+    const modal = document.getElementById('personalBillingModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function startPersonalUpgrade(tierKey) {
+    try {
+      const resp = await apiFetch('/api/v1/billing/initialize', {
+        method: 'POST',
+        body: JSON.stringify({ tier: tierKey })
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok && data.success && data.authorization_url) {
+        window.location.href = data.authorization_url;
+      } else {
+        showToast('Checkout Unavailable', data.message || 'Unable to start Paystack checkout right now.', 'error');
+      }
+    } catch (err) {
+      showToast('Network Error', 'Could not connect to billing service.', 'error');
+    }
+  }
+
+  async function cancelPersonalSubscription() {
+    try {
+      const resp = await apiFetch('/api/v1/billing/cancel', { method: 'POST', body: JSON.stringify({}) });
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok && data.success) {
+        showToast('Auto-Renewal Stopped', data.message || 'Access continues until the end of your billing period.', 'success');
+        closePersonalBillingModal();
+        hydrateAccountAndBilling(state.user, state.tenant);
+      } else {
+        showToast('Error', data.message || 'Could not cancel auto-renewal.', 'error');
+      }
+    } catch (_) {
+      showToast('Error', 'Network error cancelling subscription.', 'error');
+    }
+  }
+
   return {
     navigate,
     openSurvey,
     closeSurvey,
+    openPersonalBillingModal,
+    closePersonalBillingModal,
+    startPersonalUpgrade,
+    cancelPersonalSubscription,
     showConsentPromptModal,
     acceptConsentAndSubmit,
     openDirectConsentModal,
@@ -8045,6 +8243,11 @@ const App = (() => {
     populateSettingsProfile: () => { populateSettingsProfile(); },
     loadNotificationPreferences: () => { loadNotificationPreferences(); },
     exportMyData: () => {
+      if (state.tenant?.account_type === 'individual' && state.tenant?.effectiveTier === 'free') {
+        showToast('Upgrade Required', 'Upgrade to Personal (GHS 150/month) to export your wellbeing records.', 'warning');
+        openPersonalBillingModal();
+        return;
+      }
       const payload = {
         user: {
           name: (state.user && state.user.name) || localStorage.getItem('wf_user_name') || 'Employee',
@@ -8172,6 +8375,9 @@ const App = (() => {
         const departmentName = state.user?.department || state.user?.department_name || userMeta.department_name || userMeta.department || 'General Staff';
         const topic = topicVal || 'General Clinical Consultation Intake Request';
 
+        const employerNameVal = (document.getElementById('consultEmployerNameInput')?.value || '').trim();
+        const staffIdVal = (document.getElementById('consultStaffIdInput')?.value || '').trim();
+
         const formData = {
           patientName: nameVal,
           patientContact: contactVal,
@@ -8179,7 +8385,9 @@ const App = (() => {
           topic,
           preferredDate: dateVal,
           preferredTime: timeVal,
-          notes: notesVal
+          notes: notesVal,
+          ...(employerNameVal ? { employerName: employerNameVal } : {}),
+          ...(staffIdVal ? { staffId: staffIdVal } : {})
         };
 
         const resp = await apiFetch('/api/v1/referrals/occupational-health', {
@@ -8192,6 +8400,24 @@ const App = (() => {
           result = await resp.json();
         } catch (parseErr) {
           result = { success: false };
+        }
+
+        if (resp.status === 202 && result.paymentRequired && result.referralId) {
+          if (submitBtn) submitBtn.textContent = `Opening Paystack (GHS ${result.amountGhs || 349})...`;
+          const payResp = await apiFetch('/api/v1/billing/consultation/checkout', {
+            method: 'POST',
+            body: JSON.stringify({ referralId: result.referralId })
+          });
+          const payData = await payResp.json().catch(() => ({}));
+          if (payResp.ok && payData.success && payData.authorization_url) {
+            window.location.href = payData.authorization_url;
+            return;
+          }
+          if (submitFailure) {
+            submitFailure.textContent = payData.message || 'Unable to launch Paystack consultation checkout right now.';
+            submitFailure.style.display = 'block';
+          }
+          return;
         }
 
         if (resp.ok && result.success) {
@@ -8949,5 +9175,33 @@ window.App = App;
     }
   });
 </script>
+<!-- Personal Plan & Billing Modal -->
+<div id="personalBillingModal" role="dialog" aria-modal="true" aria-labelledby="personalBillingModalTitle" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.55); align-items:center; justify-content:center; padding:16px;" onclick="if(event.target===this) App.closePersonalBillingModal();">
+  <div style="background:var(--surface, #fff); border:1px solid var(--border); border-radius:14px; max-width:540px; width:100%; padding:24px; box-shadow:0 20px 50px rgba(0,0,0,0.2);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h2 id="personalBillingModalTitle" style="margin:0; font-size:1.2rem; font-weight:700; color:var(--text-1);">Personal Plan &amp; Billing</h2>
+      <button type="button" onclick="App.closePersonalBillingModal()" aria-label="Close billing dialog" style="background:none; border:none; font-size:1.5rem; color:var(--text-3); cursor:pointer;">&times;</button>
+    </div>
+    <div id="personalBillingStatusSummary" style="padding:10px 14px; border-radius:8px; background:var(--bg); border:1px solid var(--border); font-size:0.875rem; margin-bottom:16px;"></div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:12px; margin-bottom:16px;">
+      <div style="border:1px solid var(--border); border-radius:10px; padding:14px;">
+        <div style="font-weight:700; font-size:0.95rem;">Personal Monthly</div>
+        <div style="font-size:1.3rem; font-weight:800; color:var(--brand); margin:4px 0;">GHS 150 <span style="font-size:0.75rem; font-weight:400; color:var(--text-3);">/ month</span></div>
+        <p style="font-size:0.78rem; color:var(--text-2); margin:0 0 12px 0;">Full COPSOQ-III, PHQ-9, GAD-7, PSS-10, FAS-10 &amp; exports + GHS 150 first-consultation credit (pay GHS 199).</p>
+        <button type="button" class="btn btn-primary btn-sm" style="width:100%;" onclick="App.startPersonalUpgrade('personal')">Subscribe Monthly (GHS 150)</button>
+      </div>
+      <div style="border:2px solid var(--brand); border-radius:10px; padding:14px;">
+        <div style="font-weight:700; font-size:0.95rem;">Personal Annual <span style="font-size:0.7rem; background:rgba(15,118,110,0.12); color:var(--brand); padding:2px 6px; border-radius:99px;">2 Months Free</span></div>
+        <div style="font-size:1.3rem; font-weight:800; color:var(--brand); margin:4px 0;">GHS 1,500 <span style="font-size:0.75rem; font-weight:400; color:var(--text-3);">/ year</span></div>
+        <p style="font-size:0.78rem; color:var(--text-2); margin:0 0 12px 0;">All screening tools all year + <strong>1 complimentary Welcome Consultation</strong> (incl. Excuse Duty if indicated).</p>
+        <button type="button" class="btn btn-primary btn-sm" style="width:100%;" onclick="App.startPersonalUpgrade('personal_annual')">Subscribe Annual (GHS 1,500)</button>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+      <button type="button" id="btnCancelPersonalSub" class="btn btn-secondary btn-sm" style="display:none; color:#b91c1c;" onclick="App.cancelPersonalSubscription()">Stop Auto-Renewal</button>
+      <button type="button" class="btn btn-secondary btn-sm" style="margin-left:auto;" onclick="App.closePersonalBillingModal()">Close</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

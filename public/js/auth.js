@@ -196,11 +196,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Role checks for current view
   const payload = Auth.parseToken();
   if (payload) {
-    if (payload.role === 'employee') {
+    if (payload.role === 'employee' || payload.role === 'individual') {
       const hrLinks = document.querySelectorAll(`.hr-analytics-link, [href*="hr"], [href*="analytics"], [onclick*="'hr'"]`);
       hrLinks.forEach(link => link.remove());
       const roleBadge = document.querySelector('.profile-role');
-      if (roleBadge) roleBadge.textContent = 'Team Member';
+      if (roleBadge) roleBadge.textContent = payload.role === 'individual' ? 'Personal Account' : 'Team Member';
     }
   }
 });

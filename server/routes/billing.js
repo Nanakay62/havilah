@@ -3,104 +3,28 @@
 const express = require('express');
 const router = express.Router();
 const Tenant = require('../models/Tenant');
+const User = require('../models/User');
+const Referral = require('../models/Referral');
 const AssessmentCycle = require('../models/AssessmentCycle');
 const AuditLog = require('../models/AuditLog');
 const { validateSession, requireRole } = require('../middleware/auth');
+const { requireCompanyTenant } = require('../middleware/tierGate');
 const logger = require('../utils/logger');
 const { withTransaction } = require('../utils/dbTransaction');
 const paystack = require('../utils/paystack');
 const crypto = require('crypto');
 const { sendMail } = require('../utils/emailService');
 const { resolveAppBaseUrl } = require('../utils/runtimeConfig');
-
-// Tier specifications and ISO 45003 feature entitlements (in GHS)
-const TIERS = {
-  free: {
-    tier: 'free',
-    name: 'Free (Community)',
-    seats: 10,
-    priceMonthlyGhs: 0,
-    planCode: null,
-    features: [
-      'Standard psychosocial hazard logging',
-      '1 HR Administrator account',
-      'Up to 10 active employees',
-      'Hardcoded privacy shield (N >= 5)',
-      'Core COPSOQ-III screening'
-    ]
-  },
-  starter: {
-    tier: 'starter',
-    name: 'Starter Tier',
-    seats: 100,
-    priceMonthlyGhs: 5500,
-    planCode: process.env.PAYSTACK_PLAN_STARTER || null,
-    features: [
-      'Up to 100 active employee seats',
-      'Daily micro pulse check-ins',
-      'Clinical EAP intake routing & referrals',
-      'Dedicated medical assessor link',
-      'Basic ISO 45003 hazard logging',
-      'HR analytics ledger & heatmaps (N >= 5)'
-    ]
-  },
-  pro: {
-    tier: 'pro',
-    name: 'Professional Tier (ISO 45003 Standard)',
-    seats: 999999, // Unlimited seats
-    priceMonthlyGhs: 15450,
-    planCode: process.env.PAYSTACK_PLAN_PRO || null,
-    features: [
-      'Unlimited employees & seats',
-      'Full COPSOQ III assessment suite (Core, Middle, Long)',
-      'Automated ISO 45003 compliance audit trail & board-ready PDF export',
-      'Empirical Pearson correlation engine (workload vs. burnout)',
-      'Longitudinal trend analysis & predictive alerts',
-      'Full whistleblower encrypted drop-box with conflict guard & HMAC receipts',
-      'Assessor dialogue & video consultation links',
-      'Priority 24/7 support SLA'
-    ]
-  },
-  enterprise: {
-    tier: 'enterprise',
-    name: 'Enterprise Tier',
-    seats: 999999,
-    priceMonthlyGhs: 35000,
-    planCode: process.env.PAYSTACK_PLAN_ENTERPRISE || null,
-    features: [
-      'Unlimited / multi-subsidiary employee seats',
-      'Dedicated clinical partner integration & warm handoffs',
-      'Custom SSO (SAML 2.0 / Okta / Azure AD)',
-      'Multi-entity cross-subsidiary rollup dashboards',
-      'Quarterly ISO 45003 compliance auditor sign-off reports',
-      'Dedicated compliance engineer & custom SLA'
-    ]
-  }
-};
-
-function getPaystackPlanCode(data) {
-  if (!data) return null;
-  if (typeof data.plan === 'string' && data.plan.trim()) return data.plan.trim();
-  if (data.plan && typeof data.plan.plan_code === 'string' && data.plan.plan_code.trim()) {
-    return data.plan.plan_code.trim();
-  }
-  if (data.plan_object && typeof data.plan_object.plan_code === 'string' && data.plan_object.plan_code.trim()) {
-    return data.plan_object.plan_code.trim();
-  }
-  return null;
-}
-
-function isValidPaystackTierPayment(data, tierConfig) {
-  if (!data || !tierConfig || tierConfig.tier === 'free') return false;
-  const planCode = getPaystackPlanCode(data);
-  const configuredPlanCode = tierConfig.planCode || process.env[`PAYSTACK_PLAN_${tierConfig.tier.toUpperCase()}`] || null;
-  if (configuredPlanCode && planCode && planCode === configuredPlanCode) {
-    return true;
-  }
-  const currency = String(data.currency || 'GHS').toUpperCase();
-  const expectedMinPesewas = Math.round(tierConfig.priceMonthlyGhs * 100);
-  return currency === 'GHS' && Number(data.amount || 0) >= expectedMinPesewas;
-}
+const { decryptField } = require('../utils/crypto');
+const {
+  CONSULTATION_FEE_GHS,
+  WELCOME_DISCOUNT_CONSULTATION_FEE_GHS,
+  TIERS,
+  getPaystackPlanCode,
+  isValidPaystackTierPayment,
+  activateSubscriptionFromPaystack,
+  activateConsultationFromPaystack,
+} = require('../services/billingActivation');
 
 // ---------------------------------------------------------------------------
 // 1. Paystack Webhook (Unauthenticated - uses HMAC-SHA512 signature verification)
@@ -129,6 +53,24 @@ router.post('/webhook', async (req, res) => {
       case 'charge.success': {
         const data = event.data || {};
         const reference = data.reference;
+        const paymentType = String(data.metadata?.type || '').toLowerCase();
+
+        if (paymentType === 'consultation' || paymentType === 'guest_consultation') {
+          const result = await activateConsultationFromPaystack({
+            referralId: data.metadata?.referral_id,
+            reference,
+            data,
+          });
+          if (!result.ok) {
+            logger.warn({ reference, result }, '[Paystack Webhook] Consultation activation skipped/failed');
+          } else if (result.alreadyApplied) {
+            return res.status(200).json({ received: true, duplicate: true });
+          } else {
+            logger.info({ reference, referralId: data.metadata?.referral_id, paymentType }, '[Paystack Webhook] Consultation activated via charge.success');
+          }
+          break;
+        }
+
         const companyId = data.metadata?.company_id;
         const planCode = getPaystackPlanCode(data);
         const planMatchedTier = planCode
@@ -159,6 +101,13 @@ router.post('/webhook', async (req, res) => {
           break;
         }
 
+        const expectedAccountType = tierConfig.accountType || 'company';
+        const actualAccountType = tenant.account_type || 'company';
+        if (actualAccountType !== expectedAccountType) {
+          logger.warn({ companyId, actualAccountType, expectedAccountType, tierKey }, '[Paystack Webhook] Tier account_type mismatch');
+          break;
+        }
+
         // Idempotency check: Skip duplicate event deliveries
         const priorRefs = tenant.subscription?.transactionReferences || [];
         if (reference && priorRefs.includes(reference)) {
@@ -166,66 +115,24 @@ router.post('/webhook', async (req, res) => {
           return res.status(200).json({ received: true, duplicate: true });
         }
 
-        const nextPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-        await withTransaction(async (dbSession) => {
-          await Tenant.findOneAndUpdate(
-            { company_id: companyId },
-            {
-              $set: {
-                'subscription.tier': tierKey,
-                'subscription.status': 'active',
-                'subscription.currency': 'GHS',
-                'subscription.cancelAtPeriodEnd': false,
-                'subscription.currentPeriodEnd': nextPeriodEnd,
-                'subscription.customerId': data.customer?.customer_code || tenant.subscription?.customerId,
-                'subscription.paystackCustomerCode': data.customer?.customer_code || tenant.subscription?.paystackCustomerCode,
-                'subscription.paystackAuthorizationCode': data.authorization?.authorization_code || tenant.subscription?.paystackAuthorizationCode,
-                'subscription.paystackPlanCode': data.plan?.plan_code || tenant.subscription?.paystackPlanCode,
-                'subscription.paystackSubscriptionCode': data.subscription_code || tenant.subscription?.paystackSubscriptionCode,
-                'subscription.maxEmployees': tierConfig.seats,
-                billing_tier: tierKey,
-                max_allowed_seats: tierConfig.seats,
-                lifecycle_state: 'active',
-                access_expires_at: nextPeriodEnd
-              },
-              $addToSet: {
-                'subscription.transactionReferences': reference
-              }
-            },
-            { session: dbSession || undefined }
-          );
-
-          await AuditLog.append(
-            {
-              company_id: companyId,
-              actor_user_id: 'SYSTEM_PAYSTACK_WEBHOOK',
-              actor_role: 'system',
-              event_type: 'tenant_state_changed',
-              event_payload: {
-                previous_state: tenant.lifecycle_state,
-                new_state: 'active',
-                billing_tier: tierKey,
-                paystack_reference: reference,
-                currency: 'GHS',
-                amount_pesewas: data.amount
-              }
-            },
-            { session: dbSession || undefined }
-          );
-
-          await AssessmentCycle.updateMany(
-            {
-              company_id: companyId,
-              status: 'unlocked',
-              deadline: { $lt: new Date() }
-            },
-            {
-              $set: { deadline: nextPeriodEnd }
-            },
-            { session: dbSession || undefined }
-          ).catch(() => {});
+        const nextPeriodEnd = await activateSubscriptionFromPaystack({
+          tenant,
+          tierKey,
+          tierConfig,
+          data,
+          reference,
         });
+
+        await AssessmentCycle.updateMany(
+          {
+            company_id: companyId,
+            status: 'unlocked',
+            deadline: { $lt: new Date() }
+          },
+          {
+            $set: { deadline: nextPeriodEnd }
+          }
+        ).catch(() => {});
 
         logger.info({ companyId, tier: tierKey, reference }, '[Paystack Webhook] Tenant subscription activated/renewed via charge.success');
         break;
@@ -327,27 +234,32 @@ router.post('/webhook', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Protected Billing Endpoints (require HR/Tenant/Super Admin)
+// Protected Billing Endpoints
 // ---------------------------------------------------------------------------
 router.use(validateSession);
-router.use(requireRole('hr_admin', 'tenant_admin', 'super_admin'));
+
+const requireBillingManager = requireRole('individual', 'hr_admin', 'tenant_admin', 'super_admin');
+const requireCompanyBillingAdmin = [requireCompanyTenant, requireRole('hr_admin', 'tenant_admin', 'super_admin')];
+const requireConsultationUser = requireRole('individual', 'employee', 'hr_admin', 'tenant_admin', 'super_admin');
 
 /**
  * GET /api/v1/billing/status
  * Returns current tenant tier, status, seat utilization, and available upgrade tiers
  */
-router.get('/status', async (req, res, next) => {
+router.get('/status', requireBillingManager, async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;
-    const tenant = await Tenant.findOne({ company_id }).lean();
+    const tenant = await Tenant.findOne({ company_id });
 
     if (!tenant) {
       return res.status(404).json({ success: false, error: 'Tenant not found' });
     }
 
+    const accountType = tenant.account_type || 'company';
     const sub = tenant.subscription || {};
     const tier = sub.tier || tenant.billing_tier || 'trial';
     const status = sub.status || 'trialing';
+    const effectiveTier = typeof tenant.getEffectiveTier === 'function' ? tenant.getEffectiveTier() : tier;
     const trialEndsAt = sub.trialEndsAt ? new Date(sub.trialEndsAt) : null;
     const currentPeriodEnd = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : (tenant.access_expires_at ? new Date(tenant.access_expires_at) : null);
     const cancelAtPeriodEnd = Boolean(sub.cancelAtPeriodEnd);
@@ -363,13 +275,21 @@ router.get('/status', async (req, res, next) => {
     // Access is granted if currentPeriodEnd > now, regardless of cancelAtPeriodEnd
     const isActive = (currentPeriodEnd && currentPeriodEnd > now) || status === 'active' || (status === 'trialing' && (daysRemaining === null || daysRemaining > 0));
 
+    const filteredAvailableTiers = Object.fromEntries(
+      Object.entries(TIERS).filter(([, cfg]) => (cfg.accountType || 'company') === (accountType === 'individual' ? 'individual' : 'company'))
+    );
+
     res.json({
       success: true,
       company_id,
       company_name: tenant.company_name,
+      account_type: accountType,
       currency: 'GHS',
+      consultation_fee_ghs: CONSULTATION_FEE_GHS,
+      welcome_discount_fee_ghs: WELCOME_DISCOUNT_CONSULTATION_FEE_GHS,
       subscription: {
         tier,
+        effective_tier: effectiveTier,
         status,
         is_active: isActive,
         cancel_at_period_end: cancelAtPeriodEnd,
@@ -378,15 +298,17 @@ router.get('/status', async (req, res, next) => {
         current_period_end: currentPeriodEnd,
         used_seats: tenant.used_seats || 0,
         max_allowed_seats: tenant.max_allowed_seats || 100,
+        welcome_consultation_benefit: sub.welcomeConsultationBenefit || 'none',
+        welcome_consultation_used: Boolean(sub.welcomeConsultationUsed),
         has_paystack_customer: !!(sub.paystackCustomerCode || sub.customerId),
         has_paystack_subscription: !!(sub.paystackSubscriptionCode || sub.subscriptionCode),
         transaction_count: (sub.transactionReferences || []).length,
         extension_request: sub.extensionRequest || { status: 'none' },
-        invoices: (sub.invoices || []).slice(-20).reverse(),
+        invoices: accountType === 'individual' ? [] : (sub.invoices || []).slice(-20).reverse(),
         paystack_configured: paystack.isConfigured()
       },
       current_tier_details: TIERS[tier] || null,
-      available_tiers: TIERS
+      available_tiers: filteredAvailableTiers
     });
   } catch (err) {
     next(err);
@@ -399,16 +321,16 @@ router.get('/status', async (req, res, next) => {
  */
 async function handleInitializePayment(req, res, next) {
   try {
-    const { company_id, email } = req.sessionData;
+    const { company_id, email, user_id } = req.sessionData;
     const { tier = 'pro', callback_url } = req.body;
 
-    const tierKey = tier.toLowerCase();
+    const tierKey = String(tier || '').toLowerCase();
     const tierConfig = TIERS[tierKey];
     if (!tierConfig || tierKey === 'free') {
       return res.status(400).json({
         success: false,
         error: 'INVALID_TIER',
-        message: `Invalid tier '${tier}'. Valid paid options: starter, pro, enterprise`
+        message: `Invalid tier '${tier}'. Valid paid options: personal, personal_annual, starter, pro, enterprise`
       });
     }
 
@@ -426,9 +348,37 @@ async function handleInitializePayment(req, res, next) {
       return res.status(404).json({ success: false, error: 'Tenant not found' });
     }
 
-    const payerEmail = email || tenant.admin_email || `billing-${company_id.slice(0, 8)}@wellframe.internal`;
-    const defaultCallback = `${resolveAppBaseUrl(req)}/dashboard?checkout=success`;
-    const amountInPesewas = Math.round(tierConfig.priceMonthlyGhs * 100);
+    const actualAccountType = tenant.account_type || 'company';
+    const expectedAccountType = tierConfig.accountType || 'company';
+    if (actualAccountType !== expectedAccountType) {
+      return res.status(403).json({
+        success: false,
+        error: 'TIER_ACCOUNT_TYPE_MISMATCH',
+        message: actualAccountType === 'individual'
+          ? 'Individual accounts can only subscribe to Personal plans (personal, personal_annual).'
+          : 'Organization accounts cannot subscribe to Personal B2C plans.'
+      });
+    }
+
+    let payerEmail = email || tenant.admin_email || '';
+    if (!payerEmail && user_id) {
+      try {
+        const u = await User.findOne({ user_id }).select('email_encrypted').lean();
+        if (u?.email_encrypted) {
+          const enc = typeof u.email_encrypted === 'string' ? JSON.parse(u.email_encrypted) : u.email_encrypted;
+          payerEmail = decryptField(enc);
+        }
+      } catch (_) {}
+    }
+    if (!payerEmail) {
+      payerEmail = `billing-${company_id.slice(0, 8)}@wellframe.internal`;
+    }
+
+    const defaultCallback = actualAccountType === 'individual'
+      ? `${resolveAppBaseUrl(req)}/app/dashboard.html?checkout=success`
+      : `${resolveAppBaseUrl(req)}/dashboard?checkout=success`;
+    const priceGhs = tierConfig.priceGhs ?? tierConfig.priceMonthlyGhs;
+    const amountInPesewas = Math.round(priceGhs * 100);
 
     const transactionData = await paystack.initializeTransaction({
       email: payerEmail,
@@ -438,6 +388,7 @@ async function handleInitializePayment(req, res, next) {
       metadata: {
         company_id,
         tier: tierConfig.tier,
+        account_type: actualAccountType,
         company_name: tenant.company_name
       },
       channels: ['card', 'mobile_money']
@@ -455,7 +406,7 @@ async function handleInitializePayment(req, res, next) {
 }
 
 // POST /api/v1/billing/request-invoice - Generate corporate proforma invoice for bank/EFT/cheque billing
-router.post('/request-invoice', async (req, res, next) => {
+router.post('/request-invoice', ...requireCompanyBillingAdmin, async (req, res, next) => {
   try {
     const { company_id, user_id, role } = req.sessionData;
     const { tier = 'pro', interval = 'annual', poNumber = '', billingEmail = '', notes = '' } = req.body;
@@ -542,7 +493,7 @@ router.post('/request-invoice', async (req, res, next) => {
 });
 
 // GET /api/v1/billing/invoices
-router.get('/invoices', async (req, res, next) => {
+router.get('/invoices', ...requireCompanyBillingAdmin, async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;
     const tenant = await Tenant.findOne({ company_id }).select('subscription.invoices company_name').lean();
@@ -557,7 +508,7 @@ router.get('/invoices', async (req, res, next) => {
 });
 
 // POST /api/v1/billing/request-extension - HR requests trial extension
-router.post('/request-extension', async (req, res, next) => {
+router.post('/request-extension', ...requireCompanyBillingAdmin, async (req, res, next) => {
   try {
     const { company_id, user_id, role } = req.sessionData;
     const { requestedDays = 14, reason = '' } = req.body;
@@ -611,14 +562,14 @@ router.post('/request-extension', async (req, res, next) => {
   }
 });
 
-router.post('/initialize', handleInitializePayment);
-router.post('/create-checkout-session', handleInitializePayment);
+router.post('/initialize', requireBillingManager, handleInitializePayment);
+router.post('/create-checkout-session', requireBillingManager, handleInitializePayment);
 
 /**
  * GET /api/v1/billing/verify/:reference
  * Verifies transaction with Paystack immediately on return redirect for fast UI feedback
  */
-router.get('/verify/:reference', async (req, res, next) => {
+router.get('/verify/:reference', requireBillingManager, async (req, res, next) => {
   try {
     const { reference } = req.params;
     const { company_id } = req.sessionData;
@@ -659,7 +610,7 @@ router.get('/verify/:reference', async (req, res, next) => {
         return res.status(403).json({
           success: false,
           error: 'TENANT_MISMATCH',
-          message: 'Transaction tenant metadata does not match your organization.',
+          message: 'Transaction tenant metadata does not match your workspace.',
         });
       }
 
@@ -670,6 +621,18 @@ router.get('/verify/:reference', async (req, res, next) => {
           success: false,
           error: 'INVALID_TIER',
           message: 'Verified transaction does not specify a valid paid subscription tier.',
+        });
+      }
+
+      const tenant = await Tenant.findOne({ company_id });
+      if (!tenant) {
+        return res.status(404).json({ success: false, error: 'Tenant not found' });
+      }
+      if ((tenant.account_type || 'company') !== (tierConfig.accountType || 'company')) {
+        return res.status(403).json({
+          success: false,
+          error: 'TIER_ACCOUNT_TYPE_MISMATCH',
+          message: 'Subscription tier does not match account type.',
         });
       }
 
@@ -692,33 +655,15 @@ router.get('/verify/:reference', async (req, res, next) => {
         });
       }
 
-      const nextPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-      await Tenant.findOneAndUpdate(
-        {
-          company_id,
-          'subscription.transactionReferences': { $ne: cleanRef },
-        },
-        {
-          $set: {
-            'subscription.tier': tierKey,
-            'subscription.status': 'active',
-            'subscription.currency': 'GHS',
-            'subscription.cancelAtPeriodEnd': false,
-            'subscription.currentPeriodEnd': nextPeriodEnd,
-            'subscription.paystackCustomerCode': data.customer?.customer_code,
-            'subscription.customerId': data.customer?.customer_code,
-            'subscription.maxEmployees': tierConfig.seats,
-            billing_tier: tierKey,
-            max_allowed_seats: tierConfig.seats,
-            lifecycle_state: 'active',
-            access_expires_at: nextPeriodEnd
-          },
-          $addToSet: {
-            'subscription.transactionReferences': cleanRef
-          }
-        }
-      );
+      const nextPeriodEnd = await activateSubscriptionFromPaystack({
+        tenant,
+        tierKey,
+        tierConfig,
+        data,
+        reference: cleanRef,
+        actorId: req.sessionData.user_id || 'BILLING_VERIFY',
+        actorRole: req.sessionData.role || 'system',
+      });
 
       await AssessmentCycle.updateMany(
         {
@@ -745,10 +690,139 @@ router.get('/verify/:reference', async (req, res, next) => {
 });
 
 /**
+ * POST /api/v1/billing/consultation/checkout
+ * Initializes a one-off Paystack checkout for an awaiting_payment consultation (GHS 349 or GHS 199 welcome discount)
+ */
+router.post('/consultation/checkout', requireConsultationUser, async (req, res, next) => {
+  try {
+    const { company_id, user_id, email } = req.sessionData;
+    const { referralId, callback_url } = req.body || {};
+
+    if (!referralId) {
+      return res.status(400).json({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'referralId is required.',
+      });
+    }
+
+    if (!paystack.isConfigured()) {
+      return res.status(503).json({
+        success: false,
+        error: 'BILLING_DISABLED',
+        message: 'Paystack payments are not configured in this environment.',
+      });
+    }
+
+    const referral = await Referral.findOne({ _id: referralId, company_id });
+    if (!referral) {
+      return res.status(404).json({ success: false, error: 'REFERRAL_NOT_FOUND', message: 'Consultation request not found.' });
+    }
+    if (referral.billing?.payerUserId && referral.billing.payerUserId !== user_id) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN', message: 'You can only pay for your own consultation request.' });
+    }
+    if (referral.status !== 'awaiting_payment') {
+      return res.status(400).json({ success: false, error: 'ALREADY_PAID', message: 'This consultation does not require payment.' });
+    }
+
+    let payerEmail = email || referral.clinicalDetails?.patientContact || '';
+    if (!payerEmail && user_id) {
+      try {
+        const u = await User.findOne({ user_id }).select('email_encrypted').lean();
+        if (u?.email_encrypted) {
+          const enc = typeof u.email_encrypted === 'string' ? JSON.parse(u.email_encrypted) : u.email_encrypted;
+          payerEmail = decryptField(enc);
+        }
+      } catch (_) {}
+    }
+    if (!payerEmail || !payerEmail.includes('@')) {
+      payerEmail = `consult-${user_id.slice(0, 8)}@wellframe.internal`;
+    }
+
+    const amountInPesewas = referral.billing?.expectedAmountPesewas || (CONSULTATION_FEE_GHS * 100);
+    const defaultCallback = `${resolveAppBaseUrl(req)}/app/dashboard.html?consult_checkout=success&ref=${encodeURIComponent(referral.referenceCode)}`;
+
+    const transactionData = await paystack.initializeTransaction({
+      email: payerEmail,
+      amountInPesewas,
+      callbackUrl: callback_url || defaultCallback,
+      metadata: {
+        type: 'consultation',
+        referral_id: String(referral._id),
+        reference_code: referral.referenceCode,
+        company_id,
+        user_id,
+      },
+      channels: ['card', 'mobile_money'],
+    });
+
+    return res.json({
+      success: true,
+      authorization_url: transactionData.authorization_url,
+      access_code: transactionData.access_code,
+      reference: transactionData.reference,
+      amountGhs: amountInPesewas / 100,
+      referenceCode: referral.referenceCode,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/v1/billing/consultation/verify/:reference
+ * Verifies a one-off consultation payment upon Paystack return redirect
+ */
+router.get('/consultation/verify/:reference', requireConsultationUser, async (req, res, next) => {
+  try {
+    const { reference } = req.params;
+    const { user_id } = req.sessionData;
+
+    if (!paystack.isConfigured()) {
+      return res.status(503).json({ success: false, error: 'BILLING_DISABLED' });
+    }
+
+    const cleanRef = String(reference || '').trim();
+    if (!cleanRef) {
+      return res.status(400).json({ success: false, error: 'INVALID_REFERENCE' });
+    }
+
+    const data = await paystack.verifyTransaction(cleanRef);
+    if (data.status !== 'success') {
+      return res.status(402).json({ success: false, error: 'PAYMENT_NOT_COMPLETED', status: data.status });
+    }
+
+    if (data.metadata?.user_id && String(data.metadata.user_id) !== String(user_id)) {
+      return res.status(403).json({ success: false, error: 'USER_MISMATCH', message: 'Transaction does not belong to your account.' });
+    }
+
+    const result = await activateConsultationFromPaystack({
+      referralId: data.metadata?.referral_id,
+      reference: cleanRef,
+      data,
+    });
+
+    if (!result.ok) {
+      return res.status(400).json({ success: false, error: result.reason || 'ACTIVATION_FAILED' });
+    }
+
+    return res.json({
+      success: true,
+      status: 'pending',
+      reference: cleanRef,
+      referenceCode: result.referral.referenceCode,
+      already_applied: Boolean(result.alreadyApplied),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * POST /api/v1/billing/cancel
  * Cancels auto-renewal (sets cancelAtPeriodEnd: true). Does not revoke paid access immediately.
  */
-router.post('/cancel', async (req, res, next) => {
+router.post('/cancel', requireBillingManager, async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;
     const tenant = await Tenant.findOne({ company_id });
@@ -816,7 +890,7 @@ router.post('/cancel', async (req, res, next) => {
 /**
  * GET /api/v1/billing/portal (alias for subscription manage link)
  */
-router.get('/portal', async (req, res, next) => {
+router.get('/portal', requireBillingManager, async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;
     const tenant = await Tenant.findOne({ company_id }).lean();

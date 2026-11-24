@@ -701,10 +701,16 @@ router.get('/queue', requireAssessorAuth, async (req, res, next) => {
     }
 
     if (req.query.status && req.query.status !== 'all' && req.query.status !== 'all_including_archived') {
-      query.status = req.query.status;
-    } else if (req.query.status !== 'all_including_archived' && req.query.status !== 'archived') {
-      // By default, hide archived cases from regular triage queue
-      query.status = { $ne: 'archived' };
+      if (req.query.status === 'awaiting_payment') {
+        query.status = '__never_match_awaiting_payment__';
+      } else {
+        query.status = req.query.status;
+      }
+    } else if (req.query.status === 'all_including_archived') {
+      query.status = { $ne: 'awaiting_payment' };
+    } else {
+      // By default, hide archived and awaiting_payment cases from regular triage queue
+      query.status = { $nin: ['archived', 'awaiting_payment'] };
     }
 
     if (req.query.settlementStatus && req.query.settlementStatus !== 'all') {
@@ -739,7 +745,7 @@ router.get('/queue', requireAssessorAuth, async (req, res, next) => {
     const totalCount = await Referral.countDocuments(query);
 
     let queryExec = Referral.find(query)
-      .populate('tenantId', 'company_name company_id slug domain')
+      .populate('tenantId', 'company_name company_id slug domain account_type')
       .populate('assignedDoctorId', 'fullName email specialty role active')
       .sort({ createdAt: -1 });
 
@@ -754,15 +760,28 @@ router.get('/queue', requireAssessorAuth, async (req, res, next) => {
     const now = Date.now();
     const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
     const priorityRank = { crisis: 0, urgent: 1, standard: 2 };
+    const payerLabelMap = {
+      guest_pay: 'Guest (Paid)',
+      welcome_credit: 'Individual (Welcome Credit)',
+      welcome_discount: 'Individual (Welcome Credit)',
+      self_pay: 'Private Self-Pay',
+      company_covered: 'Company Covered',
+    };
 
     const data = referrals
       .map((r) => {
         const createdAtMs = r.createdAt ? new Date(r.createdAt).getTime() : 0;
         const isStale = r.status === 'pending' && (now - createdAtMs) > FORTY_EIGHT_HOURS_MS;
+        const pType = r.billing?.payerType || 'company_covered';
+        const isInd = r.tenantId?.account_type === 'individual';
+        const payerLabel = (pType === 'self_pay' && isInd) ? 'Individual (Self-Pay)' : (payerLabelMap[pType] || 'Company Covered');
         return {
           ...r,
           priority: r.priority || 'standard',
           isStale: !!isStale,
+          payerType: pType,
+          payerLabel,
+          patientProvidedEmployer: r.patientProvidedEmployer || { name: '', staffId: '' },
         };
       })
       .sort((a, b) => {
@@ -1262,6 +1281,8 @@ router.post('/referrals/:id/certificates', requireAssessorAuth, async (req, res,
         reassessmentRequired: Boolean(record.reassessmentRequired),
         reassessmentDate: record.reassessmentDate || '',
         isBackdated: record.isBackdated,
+        payerType: referral.billing?.payerType || 'company_covered',
+        patientProvidedEmployer: referral.patientProvidedEmployer || { name: '', staffId: '' },
         verifyUrl,
       },
     });

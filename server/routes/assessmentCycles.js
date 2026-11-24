@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const { validateSession, requireRole } = require('../middleware/auth');
+const { requireCompanyTenant } = require('../middleware/tierGate');
 const AssessmentCycle = require('../models/AssessmentCycle');
 const AuditLog = require('../models/AuditLog');
 const Tenant = require('../models/Tenant');
@@ -14,7 +15,25 @@ router.get('/status', validateSession, async (req, res, next) => {
     const { company_id, department_id } = req.sessionData;
     
     // Get tenant defaults
-    const tenant = await Tenant.findOne({ company_id }).lean();
+    const tenant = await Tenant.findOne({ company_id });
+    if (tenant && tenant.account_type === 'individual') {
+      const effectiveTier = typeof tenant.getEffectiveTier === 'function' ? tenant.getEffectiveTier() : 'free';
+      const unlocked = effectiveTier === 'personal';
+      const status = unlocked ? 'unlocked' : 'locked';
+      return res.json({
+        success: true,
+        account_type: 'individual',
+        effective_tier: effectiveTier,
+        status: {
+          phq9: { status },
+          gad7: { status },
+          pss10: { status },
+          fas10: { status },
+          copsoq3: { status, depth: 'core', copsoq_depth: 'core' },
+        },
+      });
+    }
+
     const defaults = tenant?.settings?.default_lock_policy || {
       phq9: 'locked', gad7: 'locked', pss10: 'locked', fas10: 'locked', copsoq3: 'locked'
     };
@@ -50,6 +69,7 @@ router.get('/status', validateSession, async (req, res, next) => {
 
 // Require admin for subsequent routes
 router.use(validateSession);
+router.use(requireCompanyTenant);
 router.use(requireRole('hr_admin', 'tenant_admin', 'super_admin'));
 
 // GET /active

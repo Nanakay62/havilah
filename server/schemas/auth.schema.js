@@ -29,8 +29,29 @@ const DemoRequestSchema = z.object({
   email: z.string({ required_error: 'Work email is required' }).email('Please enter a valid work email.').max(320),
 });
 
+const RegisterIndividualSchema = z.object({
+  email: z.string({ required_error: 'Email is required' }).email('Invalid email format').max(320),
+  password: z.string({ required_error: 'Password is required' })
+    .min(12, 'Password must be at least 12 characters long.')
+    .max(128, 'Password must not exceed 128 characters.')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter.')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter.')
+    .regex(/\d/, 'Password must contain at least one number.')
+    .regex(/[^a-zA-Z\d]/, 'Password must contain at least one special character.'),
+  fullName: z.string().min(1, 'Full name is required').max(512).optional(),
+  full_name: z.string().min(1, 'Full name is required').max(512).optional(),
+  timezone: z.string().max(100).optional(),
+  consentAccepted: z.boolean().optional(),
+  guestReference: z.string().max(32).optional(),
+  guestToken: z.string().max(128).optional(),
+}).refine(data => data.fullName || data.full_name, {
+  message: 'Full name is required',
+  path: ['fullName'],
+});
+
 module.exports = {
   LoginSchema,
   RegisterSchema,
+  RegisterIndividualSchema,
   DemoRequestSchema,
 };

@@ -948,6 +948,20 @@
   }
 
   function getReferralCompanyName(r, fallback = '') {
+    const pType = r?.billing?.payerType || r?.payerType || 'company_covered';
+    if (pType === 'guest_pay') {
+      return r?.patientProvidedEmployer?.name
+        ? `${r.patientProvidedEmployer.name} (Guest Self-Stated)`
+        : 'Guest Consultation';
+    }
+    if (pType === 'self_pay' && r?.tenantId?.account_type !== 'individual') {
+      return r?.patientProvidedEmployer?.name
+        ? `${r.patientProvidedEmployer.name} (Private Self-Pay)`
+        : 'Private Employee Self-Pay';
+    }
+    if (r?.tenantId?.account_type === 'individual') {
+      return r?.patientProvidedEmployer?.name || 'Personal Account';
+    }
     return (
       r?.tenantId?.company_name ||
       r?.tenantId?.companyName ||
@@ -1551,10 +1565,15 @@
         `;
       }
 
+      const payerBadgeHtml = (r.payerLabel && r.payerLabel !== 'Company Covered')
+        ? `<span class="badge badge-info" style="font-size:10px; margin-top:2px; display:inline-block;">${escapeHtml(r.payerLabel)}</span>`
+        : '';
+
       tr.innerHTML = `
         <td class="col-company" data-label="Company">
           <div class="cell-company-wrap">
             <div class="cell-company">${escapeHtml(companyName)}</div>
+            ${payerBadgeHtml}
             <div class="mobile-only-badge">${statusBadge}${completedBillingBadge}</div>
           </div>
         </td>
@@ -2207,7 +2226,14 @@
       : 'in_person';
     const startDate = (document.getElementById('excuseDutyStartInput') || {}).value || consultationDate;
     const endDate = (document.getElementById('excuseDutyEndInput') || {}).value || startDate;
-    const employeeStaffId = ((document.getElementById('excuseDutyStaffIdInput') || {}).value || '').trim();
+    const employeeStaffId = ((document.getElementById('excuseDutyStaffIdInput') || {}).value || '').trim() ||
+      (item.patientProvidedEmployer?.staffId || '');
+    const pType = item.billing?.payerType || item.payerType || 'company_covered';
+    const pdfCompanyName = (pType !== 'company_covered' || item.tenantId?.account_type === 'individual')
+      ? (item.patientProvidedEmployer?.name
+        ? `Employer (as stated by patient): ${item.patientProvidedEmployer.name}`
+        : 'As presented by patient (Individual / Private Consultation)')
+      : (item.tenantId?.company_name || '');
     const mdcNumber = ((document.getElementById('excuseDutyMdcInput') || {}).value || '').trim();
     const remarks = ((document.getElementById('excuseDutyRemarksInput') || {}).value || '').trim();
     const hrSafePrivacy = Boolean((document.getElementById('excuseDutyPrivacyCheck') || {}).checked);
@@ -2269,7 +2295,7 @@
       referenceCode: item.referenceCode || '',
       patientName: item.clinicalDetails?.patientName || '',
       employeeStaffId,
-      companyName: item.tenantId?.company_name || '',
+      companyName: pdfCompanyName,
       departmentName: item.departmentName || '',
       consultationDate,
       consultationMode,

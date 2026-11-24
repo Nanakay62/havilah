@@ -292,17 +292,18 @@ async function processTrialReminders(now = new Date()) {
     if (!checkpoint || alreadySent.includes(checkpoint)) continue;
 
     let recipientEmail = tenant.contact_email || '';
+    const isIndividual = tenant.account_type === 'individual';
     if (!recipientEmail) {
-      const hrUser = await User.findOne({
+      const targetUser = await User.findOne({
         company_id: tenant.company_id,
-        role: { $in: ['hr_admin', 'tenant_admin'] },
+        role: { $in: isIndividual ? ['individual'] : ['hr_admin', 'tenant_admin'] },
         status: 'active'
       });
-      if (hrUser && hrUser.email_encrypted) {
+      if (targetUser && targetUser.email_encrypted) {
         try {
-          const enc = typeof hrUser.email_encrypted === 'string'
-            ? JSON.parse(hrUser.email_encrypted)
-            : hrUser.email_encrypted;
+          const enc = typeof targetUser.email_encrypted === 'string'
+            ? JSON.parse(targetUser.email_encrypted)
+            : targetUser.email_encrypted;
           if (enc && enc.encrypted && enc.iv && enc.authTag) {
             recipientEmail = decryptField(enc);
           }
@@ -311,19 +312,37 @@ async function processTrialReminders(now = new Date()) {
     }
 
     if (recipientEmail) {
-      const subject = checkpoint === 'expired'
-        ? `[Havilah] Your organization's Pro Trial has expired (${tenant.company_name})`
-        : `[Havilah] Pro Trial Reminder: ${daysRemaining} day(s) remaining (${tenant.company_name})`;
-      const bodyMsg = checkpoint === 'expired'
-        ? `Your Havilah 30-day Pro trial for <strong>${tenant.company_name}</strong> has ended. Open HR Billing to upgrade via Paystack, request a corporate invoice, or submit a trial extension request.`
-        : `Your Havilah Pro trial for <strong>${tenant.company_name}</strong> expires in <strong>${daysRemaining} day(s)</strong> (${new Date(trialEndsAt).toDateString()}).`;
+      let subject;
+      let bodyMsg;
+      if (isIndividual) {
+        subject = checkpoint === 'expired'
+          ? '[Havilah] Your 30-day Personal free trial has ended'
+          : `[Havilah] Personal Trial Reminder: ${daysRemaining} day(s) remaining`;
+        bodyMsg = checkpoint === 'expired'
+          ? 'Your 30-day Personal free trial has ended. You are now on the <strong>Free plan</strong> — Daily Pulse check-ins and your personal history remain free forever. Upgrade to <strong>Personal (GHS 150/month or GHS 1,500/year)</strong> anytime to unlock COPSOQ-III and clinical screenings.'
+          : `Your Havilah Personal free trial expires in <strong>${daysRemaining} day(s)</strong> (${new Date(trialEndsAt).toDateString()}). Subscribe before it ends to keep full access to COPSOQ-III, PHQ-9, GAD-7, and data exports.`;
+      } else {
+        subject = checkpoint === 'expired'
+          ? `[Havilah] Your organization's Pro Trial has expired (${tenant.company_name})`
+          : `[Havilah] Pro Trial Reminder: ${daysRemaining} day(s) remaining (${tenant.company_name})`;
+        bodyMsg = checkpoint === 'expired'
+          ? `Your Havilah 30-day Pro trial for <strong>${tenant.company_name}</strong> has ended. Open HR Billing to upgrade via Paystack, request a corporate invoice, or submit a trial extension request.`
+          : `Your Havilah Pro trial for <strong>${tenant.company_name}</strong> expires in <strong>${daysRemaining} day(s)</strong> (${new Date(trialEndsAt).toDateString()}).`;
+      }
       await emailService.sendMail({ to: recipientEmail, subject, html: `<p>${bodyMsg}</p>` }).catch(() => {});
     }
 
     if (!tenant.subscription) tenant.subscription = {};
     tenant.subscription.remindersSent = [...alreadySent, checkpoint];
     if (checkpoint === 'expired') {
-      tenant.lifecycle_state = 'expired';
+      if (isIndividual) {
+        tenant.billing_tier = 'free';
+        tenant.subscription.tier = 'free';
+        tenant.subscription.status = 'canceled';
+        tenant.lifecycle_state = 'active';
+      } else {
+        tenant.lifecycle_state = 'expired';
+      }
     }
     await tenant.save();
     sentCheckpoints.push({ company_id: tenant.company_id, checkpoint });

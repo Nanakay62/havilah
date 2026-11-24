@@ -13,6 +13,7 @@ const DUPLICATE_PUBLIC_REDIRECTS = {
   '/public/terms.html': '/terms',
   '/public/login.html': '/login',
   '/public/register.html': '/register',
+  '/public/consult.html': '/consult',
 };
 
 const NOINDEX_EXACT_PATHS = new Set([
@@ -60,6 +61,7 @@ function buildRobotsTxt(canonicalOrigin) {
     'Allow: /terms',
     'Allow: /login',
     'Allow: /register',
+    'Allow: /consult',
     'Allow: /assets/',
     'Allow: /css/',
     'Allow: /js/',
@@ -89,6 +91,7 @@ function buildSitemapXml(canonicalOrigin) {
     { path: '/terms', changefreq: 'monthly', priority: '0.6' },
     { path: '/login', changefreq: 'monthly', priority: '0.5' },
     { path: '/register', changefreq: 'monthly', priority: '0.5' },
+    { path: '/consult', changefreq: 'weekly', priority: '0.8' },
   ];
   const urlNodes = entries.map(
     (e) =>
@@ -249,6 +252,8 @@ export default {
       targetPath = '/clinical-portal';
     } else if (path === '/verify' || path.startsWith('/verify/')) {
       targetPath = '/public/verify';
+    } else if (path === '/consult' || path === '/consult.html') {
+      targetPath = '/public/consult';
     } else if (path === '/favicon.ico') {
       targetPath = '/public/assets/havilah-mark.svg';
     } else if (path.startsWith('/js/')) {

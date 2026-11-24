@@ -4,9 +4,16 @@ const Tenant = require('../models/Tenant');
 
 const TIER_LEVELS = {
   free: 1,
+  personal: 2,
+  personal_annual: 2,
   starter: 2,
   pro: 3,
   enterprise: 4,
+};
+
+const INDIVIDUAL_FEATURES = {
+  free: new Set(['daily_pulse', 'history', 'articles']),
+  personal: new Set(['daily_pulse', 'history', 'articles', 'copsoq', 'clinical_scales', 'trends', 'pdf_export']),
 };
 
 /**
@@ -79,7 +86,109 @@ function requireTier(minimumTier) {
   };
 }
 
+/**
+ * Enforces feature capabilities for individual accounts while leaving company routes
+ * governed by their existing tier gates.
+ *
+ * @param {'daily_pulse'|'history'|'articles'|'copsoq'|'clinical_scales'|'trends'|'pdf_export'} featureName
+ * @returns {import('express').RequestHandler}
+ */
+function requireFeature(featureName) {
+  return async function featureGateMiddleware(req, res, next) {
+    try {
+      if (req.sessionData && req.sessionData.isSystemSuperAdmin) {
+        return next();
+      }
+
+      const companyId = req.sessionData?.company_id || req.tenantScope?.company_id || req.query?.company_id;
+      if (!companyId) {
+        return res.status(401).json({
+          success: false,
+          error: 'TENANT_REQUIRED',
+          message: 'Tenant context is required.',
+        });
+      }
+
+      const tenant = await Tenant.findOne({ company_id: companyId });
+      if (!tenant) {
+        return res.status(404).json({
+          success: false,
+          error: 'TENANT_NOT_FOUND',
+          message: 'Workspace not found.',
+        });
+      }
+
+      req.tenant = tenant;
+      if (tenant.account_type !== 'individual') {
+        return next();
+      }
+
+      const effectiveTier = typeof tenant.getEffectiveTier === 'function'
+        ? tenant.getEffectiveTier()
+        : (tenant.effectiveTier || tenant.subscription?.tier || 'free');
+      const allowed = INDIVIDUAL_FEATURES[effectiveTier] || INDIVIDUAL_FEATURES.free;
+
+      if (!allowed.has(featureName)) {
+        return res.status(402).json({
+          success: false,
+          error: 'UPGRADE_REQUIRED',
+          feature: featureName,
+          currentTier: effectiveTier,
+          requiredTier: 'personal',
+          upgradeUrl: '/app/dashboard.html?open=billing',
+          message: 'Upgrade to Havilah Personal (GHS 150/month or GHS 1,500/year) to access validated screening tools and exports.',
+        });
+      }
+
+      req.effectiveTier = effectiveTier;
+      return next();
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+/**
+ * Blocks individual personal workspaces from accessing organization-only endpoints.
+ *
+ * @type {import('express').RequestHandler}
+ */
+async function requireCompanyTenant(req, res, next) {
+  try {
+    if (req.sessionData && (req.sessionData.isSystemSuperAdmin || req.sessionData.role === 'super_admin')) {
+      return next();
+    }
+    if (req.sessionData?.role === 'individual') {
+      return res.status(403).json({
+        success: false,
+        error: 'NOT_AVAILABLE_FOR_INDIVIDUALS',
+        message: 'This feature is only available to organization accounts.',
+      });
+    }
+    const companyId = req.sessionData?.company_id || req.tenantScope?.company_id;
+    if (companyId) {
+      const q = Tenant.findOne({ company_id: companyId });
+      const tenant = (q && typeof q.select === 'function')
+        ? await q.select('account_type').lean()
+        : (q && typeof q.lean === 'function' ? await q.lean() : await q);
+      if (tenant && tenant.account_type === 'individual') {
+        return res.status(403).json({
+          success: false,
+          error: 'NOT_AVAILABLE_FOR_INDIVIDUALS',
+          message: 'This feature is only available to organization accounts.',
+        });
+      }
+    }
+    return next();
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   requireTier,
+  requireFeature,
+  requireCompanyTenant,
   TIER_LEVELS,
+  INDIVIDUAL_FEATURES,
 };

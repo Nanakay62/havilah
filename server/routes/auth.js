@@ -16,9 +16,9 @@ const { sensitiveRateLimiter } = require('../middleware/rateLimiter');
 const { validateSession, revokeUserSession, clearUserSessionRevocation } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { resolveAppBaseUrl } = require('../utils/runtimeConfig');
-const { LoginSchema, RegisterSchema } = require('../schemas/auth.schema');
+const { LoginSchema, RegisterSchema, RegisterIndividualSchema } = require('../schemas/auth.schema');
 
-function buildUserTokenPayload(user, isSuperOverride) {
+function buildUserTokenPayload(user, isSuperOverride, accountTypeOverride) {
   const isSuper = typeof isSuperOverride === 'boolean'
     ? isSuperOverride
     : (user.isSystemSuperAdmin === true || user.role === 'super_admin' || user.role === 'superadmin');
@@ -28,6 +28,7 @@ function buildUserTokenPayload(user, isSuperOverride) {
     departmentId: user.department_id,
     role: user.role,
     status: user.status,
+    ...(accountTypeOverride ? { accountType: accountTypeOverride } : {}),
     isSystemSuperAdmin: isSuper,
     tv: user.token_version || 0,
   };
@@ -95,17 +96,19 @@ router.post('/login', sensitiveRateLimiter(5, { skipSuccessfulRequests: true }),
     }
 
     const isSuper = user.isSystemSuperAdmin === true || user.role === 'super_admin' || user.role === 'superadmin';
+    let loginTenant = null;
 
     if (user.company_id && !isSuper && user.company_id !== 'SYSTEM_SUPER_ADMIN') {
-      const tenant = await Tenant.findOne({ company_id: user.company_id });
-      if (tenant && tenant.lifecycle_state === 'suspended') {
+      loginTenant = await Tenant.findOne({ company_id: user.company_id });
+      if (loginTenant && loginTenant.lifecycle_state === 'suspended') {
         return res.status(403).json({
           success: false,
           error: 'TENANT_SUSPENDED',
           message: 'This company account has been suspended by system administrator',
         });
       }
-      if (tenant && (tenant.lifecycle_state === 'expired' || (tenant.access_expires_at && new Date() > new Date(tenant.access_expires_at)))) {
+      const isIndividualAccount = loginTenant && (loginTenant.account_type === 'individual' || loginTenant.account_type === 'system_guest');
+      if (loginTenant && !isIndividualAccount && (loginTenant.lifecycle_state === 'expired' || (loginTenant.access_expires_at && new Date() > new Date(loginTenant.access_expires_at)))) {
         return res.status(403).json({
           success: false,
           error: 'Access expired. Please contact administrator.',
@@ -114,7 +117,12 @@ router.post('/login', sensitiveRateLimiter(5, { skipSuccessfulRequests: true }),
       }
     }
 
-    const payload = buildUserTokenPayload(user, isSuper);
+    const accountType = loginTenant?.account_type || (user.role === 'individual' ? 'individual' : 'company');
+    const effectiveTier = loginTenant && typeof loginTenant.getEffectiveTier === 'function'
+      ? loginTenant.getEffectiveTier()
+      : (loginTenant?.subscription?.tier || 'free');
+
+    const payload = buildUserTokenPayload(user, isSuper, accountType);
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '24h',
@@ -168,6 +176,8 @@ router.post('/login', sensitiveRateLimiter(5, { skipSuccessfulRequests: true }),
         user_id: user.user_id,
         role: user.role,
         full_name: user.full_name,
+        account_type: accountType,
+        effective_tier: effectiveTier,
       },
     });
   } catch (err) {
@@ -403,6 +413,9 @@ const authController = require('../controllers/authController');
 // POST /api/v1/auth/register-tenant - Self-serve HR & Organization Registration with 30-Day Pro Reverse Trial
 router.post('/register-tenant', sensitiveRateLimiter(5), authController.registerTenant);
 
+// POST /api/v1/auth/register-individual - Self-serve Individual B2C Registration with 30-Day Personal Trial
+router.post('/register-individual', sensitiveRateLimiter(5), validate(RegisterIndividualSchema), authController.registerIndividual);
+
 // GET /api/v1/auth/me - Validate bearer token freshness and return user profile
 router.get('/me', validateSession, async (req, res, next) => {
   try {
@@ -435,8 +448,11 @@ router.get('/me', validateSession, async (req, res, next) => {
           tenantInfo = {
             company_id: tenant.company_id,
             company_name: tenant.company_name,
+            account_type: tenant.account_type || 'company',
             subscription: tenant.subscription,
             effectiveTier: tenant.getEffectiveTier ? tenant.getEffectiveTier() : (tenant.subscription?.tier || 'free'),
+            welcomeConsultationBenefit: tenant.subscription?.welcomeConsultationBenefit || 'none',
+            welcomeConsultationUsed: Boolean(tenant.subscription?.welcomeConsultationUsed),
             activeAssessorId: tenant.activeAssessorId,
           };
         }
@@ -464,6 +480,7 @@ router.get('/me', validateSession, async (req, res, next) => {
         email_hash: user.email_hash,
         full_name: user.full_name,
         role: user.role,
+        account_type: tenantInfo?.account_type || (user.role === 'individual' ? 'individual' : 'company'),
         tenant_id: user.company_id,
         company_id: user.company_id,
         department_id: user.department_id,

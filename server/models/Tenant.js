@@ -236,7 +236,7 @@ const SubscriptionSchema = new mongoose.Schema(
   {
     tier: {
       type: String,
-      enum: ['free', 'starter', 'pro', 'enterprise'],
+      enum: ['free', 'personal', 'personal_annual', 'starter', 'pro', 'enterprise'],
       default: 'pro',
     },
     status: {
@@ -254,6 +254,15 @@ const SubscriptionSchema = new mongoose.Schema(
     },
     currentPeriodEnd: { type: Date, default: null },
     cancelAtPeriodEnd: { type: Boolean, default: false },
+    welcomeConsultationBenefit: {
+      type: String,
+      enum: ['none', 'discount_150', 'free_one'],
+      default: 'none',
+    },
+    welcomeConsultationUsed: {
+      type: Boolean,
+      default: false,
+    },
     customerId: { type: String, default: null },
     subscriptionCode: { type: String, default: null },
     paystackCustomerCode: { type: String, default: null },
@@ -275,7 +284,7 @@ const SubscriptionSchema = new mongoose.Schema(
     },
     invoices: [{
       invoiceNumber: { type: String, required: true },
-      tier: { type: String, enum: ['starter', 'pro', 'enterprise'], required: true },
+      tier: { type: String, enum: ['personal', 'personal_annual', 'starter', 'pro', 'enterprise'], required: true },
       interval: { type: String, enum: ['monthly', 'annual'], default: 'annual' },
       amountGhs: { type: Number, required: true },
       status: { type: String, enum: ['pending', 'paid', 'void'], default: 'pending' },
@@ -325,12 +334,22 @@ const TenantSchema = new mongoose.Schema(
       trim: true,
       match: [/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/, 'slug must be a valid subdomain label'],
     },
+    account_type: {
+      type: String,
+      enum: {
+        values: ['company', 'individual', 'system_guest'],
+        message: 'account_type must be one of: company, individual, system_guest',
+      },
+      default: 'company',
+      immutable: true,
+      index: true,
+    },
     billing_tier: {
       type: String,
       required: true,
       enum: {
-        values: ['free', 'starter', 'pro', 'enterprise'],
-        message: 'billing_tier must be one of: free, starter, pro, enterprise',
+        values: ['free', 'personal', 'personal_annual', 'starter', 'pro', 'enterprise'],
+        message: 'billing_tier must be one of: free, personal, personal_annual, starter, pro, enterprise',
       },
       default: 'free',
       set: function normalizeBillingTier(v) {
@@ -439,6 +458,24 @@ const TenantSchema = new mongoose.Schema(
  * Else return subscription.tier || 'free'.
  */
 TenantSchema.methods.getEffectiveTier = function getEffectiveTier() {
+  if (this.account_type === 'individual') {
+    if (!this.subscription) return 'free';
+    if (this.subscription.status === 'trialing') {
+      const trialEnd = this.subscription.trialEndsAt ? new Date(this.subscription.trialEndsAt) : null;
+      if (trialEnd && new Date() < trialEnd) {
+        return 'personal';
+      }
+      return 'free';
+    }
+    const periodEnd = this.subscription.currentPeriodEnd ? new Date(this.subscription.currentPeriodEnd) : null;
+    if (this.subscription.status === 'active' || (periodEnd && new Date() < periodEnd)) {
+      if (['personal', 'personal_annual'].includes(this.subscription.tier)) {
+        return 'personal';
+      }
+    }
+    return 'free';
+  }
+
   if (!this.subscription) return 'pro';
   if (this.subscription.status === 'trialing') {
     const trialEnd = this.subscription.trialEndsAt ? new Date(this.subscription.trialEndsAt) : null;

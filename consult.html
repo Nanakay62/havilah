@@ -27,6 +27,7 @@
     .thread-msg { padding: 8px 12px; border-radius: 8px; font-size: 0.875rem; line-height: 1.45; }
     .thread-msg.assessor { background: #f0fdfa; border: 1px solid #99f6e4; align-self: flex-start; max-width: 88%; }
     .thread-msg.employee { background: #fff; border: 1px solid var(--border); align-self: flex-end; max-width: 88%; }
+    #guestSubmitBtn:disabled { opacity: 0.55; cursor: not-allowed; filter: grayscale(20%); }
   </style>
 </head>
 <body class="auth-page">
@@ -108,9 +109,10 @@
           </label>
         </div>
 
-        <button type="submit" id="guestSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: var(--space-3);">
+        <button type="submit" id="guestSubmitBtn" class="btn btn-primary" disabled style="width: 100%; margin-top: var(--space-3);">
           <span>Continue to Pay GHS 349 &amp; Book Doctor</span>
         </button>
+        <p id="guestDisclaimerHint" style="text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">Tick the acknowledgement box above to continue to payment.</p>
       </form>
     </section>
 
@@ -329,6 +331,19 @@
         return;
       }
 
+      const disclaimerCb = document.getElementById('guestDisclaimer');
+      const guestSubmitBtn = document.getElementById('guestSubmitBtn');
+      const disclaimerHint = document.getElementById('guestDisclaimerHint');
+      function syncDisclaimerBtnState() {
+        const checked = Boolean(disclaimerCb && disclaimerCb.checked);
+        if (guestSubmitBtn) guestSubmitBtn.disabled = !checked;
+        if (disclaimerHint) disclaimerHint.style.display = checked ? 'none' : 'block';
+      }
+      if (disclaimerCb) {
+        disclaimerCb.addEventListener('change', syncDisclaimerBtnState);
+        syncDisclaimerBtnState();
+      }
+
       document.getElementById('guestConsultForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         hideErr();
@@ -379,6 +394,7 @@
           showErr('Network error starting checkout. Please try again.');
         } finally {
           if (window.HavilahLoader) HavilahLoader.setButtonLoading(btn, false, '<span>Continue to Pay GHS 349 &amp; Book Doctor</span>');
+          syncDisclaimerBtnState();
         }
       });
     })();

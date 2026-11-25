@@ -8,7 +8,7 @@ const { requireCompanyTenant } = require('../middleware/tierGate');
 const Invitation = require('../models/Invitation');
 const Department = require('../models/Department');
 const { buildNSizeAggregation } = require('../aggregations/nSizePrivacy');
-const { roundPercentagesLargestRemainder } = require('../utils/clinicalScoring');
+const { roundPercentagesLargestRemainder, extractCanonicalRiskDimensions } = require('../utils/clinicalScoring');
 
 // Ensure HR Admins, Tenant Admins, or Super Admins can access these routes
 router.use(validateSession);
@@ -19,7 +19,7 @@ router.use(requireRole('hr_admin', 'tenant_admin', 'super_admin'));
 router.get('/analytics', async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;
-    const { department, department_id } = req.query;
+    const { department, department_id, days } = req.query;
 
     const Tenant = require('../models/Tenant');
     const PersonalWellnessLog = require('../models/PersonalWellnessLog');
@@ -46,6 +46,7 @@ router.get('/analytics', async (req, res, next) => {
         company_name: companyName,
         used_seats: usedSeats,
         max_allowed_seats: maxSeats,
+        participation_rate: 0,
         N_threshold: 5,
         total_responses: 0,
         meets_n_threshold: false,
@@ -65,6 +66,27 @@ router.get('/analytics', async (req, res, next) => {
       }
     }
 
+    if (days && String(days).toLowerCase() !== 'all') {
+      const daysNum = parseInt(days, 10);
+      if (Number.isFinite(daysNum) && daysNum > 0) {
+        const clampedDays = Math.min(daysNum, 3650);
+        matchQuery.submitted_at = { $gte: new Date(Date.now() - clampedDays * 86400000) };
+      }
+    }
+
+    const latestNumeric = (arrField) => ({
+      $arrayElemAt: [
+        {
+          $filter: {
+            input: `${arrField}`,
+            as: 'v',
+            cond: { $in: [{ $type: '$v' }, ['double', 'int', 'long', 'decimal']] }
+          }
+        },
+        0
+      ]
+    });
+
     const [aggResult] = await PersonalWellnessLog.aggregate([
       { $match: matchQuery },
       { $sort: { submitted_at: -1 } },
@@ -72,11 +94,21 @@ router.get('/analytics', async (req, res, next) => {
         $group: {
           _id: '$user_id',
           user_responses: { $sum: 1 },
-          mood: { $first: '$dimension_scores.mood' },
-          calm: { $first: '$dimension_scores.calm' },
-          stress: { $first: '$dimension_scores.stress' },
-          energy: { $first: '$dimension_scores.energy' },
-          work_fit: { $first: '$dimension_scores.work_fit' }
+          mood_vals: { $push: '$dimension_scores.mood' },
+          calm_vals: { $push: '$dimension_scores.calm' },
+          stress_vals: { $push: '$dimension_scores.stress' },
+          energy_vals: { $push: '$dimension_scores.energy' },
+          work_fit_vals: { $push: '$dimension_scores.work_fit' }
+        }
+      },
+      {
+        $project: {
+          user_responses: 1,
+          mood: latestNumeric('mood_vals'),
+          calm: latestNumeric('calm_vals'),
+          stress: latestNumeric('stress_vals'),
+          energy: latestNumeric('energy_vals'),
+          work_fit: latestNumeric('work_fit_vals')
         }
       },
       {
@@ -95,6 +127,9 @@ router.get('/analytics', async (req, res, next) => {
 
     const deptResponseCount = aggResult ? (aggResult.total_responses || 0) : 0;
     const uniqueRespondents = aggResult ? (aggResult.unique_respondents ?? deptResponseCount) : 0;
+    const participationRate = usedSeats > 0
+      ? Math.min(100, Math.round((uniqueRespondents / usedSeats) * 1000) / 10)
+      : 0;
 
     if (uniqueRespondents < 5) {
       return res.json({
@@ -104,6 +139,7 @@ router.get('/analytics', async (req, res, next) => {
         company_name: companyName,
         used_seats: usedSeats,
         max_allowed_seats: maxSeats,
+        participation_rate: 0,
         N_threshold: 5,
         total_responses: deptResponseCount,
         meets_n_threshold: false,
@@ -121,6 +157,7 @@ router.get('/analytics', async (req, res, next) => {
       company_name: companyName,
       used_seats: usedSeats,
       max_allowed_seats: maxSeats,
+      participation_rate: participationRate,
       N_threshold: 5,
       total_responses: deptResponseCount,
       unique_respondents: uniqueRespondents,
@@ -535,10 +572,31 @@ router.delete('/departments/codes/:code', handleDeleteInvite);
 router.get('/heatmap', async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;
-    
+    const { department, department_id, days } = req.query;
+
+    let resolvedDeptId;
+    const targetDept = department || department_id;
+    if (targetDept && targetDept !== 'all') {
+      const depts = await Department.find({ company_id, is_active: true }).lean();
+      const deptMatch = depts.find(d => (d.name && d.name.toLowerCase() === String(targetDept).toLowerCase()) || d.department_id === targetDept);
+      resolvedDeptId = deptMatch ? deptMatch.department_id : '__unmatched_department__';
+    }
+
+    let periodStart;
+    if (days && String(days).toLowerCase() !== 'all') {
+      const daysNum = parseInt(days, 10);
+      if (Number.isFinite(daysNum) && daysNum > 0) {
+        periodStart = new Date(Date.now() - Math.min(daysNum, 3650) * 86400000).toISOString();
+      }
+    }
+
     // Execute N-Size Aggregation builder with threshold 5
-    const results = await buildNSizeAggregation(company_id, { nSizeThreshold: 5 });
-    
+    const results = await buildNSizeAggregation(company_id, {
+      nSizeThreshold: 5,
+      departmentId: resolvedDeptId,
+      periodStart,
+    });
+
     // Ensure suppressed teams explicitly transmit status: SUPPRESSED and metrics: null
     const sanitizedResults = results.map(item => {
       if (!item.meets_n_size || item.response_count < 5) {
@@ -566,46 +624,60 @@ router.get('/radar', async (req, res, next) => {
   try {
     const { company_id } = req.sessionData;
     const AnonHazardLog = require('../models/AnonHazardLog');
-    
-    const count = await AnonHazardLog.countDocuments({ company_id });
-    if (count < 5) {
+
+    const query = { company_id };
+    const { department, department_id, days } = req.query;
+    const targetDept = department || department_id;
+    if (targetDept && targetDept !== 'all') {
+      const depts = await Department.find({ company_id, is_active: true }).lean();
+      const deptMatch = depts.find(d => (d.name && d.name.toLowerCase() === String(targetDept).toLowerCase()) || d.department_id === targetDept);
+      query.department_id = deptMatch ? deptMatch.department_id : '__unmatched_department__';
+    }
+    if (days && String(days).toLowerCase() !== 'all') {
+      const daysNum = parseInt(days, 10);
+      if (Number.isFinite(daysNum) && daysNum > 0) {
+        query.submitted_at = { $gte: new Date(Date.now() - Math.min(daysNum, 3650) * 86400000) };
+      }
+    }
+
+    const logs = await AnonHazardLog.find(query).lean();
+    if (logs.length < 5) {
       return res.json({
         success: true,
         status: 'SUPPRESSED',
         data: [],
-        privacy_notice: 'Radar metrics suppressed due to insufficient company response count (N < 5).'
+        privacy_notice: 'Radar metrics suppressed due to insufficient matching response count (N < 5).'
       });
     }
 
-    const logs = await AnonHazardLog.find({ company_id }).lean();
-    let sums = {};
-    let counts = {};
-    
+    const riskSums = { mood: 0, calm: 0, stress: 0, energy: 0, work_fit: 0 };
+    const counts = { mood: 0, calm: 0, stress: 0, energy: 0, work_fit: 0 };
+
     logs.forEach(log => {
-       if (log.dimension_scores) {
-          Object.keys(log.dimension_scores).forEach(dim => {
-             const raw = log.dimension_scores[dim];
-             if (typeof raw === 'number' && Number.isFinite(raw)) {
-                sums[dim] = (sums[dim] || 0) + raw;
-                counts[dim] = (counts[dim] || 0) + 1;
-             }
-          });
-       }
+      const canonical = extractCanonicalRiskDimensions(log);
+      ['mood', 'calm', 'stress', 'energy', 'work_fit'].forEach(dim => {
+        if (typeof canonical[dim] === 'number' && Number.isFinite(canonical[dim])) {
+          riskSums[dim] += canonical[dim];
+          counts[dim] += 1;
+        }
+      });
     });
-    
-    let averages = {};
-    Object.keys(sums).forEach(dim => {
-       averages[dim] = Math.round(sums[dim] / counts[dim]);
+
+    const averages = {};
+    ['mood', 'calm', 'stress', 'energy', 'work_fit'].forEach(dim => {
+      averages[dim] = counts[dim] > 0
+        ? Math.max(0, Math.min(100, Math.round(100 - (riskSums[dim] / counts[dim]))))
+        : null;
     });
-    
+
     const radarData = [
-       averages['mood'] ?? null,
-       averages['calm'] ?? null,
-       averages['stress'] ?? null,
-       averages['energy'] ?? null,
-       averages['work_fit'] ?? null
+      averages.mood,
+      averages.calm,
+      averages.stress,
+      averages.energy,
+      averages.work_fit
     ];
-    
+
     res.json({ success: true, data: radarData, averages });
   } catch (err) {
     next(err);

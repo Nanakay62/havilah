@@ -283,6 +283,7 @@ router.post('/daily-pulse', async (req, res, next) => {
       Object.entries(profileScores).forEach(([dimKey, scoreVal]) => {
         if (typeof scoreVal === 'number' && Number.isFinite(scoreVal)) {
           anonDims[dimKey] = scoreVal;
+          anonDims[`risk_${dimKey}`] = Math.max(0, Math.min(100, 100 - scoreVal));
         }
       });
 
@@ -528,6 +529,7 @@ router.post('/submit-checkin', async (req, res, next) => {
       Object.entries(normalizedScores).forEach(([dimKey, val]) => {
         if (typeof val === 'number' && Number.isFinite(val)) {
           anonDims[dimKey] = val;
+          anonDims[`risk_${dimKey}`] = Math.max(0, Math.min(100, 100 - val));
         }
       });
 
@@ -599,6 +601,20 @@ router.post('/submit-checkin', async (req, res, next) => {
           .filter(Boolean);
       }
 
+      let computed;
+      try {
+        computed = computeDimensions(survey_type, answers || [], hazardResponses);
+      } catch (scoreErr) {
+        if (scoreErr && (scoreErr.statusCode === 400 || scoreErr.name === 'ClinicalValidationError')) {
+          return res.status(400).json({
+            success: false,
+            error: scoreErr.code || 'VALIDATION_ERROR',
+            message: scoreErr.message,
+          });
+        }
+        throw scoreErr;
+      }
+
       if (hazardResponses.length > 0 && !isIndividualTenant) {
         const mockReq = {
           body: {
@@ -611,13 +627,13 @@ router.post('/submit-checkin', async (req, res, next) => {
         };
 
         const mockRes = {
+          statusCode: 200,
           json: (data) => { if (data && data.success) anonLogId = data.log_id; },
-          status: () => mockRes,
+          status: (code) => { mockRes.statusCode = code; return mockRes; },
         };
         await hazardController.submitLog(mockReq, mockRes, next);
       }
 
-      const computed = computeDimensions(survey_type, answers || [], hazardResponses);
       const tenantDoc = companyId ? await Tenant.findOne({ company_id: companyId }).select('hotline_config').lean() : null;
       crisisProtocol = evaluateCrisisRisk(survey_type, answers || hazardResponses, computed.rawScore, tenantDoc?.hotline_config || {});
       const effectiveSeverityLabel = (crisisProtocol.triggered && crisisProtocol.level === 'crisis')

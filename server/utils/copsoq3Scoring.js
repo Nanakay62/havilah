@@ -403,6 +403,10 @@ function scoreCOPSOQ3(responses, options = {}) {
   const riskComposite = validScales > 0 ? Math.round((totalRiskSum / validScales) * 100) / 100 : 0;
   const wellbeingIndex = validScales > 0 ? Math.max(0, Math.min(100, Math.round(100 - riskComposite))) : 0;
 
+  if (validScales > 0) {
+    dimension_scores.set('risk_work_fit', riskComposite);
+  }
+
   let severity_band;
   let severity;
   let likelihood;

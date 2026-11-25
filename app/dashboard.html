@@ -5523,38 +5523,6 @@ const App = (() => {
     }
   }
 
-  const fallbackQuestions = {
-    phq9: [
-      { text: "Little interest or pleasure in doing things?" },
-      { text: "Feeling down, depressed, or hopeless?" },
-      { text: "Trouble falling or staying asleep, or sleeping too much?" },
-      { text: "Feeling tired or having little energy?" },
-      { text: "Poor appetite or overeating?" },
-      { text: "Feeling bad about yourself, or that you are a failure or have let yourself or your family down?" },
-      { text: "Trouble concentrating on things, such as reading the newspaper or watching television?" },
-      { text: "Moving or speaking so slowly that other people could have noticed? Or the opposite, being so fidgety or restless that you have been moving around a lot more than usual?" },
-      { text: "Thoughts that you would be better off dead, or of hurting yourself in some way?" }
-    ],
-    gad7: [
-      { text: "Feeling nervous, anxious, or on edge?" },
-      { text: "Not being able to stop or control worrying?" },
-      { text: "Worrying too much about different things?" },
-      { text: "Trouble relaxing?" }
-    ],
-    pss10: [
-      { text: "Been upset because of something that happened unexpectedly?" },
-      { text: "Felt that you were unable to control important things in life?" }
-    ],
-    fas10: [
-      { text: "I am bothered by fatigue." },
-      { text: "I get tired very quickly." }
-    ],
-    copsoq3_core: [
-      { text: "Do you have to work very fast?" },
-      { text: "Is your work emotionally demanding?" }
-    ]
-  };
-
   function openSurvey(code, contextOverride = {}) {
     const normInstrumentCode = normalizeInstrumentCode(code);
     const internalKey = getInternalSurveyKey(code);
@@ -5578,11 +5546,12 @@ const App = (() => {
       return;
     }
 
-    let survey = surveys[internalKey] || surveys[code] || defaultSurveyMeta[internalKey] || defaultSurveyMeta[code];
-    if (!survey) {
-      survey = { code: normInstrumentCode, name: normInstrumentCode, questions: fallbackQuestions[internalKey] || fallbackQuestions.phq9 };
-    } else if (!survey.questions) {
-      survey.questions = fallbackQuestions[internalKey] || fallbackQuestions[code.toLowerCase()] || fallbackQuestions.phq9;
+    const survey = surveys[internalKey] || surveys[code] || defaultSurveyMeta[internalKey] || defaultSurveyMeta[code];
+    if (!survey || !Array.isArray(survey.questions) || survey.questions.length === 0) {
+      if (typeof showToast === 'function') {
+        showToast('Questionnaire Still Loading', 'Please refresh the page to load the full validated questionnaire before starting.', 'error');
+      }
+      return;
     }
 
     state.surveyState = {
@@ -6379,7 +6348,7 @@ const App = (() => {
   };
 
   function getRiskTier(score) {
-    if (score >= 80) return { label: 'Optimal', color: '#4FB286', bg: 'rgba(79,178,134,0.12)' };
+    if (score >= 75) return { label: 'Healthy', color: '#4FB286', bg: 'rgba(79,178,134,0.12)' };
     if (score >= 50) return { label: 'Moderate', color: '#E8A33D', bg: 'rgba(232,163,61,0.12)' };
     return { label: 'High Risk', color: '#E5646E', bg: 'rgba(229,100,110,0.12)' };
   }

@@ -1691,14 +1691,24 @@ async function generateComplianceReport() {
   try {
     showToast('Generating Report', 'Preparing your 3-page wellbeing audit report...', 'info');
     
-    // Fetch real tenant analytics dynamically from backend
+    // Fetch real tenant analytics & heatmap dynamically from backend
     let analyticsData = null;
+    let heatmapRows = [];
     try {
-      const resp = await apiFetch('/api/v1/hr/analytics');
-      if (resp.ok) {
+      const [resp, hmResp] = await Promise.all([
+        apiFetch('/api/v1/hr/analytics'),
+        apiFetch('/api/v1/hr/heatmap').catch(() => null),
+      ]);
+      if (resp && resp.ok) {
         const resJson = await resp.json();
         if (resJson && resJson.success) {
           analyticsData = resJson;
+        }
+      }
+      if (hmResp && hmResp.ok) {
+        const hmJson = await hmResp.json();
+        if (hmJson && hmJson.success && Array.isArray(hmJson.data)) {
+          heatmapRows = hmJson.data;
         }
       }
     } catch (apiErr) {
@@ -1706,8 +1716,12 @@ async function generateComplianceReport() {
     }
 
     const companyName = analyticsData?.company_name || document.querySelector('.company-name, .org-name, [data-company-name]')?.textContent || 'Organization';
-    const totalRespCount = analyticsData?.responseCount || 0;
-    const partRate = analyticsData?.participationRate !== undefined ? analyticsData.participationRate : 0;
+    const totalRespCount = analyticsData?.total_responses ?? analyticsData?.responseCount ?? 0;
+    const partRate = analyticsData?.participation_rate !== undefined
+      ? Number(analyticsData.participation_rate)
+      : (analyticsData?.used_seats > 0 && analyticsData?.unique_respondents !== undefined
+        ? Math.min(100, Math.round((analyticsData.unique_respondents / analyticsData.used_seats) * 1000) / 10)
+        : (analyticsData?.participationRate !== undefined ? Number(analyticsData.participationRate) : 0));
     const isColdStart = !analyticsData || analyticsData.status === 'COLD_START' || totalRespCount === 0;
 
     const jsPDF = await getJsPDFClass();
@@ -1925,14 +1939,24 @@ async function generateComplianceReport() {
     pdf.text('30-DAY TREND', colX[4], y + 5.5);
     y += 8;
 
-    const d = analyticsData?.dimensions;
-    const isDimValid = (v) => !isColdStart && d && v !== null && v !== undefined && Number.isFinite(Number(v));
+    const d = analyticsData?.averages || analyticsData?.dimensions || null;
+    const isDimValid = (v) => !isColdStart && analyticsData?.meets_n_threshold && d && v !== null && v !== undefined && Number.isFinite(Number(v));
+    const workFitVal = d ? (d.work_fit ?? d.workFit) : null;
+    const makeDimRow = (name, val, benchVal) => {
+      if (!isDimValid(val)) {
+        return { name, score: '-- / 100', bench: `${benchVal} / 100`, risk: 'No Data', color: [148, 163, 184], trend: 'Pending' };
+      }
+      const num = Math.round(Number(val));
+      const risk = num >= 75 ? 'Low Risk' : num >= 50 ? 'Moderate Risk' : 'High Risk';
+      const color = num >= 75 ? [34, 197, 94] : num >= 50 ? [245, 158, 11] : [239, 68, 68];
+      return { name, score: `${num} / 100`, bench: `${benchVal} / 100`, risk, color, trend: 'Baseline' };
+    };
     const dimensions = [
-      { name: 'Mood (Depression Risk)', score: isDimValid(d?.mood) ? `${d.mood} / 100` : '-- / 100', bench: '70 / 100', risk: isDimValid(d?.mood) ? (d.mood >= 70 ? 'Low Risk' : 'Moderate Risk') : 'No Data', color: isDimValid(d?.mood) ? (d.mood >= 70 ? [34, 197, 94] : [245, 158, 11]) : [148, 163, 184], trend: isDimValid(d?.mood) ? 'Baseline' : 'Pending' },
-      { name: 'Calm (Anxiety Control)', score: isDimValid(d?.calm) ? `${d.calm} / 100` : '-- / 100', bench: '65 / 100', risk: isDimValid(d?.calm) ? (d.calm >= 65 ? 'Low Risk' : 'Moderate Risk') : 'No Data', color: isDimValid(d?.calm) ? (d.calm >= 65 ? [34, 197, 94] : [245, 158, 11]) : [148, 163, 184], trend: isDimValid(d?.calm) ? 'Baseline' : 'Pending' },
-      { name: 'Stress resilience (PSS-10)', score: isDimValid(d?.stress) ? `${d.stress} / 100` : '-- / 100', bench: '70 / 100', risk: isDimValid(d?.stress) ? (d.stress >= 70 ? 'Low Risk' : 'Moderate Risk') : 'No Data', color: isDimValid(d?.stress) ? (d.stress >= 70 ? [34, 197, 94] : [245, 158, 11]) : [148, 163, 184], trend: isDimValid(d?.stress) ? 'Baseline' : 'Pending' },
-      { name: 'Energy (Fatigue Level)', score: isDimValid(d?.energy) ? `${d.energy} / 100` : '-- / 100', bench: '68 / 100', risk: isDimValid(d?.energy) ? (d.energy >= 68 ? 'Low Risk' : 'Moderate Risk') : 'No Data', color: isDimValid(d?.energy) ? (d.energy >= 68 ? [34, 197, 94] : [245, 158, 11]) : [148, 163, 184], trend: isDimValid(d?.energy) ? 'Baseline' : 'Pending' },
-      { name: 'Work-Fit (Occupational Fit)', score: isDimValid(d?.workFit) ? `${d.workFit} / 100` : '-- / 100', bench: '75 / 100', risk: isDimValid(d?.workFit) ? (d.workFit >= 75 ? 'Low Risk' : 'Moderate Risk') : 'No Data', color: isDimValid(d?.workFit) ? (d.workFit >= 75 ? [34, 197, 94] : [245, 158, 11]) : [148, 163, 184], trend: isDimValid(d?.workFit) ? 'Baseline' : 'Pending' }
+      makeDimRow('Mood (Depression Risk)', d?.mood, 75),
+      makeDimRow('Calm (Anxiety Control)', d?.calm, 75),
+      makeDimRow('Stress resilience (PSS-10)', d?.stress, 75),
+      makeDimRow('Energy (Fatigue Level)', d?.energy, 75),
+      makeDimRow('Work-Fit (Occupational Fit)', workFitVal, 75)
     ];
 
     dimensions.forEach((dim, idx) => {
@@ -1988,13 +2012,46 @@ async function generateComplianceReport() {
     y += 8;
 
     let departments = [];
-    if (analyticsData && Array.isArray(analyticsData.departments) && analyticsData.departments.length > 0 && !isColdStart) {
-      departments = analyticsData.departments.map(deptObj => ({
-        dept: typeof deptObj === 'string' ? deptObj : (deptObj.name || deptObj.dept || 'Department'),
-        hazard: (deptObj.hazard || 'Workload & Delivery Pace'),
-        risk: (deptObj.risk || 'Low Risk'),
-        color: (deptObj.risk === 'High Risk' ? [239, 68, 68] : deptObj.risk === 'Moderate Risk' ? [245, 158, 11] : [34, 197, 94]),
-        eap: (deptObj.eap || 'Monitoring')
+    if (Array.isArray(heatmapRows) && heatmapRows.length > 0 && !isColdStart) {
+      const dimLabels = { mood: 'Mood Strain', calm: 'Anxiety Load', stress: 'Perceived Stress', energy: 'Fatigue / Energy', work_fit: 'Work-Life Fit' };
+      departments = heatmapRows.map(entry => {
+        if (!entry.meets_n_size || !entry.metrics) {
+          return {
+            dept: entry.department_name || 'Protected Cohort',
+            hazard: 'Protected cohort (N < 5 responses)',
+            risk: 'Protected (N < 5)',
+            color: [148, 163, 184],
+            eap: 'Privacy Enforced'
+          };
+        }
+        const riskDims = entry.metrics.avg_risk_dimensions || {};
+        let topDim = null;
+        let topRisk = -1;
+        Object.entries(riskDims).forEach(([k, v]) => {
+          if (typeof v === 'number' && Number.isFinite(v) && v > topRisk) {
+            topRisk = v;
+            topDim = k;
+          }
+        });
+        const compositeRisk = Number(entry.metrics.avg_composite_score || 0);
+        const riskScore = topRisk >= 0 ? topRisk : compositeRisk;
+        const riskLabel = riskScore >= 60 ? 'High Risk' : riskScore >= 35 ? 'Moderate Risk' : 'Low Risk';
+        const color = riskLabel === 'High Risk' ? [239, 68, 68] : riskLabel === 'Moderate Risk' ? [245, 158, 11] : [34, 197, 94];
+        return {
+          dept: entry.department_name || 'Department',
+          hazard: topDim ? `${dimLabels[topDim] || topDim} (${Math.round(topRisk)}/100 risk)` : 'General Psychosocial Load',
+          risk: riskLabel,
+          color,
+          eap: riskLabel === 'High Risk' ? 'Dispatch Recommended' : 'Monitoring'
+        };
+      });
+    } else if (analyticsData && Array.isArray(analyticsData.departments) && analyticsData.departments.length > 0 && !isColdStart) {
+      departments = analyticsData.departments.map(deptName => ({
+        dept: typeof deptName === 'string' ? deptName : (deptName.name || 'Department'),
+        hazard: 'Protected cohort (N < 5 responses)',
+        risk: 'Protected (N < 5)',
+        color: [148, 163, 184],
+        eap: 'Privacy Enforced'
       }));
     } else {
       departments = [
@@ -2188,166 +2245,16 @@ const App = (() => {
       time: '56',
       metric: 'all'
     },
+    heatmapData: [],
     severityTrends: null,
     charts: {},
     cmdSelectedIndex: 0,
     cmdItems: []
   };
 
-  /* ---------- SURVEY DEFINITIONS ---------- */
-  const surveys = {
-    phq9: {
-      code: 'PHQ-9', title: 'Depression self-check',
-      questions: [
-        'Over the last two weeks, how often have you felt little interest or pleasure in doing things?',
-        'Over the last two weeks, how often have you felt down, depressed, or hopeless?',
-        'Over the last two weeks, how often have you had trouble falling/staying asleep, or sleeping too much?',
-        'Over the last two weeks, how often have you felt tired or had little energy?',
-        'Over the last two weeks, how often have you had poor appetite or overeaten?',
-        'Over the last two weeks, how often have you felt bad about yourself - that you are a failure or let people down?',
-        'Over the last two weeks, how often have you had trouble concentrating on things like reading or watching TV?',
-        'Over the last two weeks, how often have you moved or spoken so slowly others noticed - or so fidgety you moved a lot more than usual?',
-        'Over the last two weeks, how often have you had thoughts that you would be better off dead, or of hurting yourself in some way?'
-      ]
-    },
-    gad7: {
-      code: 'GAD-7', title: 'Anxiety self-check',
-      questions: [
-        'Over the last two weeks, how often have you felt nervous, anxious, or on edge?',
-        'Over the last two weeks, how often have you not been able to stop or control worrying?',
-        'Over the last two weeks, how often have you found yourself worrying about different things?',
-        'Over the last two weeks, how often have you had trouble relaxing?',
-        'Over the last two weeks, how often have you been so restless that it is hard to sit still?',
-        'Over the last two weeks, how often have you become easily annoyed or irritable?',
-        'Over the last two weeks, how often have you felt afraid as if something awful might happen?'
-      ]
-    },
-    pss10: {
-      code: 'PSS-10', title: 'Perceived stress scale',
-      questions: [
-        'In the last month, how often have you felt unable to control the important things in your life?',
-        'In the last month, how often have you felt confident about your ability to handle your personal problems?',
-        'In the last month, how often have you felt that things were going your way?',
-        'In the last month, how often have you felt that difficulties were piling up so high you could not overcome them?',
-        'In the last month, how often have you been upset because of something that happened unexpectedly?',
-        'In the last month, how often have you felt nervous and stressed?',
-        'In the last month, how often have you been able to control irritations in your life?',
-        'In the last month, how often have you felt that you were on top of things?',
-        'In the last month, how often have you been angered because of things outside your control?',
-        'In the last month, how often have you felt difficulties were so great you could not overcome them?'
-      ]
-    },
-    fas10: {
-      code: 'FAS-10', title: 'Fatigue assessment',
-      questions: [
-        'In the past month, how often have you felt physically exhausted?',
-        'In the past month, how often have you felt mentally exhausted?',
-        'In the past month, how often have you had trouble concentrating?',
-        'In the past month, how often has fatigue interfered with your work or daily activities?',
-        'In the past month, how often have you felt too tired to start tasks?',
-        'In the past month, how often have you needed to rest more than usual?',
-        'In the past month, how often have you felt too tired to socialize?',
-        'In the past month, how often have you had trouble recovering after exertion?',
-        'In the past month, how often have you felt sleepy during the day?',
-        'In the past month, how often has fatigue affected your mood?'
-      ]
-    },
-    copsoq3_core: {
-      code: 'COPSOQ III (Core)', title: 'Work environment (Short)',
-      questions: [
-        'Do you have to work very fast?',
-        'Do you have an unevenly distributed workload so it piles up?',
-        'How often do you not have time to complete all your work tasks?',
-        'Does your work require that you hide your feelings?',
-        'Do you have a large degree of influence concerning your work?',
-        'Can you influence the amount of work assigned to you?',
-        'Are the possibilities for development good at your workplace?',
-        'How often do you get help and support from your colleagues?',
-        'How often is your nearest superior willing to listen to your problems at work?',
-        'Is your work recognized and appreciated by the management?',
-        'Do you feel that the demands of your work interfere with your home and family life?',
-        'Do you trust the information that comes from the management?',
-        'Does the management at your workplace trust the employees to do their work well?',
-        'Are conflicts resolved in a fair way?',
-        'How often have you had problems sleeping because of stress at work?',
-        'How often have you felt emotionally exhausted?',
-        'In general, would you say your health is good?'
-      ]
-    },
-    copsoq3_middle: {
-      code: 'COPSOQ III (Middle)', title: 'Work environment (Medium)',
-      questions: [
-        'Do you have to work very fast?',
-        'Do you have an unevenly distributed workload so it piles up?',
-        'How often do you not have time to complete all your work tasks?',
-        'Does your work require that you hide your feelings?',
-        'Do you have a large degree of influence concerning your work?',
-        'Can you influence the amount of work assigned to you?',
-        'Are the possibilities for development good at your workplace?',
-        'How often do you get help and support from your colleagues?',
-        'How often is your nearest superior willing to listen to your problems at work?',
-        'Is your work recognized and appreciated by the management?',
-        'Do you feel that the demands of your work interfere with your home and family life?',
-        'Do you trust the information that comes from the management?',
-        'Does the management at your workplace trust the employees to do their work well?',
-        'Are conflicts resolved in a fair way?',
-        'How often have you had problems sleeping because of stress at work?',
-        'How often have you felt emotionally exhausted?',
-        'In general, would you say your health is good?'
-      ]
-    },
-    copsoq3_long: {
-      code: 'COPSOQ III (Long)', title: 'Work environment (Long)',
-      questions: [
-        'Do you have to work very fast?',
-        'Do you have an unevenly distributed workload so it piles up?',
-        'How often do you not have time to complete all your work tasks?',
-        'Does your work require that you hide your feelings?',
-        'Do you have a large degree of influence concerning your work?',
-        'Can you influence the amount of work assigned to you?',
-        'Are the possibilities for development good at your workplace?',
-        'How often do you get help and support from your colleagues?',
-        'How often is your nearest superior willing to listen to your problems at work?',
-        'Is your work recognized and appreciated by the management?',
-        'Do you feel that the demands of your work interfere with your home and family life?',
-        'Do you trust the information that comes from the management?',
-        'Does the management at your workplace trust the employees to do their work well?',
-        'Are conflicts resolved in a fair way?',
-        'How often have you had problems sleeping because of stress at work?',
-        'How often have you felt emotionally exhausted?',
-        'In general, would you say your health is good?'
-      ]
-    }
-  };
-
-  const surveyOptions = [
-    { text: 'Not at all', value: 0 },
-    { text: 'Several days', value: 1 },
-    { text: 'More than half the days', value: 2 },
-    { text: 'Nearly every day', value: 3 }
-  ];
-
-  /* ---------- DATA ---------- */
-  const heatmapDepts = [
-    { dept: 'Engineering', scores: [22, 28, 35, 40, 32, 18, 25] },
-    { dept: 'Sales', scores: [45, 52, 68, 58, 48, 38, 55] },
-    { dept: 'Operations', scores: [38, 42, 48, 44, 50, 32, 41] },
-    { dept: 'Human Resources', scores: [28, 30, 32, 35, 28, 22, 26] },
-    { dept: 'Finance', scores: [32, 36, 40, 42, 38, 28, 34] },
-    { dept: 'Marketing', scores: [25, 30, 38, 36, 30, 24, 29] },
-    { dept: 'Customer Success', scores: [42, 48, 55, 50, 46, 35, 44] }
-  ];
-  const heatmapDims = ['Mood', 'Calm', 'Stress', 'Energy', 'Sleep', 'Work-fit', 'Social'];
-
-  const deptData = [
-    { name: 'Human Resources', score: 81, trend: '+4.2', color: '#4FB286', count: 24 },
-    { name: 'Engineering', score: 78, trend: '+2.8', color: '#4FB286', count: 412 },
-    { name: 'Marketing', score: 74, trend: '+1.6', color: '#4FB286', count: 86 },
-    { name: 'Finance', score: 71, trend: '+0.4', color: '#4FB286', count: 64 },
-    { name: 'Operations', score: 67, trend: '-1.2', color: '#E8A33D', count: 298 },
-    { name: 'Customer Success', score: 64, trend: '-2.1', color: '#E8A33D', count: 184 },
-    { name: 'Sales', score: 58, trend: '-4.8', color: '#E5646E', count: 774 }
-  ];
+  /* ---------- SURVEY DEFINITIONS (employee check-ins live on dashboard.html) ---------- */
+  const surveys = {};
+  const surveyOptions = [];
 
   const resources = [
     { cat: 'Breathing & relaxation', items: [
@@ -2394,7 +2301,7 @@ const App = (() => {
   function $$(s) { return document.querySelectorAll(s); }
   function el(tag, cls, html) { const e = document.createElement(tag); if(cls) e.className = cls; if(html !== undefined) e.innerHTML = html; return e; }
   function riskColor(s) { return s < 30 ? '#4FB286' : s < 40 ? '#7DBE8B' : s < 50 ? '#E8A33D' : s < 65 ? '#E5646E' : '#B23A48'; }
-  function statusLabel(v) { return v >= 70 ? 'healthy' : v >= 50 ? 'moderate' : 'critical'; }
+  function statusLabel(v) { return v >= 75 ? 'healthy' : v >= 50 ? 'moderate' : 'critical'; }
   function statusText(s) { return s === 'healthy' ? 'Healthy' : s === 'moderate' ? 'Adjusting' : 'At risk'; }
   function statusColor(s) { return s === 'healthy' ? '#4FB286' : s === 'moderate' ? '#E8A33D' : '#E5646E'; }
 
@@ -2798,7 +2705,7 @@ const App = (() => {
     const marker = $('#balanceMarker');
     if (marker) {
       marker.style.left = wb.marker + '%';
-      marker.style.borderColor = wb.score >= 70 ? '#4FB286' : wb.score >= 50 ? '#E8A33D' : '#E5646E';
+      marker.style.borderColor = wb.score >= 75 ? '#4FB286' : wb.score >= 50 ? '#E8A33D' : '#E5646E';
     }
     const status = $('#wellbeingStatus');
     if (status) {
@@ -2882,6 +2789,10 @@ const App = (() => {
 
   function openSurvey(id) {
     currentSurvey = surveys[id];
+    if (!currentSurvey || !Array.isArray(currentSurvey.questions) || currentSurvey.questions.length === 0) {
+      toast('Employee Check-ins', 'Individual assessments are completed from the personal wellbeing dashboard.', 'info');
+      return;
+    }
     currentQ = 0;
     selectedOption = null;
     surveyAnswers = new Array(currentSurvey.questions.length).fill(null);
@@ -2970,16 +2881,19 @@ const App = (() => {
     const subEl = $('#hrSubtitle');
     if (subEl) subEl.textContent = `Showing: ${dept} · Last ${days} days · Auto-refreshed`;
 
-    // Re-fetch real severity trends and refresh charts
+    // Re-fetch analytics, heatmap, and severity trends with active filters
+    fetchAnalytics();
+    fetchHeatmap();
     fetchSeverityTrends();
-    if (state.charts.radar) {
-      state.charts.radar.data.datasets[0].data = getRadarData();
-      state.charts.radar.update();
-    }
-    renderHeatmap();
-    renderDeptList();
-    renderKPIs();
     toast('Filters applied', `${dept} · Last ${days} days`, 'success');
+  }
+
+  function formatSeveritySubtitle(metric, windowLabel) {
+    const label = (!metric || metric === 'all') ? 'All assessments' : metric.toUpperCase();
+    const isThreeTier = metric === 'pss10' || metric === 'fas10';
+    return isThreeTier
+      ? `${label} distribution across 3 clinical bands (Healthy, Moderate, Severe), ${windowLabel}`
+      : `${label} distribution across 4 severity bands, ${windowLabel}`;
   }
 
   function setMetric(btn, metric) {
@@ -2991,7 +2905,10 @@ const App = (() => {
     });
     const label = metric === 'all' ? 'All assessments' : metric.toUpperCase();
     const subEl = $('#severitySubtitle');
-    if (subEl) subEl.textContent = `${label} distribution across 4 severity bands · Loading...`;
+    const windowLabel = (state.hrFilters && state.hrFilters.time === '56')
+      ? 'last 8 weeks'
+      : `last ${(state.hrFilters && state.hrFilters.time) || 56} days`;
+    if (subEl) subEl.textContent = `${formatSeveritySubtitle(metric, windowLabel)} · Loading...`;
     fetchSeverityTrends();
     toast('Metric switched', `Now viewing ${label} distribution`, 'info');
   }
@@ -3145,11 +3062,13 @@ const App = (() => {
       return;
     }
 
+    const activeMetric = (state.hrFilters && state.hrFilters.metric) || 'all';
+    const severitySubText = formatSeveritySubtitle(activeMetric, windowLabel);
     let ctx = $('#severityChart');
     if (!ctx) {
       container.innerHTML = `
         <div class="chart-head">
-          <div><div class="chart-title">Risk severity trends</div><div class="chart-subtitle" id="severitySubtitle">${metricLabel} distribution across 4 severity bands, ${windowLabel}</div></div>
+          <div><div class="chart-title">Risk severity trends</div><div class="chart-subtitle" id="severitySubtitle">${severitySubText}</div></div>
           <div class="chart-legend">
             <span class="legend-item"><span class="legend-dot" style="background: ${t.chart4};"></span>Healthy</span>
             <span class="legend-item"><span class="legend-dot" style="background: ${t.chart1};"></span>Mild</span>
@@ -3162,7 +3081,7 @@ const App = (() => {
       ctx = $('#severityChart');
     } else {
       const subEl = $('#severitySubtitle');
-      if (subEl) subEl.textContent = `${metricLabel} distribution across 4 severity bands, ${windowLabel}`;
+      if (subEl) subEl.textContent = severitySubText;
     }
     if (!ctx) return;
 
@@ -3381,11 +3300,43 @@ const App = (() => {
     });
   }
 
+  async function fetchHeatmap() {
+    try {
+      const token = localStorage.getItem('session_token') || localStorage.getItem('token') || '';
+      if (!token) return [];
+      const params = new URLSearchParams();
+      const dept = (state.hrFilters && state.hrFilters.department) || 'all';
+      const days = (state.hrFilters && state.hrFilters.time) || '56';
+      if (dept && dept !== 'all') params.set('department', dept);
+      if (days && days !== 'all') params.set('days', String(days));
+      const qs = params.toString();
+      const resp = await apiFetch('/api/v1/hr/heatmap' + (qs ? '?' + qs : ''), {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await resp.json();
+      if (data && data.success && Array.isArray(data.data)) {
+        state.heatmapData = data.data;
+        renderHeatmap();
+        renderDeptList();
+        return data.data;
+      }
+    } catch (e) {
+      console.warn('[Heatmap] Load notice:', e.message);
+    }
+    return [];
+  }
+
   async function fetchAnalytics() {
     try {
       const token = localStorage.getItem('session_token') || localStorage.getItem('token') || '';
       if (!token) return;
-      const resp = await apiFetch('/api/v1/hr/analytics', {
+      const params = new URLSearchParams();
+      const dept = (state.hrFilters && state.hrFilters.department) || 'all';
+      const days = (state.hrFilters && state.hrFilters.time) || '56';
+      if (dept && dept !== 'all') params.set('department', dept);
+      if (days && days !== 'all') params.set('days', String(days));
+      const qs = params.toString();
+      const resp = await apiFetch('/api/v1/hr/analytics' + (qs ? '?' + qs : ''), {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       const res = await resp.json();
@@ -3401,7 +3352,8 @@ const App = (() => {
           if (res.is_empty || res.total_responses === 0) {
             subEl.textContent = `Aggregated across ${res.used_seats || 0} active workers · Baseline State (Awaiting pulse submissions)`;
           } else {
-            subEl.textContent = `Aggregated across ${res.total_responses} pulse responses · Last refresh just now`;
+            const deptLabel = dept === 'all' ? 'All departments' : dept;
+            subEl.textContent = `${deptLabel} · Last ${days} days · ${res.total_responses} submissions`;
           }
         }
         renderKPIs();
@@ -3409,8 +3361,13 @@ const App = (() => {
           state.charts.radar.data.datasets[0].data = getRadarData();
           state.charts.radar.update();
         } else {
+          if (state.charts.radar && !res.meets_n_threshold) {
+            state.charts.radar.destroy();
+            state.charts.radar = null;
+          }
           initRadarChart();
         }
+        fetchHeatmap();
         fetchSeverityTrends();
         renderHeatmap();
         renderDeptList();
@@ -3527,11 +3484,57 @@ const App = (() => {
     return 'background-color: var(--success-bg); color: var(--success); font-variant-numeric: tabular-nums;';
   }
 
+  const heatmapCardDefaultHtml = `
+    <div class="chart-head" style="align-items: center; flex-wrap: wrap; gap: var(--space-2);">
+      <div>
+        <div class="chart-title">Risk heatmap · Department × Dimension</div>
+        <div class="chart-subtitle">Scores 0-100, higher = more risk. Click any cell to inspect.</div>
+      </div>
+      <div class="heatmap-scale" style="margin-top: 0;">
+        <span>Lower risk</span>
+        <div class="scale-bar">
+          <div class="scale-cell" style="background: #15803D;"></div>
+          <div class="scale-cell" style="background: #0F766E;"></div>
+          <div class="scale-cell" style="background: #1D4ED8;"></div>
+          <div class="scale-cell" style="background: #B45309;"></div>
+          <div class="scale-cell" style="background: #B91C1C;"></div>
+        </div>
+        <span>Higher risk</span>
+      </div>
+    </div>
+    <div class="overflow-x-auto" style="margin-top: 10px;">
+      <table class="w-full border-separate" style="border-spacing: 6px 4px; text-align: left;">
+        <thead>
+          <tr style="font-size: 11px; font-weight: 600; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.06em;">
+            <th style="padding: 4px 12px 6px 0; width: 170px;"></th>
+            <th style="padding: 4px 6px; text-align: center;">Mood</th>
+            <th style="padding: 4px 6px; text-align: center;">Calm</th>
+            <th style="padding: 4px 6px; text-align: center;">Stress</th>
+            <th style="padding: 4px 6px; text-align: center;">Energy</th>
+            <th style="padding: 4px 6px; text-align: center;">Work-Fit</th>
+          </tr>
+        </thead>
+        <tbody id="heatmapTableBody"></tbody>
+      </table>
+    </div>
+  `;
+
+  function escapeHrUiText(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function renderHeatmap() {
     try {
-      const isColdStart = !state.analytics || state.analytics.is_empty || (state.analytics.total_responses || 0) < 5;
+      const heatmapEntries = Array.isArray(state.heatmapData) ? state.heatmapData : [];
+      const hasAnyResponses = (state.analytics && !state.analytics.is_empty && (state.analytics.total_responses || 0) >= 5)
+        || heatmapEntries.some(e => e && e.meets_n_size && (e.response_count || 0) >= 5);
       const card = document.getElementById('heatmap-container');
-      if (isColdStart && card) {
+      if (!hasAnyResponses && card) {
         card.innerHTML = `
           <div class="chart-head">
             <div><div class="chart-title">Risk heatmap · Department × Dimension</div><div class="chart-subtitle">Click any cell to drill down</div></div>
@@ -3541,45 +3544,100 @@ const App = (() => {
         return;
       }
 
+      if (card && !document.getElementById('heatmapTableBody')) {
+        card.innerHTML = heatmapCardDefaultHtml;
+      }
+
       const container = document.getElementById('heatmapTableBody');
       if (!container) return;
       container.innerHTML = '';
 
-      const rawDepts = (state.analytics && state.analytics.departments && state.analytics.departments.length > 0)
-        ? state.analytics.departments
-        : [];
-      if (rawDepts.length === 0) {
+      const trackedDimensions = [
+        { key: 'mood', label: 'Mood' },
+        { key: 'calm', label: 'Calm' },
+        { key: 'stress', label: 'Stress' },
+        { key: 'energy', label: 'Energy' },
+        { key: 'work_fit', label: 'Work-Fit' }
+      ];
+
+      const activeDept = state.hrFilters ? state.hrFilters.department : 'all';
+      const rowsToRender = [];
+      const seenNames = new Set();
+
+      heatmapEntries.forEach(entry => {
+        if (!entry) return;
+        const name = entry.department_name || 'Department';
+        if (activeDept !== 'all' && name.toLowerCase() !== String(activeDept).toLowerCase() && !entry.rolled_up) {
+          return;
+        }
+        seenNames.add(name.toLowerCase());
+        rowsToRender.push(entry);
+      });
+
+      const rawDepts = (state.analytics && Array.isArray(state.analytics.departments)) ? state.analytics.departments : [];
+      rawDepts.forEach(deptName => {
+        if (activeDept !== 'all' && deptName !== activeDept) return;
+        if (!seenNames.has(String(deptName).toLowerCase())) {
+          rowsToRender.push({
+            department_name: deptName,
+            meets_n_size: false,
+            response_count: 0,
+            metrics: null
+          });
+        }
+      });
+
+      if (rowsToRender.length === 0) {
         container.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-subtle); font-size: var(--text-xs);">No department data available.</td></tr>`;
         return;
       }
 
-      const activeDept = state.hrFilters ? state.hrFilters.department : 'all';
-      const deptsToRender = activeDept === 'all' ? rawDepts : rawDepts.filter(d => d === activeDept);
+      rowsToRender.forEach(entry => {
+        const deptName = entry.department_name || 'Department';
+        const tr = document.createElement('tr');
+        tr.style.height = '44px';
 
-      deptsToRender.forEach(deptName => {
-        let rowHtml = `
-          <tr style="height: 44px;">
-            <td style="padding-right: 12px; font-weight: 600; color: #1A1B1E; font-size: 0.8125rem; vertical-align: middle; white-space: nowrap;">${deptName}</td>
-        `;
+        const nameTd = document.createElement('td');
+        nameTd.style.cssText = 'padding-right: 12px; font-weight: 600; color: #1A1B1E; font-size: 0.8125rem; vertical-align: middle; white-space: nowrap;';
+        nameTd.textContent = entry.rolled_up ? `${deptName} (Pooled)` : deptName;
+        tr.appendChild(nameTd);
 
-        const trackedDimensions = ['Mood', 'Calm', 'Stress', 'Energy', 'Work-Fit'];
+        const isExposed = Boolean(entry.meets_n_size && entry.metrics && (entry.response_count || 0) >= 5);
+        const riskMap = (isExposed && entry.metrics.avg_risk_dimensions) ? entry.metrics.avg_risk_dimensions : {};
 
         trackedDimensions.forEach(dim => {
-          let content = '<span style="font-size: 11px; font-weight: 600;">N &lt; 5</span>';
-          let styleStr = 'background-color: var(--bg); color: var(--text-subtle); border: 1px solid var(--border); cursor: help; height: 38px;';
-          let tooltip = 'title="Protected cohort (N < 5 responses)"';
+          const td = document.createElement('td');
+          td.style.cssText = 'padding: 0; text-align: center; vertical-align: middle;';
+          const cell = document.createElement('div');
+          cell.className = 'w-full flex items-center justify-center font-bold rounded-lg text-sm transition-transform duration-150 hover:scale-[1.01] shadow-sm';
 
-          rowHtml += `
-            <td style="padding: 0; text-align: center; vertical-align: middle;">
-              <div ${tooltip} style="${styleStr}" class="w-full flex items-center justify-center font-bold rounded-lg text-sm transition-transform duration-150 hover:scale-[1.01] shadow-sm">
-                ${content}
-              </div>
-            </td>
-          `;
+          if (!isExposed) {
+            cell.innerHTML = '<span style="font-size: 11px; font-weight: 600;">N &lt; 5</span>';
+            cell.style.cssText = 'background-color: var(--bg); color: var(--text-subtle); border: 1px solid var(--border); cursor: help; height: 38px;';
+            cell.title = 'Protected cohort (N < 5 responses)';
+          } else {
+            const val = riskMap[dim.key];
+            if (typeof val === 'number' && Number.isFinite(val)) {
+              const score = Math.max(0, Math.min(100, Math.round(val)));
+              cell.textContent = String(score);
+              cell.style.cssText = `${getRiskBrickStyle(score)} cursor: pointer; height: 38px;`;
+              cell.title = `${escapeHrUiText(deptName)} · ${dim.label} risk: ${score}/100 (N = ${entry.response_count})`;
+              cell.addEventListener('click', () => {
+                const band = score >= 60 ? 'Elevated risk' : score >= 35 ? 'Moderate risk' : 'Low risk';
+                toast(`${deptName} · ${dim.label}`, `Risk score ${score}/100 (${band}, N = ${entry.response_count})`, score >= 60 ? 'warning' : 'info');
+              });
+            } else {
+              cell.textContent = '--';
+              cell.style.cssText = 'background-color: var(--bg); color: var(--text-subtle); border: 1px dashed var(--border); height: 38px;';
+              cell.title = `${escapeHrUiText(deptName)} · ${dim.label}: not yet assessed in this period`;
+            }
+          }
+
+          td.appendChild(cell);
+          tr.appendChild(td);
         });
 
-        rowHtml += '</tr>';
-        container.innerHTML += rowHtml;
+        container.appendChild(tr);
       });
     } catch (err) {
       console.error('Heatmap engine error:', err);
@@ -3587,30 +3645,80 @@ const App = (() => {
   }
 
   function renderDeptList() {
-    const isColdStart = !state.analytics || state.analytics.is_empty || (state.analytics.total_responses || 0) < 5;
+    const heatmapEntries = Array.isArray(state.heatmapData) ? state.heatmapData : [];
+    const hasAnyResponses = (state.analytics && !state.analytics.is_empty && (state.analytics.total_responses || 0) >= 5)
+      || heatmapEntries.some(e => e && e.meets_n_size && (e.response_count || 0) >= 5);
     const card = document.getElementById('leaderboard-container');
-    if (isColdStart && card) {
+    if (!hasAnyResponses && card) {
       card.innerHTML = `
         <div class="chart-head">
-          <div><div class="chart-title">Department leaderboard</div><div class="chart-subtitle">Wellbeing index, sorted by trend</div></div>
+          <div><div class="chart-title">Department leaderboard</div><div class="chart-subtitle">Wellbeing index, sorted by score</div></div>
         </div>
         ${emptyStateCardHtml}
       `;
       return;
     }
+    if (card && !document.getElementById('deptList')) {
+      card.innerHTML = `
+        <div class="chart-head">
+          <div><div class="chart-title">Department leaderboard</div><div class="chart-subtitle">Wellbeing index, sorted by score</div></div>
+        </div>
+        <div class="dept-list" id="deptList"></div>
+      `;
+    }
     const container = document.getElementById('deptList');
     if (!container) return;
     container.innerHTML = '';
-    const rawDepts = (state.analytics && state.analytics.departments && state.analytics.departments.length > 0)
-      ? state.analytics.departments
-      : [];
-    if (rawDepts.length === 0) {
+
+    const activeDept = state.hrFilters ? state.hrFilters.department : 'all';
+    const exposed = [];
+    const suppressed = [];
+    const seen = new Set();
+
+    heatmapEntries.forEach(entry => {
+      if (!entry) return;
+      const name = entry.department_name || 'Department';
+      if (activeDept !== 'all' && name.toLowerCase() !== String(activeDept).toLowerCase() && !entry.rolled_up) {
+        return;
+      }
+      seen.add(name.toLowerCase());
+      if (entry.meets_n_size && entry.metrics && (entry.response_count || 0) >= 5) {
+        const wb = entry.metrics.avg_wellbeing_index !== undefined
+          ? Number(entry.metrics.avg_wellbeing_index)
+          : Math.max(0, Math.min(100, Math.round(100 - Number(entry.metrics.avg_composite_score || 0))));
+        exposed.push({ name: entry.rolled_up ? `${name} (Pooled)` : name, score: Math.round(wb), count: entry.response_count });
+      } else {
+        suppressed.push(name);
+      }
+    });
+
+    const rawDepts = (state.analytics && Array.isArray(state.analytics.departments)) ? state.analytics.departments : [];
+    rawDepts.forEach(deptName => {
+      if (activeDept !== 'all' && deptName !== activeDept) return;
+      if (!seen.has(String(deptName).toLowerCase())) suppressed.push(deptName);
+    });
+
+    exposed.sort((a, b) => b.score - a.score);
+
+    if (exposed.length === 0 && suppressed.length === 0) {
       container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-subtle); font-size: var(--text-xs);">No active department cohorts meeting N ≥ 5 threshold.</div>`;
       return;
     }
-    rawDepts.forEach(deptName => {
+
+    exposed.forEach(item => {
+      const color = item.score >= 75 ? '#4FB286' : item.score >= 50 ? '#E8A33D' : '#E5646E';
+      const statusTxt = item.score >= 75 ? 'Healthy' : item.score >= 50 ? 'Moderate' : 'At risk';
       const row = el('div', 'dept-row');
-      row.innerHTML = `<div class="dept-name"><span class="dept-dot" style="background: var(--text-subtle);"></span>${deptName}</div><div class="dept-bar"><div class="dept-bar-fill" style="width: 0%; background: var(--border);"></div></div><div class="dept-score" style="font-size: 11px; color: var(--text-subtle);">N &lt; 5</div><div class="dept-trend down" style="color: var(--text-subtle);">Protected</div>`;
+      row.innerHTML = `<div class="dept-name"><span class="dept-dot" style="background: ${color};"></span>${escapeHrUiText(item.name)}</div><div class="dept-bar"><div class="dept-bar-fill" style="width: ${item.score}%; background: ${color};"></div></div><div class="dept-score" style="color: ${color};">${item.score}</div><div class="dept-trend" style="color: var(--text-subtle); font-size: 11px;">${statusTxt} · N=${item.count}</div>`;
+      row.addEventListener('click', () => {
+        toast(item.name, `Wellbeing index: ${item.score}/100 across ${item.count} responses`, item.score < 50 ? 'warning' : 'info');
+      });
+      container.appendChild(row);
+    });
+
+    suppressed.forEach(deptName => {
+      const row = el('div', 'dept-row');
+      row.innerHTML = `<div class="dept-name"><span class="dept-dot" style="background: var(--text-subtle);"></span>${escapeHrUiText(deptName)}</div><div class="dept-bar"><div class="dept-bar-fill" style="width: 0%; background: var(--border);"></div></div><div class="dept-score" style="font-size: 11px; color: var(--text-subtle);">N &lt; 5</div><div class="dept-trend down" style="color: var(--text-subtle);">Protected</div>`;
       row.addEventListener('click', () => {
         toast('Department status', `${deptName} · Privacy threshold enforced (N < 5)`, 'info');
       });

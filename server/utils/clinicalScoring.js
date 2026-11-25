@@ -8,6 +8,15 @@
 const PSS10_REVERSE_ITEMS = new Set([3, 4, 6, 7]);
 const FAS10_REVERSE_ITEMS = new Set([3, 9]);
 
+class ClinicalValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ClinicalValidationError';
+    this.statusCode = 400;
+    this.code = 'VALIDATION_ERROR';
+  }
+}
+
 /**
  * Compute UTC ISO 8601 week number (1..53).
  * @param {Date|string|number} [date]
@@ -98,23 +107,82 @@ function normalizeDailyPulseRating(val) {
 function classifyDailyPulse(overallBalance) {
   const score = Math.max(0, Math.min(100, Number(overallBalance) || 0));
   if (score >= 75) return { severity_band: 'healthy', severity: 1, likelihood: 1 };
-  if (score >= 55) return { severity_band: 'mild', severity: 2, likelihood: 2 };
-  if (score >= 35) return { severity_band: 'moderate', severity: 3, likelihood: 3 };
+  if (score >= 50) return { severity_band: 'mild', severity: 2, likelihood: 2 };
+  if (score >= 30) return { severity_band: 'moderate', severity: 3, likelihood: 3 };
   const extreme = score < 20 ? 5 : 4;
   return { severity_band: 'severe', severity: extreme, likelihood: extreme };
 }
 
-function sumClinicalItems(responses, reverseSet = null, reverseBase = 0) {
-  if (!Array.isArray(responses)) return 0;
+/**
+ * Strictly validate and sum clinical instrument responses (Option A: complete-case required).
+ * Ensures every expected item [0..expectedCount-1] is present once and within [minVal, maxVal].
+ */
+function validateAndSumClinicalItems(responses, options) {
+  const {
+    instrument,
+    expectedCount,
+    minVal,
+    maxVal,
+    reverseSet = null,
+    reverseBase = 0,
+  } = options;
+
+  if (!Array.isArray(responses) || responses.length < expectedCount) {
+    const actualCount = Array.isArray(responses) ? responses.length : 0;
+    throw new ClinicalValidationError(
+      `${instrument} requires all ${expectedCount} questions to be answered (received ${actualCount}).`
+    );
+  }
+  if (responses.length > expectedCount) {
+    throw new ClinicalValidationError(
+      `${instrument} expects ${expectedCount} items (received ${responses.length}).`
+    );
+  }
+
+  const seenIndices = new Set();
   let total = 0;
+
   for (let i = 0; i < responses.length; i++) {
     const entry = responses[i];
     const isObj = entry !== null && typeof entry === 'object';
-    const idx = isObj && typeof entry.question_index === 'number' ? entry.question_index : i;
-    const rawVal = Number(isObj ? entry.value : entry);
-    if (!Number.isFinite(rawVal)) continue;
-    total += reverseSet && reverseSet.has(idx) ? (reverseBase - rawVal) : rawVal;
+    const rawIdx = isObj && entry.question_index !== undefined && entry.question_index !== null
+      ? Number(entry.question_index)
+      : i;
+
+    if (!Number.isInteger(rawIdx) || rawIdx < 0 || rawIdx >= expectedCount) {
+      throw new ClinicalValidationError(
+        `${instrument} contains an invalid question index at position ${i}.`
+      );
+    }
+    if (seenIndices.has(rawIdx)) {
+      throw new ClinicalValidationError(
+        `${instrument} contains a duplicate answer for question ${rawIdx + 1}.`
+      );
+    }
+
+    const rawCandidate = isObj ? entry.value : entry;
+    if (rawCandidate === null || rawCandidate === undefined || rawCandidate === '') {
+      throw new ClinicalValidationError(
+        `${instrument} question ${rawIdx + 1} is unanswered.`
+      );
+    }
+    const rawVal = Number(rawCandidate);
+    if (!Number.isInteger(rawVal) || rawVal < minVal || rawVal > maxVal) {
+      throw new ClinicalValidationError(
+        `${instrument} question ${rawIdx + 1} must be an integer between ${minVal} and ${maxVal}.`
+      );
+    }
+
+    seenIndices.add(rawIdx);
+    total += reverseSet && reverseSet.has(rawIdx) ? (reverseBase - rawVal) : rawVal;
   }
+
+  if (seenIndices.size !== expectedCount) {
+    throw new ClinicalValidationError(
+      `${instrument} requires all ${expectedCount} questions to be answered.`
+    );
+  }
+
   return total;
 }
 
@@ -124,7 +192,12 @@ function sumClinicalItems(responses, reverseSet = null, reverseBase = 0) {
  * 15-19 Moderately Severe, 20-27 Severe.
  */
 function scorePHQ9(responses) {
-  const raw = Math.max(0, Math.min(27, sumClinicalItems(responses)));
+  const raw = Math.max(0, Math.min(27, validateAndSumClinicalItems(responses, {
+    instrument: 'PHQ-9',
+    expectedCount: 9,
+    minVal: 0,
+    maxVal: 3,
+  })));
   const maxScore = 27;
   const composite = Math.round((raw / maxScore) * 100 * 100) / 100;
   const wellbeingIndex = Math.max(0, Math.min(100, Math.round(100 - (raw / maxScore) * 100)));
@@ -172,7 +245,10 @@ function scorePHQ9(responses) {
     composite_score: composite,
     likelihood,
     severity,
-    dimension_scores: new Map([['depression', composite]]),
+    dimension_scores: new Map([
+      ['depression', composite],
+      ['risk_mood', composite],
+    ]),
   };
 }
 
@@ -181,7 +257,12 @@ function scorePHQ9(responses) {
  * Standard bands (Spitzer et al.): 0-4 Minimal, 5-9 Mild, 10-14 Moderate, 15-21 Severe.
  */
 function scoreGAD7(responses) {
-  const raw = Math.max(0, Math.min(21, sumClinicalItems(responses)));
+  const raw = Math.max(0, Math.min(21, validateAndSumClinicalItems(responses, {
+    instrument: 'GAD-7',
+    expectedCount: 7,
+    minVal: 0,
+    maxVal: 3,
+  })));
   const maxScore = 21;
   const composite = Math.round((raw / maxScore) * 100 * 100) / 100;
   const wellbeingIndex = Math.max(0, Math.min(100, Math.round(100 - (raw / maxScore) * 100)));
@@ -224,7 +305,10 @@ function scoreGAD7(responses) {
     composite_score: composite,
     likelihood,
     severity,
-    dimension_scores: new Map([['anxiety', composite]]),
+    dimension_scores: new Map([
+      ['anxiety', composite],
+      ['risk_calm', composite],
+    ]),
   };
 }
 
@@ -234,7 +318,14 @@ function scoreGAD7(responses) {
  * 14-26 Moderate Stress (moderate), 27-40 High Perceived Stress (severe).
  */
 function scorePSS10(responses) {
-  const raw = Math.max(0, Math.min(40, sumClinicalItems(responses, PSS10_REVERSE_ITEMS, 4)));
+  const raw = Math.max(0, Math.min(40, validateAndSumClinicalItems(responses, {
+    instrument: 'PSS-10',
+    expectedCount: 10,
+    minVal: 0,
+    maxVal: 4,
+    reverseSet: PSS10_REVERSE_ITEMS,
+    reverseBase: 4,
+  })));
   const maxScore = 40;
   const composite = Math.round((raw / maxScore) * 100 * 100) / 100;
   const wellbeingIndex = Math.max(0, Math.min(100, Math.round(100 - (raw / maxScore) * 100)));
@@ -272,7 +363,10 @@ function scorePSS10(responses) {
     composite_score: composite,
     likelihood,
     severity,
-    dimension_scores: new Map([['perceived_stress', composite]]),
+    dimension_scores: new Map([
+      ['perceived_stress', composite],
+      ['risk_stress', composite],
+    ]),
   };
 }
 
@@ -282,7 +376,14 @@ function scorePSS10(responses) {
  * 22-34 Mild-Moderate Fatigue (moderate), 35-50 Severe Fatigue (severe).
  */
 function scoreFAS10(responses) {
-  const raw = Math.max(10, Math.min(50, sumClinicalItems(responses, FAS10_REVERSE_ITEMS, 6)));
+  const raw = Math.max(10, Math.min(50, validateAndSumClinicalItems(responses, {
+    instrument: 'FAS-10',
+    expectedCount: 10,
+    minVal: 1,
+    maxVal: 5,
+    reverseSet: FAS10_REVERSE_ITEMS,
+    reverseBase: 6,
+  })));
   const minScore = 10;
   const maxScore = 50;
   const span = maxScore - minScore;
@@ -322,7 +423,10 @@ function scoreFAS10(responses) {
     composite_score: composite,
     likelihood,
     severity,
-    dimension_scores: new Map([['fatigue', composite]]),
+    dimension_scores: new Map([
+      ['fatigue', composite],
+      ['risk_energy', composite],
+    ]),
   };
 }
 
@@ -357,13 +461,72 @@ function reconstructRawFromIndex(surveyType, overallIndex) {
   return Math.round(idx);
 }
 
+/**
+ * Extract canonical 0-100 risk scores (higher = more risk) across the 5 dashboard
+ * pillars from any AnonHazardLog document, handling both canonical `risk_*` keys
+ * and legacy module-specific keys.
+ *
+ * @param {object} log
+ * @returns {{ mood: number|null, calm: number|null, stress: number|null, energy: number|null, work_fit: number|null }}
+ */
+function extractCanonicalRiskDimensions(log) {
+  const out = { mood: null, calm: null, stress: null, energy: null, work_fit: null };
+  if (!log || typeof log !== 'object') return out;
+
+  const dims = log.dimension_scores;
+  const readDim = (key) => {
+    if (!dims) return undefined;
+    if (dims instanceof Map) return dims.get(key);
+    return dims[key];
+  };
+  const clampRisk = (val) => {
+    if (val === null || val === undefined || val === '') return null;
+    const num = Number(val);
+    if (!Number.isFinite(num)) return null;
+    return Math.max(0, Math.min(100, Math.round(num * 100) / 100));
+  };
+
+  for (const pillar of ['mood', 'calm', 'stress', 'energy', 'work_fit']) {
+    const explicit = clampRisk(readDim(`risk_${pillar}`));
+    if (explicit !== null) out[pillar] = explicit;
+  }
+
+  const normType = String(log.survey_type || '').toLowerCase();
+  const compositeRisk = clampRisk(log.composite_score);
+
+  if (normType.includes('phq9') && out.mood === null) {
+    out.mood = clampRisk(readDim('depression')) ?? compositeRisk;
+  } else if (normType.includes('gad7') && out.calm === null) {
+    out.calm = clampRisk(readDim('anxiety')) ?? compositeRisk;
+  } else if (normType.includes('pss10') && out.stress === null) {
+    out.stress = clampRisk(readDim('perceived_stress')) ?? compositeRisk;
+  } else if (normType.includes('fas10') && out.energy === null) {
+    out.energy = clampRisk(readDim('fatigue')) ?? compositeRisk;
+  } else if (normType.includes('copsoq') && out.work_fit === null) {
+    out.work_fit = compositeRisk;
+  } else if (normType === 'daily_pulse' || normType === 'checkin_slider') {
+    for (const pillar of ['mood', 'calm', 'stress', 'energy', 'work_fit']) {
+      if (out[pillar] === null) {
+        const wellbeing = clampRisk(readDim(pillar));
+        if (wellbeing !== null) {
+          out[pillar] = clampRisk(100 - wellbeing);
+        }
+      }
+    }
+  }
+
+  return out;
+}
+
 module.exports = {
+  ClinicalValidationError,
   PSS10_REVERSE_ITEMS,
   FAS10_REVERSE_ITEMS,
   getIsoWeekNumber,
   roundPercentagesLargestRemainder,
   normalizeDailyPulseRating,
   classifyDailyPulse,
+  extractCanonicalRiskDimensions,
   scorePHQ9,
   scoreGAD7,
   scorePSS10,

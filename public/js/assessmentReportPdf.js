@@ -265,7 +265,7 @@
           : 'Overview of the four PHQ-9 symptom clusters.',
         tableHeaders: ['SYMPTOM CLUSTER', 'RAW SCORE', 'BAND', 'FOCUS AREA'],
         rows,
-        indexFootnote: 'Wellbeing index conversion: 100 - (PHQ-9 raw score / 27 x 100). Higher wellbeing index indicates fewer symptoms.'
+        indexFootnote: 'Wellbeing index conversion: 100 - (PHQ-9 raw score / 27 x 100). Badge uses published PHQ-9 cutoffs; gauge shows 0-100 wellbeing index.'
       };
     }
 
@@ -354,7 +354,7 @@
           : 'Overview of the three GAD-7 anxiety clusters.',
         tableHeaders: ['ANXIETY CLUSTER', 'RAW SCORE', 'BAND', 'FOCUS AREA'],
         rows,
-        indexFootnote: 'Wellbeing index conversion: 100 - (GAD-7 raw score / 21 x 100). Higher wellbeing index indicates calmer functioning.'
+        indexFootnote: 'Wellbeing index conversion: 100 - (GAD-7 raw score / 21 x 100). Badge uses published GAD-7 cutoffs; gauge shows 0-100 wellbeing index.'
       };
     }
 
@@ -437,7 +437,7 @@
           : 'Overview of the two PSS-10 subscales.',
         tableHeaders: ['SUBSCALE', 'RAW SCORE', 'BAND', 'FOCUS AREA'],
         rows,
-        indexFootnote: 'Wellbeing index conversion: 100 - (PSS-10 raw score / 40 x 100). Items 4, 5, 7, and 8 are reverse-scored per Cohen et al.'
+        indexFootnote: 'Wellbeing index conversion: 100 - (PSS-10 raw score / 40 x 100). Items 4, 5, 7, and 8 are reverse-scored; badge reflects Cohen et al. cutoffs.'
       };
     }
 
@@ -520,7 +520,7 @@
           : 'Overview of the two FAS-10 fatigue subscales.',
         tableHeaders: ['FATIGUE SUBSCALE', 'RAW SCORE', 'BAND', 'FOCUS AREA'],
         rows,
-        indexFootnote: 'Wellbeing index conversion: 100 - ((FAS-10 raw score - 10) / 40 x 100). Items 4 and 10 are reverse-scored.'
+        indexFootnote: 'Wellbeing index conversion: 100 - ((FAS-10 raw score - 10) / 40 x 100). Items 4 and 10 are reverse-scored; badge reflects Michielsen & De Vries cutoffs.'
       };
     }
 
@@ -569,10 +569,17 @@
           name: 'Workplace safety & respect',
           clause: 'ISO 45003 Cl. 7.3 / 8.1',
           desc: 'Psychological safety, mutual trust, fairness, and respect across the team.'
+        },
+        {
+          isoArea: 4,
+          name: 'Personal health & strain indicators',
+          clause: 'COPSOQ-III Health & Well-being',
+          desc: 'Self-rated general health, sleep quality, exhaustion, and stress symptoms (separate from workplace safety).'
         }
       ];
 
-      let domainScores = [null, null, null, null];
+      let domainScores = [null, null, null, null, null];
+      let alignedDimScores = [];
       if (surveyObj && Array.isArray(surveyObj.questions) && dimMeta) {
         const dimTotalCounts = {};
         const dimValues = {};
@@ -629,7 +636,7 @@
           });
         }
 
-        const areaBuckets = { 0: [], 1: [], 2: [], 3: [] };
+        const areaBuckets = { 0: [], 1: [], 2: [], 3: [], 4: [] };
         Object.keys(dimValues).forEach((dim) => {
           const vals = dimValues[dim];
           const totalInVer = dimTotalCounts[dim] || vals.length;
@@ -638,6 +645,7 @@
           if (!meta) return;
           const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
           const aligned = meta.valence === 'hazard' ? (100 - avg) : avg;
+          alignedDimScores.push(aligned);
           if (areaBuckets[meta.isoArea]) {
             areaBuckets[meta.isoArea].push(aligned);
           }
@@ -653,15 +661,17 @@
       const hasMeasuredAreas = domainScores.some((s) => s !== null);
       if (!hasMeasuredAreas) {
         const fallback = Math.max(0, Math.min(100, Math.round(Number(options.score ?? 65))));
-        domainScores = [fallback, fallback, fallback, fallback];
+        domainScores = [fallback, fallback, fallback, fallback, fallback];
       }
 
       const validAreaScores = domainScores.filter((s) => s !== null && Number.isFinite(s));
       const wellbeingScore = (options.score !== undefined && options.score !== null && Number.isFinite(Number(options.score)))
         ? Math.max(0, Math.min(100, Math.round(Number(options.score))))
-        : (validAreaScores.length
-          ? Math.round(validAreaScores.reduce((a, b) => a + b, 0) / validAreaScores.length)
-          : 0);
+        : (alignedDimScores.length > 0
+          ? Math.max(0, Math.min(100, Math.round(alignedDimScores.reduce((a, b) => a + b, 0) / alignedDimScores.length)))
+          : (validAreaScores.length
+            ? Math.round(validAreaScores.reduce((a, b) => a + b, 0) / validAreaScores.length)
+            : 0));
 
       const band = getScoreBand(wellbeingScore);
       const interpretation = band.key === 'healthy'
@@ -722,15 +732,15 @@
           metricLabel: 'PSYCHOSOCIAL FIT',
           primaryValue: `${wellbeingScore}/100`,
           secondaryValue: 'ISO 45003 aligned',
-          clinicalSubLabel: 'Four psychosocial risk domains evaluated',
+          clinicalSubLabel: 'Four workplace domains + personal health indicators evaluated',
           interpretation
         },
         actions,
-        tableTitle: 'ISO 45003 psychosocial areas',
-        tableSubtitle: 'Domain scores (0-100, higher indicates healthier psychosocial conditions) with ISO 45003 clause references.',
-        tableHeaders: ['ISO 45003 AREA', 'SCORE', 'BAND', 'SCOPE'],
+        tableTitle: 'ISO 45003 & health domains',
+        tableSubtitle: 'Domain scores (0-100, higher indicates healthier conditions) with ISO 45003 workplace clauses separate from personal health.',
+        tableHeaders: ['DOMAIN AREA', 'SCORE', 'BAND', 'SCOPE'],
         rows,
-        indexFootnote: 'Composite COPSOQ-III score averages evaluated ISO 45003 psychosocial domains (50% minimum item response rule per dimension).'
+        indexFootnote: 'Composite COPSOQ-III score averages all evaluated dimensions equally (50% minimum item response rule per dimension); category rows summarize grouped domain averages.'
       };
     }
 
@@ -787,7 +797,7 @@
     const band = getScoreBand(wellbeingScore);
     const lowestPillar = sortedCompleted.length > 0 ? sortedCompleted[0] : null;
     const hasNeedsAttention = (completedPillars.length > 0 && band.key === 'needs_attention')
-      || sortedCompleted.some((p) => p.score <= 39);
+      || sortedCompleted.some((p) => p.score <= 49);
 
     let interpretation = '';
     if (!lowestPillar) {
@@ -828,7 +838,7 @@
             {
               title: 'Book a confidential occupational health check-in',
               timeframe: 'This week',
-              body: 'One or more scores fall in the Needs attention band (0-39). Speak with a clinician for tailored recovery guidance.'
+              body: 'One or more scores fall in the Needs attention band (0-49). Speak with a clinician for tailored recovery guidance.'
             },
             {
               title: 'Re-check your lowest pillar in 14 days',

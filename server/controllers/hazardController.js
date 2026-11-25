@@ -189,6 +189,13 @@ const submitLog = async (req, res, next) => {
         log_id: log.log_id,
       });
     } catch (err) {
+      if (err && (err.statusCode === 400 || err.name === 'ClinicalValidationError')) {
+        return res.status(400).json({
+          success: false,
+          error: err.code || 'VALIDATION_ERROR',
+          message: err.message,
+        });
+      }
       next(err);
     }
   };

@@ -266,8 +266,26 @@ describe('Clinical Screener Scoring Implementations', () => {
         answers: new Array(32).fill(50),
       });
       expect(copsoqMod.wellbeingScore).toBe(50);
-      expect(copsoqMod.rows).toHaveLength(4);
+      expect(copsoqMod.rows).toHaveLength(5);
       expect(copsoqMod.rows.every((r) => r.scoreText === '50/100')).toBe(true);
+
+      // Personal health scale (GH1 = Poor = 0) must affect category 4 (Personal health & strain indicators),
+      // NOT category 3 (Workplace safety & respect)
+      const ghPoorAnswers = global.window.copsoq3_core.questions.map((q) => {
+        if (q.id === 'GH1') return 0;
+        return global.window.COPSOQ3_DIM_META[q.dim].valence === 'hazard' ? 0 : 100;
+      });
+      const copsoqHealthIsolated = AssessmentReportPdf.resolveAssessmentData({
+        surveyType: 'copsoq3_core',
+        answers: ghPoorAnswers,
+      });
+      expect(copsoqHealthIsolated.rows[3].name).toBe('Workplace safety & respect');
+      expect(copsoqHealthIsolated.rows[3].scoreText).toBe('100/100');
+      expect(copsoqHealthIsolated.rows[4].name).toBe('Personal health & strain indicators');
+      expect(copsoqHealthIsolated.rows[4].scoreText).toBe('0/100');
+      // Dimension-weighted composite: 18 workplace dimensions @ 100 + 1 health dimension @ 0 => round(1800 / 19) = 95
+      expect(copsoqHealthIsolated.wellbeingScore).toBe(95);
+      expect(copsoqHealthIsolated.wellbeingScore).toBe(global.window.copsoq3_core.score(ghPoorAnswers));
 
       const overallPartial = AssessmentReportPdf.resolveAssessmentData({
         surveyType: 'overall',
@@ -277,6 +295,56 @@ describe('Clinical Screener Scoring Implementations', () => {
       expect(overallPartial.hero.secondaryValue).toBe('3 of 5 modules completed');
       const uncompleted = overallPartial.sortedPillars.filter((p) => p.score === null);
       expect(uncompleted).toHaveLength(2);
+    });
+
+    it('rejects incomplete or out-of-range clinical submissions (Option A strict completeness) & aligns PDF bands', () => {
+      const cs = require('../utils/clinicalScoring');
+      const PdfConfig = require('../../public/js/pdf/pdfConfig.js');
+
+      expect(() => cs.scorePHQ9([{ question_index: 0, value: 1 }])).toThrow(cs.ClinicalValidationError);
+      expect(() => cs.scoreGAD7(new Array(6).fill(1))).toThrow(cs.ClinicalValidationError);
+      expect(() => cs.scorePSS10(new Array(10).fill(5))).toThrow(cs.ClinicalValidationError);
+      expect(() => cs.scoreFAS10(new Array(10).fill(0))).toThrow(cs.ClinicalValidationError);
+      expect(() => cs.scorePHQ9([0, 1, 2, null, 0, 1, 0, 0, 0])).toThrow(cs.ClinicalValidationError);
+
+      expect(PdfConfig.getScoreBand(49).key).toBe('needs_attention');
+      expect(PdfConfig.getScoreBand(50).key).toBe('moderate');
+      expect(PdfConfig.getScoreBand(74).key).toBe('moderate');
+      expect(PdfConfig.getScoreBand(75).key).toBe('healthy');
+    });
+
+    it('extracts unified 0-100 canonical risk dimensions across all modules and Daily Pulse', () => {
+      const cs = require('../utils/clinicalScoring');
+      const { scoreCOPSOQ3 } = require('../utils/copsoq3Scoring');
+
+      const phqRisk = cs.extractCanonicalRiskDimensions({
+        survey_type: 'phq9',
+        composite_score: 51.85,
+        dimension_scores: new Map([['depression', 51.85], ['risk_mood', 51.85]]),
+      });
+      expect(phqRisk).toEqual({ mood: 51.85, calm: null, stress: null, energy: null, work_fit: null });
+
+      // COPSOQ Meaning of Work (resource = 100, risk = 0) yields work_fit risk = 0, not 100
+      const copsoqRes = scoreCOPSOQ3([
+        { item_code: 'MW1', score: 100 },
+        { item_code: 'MW2', score: 100 },
+      ], { version: 'copsoq3_core' });
+      const copsoqRisk = cs.extractCanonicalRiskDimensions({
+        survey_type: 'copsoq3_core',
+        composite_score: copsoqRes.composite_score,
+        dimension_scores: copsoqRes.dimension_scores,
+      });
+      expect(copsoqRisk.work_fit).toBe(0);
+
+      // Daily Pulse wellbeing 80 -> risk 20
+      const pulseRisk = cs.extractCanonicalRiskDimensions({
+        survey_type: 'daily_pulse',
+        composite_score: 20,
+        dimension_scores: { mood: 80, energy: 60 },
+      });
+      expect(pulseRisk.mood).toBe(20);
+      expect(pulseRisk.energy).toBe(40);
+      expect(pulseRisk.calm).toBeNull();
     });
   });
 });

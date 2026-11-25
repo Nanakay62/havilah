@@ -258,13 +258,13 @@ var WF_DATA = (function () {
     TV: { name: 'Threats of Violence', valence: 'hazard', isoArea: 3 },
     PV: { name: 'Physical Violence', valence: 'hazard', isoArea: 3 },
     BU: { name: 'Bullying', valence: 'hazard', isoArea: 3 },
-    GH: { name: 'Self-Rated Health', valence: 'resource', isoArea: 3 },
-    SL: { name: 'Sleeping Troubles', valence: 'hazard', isoArea: 3 },
-    BO: { name: 'Burnout', valence: 'hazard', isoArea: 3 },
-    ST: { name: 'Stress', valence: 'hazard', isoArea: 3 },
-    SO: { name: 'Somatic Stress', valence: 'hazard', isoArea: 3 },
-    CS: { name: 'Cognitive Stress', valence: 'hazard', isoArea: 3 },
-    DS: { name: 'Depressive Symptoms', valence: 'hazard', isoArea: 3 },
+    GH: { name: 'Self-Rated Health', valence: 'resource', isoArea: 4 },
+    SL: { name: 'Sleeping Troubles', valence: 'hazard', isoArea: 4 },
+    BO: { name: 'Burnout', valence: 'hazard', isoArea: 4 },
+    ST: { name: 'Stress', valence: 'hazard', isoArea: 4 },
+    SO: { name: 'Somatic Stress', valence: 'hazard', isoArea: 4 },
+    CS: { name: 'Cognitive Stress', valence: 'hazard', isoArea: 4 },
+    DS: { name: 'Depressive Symptoms', valence: 'hazard', isoArea: 4 },
     SE: { name: 'Self-Efficacy', valence: 'resource', isoArea: 1 }
   };
 

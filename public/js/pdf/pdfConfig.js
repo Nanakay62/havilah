@@ -57,26 +57,26 @@
     {
       key: 'needs_attention',
       min: 0,
-      max: 39,
-      rangeLabel: '0–39',
+      max: 49,
+      rangeLabel: '0-49',
       label: 'Needs attention',
       color: [158, 59, 51],   // Muted terracotta #9E3B33 (6.5:1 on white)
       tint: [250, 242, 241]   // Subtle wash
     },
     {
       key: 'moderate',
-      min: 40,
-      max: 69,
-      rangeLabel: '40–69',
+      min: 50,
+      max: 74,
+      rangeLabel: '50-74',
       label: 'Moderate',
       color: [138, 90, 25],   // Muted ochre #8A5A19 (5.8:1 on white)
       tint: [250, 246, 238]   // Subtle wash
     },
     {
       key: 'healthy',
-      min: 70,
+      min: 75,
       max: 100,
-      rangeLabel: '70–100',
+      rangeLabel: '75-100',
       label: 'Healthy',
       color: [30, 107, 82],   // Muted sage #1E6B52 (6.3:1 on white)
       tint: [240, 247, 244]   // Subtle wash
@@ -117,8 +117,8 @@
    */
   function getScoreBand(score) {
     const n = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
-    if (n <= 39) return SCORE_BANDS[0];
-    if (n <= 69) return SCORE_BANDS[1];
+    if (n <= 49) return SCORE_BANDS[0];
+    if (n <= 74) return SCORE_BANDS[1];
     return SCORE_BANDS[2];
   }
 

@@ -2,6 +2,7 @@
 
 const AnonHazardLog = require('../models/AnonHazardLog');
 const Department = require('../models/Department');
+const { extractCanonicalRiskDimensions } = require('../utils/clinicalScoring');
 
 /**
  * @fileoverview N-Size privacy aggregation pipeline builder.
@@ -82,6 +83,13 @@ async function buildNSizeAggregation(companyId, options = {}) {
         avg_severity: { $avg: '$severity' },
         severity_bands: { $push: '$severity_band' },
         dimension_scores_list: { $push: '$dimension_scores' },
+        log_entries: {
+          $push: {
+            survey_type: '$survey_type',
+            composite_score: '$composite_score',
+            dimension_scores: '$dimension_scores',
+          },
+        },
       },
     },
 
@@ -212,6 +220,13 @@ async function buildNSizeAggregation(companyId, options = {}) {
             avg_severity: { $avg: '$severity' },
             severity_bands: { $push: '$severity_band' },
             dimension_scores_list: { $push: '$dimension_scores' },
+            log_entries: {
+              $push: {
+                survey_type: '$survey_type',
+                composite_score: '$composite_score',
+                dimension_scores: '$dimension_scores',
+              },
+            },
           },
         },
       ];
@@ -284,6 +299,13 @@ async function rollUpToCompany(companyId, baseMatch, nSizeThreshold, failedDepts
         avg_severity: { $avg: '$severity' },
         severity_bands: { $push: '$severity_band' },
         dimension_scores_list: { $push: '$dimension_scores' },
+        log_entries: {
+          $push: {
+            survey_type: '$survey_type',
+            composite_score: '$composite_score',
+            dimension_scores: '$dimension_scores',
+          },
+        },
       },
     },
   ];
@@ -378,12 +400,81 @@ function computeMetrics(group) {
     avgDimensionScores[key] = Math.round((sum / dimensionCounts[key]) * 100) / 100;
   }
 
+  // Canonical 0-100 risk scores (higher = more risk) across the 5 dashboard pillars
+  const riskSums = { mood: 0, calm: 0, stress: 0, energy: 0, work_fit: 0 };
+  const riskCounts = { mood: 0, calm: 0, stress: 0, energy: 0, work_fit: 0 };
+
+  if (Array.isArray(group.log_entries) && group.log_entries.length > 0) {
+    for (const entry of group.log_entries) {
+      const canonical = extractCanonicalRiskDimensions(entry);
+      for (const dim of ['mood', 'calm', 'stress', 'energy', 'work_fit']) {
+        if (typeof canonical[dim] === 'number' && Number.isFinite(canonical[dim])) {
+          riskSums[dim] += canonical[dim];
+          riskCounts[dim] += 1;
+        }
+      }
+    }
+  } else {
+    // Fallback for test mocks that supply dimension_scores_list without log_entries
+    if (typeof avgDimensionScores.risk_mood === 'number') {
+      riskSums.mood = avgDimensionScores.risk_mood;
+      riskCounts.mood = 1;
+    } else if (typeof avgDimensionScores.depression === 'number') {
+      riskSums.mood = avgDimensionScores.depression;
+      riskCounts.mood = 1;
+    }
+    if (typeof avgDimensionScores.risk_calm === 'number') {
+      riskSums.calm = avgDimensionScores.risk_calm;
+      riskCounts.calm = 1;
+    } else if (typeof avgDimensionScores.anxiety === 'number') {
+      riskSums.calm = avgDimensionScores.anxiety;
+      riskCounts.calm = 1;
+    }
+    if (typeof avgDimensionScores.risk_stress === 'number') {
+      riskSums.stress = avgDimensionScores.risk_stress;
+      riskCounts.stress = 1;
+    } else if (typeof avgDimensionScores.perceived_stress === 'number') {
+      riskSums.stress = avgDimensionScores.perceived_stress;
+      riskCounts.stress = 1;
+    }
+    if (typeof avgDimensionScores.risk_energy === 'number') {
+      riskSums.energy = avgDimensionScores.risk_energy;
+      riskCounts.energy = 1;
+    } else if (typeof avgDimensionScores.fatigue === 'number') {
+      riskSums.energy = avgDimensionScores.fatigue;
+      riskCounts.energy = 1;
+    }
+    if (typeof avgDimensionScores.risk_work_fit === 'number') {
+      riskSums.work_fit = avgDimensionScores.risk_work_fit;
+      riskCounts.work_fit = 1;
+    }
+  }
+
+  const avgRiskDimensions = {};
+  const availableRisks = [];
+  for (const dim of ['mood', 'calm', 'stress', 'energy', 'work_fit']) {
+    if (riskCounts[dim] > 0) {
+      const val = Math.round(riskSums[dim] / riskCounts[dim]);
+      avgRiskDimensions[dim] = val;
+      availableRisks.push(val);
+    } else {
+      avgRiskDimensions[dim] = null;
+    }
+  }
+
+  const avgComposite = Math.round((group.avg_composite || 0) * 100) / 100;
+  const avgWellbeingIndex = availableRisks.length > 0
+    ? Math.max(0, Math.min(100, Math.round(100 - (availableRisks.reduce((a, b) => a + b, 0) / availableRisks.length))))
+    : Math.max(0, Math.min(100, Math.round(100 - avgComposite)));
+
   return {
-    avg_composite_score: Math.round((group.avg_composite || 0) * 100) / 100,
+    avg_composite_score: avgComposite,
+    avg_wellbeing_index: avgWellbeingIndex,
     avg_likelihood: Math.round((group.avg_likelihood || 0) * 100) / 100,
     avg_severity: Math.round((group.avg_severity || 0) * 100) / 100,
     severity_distribution: severityDistribution,
     avg_dimension_scores: avgDimensionScores,
+    avg_risk_dimensions: avgRiskDimensions,
   };
 }
 

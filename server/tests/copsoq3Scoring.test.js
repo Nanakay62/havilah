@@ -220,6 +220,8 @@ describe('HR Analytics Pipeline Deduplication & Zero-Imputation Safeguards', () 
     expect(pipelineJson).not.toContain('$ifNull');
     expect(capturedPipeline[1]).toEqual({ $sort: { submitted_at: -1 } });
     expect(capturedPipeline[2].$group._id).toBe('$user_id');
+    expect(capturedPipeline[2].$group.mood_vals).toEqual({ $push: '$dimension_scores.mood' });
+    expect(capturedPipeline[3].$project.mood.$arrayElemAt).toBeDefined();
 
     PersonalWellnessLog.aggregate = async () => [{
       unique_respondents: 3,
@@ -233,5 +235,108 @@ describe('HR Analytics Pipeline Deduplication & Zero-Imputation Safeguards', () 
     expect(suppressedRes.status).toBe(200);
     expect(suppressedRes.body.status).toBe('SUPPRESSED');
     expect(suppressedRes.body.meets_n_threshold).toBe(false);
+  });
+
+  it('passes days query filter to /api/v1/hr/analytics and returns participation_rate', async () => {
+    let capturedPipeline = null;
+    PersonalWellnessLog.aggregate = async (pipeline) => {
+      capturedPipeline = pipeline;
+      return [{
+        unique_respondents: 5,
+        total_responses: 10,
+        avgMood: 80,
+        avgCalm: 75,
+        avgStress: 70,
+        avgEnergy: 65,
+        avgWorkFit: 85,
+      }];
+    };
+
+    const res = await request(app)
+      .get('/api/v1/hr/analytics?days=30')
+      .set('Authorization', 'Bearer ' + hrToken);
+
+    expect(res.status).toBe(200);
+    expect(res.body.participation_rate).toBe(50);
+    expect(capturedPipeline[0].$match.submitted_at.$gte).toBeInstanceOf(Date);
+  });
+
+  it('returns canonical 0-100 risk dimensions in /api/v1/hr/heatmap with N >= 5 enforcement', async () => {
+    const AnonHazardLog = require('../models/AnonHazardLog');
+    const origAnonAgg = AnonHazardLog.aggregate;
+
+    AnonHazardLog.aggregate = async () => [
+      {
+        department_id: 'd1',
+        department_name: 'Operations',
+        count: 6,
+        meets_n_size: true,
+        avg_composite: 25,
+        avg_likelihood: 2,
+        avg_severity: 2,
+        severity_bands: ['healthy', 'healthy', 'healthy', 'mild', 'mild', 'healthy'],
+        dimension_scores_list: [],
+        log_entries: [
+          { survey_type: 'phq9', composite_score: 40, dimension_scores: { depression: 40 } },
+          { survey_type: 'copsoq3_core', composite_score: 10, dimension_scores: { 'Meaning of Work': 90, risk_work_fit: 10 } },
+          { survey_type: 'daily_pulse', composite_score: 25, dimension_scores: { mood: 80, calm: 70, risk_mood: 20, risk_calm: 30 } },
+        ],
+      },
+    ];
+
+    try {
+      const hmRes = await request(app)
+        .get('/api/v1/hr/heatmap')
+        .set('Authorization', 'Bearer ' + hrToken);
+
+      expect(hmRes.status).toBe(200);
+      expect(hmRes.body.success).toBe(true);
+      expect(hmRes.body.data).toHaveLength(1);
+      expect(hmRes.body.data[0].metrics.avg_risk_dimensions.mood).toBe(30);
+      expect(hmRes.body.data[0].metrics.avg_risk_dimensions.calm).toBe(30);
+      expect(hmRes.body.data[0].metrics.avg_risk_dimensions.work_fit).toBe(10);
+      expect(hmRes.body.data[0].metrics.avg_risk_dimensions.energy).toBeNull();
+    } finally {
+      AnonHazardLog.aggregate = origAnonAgg;
+    }
+  });
+
+  it('rejects incomplete clinical submission with 400 VALIDATION_ERROR on /api/v1/wellness/submit-checkin', async () => {
+    const User = require('../models/User');
+    const AssessmentCycle = require('../models/AssessmentCycle');
+    const origUserFind = User.findOne;
+    const origCycleFind = AssessmentCycle.findOne;
+    const empToken = jwt.sign(
+      { userId: 'emp-incomplete-1', companyId, departmentId: 'd1', role: 'employee', status: 'active' },
+      secret,
+      { expiresIn: '1h' }
+    );
+
+    User.findOne = () => mockQuery({
+      user_id: 'emp-incomplete-1',
+      company_id: companyId,
+      department_id: 'd1',
+      role: 'employee',
+      status: 'active',
+      baseline_profile: {},
+      save: async () => true,
+    });
+    AssessmentCycle.findOne = () => mockQuery({ cycle_id: 'c-1', survey_type: 'phq9', status: 'unlocked' });
+    const origCycleUpd = AssessmentCycle.updateOne;
+    AssessmentCycle.updateOne = async () => ({ modifiedCount: 1 });
+
+    try {
+      const res = await request(app)
+        .post('/api/v1/wellness/submit-checkin')
+        .set('Authorization', 'Bearer ' + empToken)
+        .send({ survey_type: 'phq9', answers: [1, 2] });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('VALIDATION_ERROR');
+    } finally {
+      User.findOne = origUserFind;
+      AssessmentCycle.findOne = origCycleFind;
+      AssessmentCycle.updateOne = origCycleUpd;
+    }
   });
 });

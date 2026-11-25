@@ -1208,7 +1208,7 @@ router.get('/stale-referrals', async (req, res, next) => {
   }
 });
 
-// 5.3 Manual reassignment (superadmin only — HR cannot reassign)
+// 5.3 Manual reassignment (superadmin only; HR cannot reassign)
 // Body: { newAssessorId }
 // On update: set assignedAssessorId to new assessor, record reassignedFrom and reassignedAt
 router.patch('/referrals/:id/reassign', async (req, res, next) => {

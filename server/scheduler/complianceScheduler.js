@@ -319,8 +319,8 @@ async function processTrialReminders(now = new Date()) {
           ? '[Havilah] Your 30-day Personal free trial has ended'
           : `[Havilah] Personal Trial Reminder: ${daysRemaining} day(s) remaining`;
         bodyMsg = checkpoint === 'expired'
-          ? 'Your 30-day Personal free trial has ended. You are now on the <strong>Free plan</strong> — Daily Pulse check-ins and your personal history remain free forever. Upgrade to <strong>Personal (GHS 150/month or GHS 1,500/year)</strong> anytime to unlock COPSOQ-III and clinical screenings.'
-          : `Your Havilah Personal free trial expires in <strong>${daysRemaining} day(s)</strong> (${new Date(trialEndsAt).toDateString()}). Subscribe before it ends to keep full access to COPSOQ-III, PHQ-9, GAD-7, and data exports.`;
+          ? 'Your 30-day Personal free trial has ended. You are now on the <strong>Free plan</strong>, where Daily Pulse check-ins and your personal history remain free forever. Upgrade to <strong>Personal (GHS 150/month or GHS 1,500/year)</strong> anytime to unlock full mood, anxiety, stress, fatigue, and work-balance check-ins.'
+          : `Your Havilah Personal free trial expires in <strong>${daysRemaining} day(s)</strong> (${new Date(trialEndsAt).toDateString()}). Subscribe before it ends to keep full access to all mood, stress, fatigue, and work-balance check-ins and data exports.`;
       } else {
         subject = checkpoint === 'expired'
           ? `[Havilah] Your organization's Pro Trial has expired (${tenant.company_name})`

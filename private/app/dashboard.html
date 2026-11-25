@@ -681,12 +681,16 @@
   .modal-q-num { font-size: 0.75rem; font-weight: 600; color: var(--accent-deep); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
   .modal-q-text { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 24px; line-height: 1.4; }
   .modal-options { display: flex; flex-direction: column; gap: 10px; }
-  .option { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 1.5px solid var(--border-strong); border-radius: 14px; cursor: pointer; transition: all 0.25s var(--ease-out); background: var(--bg-elev); }
-  .option:hover { border-color: var(--accent); background: rgba(0, 183, 195, 0.04); transform: translateY(-1px); }
+  .option { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 1.5px solid var(--border-strong); border-radius: 14px; cursor: pointer; transition: all 0.2s var(--ease-out); background: var(--bg-elev); -webkit-tap-highlight-color: transparent; user-select: none; }
+  @media (hover: hover) and (pointer: fine) {
+    .modal-options:not(.suppress-hover) .option:not(.selected):hover { border-color: var(--accent); background: rgba(0, 183, 195, 0.04); transform: translateY(-1px); }
+  }
   .option.selected { border-color: var(--accent); background: rgba(0, 183, 195, 0.08); box-shadow: 0 0 0 3px rgba(0, 183, 195, 0.12); }
   .option-radio { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border-strong); flex-shrink: 0; position: relative; transition: all 0.2s; }
+  .option.is-multi .option-radio { border-radius: 6px; }
   .option.selected .option-radio { border-color: var(--accent); }
   .option.selected .option-radio::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--accent); }
+  .option.is-multi.selected .option-radio::after { border-radius: 3px; }
   .option-text { font-size: 0.9375rem; font-weight: 500; }
   .modal-foot { padding: 18px 28px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
   .modal-foot-text { font-size: 0.8125rem; color: var(--text-3); }
@@ -2398,7 +2402,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
   <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
     
     <h3 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0 0 4px 0; text-align: center; width: 100%;">Wellbeing Balance</h3>
-    <p style="font-size: 0.875rem; color: #4b5563; margin: 0 0 24px 0; text-align: center; width: 100%;">Composite score across 5 dimensions</p>
+    <p id="wellbeing-balance-subtitle" style="font-size: 0.875rem; color: #4b5563; margin: 0 0 24px 0; text-align: center; width: 100%;">Composite score across 5 dimensions</p>
     
     <div style="cursor: pointer; display: flex; flex-direction: column; align-items: center;" onclick="App.toggleContextDrawer()">
       <div style="position: relative; width: 128px; height: 128px; display: inline-flex; align-items: center; justify-content: center;">
@@ -2451,7 +2455,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
   <div class="surveys-section">
     <div class="section-bar">
       <h2 class="h3">Available check-ins</h2>
-      <span class="meta">5 validated instruments · ~25 minutes total</span>
+      <span class="meta">5 science-backed check-ins · ~25 minutes total</span>
     </div>
     <div class="surveys-grid" id="surveysGrid"></div>
   </div>
@@ -2466,9 +2470,9 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
         <div class="trend-framework-tabs">
           <button class="trend-tab active" data-framework="all" onclick="App.setTrendFramework('all')">All Views</button>
           <button class="trend-tab" data-framework="daily" onclick="App.setTrendFramework('daily')">Daily Pulse</button>
-          <button class="trend-tab" data-framework="copsoq" onclick="App.setTrendFramework('copsoq')">COPSOQ III</button>
-          <button class="trend-tab" data-framework="pss10" onclick="App.setTrendFramework('pss10')">PSS-10</button>
-          <button class="trend-tab" data-framework="clinical" onclick="App.setTrendFramework('clinical')">Clinical (GAD/PHQ/FAS)</button>
+          <button class="trend-tab" data-framework="copsoq" onclick="App.setTrendFramework('copsoq')">Work-Life Fit</button>
+          <button class="trend-tab" data-framework="pss10" onclick="App.setTrendFramework('pss10')">Stress</button>
+          <button class="trend-tab" data-framework="clinical" onclick="App.setTrendFramework('clinical')">Mood, Anxiety &amp; Fatigue</button>
         </div>
         <div class="trend-controls-spacer"></div>
         <div class="trend-timeframe-tabs">
@@ -2481,11 +2485,11 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
       <!-- Chart legend -->
       <div class="trend-legend" style="display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12px; color: var(--text-muted);">
         <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-1);"></span>Daily Pulse</span>
-        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-2);"></span>PHQ-9</span>
-        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-3);"></span>GAD-7</span>
-        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-4);"></span>PSS-10</span>
-        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger);"></span>FAS-10</span>
-        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-5);"></span>COPSOQ III</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-2);"></span>Mood</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-3);"></span>Anxiety</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-4);"></span>Stress</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger);"></span>Fatigue</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--chart-5);"></span>Work-Life Fit</span>
       </div>
       <div class="trend-chart" style="position: relative;"><canvas id="employeeTrendChart"></canvas><div id="chartTooltip" style="display:none;"></div></div>
     </div>
@@ -3546,11 +3550,11 @@ async function fetchActiveCycles() {
     }
 
     const surveyNames = {
-      phq9: 'PHQ-9 (Depression Screening)',
-      gad7: 'GAD-7 (Anxiety Assessment)',
-      pss10: 'PSS-10 (Perceived Stress Scale)',
-      fas10: 'FAS-10 (Fatigue Assessment)',
-      copsoq3: 'COPSOQ III (Psychosocial Hazard Assessment)'
+      phq9: 'Mood Check',
+      gad7: 'Anxiety Check',
+      pss10: 'Stress Check',
+      fas10: 'Fatigue & Energy Check',
+      copsoq3: 'Work-Life Fit Check'
     };
 
     let bannerContainer = document.getElementById('activeCycleBanners');
@@ -3738,7 +3742,8 @@ window.openSurveyFromBanner = function(surveyType, bannerKey) {
   }
 };
 
-const pulseValues = { Mood: 3, Calm: 3, Stress: 3, Energy: 3, WorkFit: 3 };
+const PULSE_DIMENSIONS = ['Mood', 'Calm', 'Stress', 'Energy', 'WorkFit'];
+const pulseValues = { Mood: null, Calm: null, Stress: null, Energy: null, WorkFit: null };
 
 const dimTextMaps = {
   Mood: { 1: '1 - Low', 2: '2 - Fair', 3: '3 - Good', 4: '4 - Very Good', 5: '5 - Upbeat' },
@@ -3748,11 +3753,47 @@ const dimTextMaps = {
   WorkFit: { 1: '1 - Struggling', 2: '2 - Fair', 3: '3 - Good Fit', 4: '4 - Great Fit', 5: '5 - Thriving' }
 };
 
+function updatePulseSubmitButton() {
+  const btn = document.getElementById('submitPulseBtn');
+  if (!btn) return;
+  const answeredCount = PULSE_DIMENSIONS.filter(d => pulseValues[d] !== null && pulseValues[d] !== undefined).length;
+  const allAnswered = answeredCount === PULSE_DIMENSIONS.length;
+  btn.disabled = !allAnswered;
+  btn.style.opacity = allAnswered ? '1' : '0.6';
+  btn.style.cursor = allAnswered ? 'pointer' : 'not-allowed';
+  btn.textContent = allAnswered
+    ? 'Submit Daily Pulse'
+    : `Rate all 5 dimensions (${answeredCount}/5)`;
+}
+
+window.resetDailyPulseModal = function() {
+  PULSE_DIMENSIONS.forEach(dim => {
+    pulseValues[dim] = null;
+    const lbl = document.getElementById(`pulse${dim}Label`);
+    if (lbl) {
+      lbl.textContent = 'Not selected';
+      lbl.style.color = '#64748B';
+    }
+    for (let i = 1; i <= 5; i++) {
+      const btn = document.querySelector(`.pill-${dim}-${i}`);
+      if (btn) {
+        btn.style.background = '#FFFFFF';
+        btn.style.borderColor = '#CBD5E1';
+        btn.style.color = '#475569';
+        btn.style.boxShadow = 'none';
+        btn.style.fontWeight = '600';
+      }
+    }
+  });
+  updatePulseSubmitButton();
+};
+
 window.selectPulsePill = function(dim, val) {
   pulseValues[dim] = val;
   const lbl = document.getElementById(`pulse${dim}Label`);
   if (lbl) {
     lbl.textContent = dimTextMaps[dim]?.[val] || `${val} - Selected`;
+    lbl.style.color = '#0078D4';
   }
   for (let i = 1; i <= 5; i++) {
     const btn = document.querySelector(`.pill-${dim}-${i}`);
@@ -3772,12 +3813,15 @@ window.selectPulsePill = function(dim, val) {
       }
     }
   }
+  updatePulseSubmitButton();
 };
 
 window.openDailyPulseModal = function(opts = {}) {
   const tenantId = opts.tenantId || (typeof getWorkerTenantId === 'function' ? getWorkerTenantId() : 'ten-123');
   const departmentCode = opts.departmentCode || (typeof getWorkerDepartmentCode === 'function' ? getWorkerDepartmentCode() : 'ENG');
   const instrumentCode = opts.instrumentCode || 'DAILY_PULSE';
+
+  window.resetDailyPulseModal();
 
   const modal = document.getElementById('dailyPulseModalBackdrop');
   if (modal) {
@@ -3794,11 +3838,19 @@ window.closeDailyPulseModal = function() {
 };
 
 window.submitDailyPulse = async function() {
-  const mood = pulseValues.Mood || 3;
-  const calm = pulseValues.Calm || 3;
-  const stress = pulseValues.Stress || 3;
-  const energy = pulseValues.Energy || 3;
-  const work_fit = pulseValues.WorkFit || 3;
+  const missingDims = PULSE_DIMENSIONS.filter(d => pulseValues[d] === null || pulseValues[d] === undefined);
+  if (missingDims.length > 0) {
+    if (typeof showToast === 'function') {
+      showToast('Incomplete Check-in', 'Please select a rating for all 5 dimensions before submitting.', 'info');
+    }
+    return;
+  }
+
+  const mood = pulseValues.Mood;
+  const calm = pulseValues.Calm;
+  const stress = pulseValues.Stress;
+  const energy = pulseValues.Energy;
+  const work_fit = pulseValues.WorkFit;
 
   const btn = document.getElementById('submitPulseBtn');
   if (window.HavilahLoader) {
@@ -3832,10 +3884,8 @@ window.submitDailyPulse = async function() {
   } finally {
     if (window.HavilahLoader) {
       window.HavilahLoader.setButtonLoading(btn, false);
-    } else if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Submit Daily Pulse';
     }
+    updatePulseSubmitButton();
   }
 };
 
@@ -5007,11 +5057,11 @@ const App = (() => {
       composite_score: 0,
       marker: 0,
       dimensions: [
-        { label: 'Mood', value: 0, hasValue: false, status: 'healthy' },
-        { label: 'Calm', value: 0, hasValue: false, status: 'healthy' },
-        { label: 'Stress', value: 0, hasValue: false, status: 'healthy' },
-        { label: 'Energy', value: 0, hasValue: false, status: 'healthy' },
-        { label: 'Work-fit', value: 0, hasValue: false, status: 'healthy' }
+        { label: 'Mood', value: null, hasValue: false, status: 'healthy' },
+        { label: 'Calm', value: null, hasValue: false, status: 'healthy' },
+        { label: 'Stress', value: null, hasValue: false, status: 'healthy' },
+        { label: 'Energy', value: null, hasValue: false, status: 'healthy' },
+        { label: 'Work-fit', value: null, hasValue: false, status: 'healthy' }
       ]
     },
     hrFilters: {
@@ -5468,11 +5518,14 @@ const App = (() => {
       active: true,
       type: internalKey,
       instrumentCode: normInstrumentCode,
+      surveyDef: survey,
       tenantId: tenantId,
       departmentCode: departmentCode,
       currentQuestion: 0,
       answers: [],
-      answerMeta: []
+      answerMeta: [],
+      isAdvancing: false,
+      advanceTimer: null
     };
     
     const backdropEl = document.getElementById('surveyBackdrop');
@@ -5482,11 +5535,12 @@ const App = (() => {
       backdropEl.setAttribute('data-instrument-code', normInstrumentCode);
     }
 
+    const friendlySurveyMeta = defaultSurveyMeta[internalKey] || defaultSurveyMeta[code] || null;
     const modalCodeEl = document.getElementById('modalCode');
-    if (modalCodeEl) modalCodeEl.innerText = normInstrumentCode;
+    if (modalCodeEl) modalCodeEl.innerText = (friendlySurveyMeta && friendlySurveyMeta.badge) || normInstrumentCode;
     
     const modalTitleEl = document.getElementById('modalTitle');
-    if (modalTitleEl) modalTitleEl.innerText = survey.name || survey.title;
+    if (modalTitleEl) modalTitleEl.innerText = (friendlySurveyMeta && friendlySurveyMeta.name) || survey.name || survey.title;
 
     const modalQNumEl = document.getElementById('modalQNum');
     if (modalQNumEl) modalQNumEl.style.display = '';
@@ -5499,8 +5553,19 @@ const App = (() => {
     renderQuestion();
   }
 
+  function clearSurveyAdvanceTimer() {
+    if (state.surveyState && state.surveyState.advanceTimer) {
+      clearTimeout(state.surveyState.advanceTimer);
+      state.surveyState.advanceTimer = null;
+    }
+    if (state.surveyState) {
+      state.surveyState.isAdvancing = false;
+    }
+  }
+
   function closeSurvey() {
-    state.surveyState.active = false;
+    clearSurveyAdvanceTimer();
+    if (state.surveyState) state.surveyState.active = false;
     closeModal('surveyBackdrop');
   }
 
@@ -5514,12 +5579,30 @@ const App = (() => {
     return triggerVal === undefined || triggerVal === null || Number(triggerVal) <= 0;
   }
 
+  function updateSurveyNextButton(survey, currentIndex, isMultiSelect) {
+    const nextBtn = document.getElementById('modalNext');
+    if (!nextBtn || !survey) return;
+    const isLast = currentIndex >= survey.questions.length - 1;
+    const hasAnswer = isMultiSelect
+      ? true
+      : (state.surveyState.answers[currentIndex] !== undefined && state.surveyState.answers[currentIndex] !== null);
+    nextBtn.disabled = !hasAnswer;
+    nextBtn.style.opacity = hasAnswer ? '1' : '0.5';
+    nextBtn.style.cursor = hasAnswer ? 'pointer' : 'not-allowed';
+    nextBtn.innerHTML = isLast
+      ? 'Finish<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+      : 'Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+  }
+
+  let surveyHoverReleaseHandler = null;
+
   function renderQuestion() {
+    clearSurveyAdvanceTimer();
     const sType = state.surveyState.type;
-    const survey = surveys[sType];
+    const survey = state.surveyState.surveyDef || surveys[sType];
+    if (!survey || !Array.isArray(survey.questions)) return;
+
     while (
-      survey &&
-      Array.isArray(survey.questions) &&
       state.surveyState.currentQuestion < survey.questions.length &&
       isConditionalQuestionSkipped(survey, state.surveyState.currentQuestion)
     ) {
@@ -5547,10 +5630,29 @@ const App = (() => {
     document.getElementById('modalBack').disabled = (currentIndex === 0);
     
     const optionsContainer = document.getElementById('modalOptions');
+    if (document.activeElement && optionsContainer.contains(document.activeElement) && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
     optionsContainer.innerHTML = '';
+
+    // Prevent the stationary cursor / sticky touch hover from highlighting the same slot on the new question
+    optionsContainer.classList.add('suppress-hover');
+    if (surveyHoverReleaseHandler) {
+      optionsContainer.removeEventListener('pointermove', surveyHoverReleaseHandler);
+    }
+    surveyHoverReleaseHandler = (evt) => {
+      if (!evt || evt.pointerType !== 'touch') {
+        optionsContainer.classList.remove('suppress-hover');
+        optionsContainer.removeEventListener('pointermove', surveyHoverReleaseHandler);
+        surveyHoverReleaseHandler = null;
+      }
+    };
+    optionsContainer.addEventListener('pointermove', surveyHoverReleaseHandler);
+
+    const isMultiSelect = Boolean(qObj && typeof qObj === 'object' && qObj.responseType === '5M');
     
     let options = survey.options;
-    if (!options && qObj.responseType && window.COPSOQ3_CORE_MAPPINGS) {
+    if (!options && qObj && qObj.responseType && window.COPSOQ3_CORE_MAPPINGS) {
       const mapping = window.COPSOQ3_CORE_MAPPINGS[qObj.responseType];
       if (mapping) {
         options = Object.keys(mapping).map(k => ({ text: k, value: mapping[k] }));
@@ -5565,26 +5667,89 @@ const App = (() => {
         { text: 'Nearly every day', value: 3 }
       ];
     }
-    
+
+    const existingMeta = Array.isArray(state.surveyState.answerMeta) ? state.surveyState.answerMeta[currentIndex] : null;
+    const existingSelectedSet = new Set(
+      isMultiSelect && existingMeta && Array.isArray(existingMeta.selectedOptions)
+        ? existingMeta.selectedOptions
+        : []
+    );
+
     options.forEach((opt, idx) => {
-      const btn = document.createElement('div');
-      btn.className = 'option';
-      if (state.surveyState.answers[currentIndex] === opt.value) {
-        btn.classList.add('selected');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = isMultiSelect ? 'option is-multi' : 'option';
+      btn.style.width = '100%';
+      btn.style.textAlign = 'left';
+      btn.style.fontFamily = 'inherit';
+
+      let isSelected = false;
+      if (isMultiSelect) {
+        isSelected = existingSelectedSet.has(opt.text);
+      } else if (existingMeta && typeof existingMeta.optionIndex === 'number') {
+        isSelected = existingMeta.optionIndex === idx;
+      } else if (state.surveyState.answers[currentIndex] !== undefined && state.surveyState.answers[currentIndex] !== null) {
+        isSelected = state.surveyState.answers[currentIndex] === opt.value;
       }
-      const valueBadge = Number(opt.value) >= 0
+
+      if (isSelected) {
+        btn.classList.add('selected');
+        btn.setAttribute('aria-pressed', 'true');
+      } else {
+        btn.setAttribute('aria-pressed', 'false');
+      }
+
+      const valueBadge = !isMultiSelect && Number(opt.value) >= 0
         ? ` <span style="color: var(--text-3); font-size: 0.85em; margin-left: 6px;">(${opt.value})</span>`
         : '';
       btn.innerHTML = `
         <div class="option-radio"></div>
         <div class="option-text">${opt.text}${valueBadge}</div>
       `;
+
       btn.onclick = () => {
+        if (state.surveyState.isAdvancing) return;
+        if (typeof btn.blur === 'function') btn.blur();
+
+        if (isMultiSelect) {
+          if (existingSelectedSet.has(opt.text)) {
+            existingSelectedSet.delete(opt.text);
+            btn.classList.remove('selected');
+            btn.setAttribute('aria-pressed', 'false');
+          } else {
+            existingSelectedSet.add(opt.text);
+            btn.classList.add('selected');
+            btn.setAttribute('aria-pressed', 'true');
+          }
+          const picked = Array.from(existingSelectedSet);
+          state.surveyState.answers[currentIndex] = picked.length > 0 ? 1 : 0;
+          if (!Array.isArray(state.surveyState.answerMeta)) state.surveyState.answerMeta = [];
+          state.surveyState.answerMeta[currentIndex] = {
+            item_code: (qObj && typeof qObj === 'object' && qObj.id) ? qObj.id : undefined,
+            question_index: currentIndex,
+            value: picked.length,
+            score: picked.length > 0 ? 1 : 0,
+            selectedOptions: picked,
+            responseType: '5M'
+          };
+          updateSurveyNextButton(survey, currentIndex, true);
+          return;
+        }
+
+        // Single-choice: visibly highlight clicked choice briefly, then advance cleanly
+        optionsContainer.querySelectorAll('.option').forEach(el => {
+          el.classList.remove('selected');
+          el.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('selected');
+        btn.setAttribute('aria-pressed', 'true');
+
         state.surveyState.answers[currentIndex] = opt.value;
         if (!Array.isArray(state.surveyState.answerMeta)) state.surveyState.answerMeta = [];
         state.surveyState.answerMeta[currentIndex] = {
           item_code: (qObj && typeof qObj === 'object' && qObj.id) ? qObj.id : undefined,
           question_index: currentIndex,
+          optionIndex: idx,
           value: (qObj && qObj.responseType === 8) ? Math.round(Number(opt.value) / 10) : idx,
           score: Number(opt.value),
           responseType: qObj && typeof qObj === 'object' ? qObj.responseType : undefined
@@ -5595,14 +5760,25 @@ const App = (() => {
             window.WF_CrisisDetector.showCrisisBanner();
           }
         }
-        surveyNext();
+        updateSurveyNextButton(survey, currentIndex, false);
+        state.surveyState.isAdvancing = true;
+        state.surveyState.advanceTimer = setTimeout(() => {
+          state.surveyState.advanceTimer = null;
+          state.surveyState.isAdvancing = false;
+          if (state.surveyState && state.surveyState.active && state.surveyState.currentQuestion === currentIndex) {
+            surveyNext();
+          }
+        }, 180);
       };
       optionsContainer.appendChild(btn);
     });
+
+    updateSurveyNextButton(survey, currentIndex, isMultiSelect);
   }
   
   function surveyBack() {
-    const survey = surveys[state.surveyState.type];
+    clearSurveyAdvanceTimer();
+    const survey = state.surveyState.surveyDef || surveys[state.surveyState.type];
     if (state.surveyState.currentQuestion > 0) {
       state.surveyState.currentQuestion--;
       while (
@@ -5616,7 +5792,15 @@ const App = (() => {
   }
 
   function surveyNext() {
-    const survey = surveys[state.surveyState.type];
+    clearSurveyAdvanceTimer();
+    const survey = state.surveyState.surveyDef || surveys[state.surveyState.type];
+    if (!survey || !Array.isArray(survey.questions)) return;
+    const currentIndex = state.surveyState.currentQuestion;
+    const qObj = survey.questions[currentIndex];
+    const isMultiSelect = Boolean(qObj && typeof qObj === 'object' && qObj.responseType === '5M');
+    if (!isMultiSelect && (state.surveyState.answers[currentIndex] === undefined || state.surveyState.answers[currentIndex] === null)) {
+      return;
+    }
     if (state.surveyState.currentQuestion < survey.questions.length) {
       state.surveyState.currentQuestion++;
       renderQuestion();
@@ -5681,8 +5865,8 @@ const App = (() => {
           if (titleEl) titleEl.textContent = 'Upgrade to Personal Plan';
           document.getElementById('modalQText').innerHTML = `
             <div style="text-align:center; padding: 24px 12px;">
-              <h3 style="margin:0 0 8px 0; font-size:1.1rem; color:var(--text-1);">Unlock COPSOQ-III &amp; Clinical Screenings</h3>
-              <p style="margin:0 0 16px 0; font-size:0.9rem; color:var(--text-2);">${data.message || 'Your 30-day free trial has ended. Upgrade to Havilah Personal (GHS 150/month or GHS 1,500/year) to continue running validated screenings.'}</p>
+              <h3 style="margin:0 0 8px 0; font-size:1.1rem; color:var(--text-1);">Unlock Full Wellbeing Check-ins</h3>
+              <p style="margin:0 0 16px 0; font-size:0.9rem; color:var(--text-2);">${data.message || 'Your 30-day free trial has ended. Upgrade to Havilah Personal (GHS 150/month or GHS 1,500/year) to continue taking full mood, anxiety, stress, fatigue, and work-life check-ins.'}</p>
               <button type="button" class="btn btn-primary" onclick="App.closeSurvey(); App.openPersonalBillingModal();">View Personal Plans</button>
             </div>
           `;
@@ -5727,7 +5911,7 @@ const App = (() => {
     }
 
     // Accurate Scoring Logic for UI Display
-    const surveyDef = surveys[sType];
+    const surveyDef = (state.surveyState && state.surveyState.surveyDef) || surveys[sType];
     const summary = (submitData && submitData.score_summary) ? submitData.score_summary : null;
     let rawScore = 0;
     let maxScore = 100;
@@ -6107,20 +6291,20 @@ const App = (() => {
     DAILY_PULSE: '5-Dimension Daily Pulse',
     checkin_slider: '5-Dimension Daily Pulse',
     pulse: '5-Dimension Daily Pulse',
-    'PHQ-9': 'PHQ-9 Depression Check',
-    phq9: 'PHQ-9 Depression Check',
-    'GAD-7': 'GAD-7 Anxiety Check',
-    gad7: 'GAD-7 Anxiety Check',
-    'PSS-10': 'PSS-10 Perceived Stress',
-    pss10: 'PSS-10 Perceived Stress',
-    'FAS-10': 'FAS-10 Fatigue Assessment',
-    fas10: 'FAS-10 Fatigue Assessment',
-    COPSOQ_III: 'COPSOQ III Psychosocial Risks',
-    'COPSOQ III': 'COPSOQ III Psychosocial Risks',
-    copsoq3: 'COPSOQ III Psychosocial Risks',
-    copsoq3_core: 'COPSOQ III Psychosocial Risks (Core)',
-    copsoq3_middle: 'COPSOQ III Psychosocial Risks (Middle)',
-    copsoq3_long: 'COPSOQ III Psychosocial Risks (Long)'
+    'PHQ-9': 'Mood Check',
+    phq9: 'Mood Check',
+    'GAD-7': 'Anxiety Check',
+    gad7: 'Anxiety Check',
+    'PSS-10': 'Stress Check',
+    pss10: 'Stress Check',
+    'FAS-10': 'Fatigue & Energy Check',
+    fas10: 'Fatigue & Energy Check',
+    COPSOQ_III: 'Work-Life Fit Check',
+    'COPSOQ III': 'Work-Life Fit Check',
+    copsoq3: 'Work-Life Fit Check',
+    copsoq3_core: 'Work-Life Fit Check (Core)',
+    copsoq3_middle: 'Work-Life Fit Check (Extended)',
+    copsoq3_long: 'Work-Life Fit Check (Full)'
   };
 
   function getRiskTier(score) {
@@ -6357,13 +6541,13 @@ const App = (() => {
   }
 
   const defaultSurveyMeta = {
-    phq9: { code: 'PHQ-9', name: 'PHQ-9 (Depression Self-Check)', title: 'PHQ-9 Depression Check', description: '9-item clinical depression screening instrument.', estimatedMinutes: 3 },
-    gad7: { code: 'GAD-7', name: 'GAD-7 (Anxiety Self-Check)', title: 'GAD-7 Anxiety Check', description: '7-item generalized anxiety disorder scale.', estimatedMinutes: 2 },
-    pss10: { code: 'PSS-10', name: 'PSS-10 (Perceived Stress)', title: 'PSS-10 Perceived Stress', description: '10-item measure of perceived life stress.', estimatedMinutes: 4 },
-    fas10: { code: 'FAS-10', name: 'FAS-10 (Fatigue Assessment)', title: 'FAS-10 Fatigue Assessment', description: '10-item fatigue assessment scale evaluating physical and mental exhaustion.', estimatedMinutes: 4 },
-    copsoq3_core: { code: 'COPSOQ III', name: 'COPSOQ III (Core)', title: 'COPSOQ III - Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Core edition).', estimatedMinutes: 8 },
-    copsoq3_middle: { code: 'COPSOQ III', name: 'COPSOQ III (Middle)', title: 'COPSOQ III - Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Middle edition).', estimatedMinutes: 10 },
-    copsoq3_long: { code: 'COPSOQ III', name: 'COPSOQ III (Long)', title: 'COPSOQ III - Work Environment & Fit', description: 'International standard psychosocial work environment instrument (Long edition).', estimatedMinutes: 15 }
+    phq9: { code: 'PHQ-9', badge: 'MOOD', name: 'Mood Check', title: 'Mood Check', description: 'Nine quick questions on mood, motivation, and energy over the past two weeks.', estimatedMinutes: 3 },
+    gad7: { code: 'GAD-7', badge: 'ANXIETY', name: 'Anxiety Check', title: 'Anxiety Check', description: 'Seven quick questions on worry, nervousness, and restlessness over the past two weeks.', estimatedMinutes: 2 },
+    pss10: { code: 'PSS-10', badge: 'STRESS', name: 'Stress Check', title: 'Stress Check', description: 'Ten questions on how manageable or overwhelming everyday stress feels.', estimatedMinutes: 4 },
+    fas10: { code: 'FAS-10', badge: 'FATIGUE', name: 'Fatigue & Energy Check', title: 'Fatigue & Energy Check', description: 'Ten questions measuring physical tiredness and mental exhaustion.', estimatedMinutes: 4 },
+    copsoq3_core: { code: 'COPSOQ III', badge: 'WORK-LIFE FIT', name: 'Work-Life Fit Check', title: 'Work-Life Fit Check', description: 'Check how your workload, support, and daily work environment affect your wellbeing.', estimatedMinutes: 8 },
+    copsoq3_middle: { code: 'COPSOQ III', badge: 'WORK-LIFE FIT', name: 'Work-Life Fit Check (Extended)', title: 'Work-Life Fit Check', description: 'An in-depth look at your workload, team support, and work-life balance.', estimatedMinutes: 10 },
+    copsoq3_long: { code: 'COPSOQ III', badge: 'WORK-LIFE FIT', name: 'Work-Life Fit Check (Full)', title: 'Work-Life Fit Check', description: 'A comprehensive review of your work environment, support, and work-life balance.', estimatedMinutes: 15 }
   };
 
   function renderSurveyCards() {
@@ -6478,13 +6662,18 @@ const App = (() => {
         statusBadge = `<span class="badge badge-info">Available</span>`;
       }
 
-      // Display name for COPSOQ
-      let displayName = (surveyData && (surveyData.name || surveyData.title)) || code.toUpperCase();
+      // Plain-language display name & badge for regular users
+      const friendlyMeta = defaultSurveyMeta[surveyCode] || defaultSurveyMeta[code];
+      let displayName = (friendlyMeta && friendlyMeta.name) || (surveyData && (surveyData.name || surveyData.title)) || code.toUpperCase();
       if (code === 'copsoq3' && !isLocked) {
-        const depthLabel = (lockState.depth || 'core').charAt(0).toUpperCase() + (lockState.depth || 'core').slice(1);
-        displayName = `COPSOQ III (${depthLabel})`;
+        const depth = lockState.depth || 'core';
+        displayName = depth === 'long'
+          ? 'Work-Life Fit Check (Full)'
+          : depth === 'middle'
+            ? 'Work-Life Fit Check (Extended)'
+            : 'Work-Life Fit Check';
       } else if (code === 'copsoq3' && isLocked) {
-        displayName = 'COPSOQ III - Work Environment & Fit';
+        displayName = 'Work-Life Fit Check';
       }
 
       let actionButtonHtml = '';
@@ -6505,13 +6694,18 @@ const App = (() => {
         }
       }
 
+      const cardBadgeLabel = (friendlyMeta && friendlyMeta.badge) || (code === 'copsoq3' ? 'WORK-LIFE FIT' : ((surveyData && surveyData.code) || code.toUpperCase()));
+      const cardDesc = isLocked
+        ? 'This check-in is unlocked during scheduled assessment cycles or on the Personal plan.'
+        : ((friendlyMeta && friendlyMeta.description) || (surveyData && surveyData.description) || 'Check in on your wellbeing.');
+
       card.innerHTML = `
         <div class="survey-head">
-          <span class="survey-code">${code === 'copsoq3' ? 'COPSOQ III' : ((surveyData && surveyData.code) || code.toUpperCase())}</span>
+          <span class="survey-code">${cardBadgeLabel}</span>
           ${statusBadge}
         </div>
         <h3>${displayName}</h3>
-        <p class="desc">${isLocked ? 'This assessment is unlocked by HR during scheduled assessment cycles.' : ((surveyData && surveyData.description) || 'Check-in on your wellbeing.')}</p>
+        <p class="desc">${cardDesc}</p>
         <div class="survey-meta">
           <span class="survey-time">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -6527,13 +6721,6 @@ const App = (() => {
   function getCompletedModulesSummary() {
     const history = Array.isArray(state.employeeHistoryPayload) ? state.employeeHistoryPayload : [];
     const progress = state.surveyProgress || {};
-    const dims = Array.isArray(state.wellbeing?.dimensions) ? state.wellbeing.dimensions : [];
-    const dimVal = (label) => {
-      const found = dims.find(d => (d.label || '').toLowerCase() === label.toLowerCase());
-      return (found && found.hasValue && Number.isFinite(Number(found.value)))
-        ? Math.round(Number(found.value))
-        : null;
-    };
     const latestFromHistory = (matcher) => {
       for (let i = history.length - 1; i >= 0; i--) {
         const src = String(history[i].source || history[i].survey_type || '').toLowerCase();
@@ -6545,15 +6732,15 @@ const App = (() => {
       return null;
     };
 
-    const phq9Score = latestFromHistory(s => s.includes('phq')) ?? (progress.phq9?.completed ? progress.phq9.score : null) ?? dimVal('Mood');
-    const gad7Score = latestFromHistory(s => s.includes('gad')) ?? (progress.gad7?.completed ? progress.gad7.score : null) ?? dimVal('Calm');
-    const pss10Score = latestFromHistory(s => s.includes('pss')) ?? (progress.pss10?.completed ? progress.pss10.score : null) ?? dimVal('Stress');
-    const fas10Score = latestFromHistory(s => s.includes('fas')) ?? (progress.fas10?.completed ? progress.fas10.score : null) ?? dimVal('Energy');
+    // Only count modules that have an actual submission (never inherit Daily Pulse baseline dimensions)
+    const phq9Score = latestFromHistory(s => s.includes('phq')) ?? (progress.phq9?.completed ? progress.phq9.score : null);
+    const gad7Score = latestFromHistory(s => s.includes('gad')) ?? (progress.gad7?.completed ? progress.gad7.score : null);
+    const pss10Score = latestFromHistory(s => s.includes('pss')) ?? (progress.pss10?.completed ? progress.pss10.score : null);
+    const fas10Score = latestFromHistory(s => s.includes('fas')) ?? (progress.fas10?.completed ? progress.fas10.score : null);
     const copsoq3Score = latestFromHistory(s => s.includes('copsoq'))
       ?? (progress.copsoq3_core?.completed ? progress.copsoq3_core.score : null)
       ?? (progress.copsoq3_middle?.completed ? progress.copsoq3_middle.score : null)
-      ?? (progress.copsoq3_long?.completed ? progress.copsoq3_long.score : null)
-      ?? dimVal('Work-fit');
+      ?? (progress.copsoq3_long?.completed ? progress.copsoq3_long.score : null);
 
     const moduleScores = { phq9: phq9Score, gad7: gad7Score, pss10: pss10Score, fas10: fas10Score, copsoq3: copsoq3Score };
     const completedCount = Object.values(moduleScores).filter(v => v !== null && v !== undefined).length;
@@ -6637,11 +6824,11 @@ const App = (() => {
       recList.innerHTML = '';
       const resources = [];
       const energyDim = state.wellbeing.dimensions.find(d => d.label === 'Energy');
-      if (energyDim && (energyDim.status === 'at-risk' || energyDim.status === 'moderate')) {
+      if (energyDim && energyDim.hasValue && (energyDim.status === 'at-risk' || energyDim.status === 'moderate')) {
         resources.push({ title: "Fatigue recovery & sleep hygiene", meta: "Action Plan • 10 mins", icon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>' });
       }
       const stressDim = state.wellbeing.dimensions.find(d => d.label === 'Stress');
-      if (stressDim && (stressDim.status === 'at-risk' || stressDim.status === 'moderate')) {
+      if (stressDim && stressDim.hasValue && (stressDim.status === 'at-risk' || stressDim.status === 'moderate')) {
         resources.push({ title: "Managing work-related stress", meta: "Article • 5 min read", icon: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' });
       }
       if (resources.length === 0) {
@@ -6656,6 +6843,16 @@ const App = (() => {
           </div>
         </a>`;
       });
+    }
+
+    const balanceSub = document.getElementById('wellbeing-balance-subtitle');
+    if (balanceSub) {
+      const answeredDimsCount = state.wellbeing.dimensions.filter(d => d.hasValue).length;
+      balanceSub.textContent = answeredDimsCount === 5
+        ? 'Composite score across 5 dimensions'
+        : answeredDimsCount > 0
+          ? `Based on ${answeredDimsCount} of 5 dimensions answered`
+          : 'Complete a check-in to establish your score';
     }
 
     updateWellbeingRing(state.wellbeing.composite_score);
@@ -6771,6 +6968,7 @@ const App = (() => {
             d.hasValue = true;
             d.status = numVal >= 75 ? 'healthy' : numVal >= 50 ? 'moderate' : 'at-risk';
           } else {
+            d.value = null;
             d.hasValue = false;
           }
         });
@@ -6780,8 +6978,8 @@ const App = (() => {
           state.employeeHistoryPayload = data.history.map((item, idx) => ({
             ...item,
             date: item.date,
-            score: item.score ?? item.overallIndex ?? 64,
-            overallIndex: item.overallIndex ?? item.score ?? 64,
+            score: item.score ?? item.overallIndex ?? null,
+            overallIndex: item.overallIndex ?? item.score ?? null,
             label: item.label || `Check-in ${idx + 1}`,
             source: item.source || item.survey_type || 'daily_pulse',
             dimensions: item.dimensions !== undefined ? item.dimensions : null
@@ -7109,11 +7307,11 @@ const App = (() => {
       window.employeeRadarInstance.destroy();
     }
 
-    // Sort or map dimensions safely in case order varies
+    // Sort or map dimensions safely in case order varies; leave unanswered dimensions null (never 0 or 50)
     const labels = ['Mood', 'Calm', 'Stress', 'Energy', 'Work-fit'];
     const currentData = labels.map(label => {
       const dim = dimensionsData.find(d => d.label === label);
-      return dim ? dim.value : 0;
+      return (dim && dim.hasValue && Number.isFinite(Number(dim.value))) ? Number(dim.value) : null;
     });
 
     window.employeeRadarInstance = new Chart(ctx, {
@@ -7124,14 +7322,16 @@ const App = (() => {
           {
             label: 'Current State',
             data: currentData,
+            spanGaps: true,
             backgroundColor: 'rgba(15, 118, 110, 0.15)',
             borderColor: '#0F766E',
             borderWidth: 2,
-            pointBackgroundColor: '#0F766E'
+            pointBackgroundColor: '#0F766E',
+            pointRadius: 4
           },
           {
             label: 'Target baseline',
-            data: [85, 85, 85, 85, 85, 85, 85],
+            data: [85, 85, 85, 85, 85],
             borderDash: [4, 4],
             backgroundColor: 'transparent',
             borderColor: '#64748B',
@@ -7143,7 +7343,14 @@ const App = (() => {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } }, // Keeps presentation clean
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.raw === null || ctx.raw === undefined ? 'Not yet assessed' : ctx.raw + ' / 100'}`
+            }
+          }
+        },
         scales: {
           r: {
             min: 0,
@@ -7819,7 +8026,6 @@ const App = (() => {
 
     // Personal Wellness Baseline (Mood, Calm, Stress, Energy, Work-fit)
     const dims = Array.isArray(state.wellbeing && state.wellbeing.dimensions) ? state.wellbeing.dimensions : [];
-    const hasAnyBaseline = checkinCount > 0 || dims.some(d => Number(d.value) > 0);
     const dimKeys = [
       { label: 'Mood', id: 'settingsBaseline-mood' },
       { label: 'Calm', id: 'settingsBaseline-calm' },
@@ -7831,11 +8037,9 @@ const App = (() => {
       const container = document.getElementById(id);
       if (!container) return;
       const dim = dims.find(d => d.label === label);
-      const rawVal = dim ? Number(dim.value) : 0;
-      const val = Number.isFinite(rawVal) ? Math.max(0, Math.min(100, Math.round(rawVal))) : 0;
       const scoreRow = container.querySelector('.settings-baseline-score-row');
       const fill = container.querySelector('.settings-baseline-fill');
-      if (!hasAnyBaseline && val === 0) {
+      if (!dim || !dim.hasValue || !Number.isFinite(Number(dim.value))) {
         if (scoreRow) scoreRow.innerHTML = '<span class="tabular-nums" style="color: var(--text-3); font-weight: 500;">No data yet</span>';
         if (fill) {
           fill.style.width = '0%';
@@ -7843,6 +8047,7 @@ const App = (() => {
         }
         return;
       }
+      const val = Math.max(0, Math.min(100, Math.round(Number(dim.value))));
       const statusLabel = val >= 75 ? 'Healthy' : val >= 50 ? 'Moderate' : 'Needs attention';
       const statusColor = val >= 75 ? 'var(--healthy)' : val >= 50 ? 'var(--moderate)' : 'var(--critical)';
       if (scoreRow) {
@@ -8121,7 +8326,7 @@ const App = (() => {
             : '';
           bannerText.innerHTML = `<strong>Personal Plan Active</strong> (${sub.tier === 'personal_annual' ? 'Annual' : 'Monthly'})${welcomeMsg}`;
         } else {
-          bannerText.innerHTML = '<strong>Free Plan:</strong> Daily Pulse &amp; history stay free forever. Upgrade to <strong>Personal (GHS 150/mo)</strong> to unlock COPSOQ-III, PHQ-9, GAD-7 &amp; exports.';
+          bannerText.innerHTML = '<strong>Free Plan:</strong> Daily Pulse &amp; history stay free forever. Upgrade to <strong>Personal (GHS 150/mo)</strong> to unlock full mood, anxiety, stress, fatigue &amp; work-life check-ins and PDF exports.';
         }
       }
 
@@ -8133,7 +8338,7 @@ const App = (() => {
           } else if (sub.welcome_consultation_benefit === 'discount_150') {
             pricingNotice.innerHTML = '<strong>GHS 150 Welcome Credit Applied:</strong> Your first consultation is <strong>GHS 199</strong> (regularly GHS 349). Covers Excuse Duty if clinically warranted.';
           } else {
-            pricingNotice.innerHTML = '<strong>Consultation Fee: GHS 349</strong> — Includes an official Excuse Duty certificate if clinically warranted.';
+            pricingNotice.innerHTML = '<strong>Consultation Fee: GHS 349.</strong> Includes an official Excuse Duty certificate if clinically warranted.';
           }
         } else {
           pricingNotice.innerHTML = '<strong>Consultation Fee: GHS 349</strong> (billed separately from screening tools). Includes an official Excuse Duty certificate if clinically warranted.';
@@ -8998,13 +9203,13 @@ window.App = App;
       <div class="pulse-row" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;transition:all 0.2s;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
           <span style="font-weight:700;color:#0F172A;font-size:14px;letter-spacing:-0.01em;">😊 Mood</span>
-          <span id="pulseMoodLabel" style="font-size:12px;color:#0078D4;font-weight:700;">3 - Good</span>
+          <span id="pulseMoodLabel" style="font-size:12px;color:#64748B;font-weight:700;">Not selected</span>
         </div>
         <div style="font-size:11px;color:#64748B;margin-bottom:10px;font-weight:500;">1: Low / Depressed &rarr; 5: Upbeat / Great</div>
         <div style="display:flex;gap:8px;">
           <button type="button" onclick="window.selectPulsePill('Mood', 1)" class="pulse-pill pill-Mood-1" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">1</button>
           <button type="button" onclick="window.selectPulsePill('Mood', 2)" class="pulse-pill pill-Mood-2" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">2</button>
-          <button type="button" onclick="window.selectPulsePill('Mood', 3)" class="pulse-pill pill-Mood-3" style="flex:1;padding:8px 0;background:#0078D4;border:1px solid #0078D4;border-radius:8px;color:#FFFFFF;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 2px 6px rgba(0,120,212,0.3);transition:all 0.15s;">3</button>
+          <button type="button" onclick="window.selectPulsePill('Mood', 3)" class="pulse-pill pill-Mood-3" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">3</button>
           <button type="button" onclick="window.selectPulsePill('Mood', 4)" class="pulse-pill pill-Mood-4" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">4</button>
           <button type="button" onclick="window.selectPulsePill('Mood', 5)" class="pulse-pill pill-Mood-5" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">5</button>
         </div>
@@ -9014,13 +9219,13 @@ window.App = App;
       <div class="pulse-row" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;transition:all 0.2s;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
           <span style="font-weight:700;color:#0F172A;font-size:14px;letter-spacing:-0.01em;">🧘 Calm</span>
-          <span id="pulseCalmLabel" style="font-size:12px;color:#0078D4;font-weight:700;">3 - Calm</span>
+          <span id="pulseCalmLabel" style="font-size:12px;color:#64748B;font-weight:700;">Not selected</span>
         </div>
         <div style="font-size:11px;color:#64748B;margin-bottom:10px;font-weight:500;">1: Anxious / On Edge &rarr; 5: Serene / Peaceful</div>
         <div style="display:flex;gap:8px;">
           <button type="button" onclick="window.selectPulsePill('Calm', 1)" class="pulse-pill pill-Calm-1" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">1</button>
           <button type="button" onclick="window.selectPulsePill('Calm', 2)" class="pulse-pill pill-Calm-2" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">2</button>
-          <button type="button" onclick="window.selectPulsePill('Calm', 3)" class="pulse-pill pill-Calm-3" style="flex:1;padding:8px 0;background:#0078D4;border:1px solid #0078D4;border-radius:8px;color:#FFFFFF;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 2px 6px rgba(0,120,212,0.3);transition:all 0.15s;">3</button>
+          <button type="button" onclick="window.selectPulsePill('Calm', 3)" class="pulse-pill pill-Calm-3" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">3</button>
           <button type="button" onclick="window.selectPulsePill('Calm', 4)" class="pulse-pill pill-Calm-4" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">4</button>
           <button type="button" onclick="window.selectPulsePill('Calm', 5)" class="pulse-pill pill-Calm-5" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">5</button>
         </div>
@@ -9030,13 +9235,13 @@ window.App = App;
       <div class="pulse-row" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;transition:all 0.2s;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
           <span style="font-weight:700;color:#0F172A;font-size:14px;letter-spacing:-0.01em;">⚡ Stress Level</span>
-          <span id="pulseStressLabel" style="font-size:12px;color:#0078D4;font-weight:700;">3 - In Control</span>
+          <span id="pulseStressLabel" style="font-size:12px;color:#64748B;font-weight:700;">Not selected</span>
         </div>
         <div style="font-size:11px;color:#64748B;margin-bottom:10px;font-weight:500;">1: High Stress &rarr; 5: Low Stress / In Control</div>
         <div style="display:flex;gap:8px;">
           <button type="button" onclick="window.selectPulsePill('Stress', 1)" class="pulse-pill pill-Stress-1" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">1</button>
           <button type="button" onclick="window.selectPulsePill('Stress', 2)" class="pulse-pill pill-Stress-2" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">2</button>
-          <button type="button" onclick="window.selectPulsePill('Stress', 3)" class="pulse-pill pill-Stress-3" style="flex:1;padding:8px 0;background:#0078D4;border:1px solid #0078D4;border-radius:8px;color:#FFFFFF;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 2px 6px rgba(0,120,212,0.3);transition:all 0.15s;">3</button>
+          <button type="button" onclick="window.selectPulsePill('Stress', 3)" class="pulse-pill pill-Stress-3" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">3</button>
           <button type="button" onclick="window.selectPulsePill('Stress', 4)" class="pulse-pill pill-Stress-4" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">4</button>
           <button type="button" onclick="window.selectPulsePill('Stress', 5)" class="pulse-pill pill-Stress-5" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">5</button>
         </div>
@@ -9046,13 +9251,13 @@ window.App = App;
       <div class="pulse-row" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;transition:all 0.2s;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
           <span style="font-weight:700;color:#0F172A;font-size:14px;letter-spacing:-0.01em;">🔋 Energy</span>
-          <span id="pulseEnergyLabel" style="font-size:12px;color:#0078D4;font-weight:700;">3 - Moderate</span>
+          <span id="pulseEnergyLabel" style="font-size:12px;color:#64748B;font-weight:700;">Not selected</span>
         </div>
         <div style="font-size:11px;color:#64748B;margin-bottom:10px;font-weight:500;">1: Exhausted &rarr; 5: Vibrant / High Energy</div>
         <div style="display:flex;gap:8px;">
           <button type="button" onclick="window.selectPulsePill('Energy', 1)" class="pulse-pill pill-Energy-1" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">1</button>
           <button type="button" onclick="window.selectPulsePill('Energy', 2)" class="pulse-pill pill-Energy-2" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">2</button>
-          <button type="button" onclick="window.selectPulsePill('Energy', 3)" class="pulse-pill pill-Energy-3" style="flex:1;padding:8px 0;background:#0078D4;border:1px solid #0078D4;border-radius:8px;color:#FFFFFF;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 2px 6px rgba(0,120,212,0.3);transition:all 0.15s;">3</button>
+          <button type="button" onclick="window.selectPulsePill('Energy', 3)" class="pulse-pill pill-Energy-3" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">3</button>
           <button type="button" onclick="window.selectPulsePill('Energy', 4)" class="pulse-pill pill-Energy-4" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">4</button>
           <button type="button" onclick="window.selectPulsePill('Energy', 5)" class="pulse-pill pill-Energy-5" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">5</button>
         </div>
@@ -9062,13 +9267,13 @@ window.App = App;
       <div class="pulse-row" style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;transition:all 0.2s;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
           <span style="font-weight:700;color:#0F172A;font-size:14px;letter-spacing:-0.01em;">💼 Work-Fit</span>
-          <span id="pulseWorkFitLabel" style="font-size:12px;color:#0078D4;font-weight:700;">3 - Good Fit</span>
+          <span id="pulseWorkFitLabel" style="font-size:12px;color:#64748B;font-weight:700;">Not selected</span>
         </div>
         <div style="font-size:11px;color:#64748B;margin-bottom:10px;font-weight:500;">1: Struggling &rarr; 5: Thriving / Great Fit</div>
         <div style="display:flex;gap:8px;">
           <button type="button" onclick="window.selectPulsePill('WorkFit', 1)" class="pulse-pill pill-WorkFit-1" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">1</button>
           <button type="button" onclick="window.selectPulsePill('WorkFit', 2)" class="pulse-pill pill-WorkFit-2" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">2</button>
-          <button type="button" onclick="window.selectPulsePill('WorkFit', 3)" class="pulse-pill pill-WorkFit-3" style="flex:1;padding:8px 0;background:#0078D4;border:1px solid #0078D4;border-radius:8px;color:#FFFFFF;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 2px 6px rgba(0,120,212,0.3);transition:all 0.15s;">3</button>
+          <button type="button" onclick="window.selectPulsePill('WorkFit', 3)" class="pulse-pill pill-WorkFit-3" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">3</button>
           <button type="button" onclick="window.selectPulsePill('WorkFit', 4)" class="pulse-pill pill-WorkFit-4" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">4</button>
           <button type="button" onclick="window.selectPulsePill('WorkFit', 5)" class="pulse-pill pill-WorkFit-5" style="flex:1;padding:8px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;color:#475569;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;">5</button>
         </div>
@@ -9078,7 +9283,7 @@ window.App = App;
 
     <!-- Modal Footer (Padded inside modal container) -->
     <div style="padding:16px 24px 20px;border-top:1px solid #E2E8F0;background:#FFFFFF;flex-shrink:0;">
-      <button id="submitPulseBtn" onclick="window.submitDailyPulse()" style="width:100%;padding:12px 20px;background:linear-gradient(135deg,#0078D4,#00B7C3);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 12px rgba(0,183,195,0.25);">Submit Daily Pulse</button>
+      <button id="submitPulseBtn" onclick="window.submitDailyPulse()" disabled style="width:100%;padding:12px 20px;background:linear-gradient(135deg,#0078D4,#00B7C3);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:not-allowed;opacity:0.6;transition:all 0.2s;box-shadow:0 4px 12px rgba(0,183,195,0.25);">Rate all 5 dimensions (0/5)</button>
     </div>
   </div>
 </div>

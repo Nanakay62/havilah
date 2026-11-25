@@ -62,7 +62,7 @@ router.get(
       if (flaggedCategories.includes('workload')) {
         recommendations.push({
           id: 'res_workload_1',
-          title: 'Desk mobility \u2014 5 minute reset',
+          title: 'Desk mobility: 5 minute reset',
           category: 'Movement & body',
           meta: '5 min \u00b7 Video',
           trigger: 'Workload/Time Boundary Overrun',

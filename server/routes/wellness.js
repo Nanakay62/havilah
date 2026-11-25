@@ -217,6 +217,7 @@ router.post('/daily-pulse', async (req, res, next) => {
     const companyId = req.sessionData.company_id;
 
     // Normalize ratings (1-5 Likert scale mapped linearly to 0-100: (val - 1) * 25)
+    // Unanswered dimensions remain null rather than defaulting to 50.
     const profileScores = {
       mood: normalizeDailyPulseRating(mood),
       calm: normalizeDailyPulseRating(calm),
@@ -225,16 +226,32 @@ router.post('/daily-pulse', async (req, res, next) => {
       work_fit: normalizeDailyPulseRating(work_fit),
     };
 
-    // 1. Update User baseline profile
+    const providedScores = Object.values(profileScores).filter(
+      (v) => typeof v === 'number' && Number.isFinite(v)
+    );
+    if (providedScores.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'Please rate at least one wellbeing dimension before submitting.',
+      });
+    }
+
+    // 1. Update User baseline profile (only overwrite dimensions actually answered)
     const user = await User.findOne({ user_id: userId });
     if (user) {
       if (!user.baseline_profile) user.baseline_profile = {};
-      Object.assign(user.baseline_profile, profileScores, { last_updated: new Date() });
+      Object.entries(profileScores).forEach(([dimKey, scoreVal]) => {
+        if (typeof scoreVal === 'number' && Number.isFinite(scoreVal)) {
+          user.baseline_profile[dimKey] = scoreVal;
+        }
+      });
+      user.baseline_profile.last_updated = new Date();
       await user.save();
     }
 
     const overallBalance = Math.round(
-      (profileScores.mood + profileScores.calm + profileScores.stress + profileScores.energy + profileScores.work_fit) / 5
+      providedScores.reduce((acc, v) => acc + v, 0) / providedScores.length
     );
     const pulseRiskComposite = Math.max(0, Math.min(100, 100 - overallBalance));
     const pulseClassification = classifyDailyPulse(overallBalance);
@@ -262,6 +279,12 @@ router.post('/daily-pulse', async (req, res, next) => {
     if (!tenantForPulse || tenantForPulse.account_type !== 'individual') {
       const AnonHazardLog = require('../models/AnonHazardLog');
       const submittedAt = coarsenTimestamp(new Date());
+      const anonDims = { overall_balance: overallBalance };
+      Object.entries(profileScores).forEach(([dimKey, scoreVal]) => {
+        if (typeof scoreVal === 'number' && Number.isFinite(scoreVal)) {
+          anonDims[dimKey] = scoreVal;
+        }
+      });
 
       const anonDoc = new AnonHazardLog({
         company_id: companyId,
@@ -269,14 +292,7 @@ router.post('/daily-pulse', async (req, res, next) => {
         department_snapshot_id: req.sessionData.department_id || 'GENERAL',
         survey_type: 'daily_pulse',
         risk_category: 'psychosocial',
-        dimension_scores: {
-          mood: profileScores.mood,
-          calm: profileScores.calm,
-          stress: profileScores.stress,
-          energy: profileScores.energy,
-          work_fit: profileScores.work_fit,
-          overall_balance: overallBalance,
-        },
+        dimension_scores: anonDims,
         composite_score: pulseRiskComposite,
         likelihood: pulseClassification.likelihood,
         severity: pulseClassification.severity,
@@ -291,8 +307,8 @@ router.post('/daily-pulse', async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Pulse Logged! 🌟',
-      baseline_profile: profileScores,
+      message: 'Pulse Logged!',
+      baseline_profile: user ? user.baseline_profile : profileScores,
     });
   } catch (err) {
     next(err);
@@ -450,7 +466,7 @@ router.post('/submit-checkin', async (req, res, next) => {
             currentTier: effectiveTier,
             requiredTier: 'personal',
             upgradeUrl: '/app/dashboard.html?open=billing',
-            message: 'Your 30-day trial has ended. Upgrade to Havilah Personal (GHS 150/month or GHS 1,500/year) to run COPSOQ-III and clinical screenings.',
+            message: 'Your 30-day trial has ended. Upgrade to Havilah Personal (GHS 150/month or GHS 1,500/year) to continue taking full mood, anxiety, stress, fatigue, and work-life check-ins.',
           });
         }
       } else {
@@ -480,22 +496,40 @@ router.post('/submit-checkin', async (req, res, next) => {
         return res.status(400).json({ error: 'scores object is required for checkin_slider' });
       }
 
-      const mood = normalizeDailyPulseRating(scores.mood);
-      const calm = normalizeDailyPulseRating(scores.calm);
-      const stress = normalizeDailyPulseRating(scores.stress);
-      const energy = normalizeDailyPulseRating(scores.energy);
-      const work_fit = normalizeDailyPulseRating(scores.work_fit);
+      const normalizedScores = {
+        mood: normalizeDailyPulseRating(scores.mood),
+        calm: normalizeDailyPulseRating(scores.calm),
+        stress: normalizeDailyPulseRating(scores.stress),
+        energy: normalizeDailyPulseRating(scores.energy),
+        work_fit: normalizeDailyPulseRating(scores.work_fit),
+      };
+      const providedVals = Object.values(normalizedScores).filter(
+        (v) => typeof v === 'number' && Number.isFinite(v)
+      );
+      if (providedVals.length === 0) {
+        return res.status(400).json({ error: 'At least one valid dimension score is required for checkin_slider' });
+      }
 
-      user.baseline_profile.mood = mood;
-      user.baseline_profile.calm = calm;
-      user.baseline_profile.stress = stress;
-      user.baseline_profile.energy = energy;
-      user.baseline_profile.work_fit = work_fit;
+      Object.entries(normalizedScores).forEach(([dimKey, val]) => {
+        if (typeof val === 'number' && Number.isFinite(val)) {
+          user.baseline_profile[dimKey] = val;
+        }
+      });
       user.baseline_profile.last_updated = new Date();
+      await user.save();
 
-      const overall_balance = Math.round((mood + calm + stress + energy + work_fit) / 5);
+      const overall_balance = Math.round(
+        providedVals.reduce((acc, v) => acc + v, 0) / providedVals.length
+      );
       const pulseClassification = classifyDailyPulse(overall_balance);
       const submittedAt = coarsenTimestamp(new Date());
+
+      const anonDims = { overall_balance };
+      Object.entries(normalizedScores).forEach(([dimKey, val]) => {
+        if (typeof val === 'number' && Number.isFinite(val)) {
+          anonDims[dimKey] = val;
+        }
+      });
 
       const AnonHazardLog = require('../models/AnonHazardLog');
       const anonDoc = new AnonHazardLog({
@@ -504,9 +538,7 @@ router.post('/submit-checkin', async (req, res, next) => {
         department_snapshot_id: req.sessionData.department_id,
         survey_type: 'daily_pulse',
         risk_category: 'psychosocial',
-        dimension_scores: {
-          mood, calm, stress, energy, work_fit, overall_balance
-        },
+        dimension_scores: anonDims,
         composite_score: Math.max(0, Math.min(100, 100 - overall_balance)),
         likelihood: pulseClassification.likelihood,
         severity: pulseClassification.severity,
@@ -663,9 +695,9 @@ router.get('/dashboard-data', async (req, res, next) => {
         const validScores = [rawMood, rawCalm, rawStress, rawEnergy, rawWorkFit].filter(v => typeof v === 'number' && Number.isFinite(v));
         const composite = validScores.length > 0
           ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
-          : (log.composite_score ?? log.overallIndex ?? 50);
+          : (log.composite_score ?? log.overallIndex ?? null);
 
-        const resolveDim = (val) => (typeof val === 'number' && Number.isFinite(val) ? val : composite);
+        const resolveDim = (val) => (typeof val === 'number' && Number.isFinite(val) ? val : null);
         const mood = resolveDim(rawMood);
         const calm = resolveDim(rawCalm);
         const stress = resolveDim(rawStress);

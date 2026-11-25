@@ -76,14 +76,17 @@ function roundPercentagesLargestRemainder(countsObj, keys) {
 /**
  * Normalize a 1-5 Likert rating onto the standard 0-100 scale: (val - 1) * 25.
  * Values > 5 are clamped to 0..100 for legacy slider compatibility.
- * @param {number} val
- * @returns {number}
+ * Missing or non-numeric ratings return null instead of fabricating a neutral 50.
+ * @param {number|null|undefined} val
+ * @returns {number|null}
  */
 function normalizeDailyPulseRating(val) {
-  if (typeof val !== 'number' || !Number.isFinite(val)) return 50;
-  if (val === 0) return 0;
-  if (val >= 1 && val <= 5) return Math.round((val - 1) * 25);
-  return Math.max(0, Math.min(100, Math.round(val)));
+  if (val === null || val === undefined || val === '') return null;
+  const num = typeof val === 'number' ? val : Number(val);
+  if (!Number.isFinite(num)) return null;
+  if (num === 0) return 0;
+  if (num >= 1 && num <= 5) return Math.round((num - 1) * 25);
+  return Math.max(0, Math.min(100, Math.round(num)));
 }
 
 /**

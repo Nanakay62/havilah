@@ -229,6 +229,9 @@ describe('Clinical Screener Scoring Implementations', () => {
       expect(cs.normalizeDailyPulseRating(3)).toBe(50);
       expect(cs.normalizeDailyPulseRating(4)).toBe(75);
       expect(cs.normalizeDailyPulseRating(5)).toBe(100);
+      expect(cs.normalizeDailyPulseRating(null)).toBeNull();
+      expect(cs.normalizeDailyPulseRating(undefined)).toBeNull();
+      expect(cs.normalizeDailyPulseRating('')).toBeNull();
 
       expect(cs.classifyDailyPulse(100).severity_band).toBe('healthy');
       expect(cs.classifyDailyPulse(60).severity_band).toBe('mild');

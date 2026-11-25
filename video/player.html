@@ -776,7 +776,7 @@
             </div>
             <div class="chat-bubble-row out" id="chatMsg2">
               <span style="font-size: 17px; font-weight: 600; margin-bottom: 4px; opacity: 0.85;">Medical Assessor</span>
-              <span>You are in a private space—your employer only sees anonymous group stats. Let's review your check-in together.</span>
+              <span>You are in a private space; your employer only sees anonymous group stats. Let's review your check-in together.</span>
               <span style="font-size: 15px; opacity: 0.65; align-self: flex-end; margin-top: 6px;">10:17 AM</span>
             </div>
           </div>
@@ -805,22 +805,22 @@
         <div class="hr-kpi-row">
           <div class="hr-kpi-card">
             <span style="font-size: 19px; color: var(--text-subtle);">Active check-ins</span>
-            <span class="hr-kpi-val" id="kpiActiveVal" style="color: var(--brand);">—</span>
+            <span class="hr-kpi-val" id="kpiActiveVal" style="color: var(--brand);">--</span>
             <span style="font-size: 17px; color: var(--text-muted);" id="kpiActiveHint">Hidden below N = 5</span>
           </div>
           <div class="hr-kpi-card">
             <span style="font-size: 19px; color: var(--text-subtle);">PHQ-9 group mean</span>
-            <span class="hr-kpi-val" id="kpiPhqVal" style="color: var(--success);">—</span>
+            <span class="hr-kpi-val" id="kpiPhqVal" style="color: var(--success);">--</span>
             <span style="font-size: 17px; color: var(--text-muted);" id="kpiPhqHint">Minimal range (0-4)</span>
           </div>
           <div class="hr-kpi-card">
             <span style="font-size: 19px; color: var(--text-subtle);">GAD-7 group mean</span>
-            <span class="hr-kpi-val" id="kpiGadVal" style="color: var(--success);">—</span>
+            <span class="hr-kpi-val" id="kpiGadVal" style="color: var(--success);">--</span>
             <span style="font-size: 17px; color: var(--text-muted);" id="kpiGadHint">Minimal range (0-4)</span>
           </div>
           <div class="hr-kpi-card">
             <span style="font-size: 19px; color: var(--text-subtle);">Assessor referrals</span>
-            <span class="hr-kpi-val" id="kpiRefVal">—</span>
+            <span class="hr-kpi-val" id="kpiRefVal">--</span>
             <span style="font-size: 17px; color: var(--text-muted);">Anonymous codes</span>
           </div>
         </div>
@@ -832,28 +832,28 @@
           </div>
           <div class="hr-chart-bars-wrap">
             <div class="hr-bar-col">
-              <span id="hrPct1" style="font-size: 20px; font-weight: 600;">—</span>
+              <span id="hrPct1" style="font-size: 20px; font-weight: 600;">--</span>
               <div class="hr-bar-slot">
                 <div class="hr-bar-fill" id="hrBar1" style="height: 56%; background-color: var(--success);"></div>
               </div>
               <span style="font-size: 18px; color: var(--text-subtle);">Minimal</span>
             </div>
             <div class="hr-bar-col">
-              <span id="hrPct2" style="font-size: 20px; font-weight: 600;">—</span>
+              <span id="hrPct2" style="font-size: 20px; font-weight: 600;">--</span>
               <div class="hr-bar-slot">
                 <div class="hr-bar-fill" id="hrBar2" style="height: 26%; background-color: var(--text-subtle);"></div>
               </div>
               <span style="font-size: 18px; color: var(--text-subtle);">Mild</span>
             </div>
             <div class="hr-bar-col">
-              <span id="hrPct3" style="font-size: 20px; font-weight: 600;">—</span>
+              <span id="hrPct3" style="font-size: 20px; font-weight: 600;">--</span>
               <div class="hr-bar-slot">
                 <div class="hr-bar-fill" id="hrBar3" style="height: 13%; background-color: var(--warning);"></div>
               </div>
               <span style="font-size: 18px; color: var(--text-subtle);">Moderate</span>
             </div>
             <div class="hr-bar-col">
-              <span id="hrPct4" style="font-size: 20px; font-weight: 600;">—</span>
+              <span id="hrPct4" style="font-size: 20px; font-weight: 600;">--</span>
               <div class="hr-bar-slot">
                 <div class="hr-bar-fill" id="hrBar4" style="height: 8%; background-color: var(--danger);"></div>
               </div>
@@ -1164,12 +1164,12 @@
         overlayEl.style.opacity = String(1 - lin(t, 19.0, 19.45));
 
         if (!thresholdActive) {
-          $('kpiActiveVal').textContent = '—';
+          $('kpiActiveVal').textContent = '--';
           $('kpiActiveHint').textContent = 'Hidden below N = 5';
-          $('kpiPhqVal').textContent = '—';
-          $('kpiGadVal').textContent = '—';
-          $('kpiRefVal').textContent = '—';
-          ['hrPct1', 'hrPct2', 'hrPct3', 'hrPct4'].forEach(id => $(id).textContent = '—');
+          $('kpiPhqVal').textContent = '--';
+          $('kpiGadVal').textContent = '--';
+          $('kpiRefVal').textContent = '--';
+          ['hrPct1', 'hrPct2', 'hrPct3', 'hrPct4'].forEach(id => $(id).textContent = '--');
           ['hrBar1', 'hrBar2', 'hrBar3', 'hrBar4'].forEach(id => $(id).style.transform = 'scaleY(0)');
         } else {
           const kpiP = easeOut(lin(t, 19.0, 20.1));

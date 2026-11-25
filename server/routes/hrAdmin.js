@@ -584,8 +584,11 @@ router.get('/radar', async (req, res, next) => {
     logs.forEach(log => {
        if (log.dimension_scores) {
           Object.keys(log.dimension_scores).forEach(dim => {
-             sums[dim] = (sums[dim] || 0) + log.dimension_scores[dim];
-             counts[dim] = (counts[dim] || 0) + 1;
+             const raw = log.dimension_scores[dim];
+             if (typeof raw === 'number' && Number.isFinite(raw)) {
+                sums[dim] = (sums[dim] || 0) + raw;
+                counts[dim] = (counts[dim] || 0) + 1;
+             }
           });
        }
     });
@@ -596,11 +599,11 @@ router.get('/radar', async (req, res, next) => {
     });
     
     const radarData = [
-       averages['mood'] ?? 50,
-       averages['calm'] ?? 50,
-       averages['stress'] ?? 50,
-       averages['energy'] ?? 50,
-       averages['work_fit'] ?? 50
+       averages['mood'] ?? null,
+       averages['calm'] ?? null,
+       averages['stress'] ?? null,
+       averages['energy'] ?? null,
+       averages['work_fit'] ?? null
     ];
     
     res.json({ success: true, data: radarData, averages });

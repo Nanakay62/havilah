@@ -547,7 +547,7 @@ router.post('/request-extension', ...requireCompanyBillingAdmin, async (req, res
     if (notifyTo) {
       await sendMail({
         to: notifyTo,
-        subject: `[Havilah] Trial Extension Request — ${tenant.company_name} (+${days}d)`,
+        subject: `[Havilah] Trial Extension Request - ${tenant.company_name} (+${days}d)`,
         html: `<p><strong>${tenant.company_name}</strong> (${company_id}) requested a <strong>${days}-day</strong> trial extension.</p><p>Reason: ${tenant.subscription.extensionRequest.reason || 'Not provided'}</p>`
       }).catch(() => {});
     }

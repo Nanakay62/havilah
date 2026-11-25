@@ -289,7 +289,97 @@ router.get('/assessor-payouts', async (req, res, next) => {
     }
 
     const payouts = Array.from(grouped.values()).sort((a, b) => b.totalConsultations - a.totalConsultations);
-    res.json({ success: true, payouts });
+    res.json({
+      success: true,
+      period: {
+        from: dateFilter.from || null,
+        to: dateFilter.to || null,
+      },
+      payouts,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+function maskGuestContact(raw) {
+  const str = String(raw || '').trim();
+  if (!str) return '-';
+  if (str.includes('@')) {
+    const [local, domain] = str.split('@');
+    if (!domain) return '***';
+    const prefix = local.slice(0, Math.min(2, local.length));
+    return `${prefix}***@${domain}`;
+  }
+  const digits = str.replace(/\s+/g, '');
+  if (digits.length <= 4) return '***';
+  return `${digits.slice(0, 4)}***${digits.slice(-3)}`;
+}
+
+// 2c. Guest Consultations Operational Support Lookup (strictly non-clinical metadata only)
+router.get('/guest-consultations', async (req, res, next) => {
+  try {
+    const Referral = require('../models/Referral');
+    const Assessor = require('../models/Assessor');
+
+    const rawQ = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    const rawStatus = typeof req.query.status === 'string' ? req.query.status.trim().toLowerCase() : 'all';
+    const parsedLimit = parseInt(req.query.limit, 10);
+    const limit = Number.isFinite(parsedLimit) ? Math.max(1, Math.min(100, parsedLimit)) : 50;
+
+    const query = {
+      'billing.payerType': 'guest_pay',
+    };
+
+    const allowedStatuses = ['awaiting_payment', 'pending', 'scheduled', 'completed', 'cancelled', 'archived'];
+    if (rawStatus && rawStatus !== 'all' && allowedStatuses.includes(rawStatus)) {
+      query.status = rawStatus;
+    }
+
+    if (rawQ) {
+      const escaped = rawQ.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'i');
+      query.$or = [
+        { referenceCode: regex },
+        { 'billing.paystackReference': regex },
+        { 'clinicalDetails.patientContact': regex },
+      ];
+    }
+
+    const [referrals, assessors] = await Promise.all([
+      Referral.find(query)
+        .select('referenceCode status billing.amount billing.currency billing.settlementStatus billing.paystackReference billing.isBilled assignedAssessorId clinicalDetails.patientContact createdAt updatedAt')
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean(),
+      Assessor.find().select('_id name organization').lean(),
+    ]);
+
+    const assessorMap = new Map(assessors.map((a) => [String(a._id), a]));
+
+    const consultations = referrals.map((r) => {
+      const assessor = assessorMap.get(String(r.assignedAssessorId || ''));
+      return {
+        referenceCode: r.referenceCode,
+        status: r.status || 'awaiting_payment',
+        amountGhs: Number(r.billing?.amount || 349),
+        currency: r.billing?.currency || 'GHS',
+        settlementStatus: r.billing?.settlementStatus || 'unbilled',
+        isBilled: Boolean(r.billing?.isBilled),
+        paystackReference: r.billing?.paystackReference || null,
+        maskedContact: maskGuestContact(r.clinicalDetails?.patientContact),
+        assessorName: assessor?.name || 'Assigned Clinician',
+        assessorOrganization: assessor?.organization || '',
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+      };
+    });
+
+    res.json({
+      success: true,
+      count: consultations.length,
+      consultations,
+    });
   } catch (err) {
     next(err);
   }

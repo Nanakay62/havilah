@@ -1582,6 +1582,27 @@
         </div>
       </div>
 
+      <!-- My Sessions & Payouts Summary Strip -->
+      <div id="assessorPayoutSummaryBar" style="background: var(--surface, #ffffff); border: 1px solid var(--border); border-radius: var(--radius-card, 12px); padding: 14px 18px; margin-bottom: var(--space-4, 16px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-size: 13px; font-weight: 700; color: var(--text);">My Sessions &amp; Payout Summary</span>
+            <span class="badge badge-neutral" id="assessorPayoutScopeBadge">Loading...</span>
+          </div>
+          <div id="assessorPayoutCountsText" style="font-size: 12px; color: var(--text-muted);">
+            Loading session breakdown...
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <select class="select" id="assessorPayoutPeriodSelect" aria-label="Payout summary period" style="min-width: 145px; height: 34px; font-size: 12px;" onchange="loadMyPayoutSummary()">
+            <option value="all">All time</option>
+            <option value="this_month" selected>This month</option>
+            <option value="last_month">Last month</option>
+          </select>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="loadMyPayoutSummary()">Refresh</button>
+        </div>
+      </div>
+
       <!-- Controls: Underline Status Tabs + Search & Filters Popover + Chips -->
       <div class="controls-stack">
         <div class="tabs-underline" role="tablist" aria-label="Referral status views">
@@ -1627,6 +1648,17 @@
                 <label for="companyFilterSelect">Client company</label>
                 <select class="select" id="companyFilterSelect" onchange="applyQueueFilter()">
                   <option value="all">All client companies</option>
+                </select>
+              </div>
+
+              <div class="filters-popover-field" id="payerFilterField">
+                <label for="payerFilterSelect">Consultation type</label>
+                <select class="select" id="payerFilterSelect" onchange="applyQueueFilter()">
+                  <option value="all">All consultation types</option>
+                  <option value="company_covered">Company covered (B2B)</option>
+                  <option value="individual">Personal account (B2C)</option>
+                  <option value="self_pay">Private employee self-pay</option>
+                  <option value="guest_pay">Guest consultation</option>
                 </select>
               </div>
 

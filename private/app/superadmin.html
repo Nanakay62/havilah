@@ -821,7 +821,75 @@
       </div>
     </div>
 
-    <div class="data-table-container" id="saAssessorPayoutsPanel" style="margin-bottom: 28px;"><div class="data-table-header"><div><div class="registry-title">Assessor Payouts Summary</div><div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Aggregated consultation counts and GHS collected by Havilah across Company, Individual, and Guest sessions for offline assessor payout.</div></div><button class="btn-outline" type="button" onclick="loadAssessorPayouts()">Refresh Payouts</button></div><div class="data-table-scroll"><table class="data-table table-to-cards"><thead><tr><th>Medical Assessor</th><th>Total Consultations</th><th>Completed</th><th>Breakdown (Guest / Self-Pay / Welcome / B2B)</th><th>GHS Collected by Havilah</th></tr></thead><tbody id="saAssessorPayoutsBody"><tr class="empty-row"><td colspan="5" style="padding:12px;text-align:center;color:var(--text-muted);">Loading assessor payouts...</td></tr></tbody></table></div></div>
+    <div class="data-table-container" id="saAssessorPayoutsPanel" style="margin-bottom: 28px;">
+      <div class="data-table-header">
+        <div>
+          <div class="registry-title">Assessor Payouts Summary</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Aggregated consultation counts and GHS collected by Havilah across Company, Individual, and Guest sessions for offline assessor payout.</div>
+        </div>
+        <div class="registry-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <input type="month" id="saPayoutMonthInput" aria-label="Filter payouts by month" style="padding: 6px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px;" onchange="loadAssessorPayouts()">
+          <button class="btn-outline" type="button" onclick="resetAssessorPayoutMonth()">All Time</button>
+          <button class="btn-outline" type="button" onclick="exportAssessorPayoutsCsv()">Export CSV</button>
+          <button class="btn-outline" type="button" onclick="loadAssessorPayouts()">Refresh Payouts</button>
+        </div>
+      </div>
+      <div class="data-table-scroll">
+        <table class="data-table table-to-cards">
+          <thead>
+            <tr>
+              <th>Medical Assessor</th>
+              <th>Total Consultations</th>
+              <th>Completed</th>
+              <th>Breakdown (Guest / Self-Pay / Welcome / B2B)</th>
+              <th>GHS Collected by Havilah</th>
+            </tr>
+          </thead>
+          <tbody id="saAssessorPayoutsBody">
+            <tr class="empty-row"><td colspan="5" style="padding:12px;text-align:center;color:var(--text-muted);">Loading assessor payouts...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="data-table-container" id="saGuestConsultationsPanel" style="margin-bottom: 28px;">
+      <div class="data-table-header">
+        <div>
+          <div class="registry-title">Guest Consultations Lookup</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Support view for one-off guest bookings (GHS 349). Clinical notes and chat messages are never exposed here.</div>
+        </div>
+        <div class="registry-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <input type="text" id="saGuestSearchInput" placeholder="Search ref code, Paystack ref, contact..." style="padding: 7px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; min-width: 220px;" oninput="debouncedLoadGuestConsultations()">
+          <select id="saGuestStatusFilter" style="padding: 7px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px;" onchange="loadGuestConsultations()">
+            <option value="all">All Statuses</option>
+            <option value="awaiting_payment">Awaiting Payment</option>
+            <option value="pending">Pending</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <button class="btn-outline" type="button" onclick="loadGuestConsultations()">Refresh</button>
+        </div>
+      </div>
+      <div class="data-table-scroll">
+        <table class="data-table table-to-cards">
+          <thead>
+            <tr>
+              <th>Booking Ref</th>
+              <th>Status</th>
+              <th>Payment</th>
+              <th>Paystack Ref</th>
+              <th>Contact (Masked)</th>
+              <th>Assigned Clinic</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody id="saGuestConsultationsBody">
+            <tr class="empty-row"><td colspan="7" style="padding:12px;text-align:center;color:var(--text-muted);">Loading guest consultations...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
     <!-- Tenant Registry Table -->
     <div class="data-table-container">
       <div class="data-table-header">
@@ -1968,8 +2036,143 @@ HR only receives aggregated reports when at least N >= 5 employees participate i
     loadPendingBilling();
     if (typeof fetchTenants === 'function') fetchTenants();
   }
-  async function loadAssessorPayouts() { const tbody = document.getElementById('saAssessorPayoutsBody'); if (!tbody) return; try { const res = await fetch('/api/v1/superadmin/assessor-payouts', { headers: saAuthHeaders() }); const data = await res.json().catch(() => ({})); if (!res.ok || !data.success) { tbody.innerHTML = '<tr><td colspan="5" style="padding:12px;text-align:center;color:#f87171;">Failed to load payouts</td></tr>'; return; } const rows = data.payouts || []; if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="padding:12px;text-align:center;color:var(--text-muted);">No consultations recorded yet.</td></tr>'; return; } tbody.innerHTML = rows.map(p => { const b = p.byPayerType || {}; const breakdown = `Guest: ${b.guest_pay || 0} &middot; Self-Pay: ${b.self_pay || 0} &middot; Welcome: ${(b.welcome_credit || 0) + (b.welcome_discount || 0)} &middot; B2B: ${b.company_covered || 0}`; return `<tr><td><strong>${(p.assessorName || 'Assessor').replace(/</g,'&lt;')}</strong><div style="font-size:11px;color:var(--text-muted);">${(p.organization || p.email || '').replace(/</g,'&lt;')}</div></td><td>${p.totalConsultations}</td><td>${p.completedConsultations}</td><td style="font-size:12px;">${breakdown}</td><td><strong>GHS ${Number(p.collectedGhs || 0).toFixed(2)}</strong></td></tr>`; }).join(''); } catch (_) { tbody.innerHTML = '<tr><td colspan="5" style="padding:12px;text-align:center;color:#f87171;">Error loading payouts</td></tr>'; } }
-  document.addEventListener('DOMContentLoaded', () => { loadPendingBilling(); loadAssessorPayouts(); });
+  let saLastPayoutRows = [];
+  let saGuestSearchTimer = null;
+
+  function saEsc(v) {
+    return String(v ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function resetAssessorPayoutMonth() {
+    const monthEl = document.getElementById('saPayoutMonthInput');
+    if (monthEl) monthEl.value = '';
+    loadAssessorPayouts();
+  }
+
+  async function loadAssessorPayouts() {
+    const tbody = document.getElementById('saAssessorPayoutsBody');
+    if (!tbody) return;
+    const monthVal = (document.getElementById('saPayoutMonthInput')?.value || '').trim();
+    const qs = monthVal ? `?month=${encodeURIComponent(monthVal)}` : '';
+    try {
+      const res = await fetch(`/api/v1/superadmin/assessor-payouts${qs}`, { headers: saAuthHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        saLastPayoutRows = [];
+        tbody.innerHTML = '<tr><td colspan="5" style="padding:12px;text-align:center;color:#f87171;">Failed to load payouts</td></tr>';
+        return;
+      }
+      const rows = data.payouts || [];
+      saLastPayoutRows = rows;
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding:12px;text-align:center;color:var(--text-muted);">No consultations recorded for this period.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(p => {
+        const b = p.byPayerType || {};
+        const breakdown = `Guest: ${b.guest_pay || 0} &middot; Self-Pay: ${b.self_pay || 0} &middot; Welcome: ${(b.welcome_credit || 0) + (b.welcome_discount || 0)} &middot; B2B: ${b.company_covered || 0}`;
+        return `<tr><td><strong>${saEsc(p.assessorName || 'Assessor')}</strong><div style="font-size:11px;color:var(--text-muted);">${saEsc(p.organization || p.email || '')}</div></td><td>${p.totalConsultations}</td><td>${p.completedConsultations}</td><td style="font-size:12px;">${breakdown}</td><td><strong>GHS ${Number(p.collectedGhs || 0).toFixed(2)}</strong></td></tr>`;
+      }).join('');
+    } catch (_) {
+      saLastPayoutRows = [];
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:12px;text-align:center;color:#f87171;">Error loading payouts</td></tr>';
+    }
+  }
+
+  function exportAssessorPayoutsCsv() {
+    if (!saLastPayoutRows || saLastPayoutRows.length === 0) {
+      alert('No payout rows to export for the selected period.');
+      return;
+    }
+    const monthVal = (document.getElementById('saPayoutMonthInput')?.value || '').trim();
+    const csvCell = (val) => {
+      let s = String(val ?? '');
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+    const header = ['Assessor Name', 'Organization', 'Email', 'Total Consultations', 'Completed', 'Guest', 'Self-Pay', 'Welcome', 'B2B Covered', 'GHS Collected'];
+    const lines = [header.map(csvCell).join(',')];
+    saLastPayoutRows.forEach((p) => {
+      const b = p.byPayerType || {};
+      const welcome = (b.welcome_credit || 0) + (b.welcome_discount || 0);
+      lines.push([
+        p.assessorName || 'Assessor',
+        p.organization || '',
+        p.email || '',
+        p.totalConsultations || 0,
+        p.completedConsultations || 0,
+        b.guest_pay || 0,
+        b.self_pay || 0,
+        welcome,
+        b.company_covered || 0,
+        Number(p.collectedGhs || 0).toFixed(2)
+      ].map(csvCell).join(','));
+    });
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `havilah-assessor-payouts-${monthVal || 'all-time'}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+
+  function debouncedLoadGuestConsultations() {
+    clearTimeout(saGuestSearchTimer);
+    saGuestSearchTimer = setTimeout(() => loadGuestConsultations(), 250);
+  }
+
+  async function loadGuestConsultations() {
+    const tbody = document.getElementById('saGuestConsultationsBody');
+    if (!tbody) return;
+    const q = (document.getElementById('saGuestSearchInput')?.value || '').trim();
+    const status = (document.getElementById('saGuestStatusFilter')?.value || 'all').trim();
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (status && status !== 'all') params.set('status', status);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+
+    try {
+      const res = await fetch(`/api/v1/superadmin/guest-consultations${qs}`, { headers: saAuthHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        tbody.innerHTML = '<tr><td colspan="7" style="padding:12px;text-align:center;color:#f87171;">Failed to load guest consultations</td></tr>';
+        return;
+      }
+      const rows = data.consultations || [];
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="padding:12px;text-align:center;color:var(--text-muted);">No matching guest consultations found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map((c) => {
+        const dt = c.createdAt ? new Date(c.createdAt).toLocaleString() : '-';
+        const payLabel = c.isBilled ? `GHS ${Number(c.amountGhs || 349).toFixed(0)} (${c.settlementStatus || 'settled'})` : `GHS ${Number(c.amountGhs || 349).toFixed(0)} (${c.settlementStatus || 'unbilled'})`;
+        return `<tr>
+          <td data-label="Booking Ref" style="font-family:monospace;font-weight:700;">${saEsc(c.referenceCode)}</td>
+          <td data-label="Status"><span class="badge">${saEsc(c.status)}</span></td>
+          <td data-label="Payment">${saEsc(payLabel)}</td>
+          <td data-label="Paystack Ref" style="font-family:monospace;font-size:12px;">${saEsc(c.paystackReference || '-')}</td>
+          <td data-label="Contact (Masked)">${saEsc(c.maskedContact || '-')}</td>
+          <td data-label="Assigned Clinic"><strong>${saEsc(c.assessorName || 'Clinician')}</strong><div style="font-size:11px;color:var(--text-muted);">${saEsc(c.assessorOrganization || '')}</div></td>
+          <td data-label="Created" style="font-size:12px;">${saEsc(dt)}</td>
+        </tr>`;
+      }).join('');
+    } catch (_) {
+      tbody.innerHTML = '<tr><td colspan="7" style="padding:12px;text-align:center;color:#f87171;">Error loading guest consultations</td></tr>';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadPendingBilling();
+    loadAssessorPayouts();
+    loadGuestConsultations();
+  });
 </script>
 </body>
 </html>

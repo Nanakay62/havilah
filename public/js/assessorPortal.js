@@ -21,6 +21,7 @@
     filters: {
       search: '',
       company: 'all',
+      payer: 'all',
       doctor: 'all',
       status: 'active',
       settlement: 'all',
@@ -300,6 +301,7 @@
         fetchDoctorsList();
       }
       fetchAssessorQueue();
+      loadMyPayoutSummary();
     } catch (err) {
       clearAssessorToken();
       if (loginSection) loginSection.style.display = 'block';
@@ -1066,6 +1068,7 @@
 
   window.applyQueueFilter = () => {
     state.filters.company = document.getElementById('companyFilterSelect')?.value || 'all';
+    state.filters.payer = document.getElementById('payerFilterSelect')?.value || 'all';
     state.filters.doctor = document.getElementById('doctorFilterSelect')?.value || 'all';
     state.filters.status = document.getElementById('statusFilterSelect')?.value || 'active';
     state.filters.settlement = document.getElementById('settlementFilterSelect')?.value || 'all';
@@ -1091,6 +1094,10 @@
     } else if (key === 'company') {
       state.filters.company = 'all';
       const el = document.getElementById('companyFilterSelect');
+      if (el) el.value = 'all';
+    } else if (key === 'payer') {
+      state.filters.payer = 'all';
+      const el = document.getElementById('payerFilterSelect');
       if (el) el.value = 'all';
     } else if (key === 'doctor') {
       state.filters.doctor = 'all';
@@ -1127,6 +1134,7 @@
     state.filters = {
       search: '',
       company: 'all',
+      payer: 'all',
       doctor: 'all',
       status: resetStatus,
       settlement: 'all',
@@ -1136,6 +1144,7 @@
     };
     const searchEl = document.getElementById('searchInput');
     const compEl = document.getElementById('companyFilterSelect');
+    const payerEl = document.getElementById('payerFilterSelect');
     const docEl = document.getElementById('doctorFilterSelect');
     const statusEl = document.getElementById('statusFilterSelect');
     const settEl = document.getElementById('settlementFilterSelect');
@@ -1146,6 +1155,7 @@
 
     if (searchEl) searchEl.value = '';
     if (compEl) compEl.value = 'all';
+    if (payerEl) payerEl.value = 'all';
     if (docEl) docEl.value = 'all';
     if (statusEl) statusEl.value = resetStatus;
     if (settEl) settEl.value = 'all';
@@ -1171,6 +1181,11 @@
       const sel = document.getElementById('companyFilterSelect');
       const txt = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : 'Company';
       chips.push({ key: 'company', label: `Client: ${txt}` });
+    }
+    if (state.filters.payer && state.filters.payer !== 'all') {
+      const sel = document.getElementById('payerFilterSelect');
+      const txt = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : state.filters.payer;
+      chips.push({ key: 'payer', label: `Type: ${txt}` });
     }
     if (state.filters.doctor && state.filters.doctor !== 'all') {
       const sel = document.getElementById('doctorFilterSelect');
@@ -1274,6 +1289,21 @@
       result = result.filter((r) => {
         const tId = r.tenantId?._id || r.tenantId;
         return String(tId) === String(state.filters.company);
+      });
+    }
+
+    // Consultation type / payer filter
+    if (state.filters.payer && state.filters.payer !== 'all') {
+      result = result.filter((r) => {
+        const pType = r.billing?.payerType || r.payerType || 'company_covered';
+        const isInd = r.tenantId?.account_type === 'individual';
+        if (state.filters.payer === 'individual') {
+          return isInd || pType === 'welcome_credit' || pType === 'welcome_discount';
+        }
+        if (state.filters.payer === 'self_pay') {
+          return pType === 'self_pay' && !isInd;
+        }
+        return pType === state.filters.payer;
       });
     }
 
@@ -1771,7 +1801,7 @@
     document.getElementById('modalCaseRefCode').textContent = item.referenceCode;
 
     const body = document.getElementById('modalCaseDetailBody');
-    const compName = item.tenantId?.company_name || 'Organization';
+    const compName = getReferralCompanyName(item, 'Organization');
     const pName = item.clinicalDetails?.patientName || '-';
     const pContact = item.clinicalDetails?.patientContact || '-';
     const pDept = item.departmentName || 'General';
@@ -1780,13 +1810,14 @@
     const assessorNotes = item.clinicalDetails?.assessorNotes || 'None recorded yet';
     const isCompleted = item.status === 'completed';
     const isClinicAdmin = isUserClinicAdmin(state.assessor);
+    const payerTag = (item.payerLabel && item.payerLabel !== 'Company Covered') ? ` · ${item.payerLabel}` : '';
 
     // Populate sticky workspace header
     const hdrNameEl = document.getElementById('modalHeaderPatientName');
     const hdrOrgEl = document.getElementById('modalHeaderOrgDept');
     const hdrStatusEl = document.getElementById('modalHeaderStatusBadge');
     if (hdrNameEl) hdrNameEl.textContent = pName;
-    if (hdrOrgEl) hdrOrgEl.textContent = `${compName} · ${pDept}`;
+    if (hdrOrgEl) hdrOrgEl.textContent = `${compName} · ${pDept}${payerTag}`;
     if (hdrStatusEl) {
       const st = (item.status || 'pending').toLowerCase();
       hdrStatusEl.textContent = st.charAt(0).toUpperCase() + st.slice(1);
@@ -3793,6 +3824,47 @@
       window.closeModal(e.target.id);
     }
   });
+
+  window.loadMyPayoutSummary = async () => {
+    const scopeBadge = document.getElementById('assessorPayoutScopeBadge');
+    const countsText = document.getElementById('assessorPayoutCountsText');
+    const periodSelect = document.getElementById('assessorPayoutPeriodSelect');
+    if (!countsText) return;
+
+    const periodMode = periodSelect ? periodSelect.value : 'this_month';
+    let queryStr = '';
+    const now = new Date();
+    if (periodMode === 'this_month') {
+      const ym = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+      queryStr = `?month=${ym}`;
+    } else if (periodMode === 'last_month') {
+      const prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+      const ym = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, '0')}`;
+      queryStr = `?month=${ym}`;
+    }
+
+    try {
+      const res = await assessorApiFetch(`${API_BASE}/my-payouts${queryStr}`);
+      const s = res.summary || {};
+      const b = s.byPayerType || {};
+      const welcomeCount = (b.welcome_credit || 0) + (b.welcome_discount || 0);
+
+      if (scopeBadge) {
+        scopeBadge.textContent = res.scope === 'clinic' ? 'Clinic Summary' : 'My Assigned Sessions';
+      }
+
+      const ghsPart = (res.scope === 'clinic' && typeof s.collectedGhs === 'number')
+        ? ` · <strong>GHS ${Number(s.collectedGhs || 0).toFixed(2)}</strong> collected`
+        : '';
+
+      countsText.innerHTML =
+        `<strong>${s.totalConsultations || 0}</strong> total (${s.completedConsultations || 0} completed)${ghsPart} · ` +
+        `Guest: ${b.guest_pay || 0} · Self-Pay: ${b.self_pay || 0} · Welcome: ${welcomeCount} · B2B: ${b.company_covered || 0}`;
+    } catch (err) {
+      if (scopeBadge) scopeBadge.textContent = 'Unavailable';
+      countsText.textContent = 'Could not load session summary.';
+    }
+  };
 
   document.addEventListener('DOMContentLoaded', () => {
     checkAuth();

@@ -1324,6 +1324,12 @@
         paystackNote.style.display = data.paystack_configured ? 'none' : 'block';
       }
 
+      const freeTierNote = document.getElementById('hrFreeTierClinicalNote');
+      if (freeTierNote) {
+        const effTier = String(sub.effective_tier || sub.tier || '').toLowerCase();
+        freeTierNote.style.display = effTier === 'free' ? 'block' : 'none';
+      }
+
       if (invoicesBody) {
         const invoices = Array.isArray(sub.invoices) ? sub.invoices : [];
         if (invoices.length === 0) {

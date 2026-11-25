@@ -11,6 +11,7 @@ const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const Referral = require('../models/Referral');
 const Assessor = require('../models/Assessor');
+const Doctor = require('../models/Doctor');
 const AuditLog = require('../models/AuditLog');
 const AssessmentCycle = require('../models/AssessmentCycle');
 const PersonalWellnessLog = require('../models/PersonalWellnessLog');
@@ -544,10 +545,17 @@ describe('B2C Individual Accounts & Guest Consultation Mode', () => {
       expect(whRes.status).toBe(200);
       expect(savedGuestReferral.status).toBe('pending');
 
-      // After payment, valid token returns consultation room
+      // After payment, valid token returns consultation room with paymentSummary (without internal secrets)
       const okRoomRes = await request(app).get(`/api/v1/referrals/status/${referenceCode}?token=${guestToken}`);
       expect(okRoomRes.status).toBe(200);
       expect(okRoomRes.body.data.referenceCode).toBe(referenceCode);
+      expect(okRoomRes.body.data.paymentSummary).toEqual({
+        payerType: 'guest_pay',
+        amount: 349,
+        currency: 'GHS',
+        settlementStatus: 'settled',
+      });
+      expect(okRoomRes.body.data.paystackReference).toBeUndefined();
     });
 
     it('Free-tier company employee self-pays GHS 349 and HR /employer-billing excludes self_pay rows while counting them anonymously', async () => {
@@ -605,6 +613,83 @@ describe('B2C Individual Accounts & Guest Consultation Mode', () => {
       const consultPageRes = await request(app).get('/consult');
       expect(consultPageRes.status).toBe(200);
       expect(consultPageRes.text).toContain('Doctor Consultation');
+    });
+
+    it('Assessor /my-payouts scopes Clinic Admin vs. Staff Doctor and SuperAdmin /guest-consultations masks contacts', async () => {
+      const assessorId = new mongoose.Types.ObjectId();
+      const doctorId = new mongoose.Types.ObjectId();
+      const clinicAdminToken = jwt.sign(
+        { assessorId: String(assessorId), email: 'lead@clinic.test', name: 'Dr. Lead', role: 'clinic_admin', isLeadAssessor: true },
+        TEST_SECRET,
+        { expiresIn: '1h' }
+      );
+      const staffDoctorToken = jwt.sign(
+        { assessorId: String(assessorId), doctorId: String(doctorId), email: 'staff@clinic.test', name: 'Dr. Staff', role: 'doctor', isLeadAssessor: false },
+        TEST_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      let capturedFindQueries = [];
+      vi.spyOn(Assessor, 'findById').mockResolvedValue({
+        _id: assessorId,
+        name: 'Dr. Lead',
+        email: 'lead@clinic.test',
+        active: true,
+      });
+      vi.spyOn(Doctor, 'findById').mockResolvedValue({
+        _id: doctorId,
+        fullName: 'Dr. Staff',
+        email: 'staff@clinic.test',
+        role: 'doctor',
+        specialty: 'Occupational Medicine',
+        active: true,
+      });
+      vi.spyOn(Referral, 'find').mockImplementation((q) => {
+        capturedFindQueries.push(q);
+        return makeChainQuery([
+          { status: 'completed', billing: { payerType: 'guest_pay', isBilled: true, amount: 349 } },
+          { status: 'pending', billing: { payerType: 'self_pay', isBilled: true, amount: 349 } },
+        ]);
+      });
+
+      const clinicRes = await request(app)
+        .get('/api/v1/assessor/my-payouts?month=2026-11')
+        .set('Authorization', `Bearer ${clinicAdminToken}`);
+      expect(clinicRes.status).toBe(200);
+      expect(clinicRes.body.scope).toBe('clinic');
+      expect(clinicRes.body.summary.totalConsultations).toBe(2);
+      expect(clinicRes.body.summary.completedConsultations).toBe(1);
+      expect(clinicRes.body.summary.collectedGhs).toBe(698);
+      expect(capturedFindQueries[0].assignedDoctorId).toBeUndefined();
+
+      const doctorRes = await request(app)
+        .get('/api/v1/assessor/my-payouts?month=2026-11')
+        .set('Authorization', `Bearer ${staffDoctorToken}`);
+      expect(doctorRes.status).toBe(200);
+      expect(doctorRes.body.scope).toBe('doctor');
+      expect(doctorRes.body.summary.collectedGhs).toBeUndefined();
+      expect(String(capturedFindQueries[1].assignedDoctorId)).toBe(String(doctorId));
+
+      vi.spyOn(Referral, 'find').mockImplementation(() => makeChainQuery([
+        {
+          referenceCode: 'GUEST-1234',
+          status: 'pending',
+          billing: { payerType: 'guest_pay', amount: 349, currency: 'GHS', settlementStatus: 'settled', isBilled: true, paystackReference: 'psk_test_999' },
+          assignedAssessorId: assessorId,
+          clinicalDetails: { patientContact: 'kwame.mensah@gmail.com', intakeNotes: 'Private clinical symptom' },
+          createdAt: new Date(),
+        },
+      ]));
+      vi.spyOn(Assessor, 'find').mockImplementation(() => makeChainQuery([{ _id: assessorId, name: 'Dr. Lead', organization: 'FZ Clinic' }]));
+
+      const guestLookupRes = await request(app)
+        .get('/api/v1/superadmin/guest-consultations?q=GUEST-1234')
+        .set('Authorization', `Bearer ${superAdminToken}`);
+      expect(guestLookupRes.status).toBe(200);
+      expect(guestLookupRes.body.consultations).toHaveLength(1);
+      expect(guestLookupRes.body.consultations[0].maskedContact).toBe('kw***@gmail.com');
+      expect(guestLookupRes.body.consultations[0].intakeNotes).toBeUndefined();
+      expect(guestLookupRes.body.consultations[0].thread).toBeUndefined();
     });
   });
 });

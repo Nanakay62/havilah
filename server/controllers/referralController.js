@@ -749,7 +749,7 @@ router.get('/status/:referenceCode', sensitiveRateLimiter(10, { strictLimit: tru
     }
 
     const referral = await Referral.findOne({ referenceCode: rawCode })
-      .select('referenceCode status scheduledAt appointmentNotes preferredTime createdAt thread guestAccessTokenHash billing.payerType clinicalDetails.meetingLink clinicalDetails.attachments')
+      .select('referenceCode status scheduledAt appointmentNotes preferredTime createdAt thread guestAccessTokenHash billing.payerType billing.amount billing.currency billing.settlementStatus clinicalDetails.meetingLink clinicalDetails.attachments')
       .lean();
 
     if (!referral) {
@@ -781,7 +781,7 @@ router.get('/status/:referenceCode', sensitiveRateLimiter(10, { strictLimit: tru
       });
     }
 
-    // Return sanitized zero-knowledge payload for employee (no internal DB IDs, no billing data, no tenant internals)
+    // Return sanitized zero-knowledge payload for patient (no internal DB IDs, no Paystack secrets, no tenant internals)
     const sanitizedData = {
       referenceCode: referral.referenceCode,
       status: referral.status || 'pending',
@@ -790,6 +790,12 @@ router.get('/status/:referenceCode', sensitiveRateLimiter(10, { strictLimit: tru
       meetingLink: referral.clinicalDetails?.meetingLink || '',
       preferredTime: referral.preferredTime || 'As soon as available',
       createdAt: referral.createdAt,
+      paymentSummary: {
+        payerType: referral.billing?.payerType || 'company_covered',
+        amount: Number(referral.billing?.amount || 0),
+        currency: referral.billing?.currency || 'GHS',
+        settlementStatus: referral.billing?.settlementStatus || 'unbilled',
+      },
       attachments: (referral.clinicalDetails?.attachments || []).map(att => ({
         fileName: att.fileName,
         fileData: att.fileData,
@@ -801,7 +807,7 @@ router.get('/status/:referenceCode', sensitiveRateLimiter(10, { strictLimit: tru
       })),
       thread: (referral.thread || []).map(msg => ({
         sender: msg.sender,
-        senderName: msg.senderName || (msg.sender === 'assessor' ? 'Medical Assessor' : 'You (Employee)'),
+        senderName: msg.senderName || (msg.sender === 'assessor' ? 'Medical Assessor' : 'You'),
         message: msg.message,
         timestamp: msg.timestamp,
       })),

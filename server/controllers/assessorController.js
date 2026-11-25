@@ -2030,4 +2030,88 @@ router.post('/2fa/regenerate-recovery-codes', requireAssessorAuth, async (req, r
   }
 });
 
+/**
+ * @route   GET /api/v1/assessor/my-payouts
+ * @desc    Read-only session & payout summary for the authenticated clinic admin or doctor
+ * @access  Private (Assessor / Doctor)
+ */
+router.get('/my-payouts', requireAssessorAuth, async (req, res, next) => {
+  try {
+    const { parseMonthRangeQuery } = require('../utils/dateRangeFilter');
+    const dateFilter = parseMonthRangeQuery(req.query);
+    if (dateFilter.error) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_DATE_RANGE',
+        message: dateFilter.error,
+      });
+    }
+
+    const userRole = req.assessorUser?.role || (req.doctor ? req.doctor.role : 'clinic_admin');
+    const isClinicAdmin = !req.doctor || userRole === 'clinic_admin';
+    const query = {
+      assignedAssessorId: req.assessor._id,
+      status: { $nin: ['awaiting_payment', 'cancelled'] },
+    };
+
+    if (!isClinicAdmin) {
+      if (!req.doctor || !req.doctor._id) {
+        return res.status(403).json({
+          success: false,
+          error: 'FORBIDDEN',
+          message: 'Clinician profile identifier is required.',
+        });
+      }
+      query.assignedDoctorId = req.doctor._id;
+    }
+
+    if (dateFilter.active) {
+      query.createdAt = dateFilter.range;
+    }
+
+    const referrals = await Referral.find(query)
+      .select('status billing createdAt')
+      .lean();
+
+    const summary = {
+      totalConsultations: 0,
+      completedConsultations: 0,
+      byPayerType: {
+        company_covered: 0,
+        welcome_credit: 0,
+        welcome_discount: 0,
+        self_pay: 0,
+        guest_pay: 0,
+      },
+    };
+    if (isClinicAdmin) {
+      summary.collectedGhs = 0;
+    }
+
+    for (const r of referrals) {
+      summary.totalConsultations += 1;
+      if (r.status === 'completed') summary.completedConsultations += 1;
+      const pType = r.billing?.payerType || 'company_covered';
+      if (summary.byPayerType[pType] !== undefined) {
+        summary.byPayerType[pType] += 1;
+      }
+      if (isClinicAdmin && ['guest_pay', 'self_pay', 'welcome_discount'].includes(pType) && r.billing?.isBilled) {
+        summary.collectedGhs += Number(r.billing?.amount || 0);
+      }
+    }
+
+    return res.json({
+      success: true,
+      scope: isClinicAdmin ? 'clinic' : 'doctor',
+      period: {
+        from: dateFilter.from || null,
+        to: dateFilter.to || null,
+      },
+      summary,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

@@ -2805,7 +2805,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
 
           <div class="settings-notice-banner">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-            <span>HR sees results only for groups of 5 or more. HR never sees your individual answers.</span>
+            <span id="settingsPrivacyBannerText">HR sees results only for groups of 5 or more. HR never sees your individual answers.</span>
           </div>
 
           <div class="settings-row">
@@ -2912,7 +2912,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
         <div class="help-card help-card--split" aria-labelledby="helpConsultHeading">
           <div>
             <h2 class="help-section-heading" id="helpConsultHeading">Talk to a professional</h2>
-            <p class="help-section-text" style="margin-top: 8px;">Request a confidential consultation with a licensed practitioner from FZ Safety and Health Centre. Only the clinical partner sees your name and contact details. Your employer is not told.</p>
+            <p id="helpConsultDesc" class="help-section-text" style="margin-top: 8px;">Request a confidential consultation with a licensed practitioner from FZ Safety and Health Centre. Only the clinical partner sees your name and contact details. Your employer is not told.</p>
           </div>
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <div class="help-card-actions">
@@ -2930,7 +2930,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
         </div>
 
         <!-- SECTION 3: Report a concern -->
-        <div class="help-card help-card--split" aria-labelledby="helpReportHeading">
+        <div id="helpWhistleblowerCard" class="help-card help-card--split" aria-labelledby="helpReportHeading">
           <div>
             <h2 class="help-section-heading" id="helpReportHeading">Report a concern</h2>
             <p class="help-section-text" style="margin-top: 8px;">Report a workplace hazard, harassment or a safety issue. Reports are anonymous.</p>
@@ -2953,7 +2953,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
       <div class="help-card" aria-labelledby="helpPrivacyHeading">
         <h2 class="help-section-heading" id="helpPrivacyHeading">How your privacy works</h2>
         <div class="help-accordion" id="helpPrivacyAccordion">
-          <div class="help-accordion-item">
+          <div id="helpPrivacyHrItem" class="help-accordion-item">
             <button type="button" class="help-accordion-trigger" aria-expanded="false" aria-controls="help-faq-1" id="help-faq-btn-1" onclick="App.toggleHelpAccordion(this)">
               <span>What does HR see?</span>
               <svg class="help-accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -2967,7 +2967,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
               <span>Who can see a consultation request?</span>
               <svg class="help-accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
-            <div class="help-accordion-panel" id="help-faq-2" role="region" aria-labelledby="help-faq-btn-2" hidden>
+            <div class="help-accordion-panel" id="helpFaq2Panel" role="region" aria-labelledby="help-faq-btn-2" hidden>
               Only the licensed practitioner at FZ Safety and Health Centre sees your name, contact details, and reason for reaching out. Your employer does not see who requested a consultation or what you discussed.
             </div>
           </div>
@@ -3161,6 +3161,7 @@ main:has(> #view-help:not([style*="display:none"]):not([style*="display: none"])
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <span id="consultDisplayCode" class="help-mono" style="font-size: 16px; font-weight: 600; color: var(--text);">REF-XXXXXXXX</span>
                 <span id="consultDisplayStatus" class="help-status-badge">Pending</span>
+                <span id="consultDisplayPaymentBadge" style="display:none;"></span>
               </div>
               <div class="help-meta-text" style="margin-top: 4px;">
                 Requested on <span id="consultDisplayDate">-</span> · Preferred: <span id="consultDisplayPreferred">-</span>
@@ -4430,6 +4431,50 @@ function renderHelpLatestRow(items) {
   row.style.display = 'flex';
 }
 
+function getPaymentBadgeInfo(paymentSummary) {
+  if (!paymentSummary || !paymentSummary.payerType) return null;
+  const pType = String(paymentSummary.payerType);
+  const currency = escapeHelpHtml(paymentSummary.currency || 'GHS');
+  const amount = Number(paymentSummary.amount || 0);
+  if (pType === 'welcome_credit') {
+    return {
+      label: `Welcome Consultation (${currency} 0)`,
+      style: 'background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;'
+    };
+  }
+  if (pType === 'welcome_discount') {
+    return {
+      label: `Paid · ${currency} ${amount || 199} (Welcome Credit)`,
+      style: 'background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;'
+    };
+  }
+  if (pType === 'self_pay') {
+    return {
+      label: `Paid · ${currency} ${amount || 349} (Private Self-Pay)`,
+      style: 'background:#f0fdfa;color:#0f766e;border:1px solid #99f6e4;'
+    };
+  }
+  if (pType === 'guest_pay') {
+    return {
+      label: `Paid · ${currency} ${amount || 349} (Guest)`,
+      style: 'background:#f0fdfa;color:#0f766e;border:1px solid #99f6e4;'
+    };
+  }
+  if (pType === 'company_covered') {
+    return {
+      label: 'Covered by Employer',
+      style: 'background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;'
+    };
+  }
+  return null;
+}
+
+function renderPaymentBadgeHtml(paymentSummary) {
+  const info = getPaymentBadgeInfo(paymentSummary);
+  if (!info) return '';
+  return `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap;${info.style}">${escapeHelpHtml(info.label)}</span>`;
+}
+
 function renderHelpRequestsList(items) {
   const listEl = document.getElementById('helpRequestsList');
   const emptyEl = document.getElementById('helpRequestsEmptyState');
@@ -4454,12 +4499,14 @@ function renderHelpRequestsList(items) {
     const lastTs = thread.length > 0 ? thread[thread.length - 1].timestamp : null;
     const dateLabel = item.createdAt ? formatHelpShortDate(item.createdAt) : '-';
     const msgLabel = lastTs ? ('Last message ' + formatHelpShortDate(lastTs)) : 'No messages yet';
+    const paymentBadge = renderPaymentBadgeHtml(item.paymentSummary);
     return `
       <button type="button" class="help-req-row${isActive ? ' is-active' : ''}" onclick="window.lookupConsultationReport('${escapeHelpHtml(code)}')">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
           <span class="help-mono" style="font-weight: 600; color: var(--text);">${escapeHelpHtml(code)}</span>
           <span class="${conf.cls}">${conf.label}</span>
         </div>
+        ${paymentBadge ? `<div style="display:flex;align-items:center;width:100%;margin-top:4px;">${paymentBadge}</div>` : ''}
         <div class="help-req-row-meta" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
           <span>${escapeHelpHtml(dateLabel)}</span>
           <span>${escapeHelpHtml(msgLabel)}</span>
@@ -4792,6 +4839,18 @@ function renderConsultationTrackView(data) {
     statusEl.textContent = conf.label;
   }
 
+  const payBadgeEl = document.getElementById('consultDisplayPaymentBadge');
+  if (payBadgeEl) {
+    const pInfo = getPaymentBadgeInfo(data.paymentSummary);
+    if (pInfo) {
+      payBadgeEl.style.cssText = `display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;${pInfo.style}`;
+      payBadgeEl.textContent = pInfo.label;
+    } else {
+      payBadgeEl.style.display = 'none';
+      payBadgeEl.textContent = '';
+    }
+  }
+
   const telehealthBanner = document.getElementById('consultTelehealthBanner');
   const joinBtn = document.getElementById('consultJoinMeetingBtn');
   const schedTimeText = document.getElementById('consultScheduleTimeText');
@@ -4879,6 +4938,18 @@ function renderConsultationThreadOnly(data) {
     const conf = getConsultStatusConfig(data.status);
     statusEl.className = conf.cls;
     statusEl.textContent = conf.label;
+  }
+
+  const payBadgeEl = document.getElementById('consultDisplayPaymentBadge');
+  if (payBadgeEl) {
+    const pInfo = getPaymentBadgeInfo(data.paymentSummary);
+    if (pInfo) {
+      payBadgeEl.style.cssText = `display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;${pInfo.style}`;
+      payBadgeEl.textContent = pInfo.label;
+    } else {
+      payBadgeEl.style.display = 'none';
+      payBadgeEl.textContent = '';
+    }
   }
 
   const telehealthBanner = document.getElementById('consultTelehealthBanner');
@@ -8302,6 +8373,22 @@ const App = (() => {
       if (billBtn) billBtn.style.display = 'flex';
       const deptRow = document.getElementById('settingsRowDepartment');
       if (deptRow) deptRow.style.display = 'none';
+      const vaultCard = document.getElementById('helpWhistleblowerCard');
+      if (vaultCard) vaultCard.style.display = 'none';
+      const privacyHrItem = document.getElementById('helpPrivacyHrItem');
+      if (privacyHrItem) privacyHrItem.style.display = 'none';
+      const settingsPrivBanner = document.getElementById('settingsPrivacyBannerText');
+      if (settingsPrivBanner) {
+        settingsPrivBanner.textContent = 'Your account is strictly private. Your check-ins and scores are never shared with any employer or third party.';
+      }
+      const helpConsultDesc = document.getElementById('helpConsultDesc');
+      if (helpConsultDesc) {
+        helpConsultDesc.textContent = 'Request a confidential consultation with a licensed doctor from FZ Safety and Health Centre. Only your doctor sees your name and consultation notes.';
+      }
+      const helpFaq2 = document.getElementById('helpFaq2Panel');
+      if (helpFaq2) {
+        helpFaq2.textContent = 'Only the licensed doctor at FZ Safety and Health Centre sees your name, contact details, and consultation notes. Your personal sessions are strictly confidential.';
+      }
       if (employerFields) employerFields.style.display = 'grid';
 
       const bRes = await apiFetch('/api/v1/billing/status');
